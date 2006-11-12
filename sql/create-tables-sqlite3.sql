@@ -3,6 +3,18 @@
 
 -- This is sqlite3 specific.
 
+CREATE TABLE parse_rules ( --{{{1
+    id                      integer NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    name                    text    NOT NULL UNIQUE,
+    description             text    NOT NULL,
+    -- A regex to parse the line.
+    regex                   text    NOT NULL,
+    -- The action to take: IGNORE, CONNECT, DISCONNECT . . .
+    action                  text    NOT NULL,
+    -- The order to apply the rules in: lowest first.
+    rule_order              integer NOT NULL
+);
+
 CREATE TABLE checks ( --{{{1
     id                      integer NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     name                    text    NOT NULL UNIQUE,
