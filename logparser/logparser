@@ -10,6 +10,7 @@ use ASO::DB;
 use Parse::Syslog;
 use IO::File;
 use Carp;
+use Data::Dumper;
 
 my $dbix = ASO::DB->connect(
     q{dbi:SQLite:dbname=../sql/db.sq3},
@@ -22,6 +23,88 @@ if (not @logs and -t STDIN) {
 }
 if (not @logs) {
     @logs = q{-};
+}
+
+my @checks      = process_checks();
+my @parse_rules = process_parse_rules();
+
+my %connections = ();
+foreach my $logfile (@logs) {
+    my $syslog = Parse::Syslog->new($logfile);
+    if (not $syslog) {
+        croak qq{Failed creating parser for $logfile: $@\n};
+    }
+
+    LINE:
+    while (my $line = $syslog->next()) {
+        if ($line->{program} !~ m/^postfix\/smtpd/) {
+            # It's not from postfix, ignore it.
+            next LINE;
+        }
+        if (not defined $line->{pid}) {
+            # For some weird reason there's no PID.  Probably a line like:
+            # "refreshing the Postfix mail system"
+            next LINE;
+        }
+
+        RULE:
+        foreach my $rule (@parse_rules) {
+            if ($line->{text} !~ m/$rule->{regex}/) {
+                next RULE;
+            }
+
+            # A line we want to ignore
+            if (uc $rule->{action} eq q{IGNORE}) {
+                next LINE;
+            }
+
+            # Someone has connected to us
+            if (uc $rule->{action} eq q{CONNECT}) {
+                if (exists $connections{$line->{pid}}) {
+                    carp <<"COMPLAINT";
+$0: $logfile: $.: existing connection hash for pid $line->{pid}; this should never happen :(
+COMPLAINT
+                    $connections{$line->{pid}} = {};
+                } else {
+                    $connections{$line->{pid}} = {};
+                }
+                next LINE;
+            }
+
+            # Someone has disconnected
+            if (uc $rule->{action} eq q{DISCONNECT}) {
+                if (not exists $connections{$line->{pid}}) {
+                    carp <<"COMPLAINT";
+$0: $logfile: $.: no connection hash for pid $line->{pid} - perhaps the connect line is in a previous log file?
+COMPLAINT
+                }
+                delete $connections{$line->{pid}};
+                next LINE;
+            }
+        }
+
+        CHECK:
+        foreach my $check (@checks) {
+            my @matches = ($line->{text} =~ m/$check->{regex}/);
+            if (not @matches) {
+                next;
+            }
+            # regex matches are 1-based, but arrays are 0-based.
+            # unshift undef onto the start of the array to align the two.
+            unshift @matches, undef;
+        }
+        if ($line->{text} =~ m/^[A-Z0-9]{9}:/) {
+            # Need to deal with this
+            next;
+        }
+        if ($line->{text} =~ m/^NOQUEUE/) {
+            # Need to deal with this
+            next;
+        }
+
+        # Last ditch: complain to the user
+        print qq{unknown line: $logfile: $.: $line->{text}\n};
+    }
 }
 
 sub parse_result_cols {
@@ -40,91 +123,48 @@ sub parse_result_cols {
     return $assignments;
 }
 
-my @checks = ();
-foreach my $check ($dbix->resultset(q{Check})->search()) {
-    my $check_hash = {};
-    $check_hash->{id}               = $check->();
-    $check_hash->{regex}            = $check->();
-    $check_hash->{result_cols}      = parse_result_cols($check->result_cols());
-    $check_hash->{connection_cols}  
-        = parse_result_cols($check->connection_cols());
-    push @checks, $check_hash;
+sub compile_regex {
+    my ($object) = @_;
+    my $regex = $object->regex();
+    my $compiled_regex;
+    eval {
+        $compiled_regex = qr/$regex/;
+    };
+    if ($@) {
+        my %columns = $object->get_columns();
+        croak qq{$0: failed to compile regex $regex: $!\n}
+            . Data::Dumper->Dump([\%columns], [qw(row)]);
+    }
+    return $compiled_regex;
 }
 
-my %connections = ();
-
-foreach my $logfile (@logs) {
-    my $syslog = Parse::Syslog->new($logfile);
-    if (not $syslog) {
-        croak qq{Failed creating parser for $logfile: $@\n};
+sub process_parse_rules {
+    my @results;
+    foreach my $rule ($dbix->resultset(q{ParseRule})->search()) {
+        my $rule_hash = {};
+        $rule_hash->{id}                = $rule->id();
+        $rule_hash->{action}            = $rule->action();
+        $rule_hash->{rule_order}        = $rule->rule_order();
+        # Compile the regex for efficiency, otherwise it'll be recompiled every
+        # time it's used.
+        $rule_hash->{regex}             = compile_regex($rule);
+        push @results, $rule_hash;
     }
-
-    while (my $line = $syslog->next()) {
-        if ($line->{program} !~ m/^postfix/) {
-            # It's not from postfix, ignore it.
-            next;
-        }
-        if (not defined $line->{pid}) {
-            # For some weird reason there's no PID.  Probably a line like:
-            # "refreshing the Postfix mail system"
-            next;
-        }
-        if (not exists $connections{$line->{pid}}) {
-            $connections{$line->{pid}} = {};
-        }
-        my $connection = $connections{$line->{pid}};
-
-        my $text = $line->{text};
-        if ($text =~ m/^[A-Z0-9]{9}:/) {
-            # Need to deal with this
-            next;
-        }
-        if ($text =~ m/^NOQUEUE/) {
-            # Need to deal with this
-            next;
-        }
-
-        # Someone is connecting
-        # XXX: merge this with the check for non-existant connection hash
-        if ($text =~ m/^connect/) {
-            next;
-        }
-
-        # Various ways people can disconnect
-        if ($text =~ m/^disconnect/) {
-            # add record
-            next;
-        }
-        if ($text =~ m/^lost connection after/) {
-            # add record
-            next;
-        }
-        if ($text =~ m/^timeout after (\w+|END-OF-MESSAGE) from /) {
-            # add record
-            next;
-        }
-        if ($text =~ m/^too many errors after \w+ from /) {
-            # add record
-            next;
-        }
-
-        # We can ignore these lines
-        if ($text =~ m/^warning:/) {
-            next;
-        }
-        if ($text =~ m/^statistics: /) {
-            next;
-        }
-        if ($text =~ m/^table .* has changed -- restarting/) {
-            next;
-        }
-        if ($text =~ m/^reload configuration/) {
-            next;
-        }
-
-        # Last ditch: complain to the user
-        print qq{$logfile: $.: $text\n};
-    }
+    return sort { $a->{rule_order} <=> $b->{rule_order} } @results;   
 }
 
-
+sub process_checks {
+    my @results;
+    foreach my $check ($dbix->resultset(q{Check})->search()) {
+        my $check_hash = {};
+        $check_hash->{id}               = $check->id();
+        # Compile the regex for efficiency, otherwise it'll be recompiled every
+        # time it's used.
+        $check_hash->{regex}            = compile_regex($check);
+        $check_hash->{result_cols}      = parse_result_cols($check->result_cols());
+        $check_hash->{connection_cols}  
+            = parse_result_cols($check->connection_cols());
+        push @results, $check_hash;
+    }
+    return @results;
+}
