@@ -12,6 +12,7 @@ my @classes = qw(
     Check
     Connection
     Check::Result
+    ParseRule
 );
 
 # load the various classes.
