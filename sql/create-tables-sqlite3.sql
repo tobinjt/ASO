@@ -56,14 +56,15 @@ CREATE TABLE check_results ( --{{{1
     -- Accept/defer/reject whatever
     result                  text    NOT NULL,
     -- True if it was a warning, false if it took effect
-    warning                 integer NOT NULL,
+    warning                 integer NOT NULL DEFAULT 0,
     -- The SMTP code sent to the client
     smtp_code               text    NOT NULL,
-    -- The recipient
+    -- The recipient; checks after DATA won't have a recipient, so allow it to
+    -- be null.
     recipient               text,
     -- The full line from the log
     log_line                text    NOT NULL,
     -- A place to plop anything not already covered.
-    data                    text    NOT NULL,
+    data                    text,
     PRIMARY KEY (connection_id, check_id)
 );
