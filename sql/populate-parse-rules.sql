@@ -40,7 +40,7 @@ INSERT INTO parse_rules(name, description, regex, action, rule_order)
         'IGNORE', 3);
 INSERT INTO parse_rules(name, description, regex, action, rule_order)
     VALUES('Client hostname and IP logged', 'Postfix logging the client IP address and hostname, probably because of XFORWARD',
-        '^client=__HOSTNAME__\[__IP__\]$',
+        '^[\dA-F]+: client=__HOSTNAME__\[__IP__\]$',
         'IGNORE', 3);
 INSERT INTO parse_rules(name, description, regex, action, rule_order)
     VALUES('Bloody Solaris LDAP', 'Solaris LDAP is trying to load something or other',
