@@ -11,6 +11,7 @@ use Parse::Syslog;
 use IO::File;
 use Carp;
 use Data::Dumper;
+use Regexp::Common qw(Email::Address net);
 
 my $dbix = ASO::DB->connect(
     q{dbi:SQLite:dbname=../sql/db.sq3},
@@ -27,6 +28,10 @@ if (not @logs) {
 
 my @checks      = process_checks();
 my @parse_rules = process_parse_rules();
+my $restriction_start = filter_regex(
+    qr/^([A-Z0-9]{9}|NOQUEUE): (reject(?:_warning)?): (?:RCPT|DATA) from (?>(__HOSTNAME__)\[)(?>(__IP__)\]): (__SMTP_CODE__) /
+);
+$restriction_start = qr/$restriction_start/;
 
 my %connections = ();
 foreach my $logfile (@logs) {
@@ -83,27 +88,37 @@ COMPLAINT
             }
         }
 
+        # Parse::Syslog handles "last line repeated n times" by returning the 
+        # same hash as it did on the last call, so any changes we make to the 
+        # contents of the hash will be propogated, thus we need to work on a
+        # copy of the text of the line from now on, as we'll be making changes
+        # to it.
+        my $text = $line->{text};
+
+        # The start of every restriction line is the same, so strip it off here
+        if ($text !~ s/$restriction_start//) {
+            print qq{line doesn't match restriction_start: $logfile: $.: $text\n};
+            next LINE;
+        }
+        my ($queueid, $result, $hostname, $ip, $smtp_code)
+         = ($1,       $2,      $3,        $4,  $5        );
+
         CHECK:
         foreach my $check (@checks) {
-            my @matches = ($line->{text} =~ m/$check->{regex}/);
+            my @matches = ($text =~ m/$check->{regex}/);
             if (not @matches) {
-                next;
+                next CHECK;
             }
             # regex matches are 1-based, but arrays are 0-based.
             # unshift undef onto the start of the array to align the two.
             unshift @matches, undef;
-        }
-        if ($line->{text} =~ m/^[A-Z0-9]{9}:/) {
-            # Need to deal with this
-            next;
-        }
-        if ($line->{text} =~ m/^NOQUEUE/) {
-            # Need to deal with this
-            next;
+            next LINE;
         }
 
         # Last ditch: complain to the user
-        print qq{unknown line: $logfile: $.: $line->{text}\n};
+#        print qq{$text\n};
+        #print qq{unknown line: $logfile: $.: $text\n};
+        print qq{Nov  5 00:00:10 relay.cs.tcd.ie postfix/smtpd[21407]: [ID 197553 mail.info] $line->{text}\n};
     }
 }
 
@@ -125,14 +140,14 @@ sub parse_result_cols {
 
 sub compile_regex {
     my ($object) = @_;
-    my $regex = $object->regex();
+    my $regex = filter_regex($object->regex());
     my $compiled_regex;
     eval {
         $compiled_regex = qr/$regex/;
     };
     if ($@) {
         my %columns = $object->get_columns();
-        croak qq{$0: failed to compile regex $regex: $!\n}
+        croak qq{$0: failed to compile regex $regex: $@\n}
             . Data::Dumper->Dump([\%columns], [qw(row)]);
     }
     return $compiled_regex;
@@ -158,13 +173,42 @@ sub process_checks {
     foreach my $check ($dbix->resultset(q{Check})->search()) {
         my $check_hash = {};
         $check_hash->{id}               = $check->id();
+        $check_hash->{name}             = $check->name();
         # Compile the regex for efficiency, otherwise it'll be recompiled every
         # time it's used.
         $check_hash->{regex}            = compile_regex($check);
-        $check_hash->{result_cols}      = parse_result_cols($check->result_cols());
-        $check_hash->{connection_cols}  
-            = parse_result_cols($check->connection_cols());
+        eval {
+            $check_hash->{result_cols}      = parse_result_cols($check->result_cols());
+            $check_hash->{connection_cols}  
+                = parse_result_cols($check->connection_cols());
+        };
+        if ($@) {
+            croak $@ . Dumper($check_hash);
+        }
         push @results, $check_hash;
     }
     return @results;
+}
+
+sub filter_regex {
+    my ($regex) = @_;
+
+    # I'm deliberately allowing a trailing .
+    my $hostname_re = qr/(?:unknown|(?:[-_a-zA-Z0-9.]+))/;
+
+    $regex =~ s/__SENDER__      /__EMAIL__/gx;
+    $regex =~ s/__RECIPIENT__   /__EMAIL__/gx;
+    # We see some pretty screwey hostnames in HELO commands.
+    $regex =~ s/__HELO__        /__HOSTNAME__|(?:\\[)__IP__(?:\\])|(.*?)/gx;
+#   $regex =~ s/__EMAIL__       /$RE{Email}{Address}/gx;
+#   The empty alternative below is to allow for <> as the sender address
+#   We also allow up to 7 @ signs in the address . . . I have seen that many :(
+    $regex =~ s/__EMAIL__       /(?:|[^@]+(?:\@(?:__HOSTNAME__|\\[__IP__\\])){0,7})/gx;
+    #$regex =~ s/__HOSTNAME__    /$RE{net}{domain}{-nospace}/gx;
+    $regex =~ s/__HOSTNAME__    /$hostname_re/gx;
+    $regex =~ s/__IP__          /$RE{net}{IPv4}/gx;
+    $regex =~ s/__SMTP_CODE__   /\\d{3}/gx;
+#   $regex =~ s/____/$RE{}{}/g;
+
+    return $regex;
 }
