@@ -34,6 +34,8 @@ my $restriction_start = filter_regex(
 $restriction_start = qr/$restriction_start/;
 
 my %connections = ();
+my %count = ();
+my $num_connections_uncommitted;
 foreach my $logfile (@logs) {
     my $syslog = Parse::Syslog->new($logfile);
     if (not $syslog) {
@@ -65,25 +67,13 @@ foreach my $logfile (@logs) {
 
             # Someone has connected to us
             if (uc $rule->{action} eq q{CONNECT}) {
-                if (exists $connections{$line->{pid}}) {
-                    carp <<"COMPLAINT";
-$0: $logfile: $.: existing connection hash for pid $line->{pid}; this should never happen :(
-COMPLAINT
-                    $connections{$line->{pid}} = {};
-                } else {
-                    $connections{$line->{pid}} = {};
-                }
+                make_connection($line, $logfile);
                 next LINE;
             }
 
             # Someone has disconnected
             if (uc $rule->{action} eq q{DISCONNECT}) {
-                if (not exists $connections{$line->{pid}}) {
-                    carp <<"COMPLAINT";
-$0: $logfile: $.: no connection hash for pid $line->{pid} - perhaps the connect line is in a previous log file?
-COMPLAINT
-                }
-                delete $connections{$line->{pid}};
+                disconnection($line, $logfile);
                 next LINE;
             }
         }
@@ -112,21 +102,51 @@ COMPLAINT
             # regex matches are 1-based, but arrays are 0-based.
             # unshift undef onto the start of the array to align the two.
             unshift @matches, undef;
+            $count{$check->{name}}++;
+
+            # Deal with the lack of connection lines sometimes.
+            if (not $connections{$line->{pid}}) {
+                make_connection($line, $logfile);
+            }
+
+            $connections{$line->{pid}}->{connection}->ip($ip);
+            $connections{$line->{pid}}->{connection}->hostname($hostname);
+            $connections{$line->{pid}}->{connection}->helo(
+                $matches[$check->{connection_cols}->{helo}]
+            );
+
+            my $check_result = $dbix->resultset(q{Check::Result})->new_result({
+                check_id        => $check->{id},
+                result          => $result,
+#                warning         => 
+                smtp_code       => $smtp_code,
+                recipient       => $matches[$check->{result_cols}->{recipient}],
+                sender          => $matches[$check->{result_cols}->{sender}],
+                log_line        => $line->{text},
+                data            => $matches[$check->{result_cols}->{data}],
+            });
+
+            push @{$connections{$line->{pid}}->{results}}, $check_result;
+
             next LINE;
         }
 
         # Last ditch: complain to the user
-#        print qq{$text\n};
         #print qq{unknown line: $logfile: $.: $text\n};
         print qq{Nov  5 00:00:10 relay.cs.tcd.ie postfix/smtpd[21407]: [ID 197553 mail.info] $line->{text}\n};
     }
 }
+if ($num_connections_uncommitted) {
+    $dbix->txn_commit();
+}
+
+print Dumper(\%count);
 
 sub parse_result_cols {
     my ($spec) = @_;
 
     my $assignments = {};
-    foreach my $assign (split /\s*;\s*/, $spec) {
+    foreach my $assign (split /\s*,\s*/, $spec) {
         if (not length $assign) {
             croak qq{empty assignment found in: $assignments\n};
         }
@@ -174,6 +194,7 @@ sub process_checks {
         my $check_hash = {};
         $check_hash->{id}               = $check->id();
         $check_hash->{name}             = $check->name();
+        $check_hash->{check_order}      = $check->check_order();
         # Compile the regex for efficiency, otherwise it'll be recompiled every
         # time it's used.
         $check_hash->{regex}            = compile_regex($check);
@@ -185,9 +206,12 @@ sub process_checks {
         if ($@) {
             croak $@ . Dumper($check_hash);
         }
+        if (not exists $check_hash->{result_cols}->{data}) {
+            $check_hash->{result_cols}->{data} = 0;
+        }
         push @results, $check_hash;
     }
-    return @results;
+    return sort { $a->{check_order} <=> $b->{check_order} } @results;
 }
 
 sub filter_regex {
@@ -211,4 +235,57 @@ sub filter_regex {
 #   $regex =~ s/____/$RE{}{}/g;
 
     return $regex;
+}
+
+sub make_connection {
+    my ($line, $logfile) = @_;
+
+    if (exists $connections{$line->{pid}}) {
+        carp <<"COMPLAINT";
+$0: $logfile: $.: existing connection hash for pid $line->{pid}; this should never happen :(
+COMPLAINT
+    }
+    $connections{$line->{pid}} = {};
+    $connections{$line->{pid}}->{connection} =
+        $dbix->resultset(q{Connection})->new_result({
+            start => $line->{timestamp}
+        });
+    $connections{$line->{pid}}->{results} = [];
+}
+
+sub disconnection {
+    my ($line, $logfile) = @_;
+
+    if (not exists $connections{$line->{pid}}) {
+        warn <<"COMPLAINT";
+$0: $logfile: $.: no connection hash for pid $line->{pid} - perhaps the connect line is in a previous log file?
+COMPLAINT
+        return;
+    }
+
+    # We're not dealing with success; need to add that later.
+    if (not @{$connections{$line->{pid}}->{results}}) {
+        delete $connections{$line->{pid}};
+        return;
+    }
+
+    if ($num_connections_uncommitted > 1000) {
+        $dbix->txn_commit();
+        $num_connections_uncommitted = 0;
+    }
+    if (not $num_connections_uncommitted) {
+        $dbix->txn_begin();
+    }
+
+    my $connection = $connections{$line->{pid}}->{connection};
+    $connection->end($line->{timestamp});
+    $connection->insert();
+    $num_connections_uncommitted++;
+
+    foreach my $result (@{$connections{$line->{pid}}->{results}}) {
+        $result->connection_id($connection->id());
+        $result->insert();
+    }
+
+    delete $connections{$line->{pid}};
 }
