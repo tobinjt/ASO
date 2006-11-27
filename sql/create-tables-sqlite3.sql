@@ -29,7 +29,8 @@ CREATE TABLE checks ( --{{{1
     -- the left and the match from the regex ($1, $2 etc) on the right hand side
     -- (without $).
     result_cols             text    NOT NULL,
-    connection_cols         text    NOT NULL
+    connection_cols         text    NOT NULL,
+    check_order             integer NOT NULL
 );
 
 CREATE TABLE connections ( --{{{1
@@ -41,8 +42,6 @@ CREATE TABLE connections ( --{{{1
     -- The name used in the HELO command
     -- TODO: how do I deal with clients who RSET and HELO again?
     helo                    text    NOT NULL,
-    -- The MAIL FROM: <address>
-    sender                  text    NOT NULL,
     -- Unix timestamp giving the start and end of the connection
     start                   integer NOT NULL,
     end                     integer NOT NULL
@@ -59,12 +58,13 @@ CREATE TABLE check_results ( --{{{1
     warning                 integer NOT NULL DEFAULT 0,
     -- The SMTP code sent to the client
     smtp_code               text    NOT NULL,
+    -- The MAIL FROM: <address>; may be <>, so can be null.
+    sender                  text,
     -- The recipient; checks after DATA won't have a recipient, so allow it to
     -- be null.
     recipient               text,
     -- The full line from the log
     log_line                text    NOT NULL,
     -- A place to plop anything not already covered.
-    data                    text,
-    PRIMARY KEY (connection_id, check_id)
+    data                    text
 );

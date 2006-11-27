@@ -18,6 +18,7 @@ __PACKAGE__->add_columns(
         result
         warning
         smtp_code
+        sender
         recipient
         log_line
         data

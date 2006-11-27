@@ -17,7 +17,6 @@ __PACKAGE__->add_columns(
         ip
         hostname
         helo
-        sender
         start
         end
     )

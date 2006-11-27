@@ -19,6 +19,7 @@ __PACKAGE__->add_columns(
         regex
         result_cols
         connection_cols
+        check_order
     )
 );
 __PACKAGE__->set_primary_key(q{id});
