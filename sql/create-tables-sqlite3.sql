@@ -3,22 +3,13 @@
 
 -- This is sqlite3 specific.
 
-CREATE TABLE parse_rules ( --{{{1
+DROP TABLE IF EXISTS rules; --{{{1
+CREATE TABLE rules (
     id                      integer NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     name                    text    NOT NULL UNIQUE,
     description             text    NOT NULL,
-    -- A regex to parse the line.
-    regex                   text    NOT NULL,
-    -- The action to take: IGNORE, CONNECT, DISCONNECT . . .
-    action                  text    NOT NULL,
-    -- The order to apply the rules in: lowest first.
-    rule_order              integer NOT NULL
-);
-
-CREATE TABLE checks ( --{{{1
-    id                      integer NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-    name                    text    NOT NULL UNIQUE,
-    description             text    NOT NULL,
+    -- The program the rule applies to: smtpd, qmgr, etc.
+    program                 text    NOT NULL,
     -- A regex to parse the line.
     regex                   text    NOT NULL,
     -- This is how we extract the matched fields from the regex: 
@@ -30,10 +21,14 @@ CREATE TABLE checks ( --{{{1
     -- (without $).
     result_cols             text    NOT NULL,
     connection_cols         text    NOT NULL,
-    check_order             integer NOT NULL
+    -- The action to take: IGNORE, CONNECT, DISCONNECT . . .
+    action                  text    NOT NULL,
+    -- The order to apply the rules in: lowest first.
+    rule_order              integer NOT NULL DEFAULT 0
 );
 
-CREATE TABLE connections ( --{{{1
+DROP TABLE IF EXISTS connections; --{{{1
+CREATE TABLE connections (
     id                      integer NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     -- The IP address of the connection
     ip                      text    NOT NULL,
@@ -42,12 +37,15 @@ CREATE TABLE connections ( --{{{1
     -- The name used in the HELO command
     -- TODO: how do I deal with clients who RSET and HELO again?
     helo                    text    NOT NULL,
+    -- The queueid of the mail
+    queueid                 text    NOT NULL,
     -- Unix timestamp giving the start and end of the connection
     start                   integer NOT NULL,
     end                     integer NOT NULL
 );
 
-CREATE TABLE check_results ( --{{{1
+DROP TABLE IF EXISTS check_results; --{{{1
+CREATE TABLE check_results (
     -- Reference to connections->id
     connection_id           integer NOT NULL,
     -- Reference to checks->id
