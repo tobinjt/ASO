@@ -34,9 +34,10 @@ my $restriction_start = filter_regex(
 $restriction_start = qr/$restriction_start/;
 
 my %connections = ();
-my %count = ();
-my $num_connections_uncommitted;
+my $num_connections_uncommitted = 0;
+
 foreach my $logfile (@logs) {
+    warn qq{$0: Starting to read $logfile\n};
     my $syslog = Parse::Syslog->new($logfile);
     if (not $syslog) {
         croak qq{Failed creating parser for $logfile: $@\n};
@@ -102,7 +103,7 @@ foreach my $logfile (@logs) {
             # regex matches are 1-based, but arrays are 0-based.
             # unshift undef onto the start of the array to align the two.
             unshift @matches, undef;
-            $count{$check->{name}}++;
+            $check->{count}++;
 
             # Deal with the lack of connection lines sometimes.
             if (not $connections{$line->{pid}}) {
@@ -110,6 +111,7 @@ foreach my $logfile (@logs) {
             }
 
             $connections{$line->{pid}}->{connection}->ip($ip);
+            $connections{$line->{pid}}->{connection}->queueid($queueid);
             $connections{$line->{pid}}->{connection}->hostname($hostname);
             $connections{$line->{pid}}->{connection}->helo(
                 $matches[$check->{connection_cols}->{helo}]
@@ -140,7 +142,24 @@ if ($num_connections_uncommitted) {
     $dbix->txn_commit();
 }
 
-print Dumper(\%count);
+print_totals(\@checks);
+
+sub print_totals {
+    my ($check_list) = @_;
+    my (%map, $length);
+    $length = 0;
+
+    foreach my $check (@$check_list) {
+        $map{$check->{name}} = $check->{count};
+        if (length $check->{name} > $length) {
+            $length = length $check->{name};
+        }
+    }
+
+    foreach my $name (sort { $map{$b} <=> $map{$a} } keys %map) {
+        print $name, q{ } x (3 + $length - length $name), $map{$name}, qq{\n};
+    }
+}
 
 sub parse_result_cols {
     my ($spec) = @_;
@@ -241,7 +260,7 @@ sub make_connection {
     my ($line, $logfile) = @_;
 
     if (exists $connections{$line->{pid}}) {
-        carp <<"COMPLAINT";
+        warn <<"COMPLAINT";
 $0: $logfile: $.: existing connection hash for pid $line->{pid}; this should never happen :(
 COMPLAINT
     }
