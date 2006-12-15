@@ -17,6 +17,7 @@ __PACKAGE__->add_columns(
         ip
         hostname
         helo
+        queueid
         start
         end
     )
