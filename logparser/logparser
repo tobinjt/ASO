@@ -2,6 +2,18 @@
 
 # $Id$
 
+# NOTES: for successful mail, I get:
+#   postfix/smtpd: 6F3D44317: client=webbie.berkeley.intel-research.net[12.155.161.150]
+#   postfix/qmgr: 6F3D44317: from=<dtn-interest-admin@mailman.dtnrg.org>, size=11880, nrcpt=2 (queue active)
+#   postfix/smtp: 6F3D44317: to=<elizabeth.daly@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=14, status=sent (250 2.6.0 Ok, id=18003-11, from MTA([127.0.0.1]:11025): 250 Ok: queued as B370843FD)
+#   postfix/smtp: 6F3D44317: to=<stephen.farrell@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=14, status=sent (250 2.6.0 Ok, id=18003-11, from MTA([127.0.0.1]:11025): 250 Ok: queued as B370843FD)
+#   postfix/qmgr: 6F3D44317: removed
+# That gives me: hostname, ip, sender, recipients (I can sanity check recipient
+# number using nrcpt), smtp code, queueid, timestamps, result.
+# So far I don't have HELO.  The queueid ties those lines together.  Can I get
+# postfix to log the HELO somehow?  There might be cleanup lines too . . . just
+# message-id, I think.
+
 use strict;
 use warnings;
 
@@ -26,9 +38,9 @@ if (not @logs) {
     @logs = q{-};
 }
 
-my @checks      = process_checks();
-my @parse_rules = process_parse_rules();
-my $restriction_start = filter_regex(
+my @checks              = process_checks();
+my @parse_rules         = process_parse_rules();
+my $restriction_start   = filter_regex(
     qr/^([A-Z0-9]{9}|NOQUEUE): (reject(?:_warning)?): (?:RCPT|DATA) from (?>(__HOSTNAME__)\[)(?>(__IP__)\]): (__SMTP_CODE__) /
 );
 $restriction_start = qr/$restriction_start/;
@@ -88,7 +100,7 @@ foreach my $logfile (@logs) {
 
         # The start of every restriction line is the same, so strip it off here
         if ($text !~ s/$restriction_start//) {
-            print qq{line doesn't match restriction_start: $logfile: $.: $text\n};
+            print qq{line doesn't match restriction_start: $logfile: $.: $line->{program}: $text\n};
             next LINE;
         }
         my ($queueid, $result, $hostname, $ip, $smtp_code)
@@ -142,6 +154,7 @@ if ($num_connections_uncommitted) {
     $dbix->txn_commit();
 }
 
+update_check_order(\@checks);
 print_totals(\@checks);
 
 sub print_totals {
@@ -158,6 +171,22 @@ sub print_totals {
 
     foreach my $name (sort { $map{$b} <=> $map{$a} } keys %map) {
         print $name, q{ } x (3 + $length - length $name), $map{$name}, qq{\n};
+    }
+}
+
+sub update_check_order {
+    my ($check_list) = @_;
+    my ($i, %order_map);
+    $i = 0;
+    map { exists $_->{count} or $_->{count} = 0 } @$check_list;
+    foreach my $check (sort { $b->{count} <=> $a->{count} } @$check_list) {
+        $order_map{$check->{id}} = $i++;
+    }
+    foreach my $check ($dbix->resultset(q{Check})->search()) {
+        # Sometimes a check won't have been hit; just use the next value
+        # in the sequence.
+        $check->check_order($order_map{$check->id()} || $i++);
+        $check->update();
     }
 }
 
