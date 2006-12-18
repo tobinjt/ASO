@@ -9,10 +9,9 @@ package ASO::DB;
 use base qw(DBIx::Class::Schema);
 
 my @classes = qw(
-    Check
     Connection
-    Check::Result
-    ParseRule
+    Result
+    Rule
 );
 
 # load the various classes.

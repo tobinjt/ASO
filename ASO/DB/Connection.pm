@@ -24,6 +24,6 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key(q{id});
 # Foreign keys: other tables reference this one.
-__PACKAGE__->has_many(q{results}            => q{ASO::DB::Check::Result}
+__PACKAGE__->has_many(q{results}            => q{ASO::DB::Result}
                                             => q{connection_id});
 1;

@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-package ASO::DB::Check::Result;
+package ASO::DB::Result;
 use base qw{DBIx::Class};
 use base qw{ASO::DB::Base};
 
@@ -14,7 +14,7 @@ __PACKAGE__->table(q{check_results});
 __PACKAGE__->add_columns(
     qw(
         connection_id
-        check_id
+        rule_id
         result
         warning
         smtp_code
@@ -24,8 +24,8 @@ __PACKAGE__->add_columns(
         data
     )
 );
-__PACKAGE__->set_primary_key(qw(connection_id check_id));
+__PACKAGE__->set_primary_key(qw(connection_id rule_id));
 # Foreign keys: this table references other tables.
 __PACKAGE__->belongs_to(q{connection_id}    => q{ASO::DB::Connection});
-__PACKAGE__->belongs_to(q{check_id}         => q{ASO::DB::Check});
+__PACKAGE__->belongs_to(q{rule_id}          => q{ASO::DB::Rule});
 1;

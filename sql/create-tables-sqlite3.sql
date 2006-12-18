@@ -23,6 +23,10 @@ CREATE TABLE rules (
     connection_cols         text    NOT NULL,
     -- The action to take: IGNORE, CONNECT, DISCONNECT . . .
     action                  text    NOT NULL,
+    -- The regex above should give the queueid; this give the index of the match
+    -- e.g. $1, $5, whatever.  smtpd rules won't need this, as restriction_start
+    -- handles it for them.
+    queueid                 integer NOT NULL,
     -- The order to apply the rules in: lowest first.
     rule_order              integer NOT NULL DEFAULT 0
 );
@@ -44,12 +48,12 @@ CREATE TABLE connections (
     end                     integer NOT NULL
 );
 
-DROP TABLE IF EXISTS check_results; --{{{1
-CREATE TABLE check_results (
+DROP TABLE IF EXISTS results; --{{{1
+CREATE TABLE results (
     -- Reference to connections->id
     connection_id           integer NOT NULL,
-    -- Reference to checks->id
-    check_id                integer NOT NULL,
+    -- Reference to rules->id
+    rule_id                 integer NOT NULL,
     -- Accept/defer/reject whatever
     result                  text    NOT NULL,
     -- True if it was a warning, false if it took effect
