@@ -38,18 +38,28 @@ if (not @logs) {
     @logs = q{-};
 }
 
-my @checks              = process_checks();
-my @parse_rules         = process_parse_rules();
-my $restriction_start   = filter_regex(
-    qr/^([A-Z0-9]{9}|NOQUEUE): (reject(?:_warning)?): (?:RCPT|DATA) from (?>(__HOSTNAME__)\[)(?>(__IP__)\]): (__SMTP_CODE__) /
-);
-$restriction_start = qr/$restriction_start/;
+my @rules                   = load_rules();
+my %rules_by_program        = map { $_->{program} => [] } @rules;
+map { push @{$rules_by_program{$_->{program}}}, $_ } @rules;
 
-my %connections = ();
+# programs which can create connections
+my %connect_programs        = (
+    q{postfix/smtpd}        => 1,
+);
+# programs which implement restrictions, and thus need to be processed by 
+# restriction_start below.
+my %restriction_programs    = (
+    q{postfix/smtpd}        => 1,
+);
+my $restriction_start       = make_restriction_start();
+
+my (%connections, %queueids);
 my $num_connections_uncommitted = 0;
+my $current_logfile;
 
 foreach my $logfile (@logs) {
-    warn qq{$0: Starting to read $logfile\n};
+    print qq{$0: Starting to read $logfile\n};
+    $current_logfile = $logfile;
     my $syslog = Parse::Syslog->new($logfile);
     if (not $syslog) {
         croak qq{Failed creating parser for $logfile: $@\n};
@@ -57,21 +67,39 @@ foreach my $logfile (@logs) {
 
     LINE:
     while (my $line = $syslog->next()) {
-        if ($line->{program} !~ m/^postfix\/smtpd/) {
-            # It's not from postfix, ignore it.
-            next LINE;
-        }
-        if (not defined $line->{pid}) {
-            # For some weird reason there's no PID.  Probably a line like:
-            # "refreshing the Postfix mail system"
+        if (not exists $rules_by_program{$line->{program}}) {
+            # It's not from a program we're interested in, skip it.
             next LINE;
         }
 
+        # Parse::Syslog handles "last line repeated n times" by returning the 
+        # same hash as it did on the last call, so any changes we make to the 
+        # contents of the hash will be propogated, thus we need to work on a
+        # copy of the text of the line from now on.
+        my $text = $line->{text};
+
+        # The start of every restriction line is the same, so strip it off here;
+        # however, not every line matches restriction_start.
+        if (exists $restriction_programs{$line->{program}}) {
+            my @matches = $text =~ m/$restriction_start->{regex}/;
+            if (@matches) {
+                $text =~ s/$restriction_start->{regex}//;
+                save($line, $restriction_start, \@matches);
+            }
+        }
+
         RULE:
-        foreach my $rule (@parse_rules) {
-            if ($line->{text} !~ m/$rule->{regex}/) {
+        foreach my $rule (@{$rules_by_program{$line->{program}}}) {
+            if ($text !~ m/$rule->{regex}/) {
                 next RULE;
             }
+            $rule->{count}++;
+
+            # XXX: is there a way I can do this without matching twice??
+            my @matches = ($text =~ m/$rule->{regex}/);
+            # regex matches start at one, but array indices start at 0.
+            # shift the array forward so they're aligned
+            unshift @matches, undef;
 
             # A line we want to ignore
             if (uc $rule->{action} eq q{IGNORE}) {
@@ -80,113 +108,94 @@ foreach my $logfile (@logs) {
 
             # Someone has connected to us
             if (uc $rule->{action} eq q{CONNECT}) {
-                make_connection($line, $logfile);
+                make_connection($line);
+                # We also want to save the hostname/ip info
+                save($line, $rule, \@matches);
                 next LINE;
             }
 
             # Someone has disconnected
             if (uc $rule->{action} eq q{DISCONNECT}) {
-                disconnection($line, $logfile);
+                disconnection($line, \@matches);
                 next LINE;
             }
-        }
 
-        # Parse::Syslog handles "last line repeated n times" by returning the 
-        # same hash as it did on the last call, so any changes we make to the 
-        # contents of the hash will be propogated, thus we need to work on a
-        # copy of the text of the line from now on, as we'll be making changes
-        # to it.
-        my $text = $line->{text};
-
-        # The start of every restriction line is the same, so strip it off here
-        if ($text !~ s/$restriction_start//) {
-            print qq{line doesn't match restriction_start: $logfile: $.: $line->{program}: $text\n};
-            next LINE;
-        }
-        my ($queueid, $result, $hostname, $ip, $smtp_code)
-         = ($1,       $2,      $3,        $4,  $5        );
-
-        CHECK:
-        foreach my $check (@checks) {
-            my @matches = ($text =~ m/$check->{regex}/);
-            if (not @matches) {
-                next CHECK;
-            }
-            # regex matches are 1-based, but arrays are 0-based.
-            # unshift undef onto the start of the array to align the two.
-            unshift @matches, undef;
-            $check->{count}++;
-
-            # Deal with the lack of connection lines sometimes.
-            if (not $connections{$line->{pid}}) {
-                make_connection($line, $logfile);
+            # We want to save some information
+            if (uc $rule->{action} eq q{SAVE}) {
+                save($line, $rule, \@matches);
+                next LINE;
             }
 
-            $connections{$line->{pid}}->{connection}->ip($ip);
-            $connections{$line->{pid}}->{connection}->queueid($queueid);
-            $connections{$line->{pid}}->{connection}->hostname($hostname);
-            $connections{$line->{pid}}->{connection}->helo(
-                $matches[$check->{connection_cols}->{helo}]
-            );
+            # We want create db entries with the information we've saved.
+            if (uc $rule->{action} eq q{COMMIT}) {
+                commit($line, $rule, \@matches);
+                next LINE;
+            }
 
-            my $check_result = $dbix->resultset(q{Check::Result})->new_result({
-                check_id        => $check->{id},
-                result          => $result,
-#                warning         => 
-                smtp_code       => $smtp_code,
-                recipient       => $matches[$check->{result_cols}->{recipient}],
-                sender          => $matches[$check->{result_cols}->{sender}],
-                log_line        => $line->{text},
-                data            => $matches[$check->{result_cols}->{data}],
-            });
-
-            push @{$connections{$line->{pid}}->{results}}, $check_result;
-
-            next LINE;
+            my_warn(qq{unknown action $rule->{action}\n} . Dumper($rule));
         }
 
         # Last ditch: complain to the user
-        #print qq{unknown line: $logfile: $.: $text\n};
-        print qq{Nov  5 00:00:10 relay.cs.tcd.ie postfix/smtpd[21407]: [ID 197553 mail.info] $line->{text}\n};
+        print qq{$text\n};
+        #my_warn(qq{unknown line: $line->{program}: $line->{pid}: $text\n});
     }
 }
 if ($num_connections_uncommitted) {
     $dbix->txn_commit();
 }
 
-update_check_order(\@checks);
-print_totals(\@checks);
+#print dump_state();
+update_check_order();
+#print_totals();
+
+sub make_restriction_start {
+
+    my $special_rule = {
+        id                  => -1,
+        name                => q{special rule matching the start of restrictions},
+        program             => q{postfix/smtpd},
+        queueid             => 0,
+        result_cols         => parse_result_cols(q{queueid = 1, hostname = 3, ip = 4}),
+        connection_cols     => parse_result_cols(q{result = 2, smtp_code = 5}),
+        regex               => filter_regex(
+            qr/^([A-Z0-9]{9}|NOQUEUE): (reject(?:_warning)?): (?:RCPT|DATA) from (?>(__HOSTNAME__)\[)(?>(__IP__)\]): (__SMTP_CODE__) /
+        )
+    };
+    $special_rule->{regex}  = qr/$special_rule->{regex}/;
+
+    return $special_rule;
+}
 
 sub print_totals {
-    my ($check_list) = @_;
     my (%map, $length);
     $length = 0;
 
-    foreach my $check (@$check_list) {
-        $map{$check->{name}} = $check->{count};
-        if (length $check->{name} > $length) {
-            $length = length $check->{name};
+    foreach my $rule (@rules) {
+        $map{$rule->{name}} = $rule->{count};
+        if (length $rule->{name} > $length) {
+            $length = length $rule->{name};
         }
     }
 
-    foreach my $name (sort { $map{$b} <=> $map{$a} } keys %map) {
+    my @names = sort { $map{$b} <=> $map{$a} } keys %map;
+    foreach my $name (@names) {
         print $name, q{ } x (3 + $length - length $name), $map{$name}, qq{\n};
     }
 }
 
 sub update_check_order {
-    my ($check_list) = @_;
-    my ($i, %order_map);
-    $i = 0;
-    map { exists $_->{count} or $_->{count} = 0 } @$check_list;
-    foreach my $check (sort { $b->{count} <=> $a->{count} } @$check_list) {
-        $order_map{$check->{id}} = $i++;
+    my ($i, %order_map) = (1);
+
+    map { exists $_->{count} or $_->{count} = 0 } @rules;
+    my @sorted_rules = sort { $b->{count} <=> $a->{count} } @rules;
+    foreach my $rule (@sorted_rules) {
+        $order_map{$rule->{id}} = $i++;
     }
-    foreach my $check ($dbix->resultset(q{Check})->search()) {
-        # Sometimes a check won't have been hit; just use the next value
+    foreach my $rule ($dbix->resultset(q{Rule})->search()) {
+        # Sometimes a rule won't have been hit; just use the next value
         # in the sequence.
-        $check->check_order($order_map{$check->id()} || $i++);
-        $check->update();
+        $rule->rule_order($order_map{$rule->id()} || $i++);
+        $rule->update();
     }
 }
 
@@ -206,60 +215,111 @@ sub parse_result_cols {
     return $assignments;
 }
 
-sub compile_regex {
-    my ($object) = @_;
-    my $regex = filter_regex($object->regex());
-    my $compiled_regex;
-    eval {
-        $compiled_regex = qr/$regex/;
-    };
-    if ($@) {
-        my %columns = $object->get_columns();
-        croak qq{$0: failed to compile regex $regex: $@\n}
-            . Data::Dumper->Dump([\%columns], [qw(row)]);
+sub get_connection {
+    my ($line, $queueid, $rule) = @_;
+    my $connection;
+
+    # Is it a program which makes connections?
+    if (exists $connect_programs{$line->{program}}) {
+        $connection = $connections{$line->{pid}};
+        if (not $connection) {
+            my_warn(qq{get_connection: no connection for pid $line->{pid}\n});
+            $connection = make_connection($line);
+        }
+        if (not $connection) {
+            my_die(qq{failed to make_connection()\n});
+        }
+        return $connection;
     }
-    return $compiled_regex;
+
+    # Or is it a program we track by queueid?
+    if (not $queueid) {
+        my $dump = dump_rule($rule);
+        my_warn(qq{no queueid for rule $dump\n});
+        return {};
+    }
+
+    if (not exists $queueids{$queueid}) {
+        my_warn(qq{get_connection: queueid $queueid not found\n});
+        $queueids{$queueid} = {};
+    }
+
+    return $queueids{$queueid};
 }
 
-sub process_parse_rules {
-    my @results;
-    foreach my $rule ($dbix->resultset(q{ParseRule})->search()) {
-        my $rule_hash = {};
-        $rule_hash->{id}                = $rule->id();
-        $rule_hash->{action}            = $rule->action();
-        $rule_hash->{rule_order}        = $rule->rule_order();
-        # Compile the regex for efficiency, otherwise it'll be recompiled every
-        # time it's used.
-        $rule_hash->{regex}             = compile_regex($rule);
-        push @results, $rule_hash;
+sub delete_connection {
+    my ($line, $queueid) = @_;
+
+
+    if (exists $connect_programs{$line->{program}}) {
+        if (not exists $connections{$line->{pid}}) {
+            my_warn(qq{delete_connection: no connection for pid $line->{pid}\n});
+        }
+        delete $connections{$line->{pid}};
+    } else {
+        if (not exists $queueids{$queueid}) {
+            my_warn(qq{delete_connection: no connection for queueid $queueid\n});
+        }
+        delete $queueids{$queueid};
     }
-    return sort { $a->{rule_order} <=> $b->{rule_order} } @results;   
 }
 
-sub process_checks {
+sub load_rules {
     my @results;
-    foreach my $check ($dbix->resultset(q{Check})->search()) {
-        my $check_hash = {};
-        $check_hash->{id}               = $check->id();
-        $check_hash->{name}             = $check->name();
-        $check_hash->{check_order}      = $check->check_order();
+
+    foreach my $rule ($dbix->resultset(q{Rule})->search()) {
+        my $rule_hash = {
+            id               => $rule->id(),
+            name             => $rule->name(),
+            rule_order       => $rule->rule_order(),
+            action           => $rule->action(),
+            program          => $rule->program(),
+            queueid          => $rule->queueid(),
+            result_cols      => parse_result_cols($rule->result_cols()),
+            connection_cols  => parse_result_cols($rule->connection_cols()),
+        };
+
         # Compile the regex for efficiency, otherwise it'll be recompiled every
         # time it's used.
-        $check_hash->{regex}            = compile_regex($check);
+        my $regex = filter_regex($rule->regex());
         eval {
-            $check_hash->{result_cols}      = parse_result_cols($check->result_cols());
-            $check_hash->{connection_cols}  
-                = parse_result_cols($check->connection_cols());
+            $rule_hash->{regex} = qr/$regex/;
         };
         if ($@) {
-            croak $@ . Dumper($check_hash);
+            croak qq{$0: failed to compile regex $regex: $@\n} .
+                dump_rule_from_db($rule);
         }
-        if (not exists $check_hash->{result_cols}->{data}) {
-            $check_hash->{result_cols}->{data} = 0;
-        }
-        push @results, $check_hash;
+
+        push @results, $rule_hash;
     }
-    return sort { $a->{check_order} <=> $b->{check_order} } @results;
+    return sort { $a->{rule_order} <=> $b->{rule_order} } @results;
+}
+
+sub dump_connection {
+    my ($connection) = @_;
+
+    return Data::Dumper->Dump([$connection], [q{connection}]);
+}
+
+sub dump_rule {
+    my ($rule) = @_;
+
+    return Data::Dumper->Dump([$rule], [q{rule}]);
+}
+
+sub dump_rule_from_db {
+    my ($rule) = @_;
+
+    my %columns = $rule->get_columns();
+    return Data::Dumper->Dump([\%columns], [q{rule}]);
+}
+
+sub dump_state {
+    
+    return Data::Dumper->Dump(
+        [\%connections, \%queueids],
+        [qw(connections queueids)]
+    );
 }
 
 sub filter_regex {
@@ -276,47 +336,150 @@ sub filter_regex {
 #   The empty alternative below is to allow for <> as the sender address
 #   We also allow up to 7 @ signs in the address . . . I have seen that many :(
     $regex =~ s/__EMAIL__       /(?:|[^@]+(?:\@(?:__HOSTNAME__|\\[__IP__\\])){0,7})/gx;
+    $regex =~ s/__HOSTNAME_IP__ /__HOSTNAME__\[__IP__\]/gx;
     #$regex =~ s/__HOSTNAME__    /$RE{net}{domain}{-nospace}/gx;
     $regex =~ s/__HOSTNAME__    /$hostname_re/gx;
     $regex =~ s/__IP__          /$RE{net}{IPv4}/gx;
     $regex =~ s/__SMTP_CODE__   /\\d{3}/gx;
-#   $regex =~ s/____/$RE{}{}/g;
+    # 3-9 is a guess.
+    $regex =~ s/__QUEUEID__     /(?:NOQUEUE|[\\dA-F]{3,9})/gx;
+#   $regex =~ s/____/$RE{}{}/gx;
 
     return $regex;
 }
 
 sub make_connection {
-    my ($line, $logfile) = @_;
+    my ($line) = @_;
 
     if (exists $connections{$line->{pid}}) {
-        warn <<"COMPLAINT";
-$0: $logfile: $.: existing connection hash for pid $line->{pid}; this should never happen :(
-COMPLAINT
+        my_warn(qq{existing connection hash for pid $line->{pid}; this should never happen :(\n});
     }
+    if (not exists $connect_programs{$line->{program}}) {
+        my_warn(qq{trying to create a connection for program $line->{program}\n});
+    }
+
     $connections{$line->{pid}} = {};
-    $connections{$line->{pid}}->{connection} =
-        $dbix->resultset(q{Connection})->new_result({
-            start => $line->{timestamp}
-        });
-    $connections{$line->{pid}}->{results} = [];
+    return $connections{$line->{pid}};
 }
 
 sub disconnection {
-    my ($line, $logfile) = @_;
+    my ($line) = @_;
 
     if (not exists $connections{$line->{pid}}) {
-        warn <<"COMPLAINT";
-$0: $logfile: $.: no connection hash for pid $line->{pid} - perhaps the connect line is in a previous log file?
-COMPLAINT
+        my_warn(qq{no connection hash for pid $line->{pid} - perhaps the connect line is in a previous log file?\n});
         return;
     }
 
+    my $connection = $connections{$line->{pid}};
+    if (exists $connection->{queueid}
+            and $connection->{queueid} eq q{NOQUEUE}) {
+        my_warn(qq{$line->{pid}: queueid is NOQUEUE, ignored\n});
+        delete $connection->{queueid};
+    }
+
+    # This is quite common - it happens every time we reject at SMTP time.
+    if (not exists $connection->{queueid} and exists $connection->{results}) {
+        commit_connection($connection);
+    }
+
+    delete $connections{$line->{pid}};
+}
+
+# My logic in relation to smtpd pids and queueids is:
+# There has to be a line from smtpd saying "queueid: accepted" or something 
+# similar, so we have to have gotten a queueid at some stage, or the mail
+# couldn't be in the system at all.  I know this doesn't handle submission by
+# sendmail or anything like that, I'll have to figure that bit out later.
+sub save {
+    my ($line, $rule, $matches) = @_;
+
+    my $queueid     = $matches->[$rule->{queueid}];
+    my $connection  = get_connection($line, $queueid, $rule);
+
+    # Deal with the lack of connection lines sometimes.
+    if (not $connection) {
+        my_warn(qq{no connection\n});
+    }
+
+    # Ensure we save the connection by queueid; this allows us to tie the whole
+    # lot together.
+    if ($queueid and not exists $queueids{$queueid}) {
+        $queueids{$queueid} = $connection;
+    }
+
+    my $connection_cols = $rule->{connection_cols};
+    foreach my $ccol (keys %{$connection_cols}) {
+        $connection->{$ccol} = $matches->[$connection_cols->{$ccol}];
+    }
+
+    my %result;
+    my $result_cols = $rule->{result_cols};
+    foreach my $rcol (keys %{$result_cols}) {
+        $result{$rcol} = $matches->[$result_cols->{$rcol}];
+    }
+
+    if (%result) {
+        if (not exists $connection->{results}) {
+            $connection->{results} = [];
+        }
+        push @{$connection->{results}}, \%result;
+    }
+}
+
+# TODO: WRITE
+sub commit {
+    my ($line, $rule, $matches) = @_;
+
+    my $queueid = $matches->[$rule->{queueid}];
+    my $connection = get_connection($line, $queueid, $rule);
+
+    if (not $connection) {
+        my_warn(qq{no connection for $line->{text}\n});
+        return;
+    }
+
+    commit_connection($connection);
+    delete_connection($line, $queueid);
+}
+
+sub commit_connection {
+}
+
+sub my_warn {
+    warn qq{$0: $current_logfile: $.: }, @_;
+}
+
+sub my_die {
+    die qq{$0: $current_logfile: $.: }, @_;
+}
+
+__DATA__
+
+sub save_connection {
+
     # We're not dealing with success; need to add that later.
-    if (not @{$connections{$line->{pid}}->{results}}) {
+    if (not exists $connections
+        not @{$connections{$line->{pid}}->{results}}) {
+        warn qq{$0: $logfile: $.: no results\n};
         delete $connections{$line->{pid}};
         return;
     }
 
+    $connections{$line->{pid}}->{connection} =
+        $dbix->resultset(q{Connection})->new_result({
+            start => $line->{timestamp}
+        });
+
+        my $check_result = $dbix->resultset(q{Check::Result})->new_result({
+            check_id        => $check->{id},
+            result          => $result,
+#                warning         => 
+            smtp_code       => $smtp_code,
+            recipient       => $matches[$check->{result_cols}->{recipient}],
+            sender          => $matches[$check->{result_cols}->{sender}],
+            log_line        => $line->{text},
+            data            => $matches[$check->{result_cols}->{data}],
+        });
     if ($num_connections_uncommitted > 1000) {
         $dbix->txn_commit();
         $num_connections_uncommitted = 0;
@@ -335,5 +498,4 @@ COMPLAINT
         $result->insert();
     }
 
-    delete $connections{$line->{pid}};
 }
