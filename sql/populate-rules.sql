@@ -1,27 +1,26 @@
 -- vim: set foldmethod=marker textwidth=300 :
 -- $Id$
 
--- result_cols: recipient, data (log_line will be added automatically)
--- connection_cols: helo, sender
 -- XXX: how will I specify warning?
 
 DELETE FROM rules;
 
--- CONNECT lines
+-- SMTPD CONNECT RULES {{{1
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
-    VALUES('connection', 'A client has connected',
+    VALUES('client connection', 'A client has connected',
         'postfix/smtpd',
-        '^connect from __HOSTNAME__\[__IP__\]$',
+        '^connect from (__HOSTNAME__)\[(__IP__)\]$',
         '',
-        '',
+        'hostname = 1, ip = 2',
         'CONNECT',
         0
 );
 
+-- }}}
 
--- DISCONNECT lines
+-- SMTPD DISCONNECT RULES {{{1
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
-    VALUES('disconnection', 'The client has disconnected cleanly',
+    VALUES('client disconnection', 'The client has disconnected cleanly',
         'postfix/smtpd',
         '^disconnect from __HOSTNAME__\[__IP__\]$',
         '',
@@ -30,8 +29,10 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0
 );
 
+-- }}}
 
--- These will always be followed by a disconnect line, as matched above
+-- SMTPD IGNORE RULES {{{1
+-- SMTPD These will always be followed by a disconnect line, as matched above {{{2
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('lost connection', 'Client disconnected uncleanly',
         'postfix/smtpd',
@@ -62,8 +63,9 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0
 );
 
+-- }}}
 
--- Lines we want to ignore.
+-- SMTPD Other lines we want to ignore {{{2
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Warning', 'Warnings of some sort',
         'postfix/smtpd',
@@ -104,10 +106,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0
 );
 
+-- }}}
+
+-- }}}
 
 
-
--- reject lines
+-- SMTPD REJECT RULES {{{1
 
 -- <munin@cs.tcd.ie>: Recipient address rejected: User unknown in local recipient table; from=<> to=<munin@cs.tcd.ie> proto=ESMTP helo=<lg12x22.cs.tcd.ie>
 -- <hienes@cs.tcd.ie>: Recipient address rejected: User unknown in local recipient table; from=<BrooksPool@rowcmi.org> to=<hienes@cs.tcd.ie> proto=ESMTP helo=<PETTERH?DNEB?>
@@ -507,41 +511,289 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0
 );
 
+-- }}}
+
+-- SMTPD ACCEPT RULES {{{1
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
-    VALUES('Mail accepted', 'Postfix accepted the mail; it is hardly obvious from this line though',
+    VALUES('Mail accepted', 'Postfix accepted the mail; it is hardly obvious from the log message though',
         'postfix/smtpd',
         '^(__QUEUEID__): client=(__HOSTNAME__)\[(__IP__)\]$',
         '',
         'queueid = 1, hostname = 2, ip = 3',
         'SAVE',
-        0
+        1
 );
 
+-- }}}
+
+
+-- QMGR RULES {{{1
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Mail delivery accomplished', 'qmgr is finished with the mail; it has been delivered',
         'postfix/qmgr',
         '^(__QUEUEID__): removed$',
         '',
         'queueid = 1',
-        'SAVE',
-        0
+        'COMMIT',
+        1
 );
 
+-- 6508A4317: from=<florenzaaluin@callisupply.com>, size=2656, nrcpt=1 (queue active)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
-    VALUES('smtp client cannot connect', 'the smtp client cannot connect ot the host',
+    VALUES('qmgr processing mail', 'qmgr is going to deliver this mail',
+        'postfix/qmgr',
+        '^(__QUEUEID__): from=<(__SENDER__)>, size=\d+, nrcpt=(\d+) \(queue active\)$',
+        'sender = 2',
+        'queueid = 1, nrcpt = 3',
+        'SAVE',
+        1
+);
+
+-- B1508348E: from=<tcd-mzones-management-bounces+79talbert=jinan.gov.cn@cs.tcd.ie>, status=expired, returned to sender
+-- 9C169364A: from=<>, status=expired, returned to sender
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('mail has been queued for too long', 'mail has been sitting in the queue for too long, postifx is giving up on it',
+        'postfix/qmgr',
+        '^(__QUEUEID__): from=<(__SENDER__)>, status=expired, returned to sender$',
+        'sender = 1',
+        '',
+        'SAVE',
+        1
+);
+
+-- INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+--     VALUES('', '',
+--         '',
+--         '',
+--         '',
+--         '',
+--         'SAVE',
+--         
+-- );
+
+
+-- SMTP RULES {{{1
+
+-- 058654401: to=<autosupport@netapp.com>, relay=mx1.netapp.com[216.240.18.38], delay=53, status=sent (250 ok:  Message 348102483 accepted)
+-- 253234317: to=<shanneneables@granherne.com>, relay=houmail002.halliburton.com[34.254.16.14], delay=2, status=sent (250 2.0.0 kA50s0cL029158 Message accepted for delivery)
+-- 0226B4317: to=<rajaverma@gmail.com>, relay=gmail-smtp-in.l.google.com[66.249.93.114], delay=1, status=sent (250 2.0.0 OK 1162706943 x33si2914313ugc)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('mail delivered to outside world', 'a mail was delivered to an outside address',
         'postfix/smtp',
-        'connect to lackey.cs.qub.ac.uk[143.117.5.165]: Connection timed out (port 25)',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \((250) (.*)\)$',
+        'recipient = 2, data = 6, smtp_code = 5',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- 1C8E84317: to=<dolan@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=8, status=sent (250 2.6.0 Ok, id=00218-02, from MTA([127.0.0.1]:11025): 250 Ok: queued as 2677C43FD)
+-- 730AC43FD: to=<grid-ireland-alert@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=0, status=sent (250 2.6.0 Ok, id=15759-01-2, from MTA([127.0.0.1]:11025): 250 Ok: queued as A3B7C4403)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('mail passed to amavisd', 'mail has been passed to amavisd for filtering',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(127.0.0.1)\[(127.0.0.1)\], delay=\d+, status=sent \((250) (2.6.0 Ok, id=\d+(?:-\d+)+, from MTA\(\[127.0.0.1\]:\d+\): 250 Ok: queued as __QUEUEID__)\)$',
+        'recipient = 2, smtp_code = 5, data = 6',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- DC1484406: to=<elisab@gmail.com>, orig_to=<elisa.baniassad@cs.tcd.ie>, relay=gmail-smtp-in.l.google.com[66.249.93.114], delay=1, status=sent (250 2.0.0 OK 1162686664 53si2666246ugd)
+-- B7F9D4400: to=<dalyj1@tcd.ie>, orig_to=<dalyj1@cs.tcd.ie>, relay=imx1.tcd.ie[134.226.17.160], delay=0, status=sent (250 Ok: queued as BE7B04336)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('mail aliased to outside world', 'mail was sent to a local alias which expanded to an external address',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, orig_to=<(__RECIPIENT__)>, relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \((250) (.*)\)$',
+        'recipient = 3, smtp_code = 6, data = 7',
+        'queueid = 1, hostname = 4, ip = 5',
+        'SAVE',
+        1
+);
+
+-- XXX: why is this being discarded?
+-- 56EE54317: to=<creans@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=3, status=sent (250 2.7.1 Ok, discarded, id=00218-04 - VIRUS: HTML.Phishing.Bank-753)
+-- D93E84400: to=<diana.wilson@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=1, status=sent (250 2.7.1 Ok, discarded, id=00218-03-2 - VIRUS: HTML.Phishing.Bank-753)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('mail discarded by amavisd', 'mail was passed to amavisd, which discarded it',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(127.0.0.1)\[(127.0.0.1)\], delay=\d+, status=sent \((250) (2.7.1 Ok, discarded, id=\d+(?:-\d+)+ - VIRUS: .*)\)$',
+        'recipient = 2, smtp_code = 5, data = 6',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- connect to wsatkins.co.uk[193.117.23.129]: Connection refused (port 25)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('connect refused', 'postfix tried to connect to a remote smtp server, but the connection was refused',
+        'postfix/smtp',
+        '^connect to (__HOSTNAME__)\[(__IP__)\]: Connection refused \(port 25\)$',
         '',
         '',
         'IGNORE',
         0
 );
 
--- INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action)
+-- 4CC8443C5: to=<abutbrittany@route66bikers.com>, relay=none, delay=222439, status=deferred (connect to route66bikers.com[69.25.142.6]: Connection timed out)
+-- D004043FD: to=<bjung@uvic.ca>, orig_to=<jungb@cs.tcd.ie>, relay=none, delay=31, status=deferred (connect to smtpx.uvic.ca[142.104.5.91]: Connection timed out)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('mail delayed', 'the connection timed out while trying to deliver mail',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=deferred \(connect to (__HOSTNAME__)\[(__IP__)\]: Connection timed out\)$',
+        'recipient = 2',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- 7A06F3489: to=<azo@www.instantweb.com>, relay=www.instantweb.com[206.185.24.12], delay=68210, status=deferred (host www.instantweb.com[206.185.24.12] said: 451 qq write error or disk full (#4.3.0) (in reply to end of DATA command))
+-- B697043F0: to=<matthew@sammon.info>, orig_to=<matthew.sammon@cs.tcd.ie>, relay=mail.hosting365.ie[82.195.128.132], delay=1, status=deferred (host mail.hosting365.ie[82.195.128.132] said: 450 <matthew@sammon.info>: Recipient address rejected: Greylisted for 5 minutes (in reply to RCPT TO command))
+-- DDF6A3489: to=<economie-recherche@region-bretagne.fr>, relay=rain-pdl.megalis.org[217.109.171.200], delay=1, status=deferred (host rain-pdl.megalis.org[217.109.171.200] said: 450 <economie-recherche@region-bretagne.fr>: Recipient address rejected: Greylisted for 180 seco nds (see http://isg.ee.ethz.ch/tools/postgrey/help/region-bretagne.fr.html) (in reply to RCPT TO command))
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('mail deferred because of a problem at the remote end', 'mail deferred because of a problem at the remote end',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=deferred \(host \3\[\4\] said: ((__SMTP_CODE__) .*) \(in reply to (?:RCPT TO|end of DATA) command\)\)',
+        'recipient = 2, smtp_code = 5, data = 6',
+        'queueid = 1, host = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- 99C2243F0: to=<mounderek@bigfot.com>, relay=none, delay=385069, status=deferred (connect to mail.ehostinginc.com[66.172.49.6]: Connection refused)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('connect refused (more detailed)', 'Connection refused by the remote server',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=none, delay=\d+, status=deferred \(connect to (__HOSTNAME__)\[(__IP__)\]: Connection refused\)$',
+        'recipient = 2',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- 7ABDF43FD: to=<olderro@myccccd.net>, relay=none, delay=0, status=bounced (Host or domain name not found. Name service error for name=mailcruiser.campuscruiser.com type=A: Host not found)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Recipient MX not found', 'No MX server for the recipient was found',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=none, delay=\d+, status=bounced \(Host or domain name not found. Name service error for name=(__HOSTNAME__) type=(?:MX|A): Host not found\)',
+        'recipient = 2, hostname = 3',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
+-- B028035EB: to=<Iain@fibernetix.com>, relay=none, delay=282964, status=deferred (Host or domain name not found. Name service error for name=fibernetix.com type=MX: Host not found, try again)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Recipient MX not found (try again)', 'No MX server for the recipient was found',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=none, delay=\d+, status=deferred \(Host or domain name not found. Name service error for name=(__HOSTNAME__) type=(?:A|MX): Host not found, try again\)',
+        'recipient = 2, hostname = 3',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
+-- connect to lackey.cs.qub.ac.uk[143.117.5.165]: Connection timed out (port 25)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('connect timed out', 'time out while postfix was connecting to remote server',
+        'postfix/smtp',
+        '^connect to __HOSTNAME__\[__IP__\]: Connection timed out \(port 25\)$',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- D7B274401: to=<jaumaffup@cchlis.com>, relay=cchlis.com.s5a1.psmtp.com[64.18.4.10], delay=2, status=bounced (host cchlis.com.s5a1.psmtp.com[64.18.4.10] said: 550 5.1.1 User unknown (in reply to RCPT TO command))
+-- A71B043FD: to=<dpdlbalgkcm@malaysia.net>, relay=malaysia-net.mr.outblaze.com[205.158.62.177], delay=31, status=bounced (host malaysia-net.mr.outblaze.com[205.158.62.177] said: 550 <>: No thank you rejected: Account Unavailable: Possible Forgery (in reply to RCPT TO command))
+-- 224E243C3: to=<lamohtm@mail.ru>, orig_to=<sergey.tsvetkov@cs.tcd.ie>, relay=mxs.mail.ru[194.67.23.20], delay=5, status=bounced (host mxs.mail.ru[194.67.23.20] said: 550 spam message discarded. If you think that the system is mistaken, please report details to abuse@corp.mail.ru (in reply to end of DATA command))
+-- 
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('mail to outside world rejected', 'mail to the outside world was rejected',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, (?>status=bounced) \(host \3\[\4\] said: ((__SMTP_CODE__) .*) \(in reply to (?:RCPT TO|end of DATA) command\)\)$',
+        'recipient = 2, smtp_code = 5, data = 6',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- connect to mx1.mail.yahoo.com[4.79.181.14]: server refused to talk to me: 421 Message from (134.226.32.56) temporarily deferred - 4.16.50. Please refer to http://help.yahoo.com/help/us/mail/defer/defer-06.html   (port 25)
+-- connect to mx1.mail.ukl.yahoo.com[195.50.106.7]: server refused to talk to me: 451 Message temporarily deferred - 4.16.50   (port 25)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Server refused to talk', 'The remote server refused to talk for some reason',
+        'postfix/smtp',
+        '^connect to __HOSTNAME__\[__IP__\]: server refused to talk to me: __SMTP_CODE__ (?:.*) \(port 25\)$',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- 31AE04400: to=<domurtag@yahoo.co.uk>, orig_to=<domurtag@cs.tcd.ie>, relay=none, delay=0, status=deferred (connect to mx2.mail.ukl.yahoo.com[217.12.11.64]: server refused to talk to me: 451 Message temporarily deferred - 4.16.50  )
+-- A932037C8: to=<ayako70576@freewww.info>, relay=none, delay=30068, status=deferred (connect to vanitysmtp.changeip.com[143.215.15.51]: server refused to talk to me: 421 cannot send to name server  )
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Server refused to talk (later stage?)', 'The remote server refused to talk for some reason - at a later stage?  We have a queueid anyway',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, delay=\d+, status=deferred \(connect to (__HOSTNAME__)\[(__IP__)\]: server refused to talk to me: ((__SMTP_CODE__) .*)\)$',
+        'recipient = 2, smtp_code = 6, data = 5',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+-- warning: numeric domain name in resource data of MX record for phpcompiler.org: 80.68.89.7
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Warning from smtp', 'Warning of some sort from smtp - rare',
+        'postfix/smtp',
+        '^warning: ',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- 18FCF43C3: host iona.com.s8a1.psmtp.com[64.18.7.10] said: 451 Can't connect to iona.ie - psmtp (in reply to RCPT TO command)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Generic smtp failure', 'A catchall for failures we do not have more specific tests for',
+        'postfix/smtp',
+        '^(__QUEUEID__): host (__HOSTNAME__)\[(__IP__)\] said: (__SMTP_CODE__) (.*) \(in reply to (?:RCPT TO|end of DATA) command\)$',
+        'data = 5, smtp_code = 4',
+        'queueid = 1, hostname = 2, ip = 3',
+        'SAVE',
+        1
+);
+
+-- connect to smap-net-bk.mr.outblaze.com[205.158.62.181]: read timeout (port 25)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('read timeout', 'reading data from remote server timed out',
+        'postfix/smtp',
+        '^connect to __HOSTNAME__\[__IP__\]: read timeout \(port 25\)$',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- C770E4317: to=<nywzssbpk@smapxsmap.net>, relay=none, delay=944, status=deferred (connect to smap-net-bk.mr.outblaze.com[205.158.62.177]: read timeout)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('read timeout (with queueid)', 'read timeout during connect - with queueid',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=none, delay=\d+, status=deferred \(connect to (__HOSTNAME__)\[(__IP__)\]: read timeout\)',
+        'recipient = 2',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- }}}
+
+-- INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
 --     VALUES('', '',
 --         '',
 --         '',
 --         '',
 --         '',
---         'SAVE'
+--         'SAVE',
+--         
 -- );
+
