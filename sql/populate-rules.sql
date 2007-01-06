@@ -1,4 +1,4 @@
--- vim: set foldmethod=marker textwidth=300 :
+-- vim: set foldmethod=marker textwidth=1000 :
 -- $Id$
 
 -- XXX: how will I specify warning?
@@ -269,7 +269,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Recipient MX in private address space (192.168.0.0/16)', 'The MX for Recipient domain is in private address space (192.168.0.0/16), so cannot be contacted',
         'postfix/smtpd',
-        '<(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<(__SENDER__)> to=<\1> proto=E?SMTP helo=<(__HELO__)>',
+        '^<(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<(__SENDER__)> to=<\1> proto=E?SMTP helo=<(__HELO__)>',
         'recipient = 1, sender = 2',
         'helo = 3',
         'SAVE',
@@ -378,9 +378,9 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0
 );
 
--- Client host rejected: cannot find your hostname, [190.40.183.65]; from=<dage@0451.com> to=<ebarrett@cs.tcd.ie> proto=ESMTP helo=<client-200.121.175.96.speedy.net.pe>
+-- Client host rejected: cannot find your hostname, [199.84.53.138]; from=<security@e-gold.com.> to=<melanie.bouroche@cs.tcd.ie> proto=ESMTP helo=<DynamicCorp.net>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
-    VALUES('Unknown hostname', 'No PTR record for client IP address',
+    VALUES('Rejected client without PTR', 'Client IP address does not have associated PTR record',
         'postfix/smtpd',
         '^Client host rejected: cannot find your hostname, \[__IP__\]; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 2, sender = 1',
@@ -389,23 +389,14 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0
 );
 
+-- We match anything here because the address is invalid.
 -- <[]>: Helo command rejected: invalid ip address; from=<mrmmpwv@parfive.com> to=<hitesh.tewari@cs.tcd.ie> proto=ESMTP helo=<[]>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
-    VALUES('Invalid HELO ip address', 'The hostname used in the HELO command is invalid',
-        'postfix/smtpd',
-        '<(.*?)>: Helo command rejected: invalid ip address; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\1>',
-        'recipient = 3, sender = 2',
-        'helo = 1',
-        'SAVE',
-        0
-);
-
 -- <24383590>: Helo command rejected: Invalid name; from=<CBKWPMIUF@hotmail.com> to=<byrne@cs.tcd.ie> proto=SMTP helo=<24383590>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
-    VALUES('Invalid HELO hostname', 'The client used an invalid hostname in the HELO command',
+    VALUES('Invalid HELO hostname/ip', 'The hostname/ip used in the HELO command is invalid',
         'postfix/smtpd',
-        '^<(.*?)>: Helo command rejected: Invalid name; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\1>$',
-        'recipient = 3, sender = 2',
+        '^<(.*?)>: Helo command rejected: (invalid ip address|Invalid name); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\1>',
+        'recipient = 4, sender = 3, data = 2',
         'helo = 1',
         'SAVE',
         0
@@ -467,17 +458,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0
 );
 
--- Client host rejected: cannot find your hostname, [199.84.53.138]; from=<security@e-gold.com.> to=<melanie.bouroche@cs.tcd.ie> proto=ESMTP helo=<DynamicCorp.net>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
-    VALUES('Rejected client without PTR', 'Client IP address does not have associated PTR record',
-        'postfix/smtpd',
-        '^Client host rejected: cannot find your hostname, \[__IP__\]; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
-        'recipient = 2, sender = 1',
-        'helo = 3',
-        'SAVE',
-        0
-);
-
 -- <localhost.localhost>: Helo command rejected: You are not me; from=<qute1212000@yahoo.it> to=<mads.haahr@cs.tcd.ie> proto=SMTP helo=<localhost.localhost>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Fake localhost HELO', 'The client claimed to be localhost in the HELO command',
@@ -501,12 +481,25 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- <DATA>: Data command rejected: Multi-recipient bounce; from=<> proto=SMTP helo=<mail71.messagelabs.com>
+-- <DATA>: Data command rejected: Multi-recipient bounce; from=<> proto=ESMTP helo=<euphrates.qatar.net.qa>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Multi-recipient bounce rejected', 'Any mail from <> should be a bounce, therefore if there is more than one recipient it can be rejected',
         'postfix/smtpd',
-        '^<DATA>: Data command rejected: Multi-recipient bounce; from=<()> proto=SMTP helo=<(__HELO__)>$',
+        '^<DATA>: Data command rejected: Multi-recipient bounce; from=<()> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 1',
         'helo = 2',
+        'SAVE',
+        0
+);
+
+-- <DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<bounce-523207-288@lists.tmforum.org> to=<vwade@cs.tcd.ie> proto=SMTP helo=<lists.tmforum.org>
+-- <DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<daffy982@livedoor.com> to=<tfernand@cs.tcd.ie> proto=ESMTP helo=<adler.ims.uni-stuttgart.de>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Bad pipelining', 'The client tried to use pipelining before Postfix allowed it',
+        'postfix/smtpd',
+        '^<DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'sender = 1, recipient = 2',
+        'helo = 3',
         'SAVE',
         0
 );
@@ -561,15 +554,42 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         1
 );
 
--- INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
---     VALUES('', '',
---         '',
---         '',
---         '',
---         '',
---         'SAVE',
---         
--- );
+-- E8DE4438A: to=<root@godiva.cs.tcd.ie>, relay=none, delay=1, status=deferred (delivery temporarily suspended: connect to godiva.cs.tcd.ie[134.226.35.142]: Connection refused)
+-- D24B44416: to=<G4254-list@tcd.ie>, orig_to=<allnightug-list@cs.tcd.ie>, relay=none, delay=64, status=deferred (delivery temporarily suspended: connect to imx2.tcd.ie[134.226.1.156]: Connection timed out)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('delivery suspended because the connection was refused/timed out', 'qmgr deferred delivery because the smtp connection was refused/timed out',
+        'postfix/qmgr',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=deferred \(delivery temporarily suspended: connect to (__HOSTNAME__)\[(__IP__)\]: Connection (?:refused|timed out)\)$',
+        'recipient = 2',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- 27AB942D3: skipped, still being delivered
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Qmgr skipping a mail', 'I presume qmgr is rescanning the queue, sees this mail, but knows there is a process trying to deliver it?  How can it take so long?',
+        'postfix/qmgr',
+        '__QUEUEID__: skipped, still being delivered',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- 0F5073725: to=<amulllly@cs.tcd.ie>, relay=none, delay=0, status=deferred (delivery temporarily suspended: lost connection with 127.0.0.1[127.0.0.1] while sending end of data -- message may be sent more than once)
+-- 9326C365D: to=<welsh@cs.tcd.ie>, relay=none, delay=3, status=deferred (delivery temporarily suspended: lost connection with 127.0.0.1[127.0.0.1] while sending end of data -- message may be sent more than once)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Conversation timed out with filter while sending <CR>.<CR>', 'The conversation timed out after Postfix had finished sending data to the filter; mail will be retried, but should not have been delivered by amavisd-new (we hope)',
+        'postfix/qmgr',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=none, delay=\d+, status=deferred \(delivery temporarily suspended: lost connection with (127.0.0.1)\[(127.0.0.1)\] while sending end of data -- message may be sent more than once\)$',
+        'recipient = 2',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- 1}}}
 
 
 -- SMTP RULES {{{1
@@ -580,8 +600,8 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('mail delivered to outside world', 'a mail was delivered to an outside address',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \((250) (.*)\)$',
-        'recipient = 2, data = 6, smtp_code = 5',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \(((__SMTP_CODE__).*)\)$',
+        'recipient = 2, data = 5, smtp_code = 6',
         'queueid = 1, hostname = 3, ip = 4',
         'SAVE',
         1
@@ -589,14 +609,15 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- 1C8E84317: to=<dolan@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=8, status=sent (250 2.6.0 Ok, id=00218-02, from MTA([127.0.0.1]:11025): 250 Ok: queued as 2677C43FD)
 -- 730AC43FD: to=<grid-ireland-alert@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=0, status=sent (250 2.6.0 Ok, id=15759-01-2, from MTA([127.0.0.1]:11025): 250 Ok: queued as A3B7C4403)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority)
     VALUES('mail passed to amavisd', 'mail has been passed to amavisd for filtering',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(127.0.0.1)\[(127.0.0.1)\], delay=\d+, status=sent \((250) (2.6.0 Ok, id=\d+(?:-\d+)+, from MTA\(\[127.0.0.1\]:\d+\): 250 Ok: queued as __QUEUEID__)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(127.0.0.1)\[(127.0.0.1)\], delay=\d+, status=sent \((250) (2.6.0 Ok, id=\d+(?:-\d+)+, from MTA\(\[127.0.0.1\]:\d+\): 250 Ok: queued as (__QUEUEID__))\)$',
         'recipient = 2, smtp_code = 5, data = 6',
-        'queueid = 1, hostname = 3, ip = 4',
-        'SAVE',
-        1
+        'queueid = 1, hostname = 3, ip = 4, new_queueid = 7',
+        'TRACK',
+        1,
+        5
 );
 
 -- DC1484406: to=<elisab@gmail.com>, orig_to=<elisa.baniassad@cs.tcd.ie>, relay=gmail-smtp-in.l.google.com[66.249.93.114], delay=1, status=sent (250 2.0.0 OK 1162686664 53si2666246ugd)
@@ -604,9 +625,9 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('mail aliased to outside world', 'mail was sent to a local alias which expanded to an external address',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>, orig_to=<(__RECIPIENT__)>, relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \((250) (.*)\)$',
-        'recipient = 3, smtp_code = 6, data = 7',
-        'queueid = 1, hostname = 4, ip = 5',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \(((__SMTP_CODE__).*)\)$',
+        'recipient = 2, smtp_code = 6, data = 5',
+        'queueid = 1, hostname = 3, ip = 4',
         'SAVE',
         1
 );
@@ -625,10 +646,11 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- connect to wsatkins.co.uk[193.117.23.129]: Connection refused (port 25)
+-- connect to 127.0.0.1[127.0.0.1]: Connection refused (port 10024)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('connect refused', 'postfix tried to connect to a remote smtp server, but the connection was refused',
         'postfix/smtp',
-        '^connect to (__HOSTNAME__)\[(__IP__)\]: Connection refused \(port 25\)$',
+        '^connect to __HOSTNAME__\[__IP__\]: Connection refused \(port \d+\)$',
         '',
         '',
         'IGNORE',
@@ -650,32 +672,23 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- 7A06F3489: to=<azo@www.instantweb.com>, relay=www.instantweb.com[206.185.24.12], delay=68210, status=deferred (host www.instantweb.com[206.185.24.12] said: 451 qq write error or disk full (#4.3.0) (in reply to end of DATA command))
 -- B697043F0: to=<matthew@sammon.info>, orig_to=<matthew.sammon@cs.tcd.ie>, relay=mail.hosting365.ie[82.195.128.132], delay=1, status=deferred (host mail.hosting365.ie[82.195.128.132] said: 450 <matthew@sammon.info>: Recipient address rejected: Greylisted for 5 minutes (in reply to RCPT TO command))
 -- DDF6A3489: to=<economie-recherche@region-bretagne.fr>, relay=rain-pdl.megalis.org[217.109.171.200], delay=1, status=deferred (host rain-pdl.megalis.org[217.109.171.200] said: 450 <economie-recherche@region-bretagne.fr>: Recipient address rejected: Greylisted for 180 seco nds (see http://isg.ee.ethz.ch/tools/postgrey/help/region-bretagne.fr.html) (in reply to RCPT TO command))
+-- EF2AE438D: to=<k.brown@cs.ucc.ie>, relay=mail6.ucc.ie[143.239.1.36], delay=11, status=deferred (host mail6.ucc.ie[143.239.1.36] said: 451 4.3.2 Please try again later (in reply to MAIL FROM command))
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('mail deferred because of a problem at the remote end', 'mail deferred because of a problem at the remote end',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=deferred \(host \3\[\4\] said: ((__SMTP_CODE__) .*) \(in reply to (?:RCPT TO|end of DATA) command\)\)',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=deferred \(host \3\[\4\] said: ((__SMTP_CODE__).*) \(in reply to __COMMAND__ command\)\)',
         'recipient = 2, smtp_code = 5, data = 6',
         'queueid = 1, host = 3, ip = 4',
         'SAVE',
         1
 );
 
--- 99C2243F0: to=<mounderek@bigfot.com>, relay=none, delay=385069, status=deferred (connect to mail.ehostinginc.com[66.172.49.6]: Connection refused)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
-    VALUES('connect refused (more detailed)', 'Connection refused by the remote server',
-        'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=none, delay=\d+, status=deferred \(connect to (__HOSTNAME__)\[(__IP__)\]: Connection refused\)$',
-        'recipient = 2',
-        'queueid = 1, hostname = 3, ip = 4',
-        'SAVE',
-        1
-);
-
 -- 7ABDF43FD: to=<olderro@myccccd.net>, relay=none, delay=0, status=bounced (Host or domain name not found. Name service error for name=mailcruiser.campuscruiser.com type=A: Host not found)
+-- 90F0E3E19: to=<matthew@sammon.info>, orig_to=<matthew.sammon@cs.tcd.ie>, relay=none, delay=0, status=bounced (Host or domain name not found. Name service error for name=mail.hosting365.ie type=A: Host not found)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Recipient MX not found', 'No MX server for the recipient was found',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=none, delay=\d+, status=bounced \(Host or domain name not found. Name service error for name=(__HOSTNAME__) type=(?:MX|A): Host not found\)',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=bounced \(Host or domain name not found. Name service error for name=(__HOSTNAME__) type=(?:MX|A): Host not found\)',
         'recipient = 2, hostname = 3',
         'queueid = 1',
         'SAVE',
@@ -711,7 +724,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('mail to outside world rejected', 'mail to the outside world was rejected',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, (?>status=bounced) \(host \3\[\4\] said: ((__SMTP_CODE__) .*) \(in reply to (?:RCPT TO|end of DATA) command\)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, (?>status=bounced) \(host \3\[\4\] said: ((__SMTP_CODE__).*) \(in reply to __COMMAND__ command\)\)$',
         'recipient = 2, smtp_code = 5, data = 6',
         'queueid = 1, hostname = 3, ip = 4',
         'SAVE',
@@ -723,7 +736,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Server refused to talk', 'The remote server refused to talk for some reason',
         'postfix/smtp',
-        '^connect to __HOSTNAME__\[__IP__\]: server refused to talk to me: __SMTP_CODE__ (?:.*) \(port 25\)$',
+        '^connect to __HOSTNAME__\[__IP__\]: server refused to talk to me: __SMTP_CODE__(?:.*) \(port 25\)$',
         '',
         '',
         'IGNORE',
@@ -735,7 +748,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Server refused to talk (later stage?)', 'The remote server refused to talk for some reason - at a later stage?  We have a queueid anyway',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, delay=\d+, status=deferred \(connect to (__HOSTNAME__)\[(__IP__)\]: server refused to talk to me: ((__SMTP_CODE__) .*)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=deferred \(connect to (__HOSTNAME__)\[(__IP__)\]: server refused to talk to me: ((__SMTP_CODE__).*)\)$',
         'recipient = 2, smtp_code = 6, data = 5',
         'queueid = 1, hostname = 3, ip = 4',
         'SAVE',
@@ -753,10 +766,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- 18FCF43C3: host iona.com.s8a1.psmtp.com[64.18.7.10] said: 451 Can't connect to iona.ie - psmtp (in reply to RCPT TO command)
+-- 3B91D4390: host mail6.ucc.ie[143.239.1.36] said: 451 4.3.2 Please try again later (in reply to MAIL FROM command)
+-- 80C05439E: host ASPMX.L.GOOGLE.COM[66.249.93.27] said: 450-4.2.1 The Gmail user you are trying to contact is receiving 450-4.2.1 mail at a rate that prevents additional messages from 450-4.2.1 being delivered. Please resend your message at a later 450-4.2.1 time; if the user is able to receive mail at that time, 450 4.2.1 your message will be delivered. q40si1486066ugc (in reply to RCPT TO command)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Generic smtp failure', 'A catchall for failures we do not have more specific tests for',
         'postfix/smtp',
-        '^(__QUEUEID__): host (__HOSTNAME__)\[(__IP__)\] said: (__SMTP_CODE__) (.*) \(in reply to (?:RCPT TO|end of DATA) command\)$',
+        '^(__QUEUEID__): host (__HOSTNAME__)\[(__IP__)\] said: (__SMTP_CODE__)(.*) \(in reply to __COMMAND__ command\)$',
         'data = 5, smtp_code = 4',
         'queueid = 1, hostname = 2, ip = 3',
         'SAVE',
@@ -785,7 +800,435 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         1
 );
 
+-- 681A74425: lost connection with mx1.mail.yahoo.com[4.79.181.15] while sending RCPT TO
+-- 719B44312: lost connection with mail.waypt.com[63.172.167.6] while sending DATA command
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('smtp client lost connection', 'smtp client lost connection for who knows what reason',
+        'postfix/smtp',
+        '^(__QUEUEID__): lost connection with (__HOSTNAME__)\[(__IP__)\] while sending __COMMAND__(?: command)?$',
+        '',
+        'queueid = 1, hostname = 2, ip = 3',
+        'SAVE',
+        1
+);
+
+-- no queueid to save with
+-- connect to mail.boilingpoint.com[66.240.186.41]: server dropped connection without sending the initial SMTP greeting (port 25)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('remote server rudely hung up', 'The remote server closed the connection without saying anything at all',
+        'postfix/smtp',
+        '^connect to __HOSTNAME__\[__IP__\]: server dropped connection without sending the initial SMTP greeting \(port \d+\)$',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- 198D4438F: to=<fj.azuaje@ieee.org>, orig_to=<francisco.azuaje@cs.tcd.ie>, relay=none, delay=0, status=deferred (connect to hormel.ieee.org[140.98.193.224]: server dropped connection without sending the initial SMTP greeting)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('remote server rudely hung up (with queueid)', 'The remote server closed the connection without saying anything at all (but we have a queueid this time)',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=deferred \(connect to (__HOSTNAME__)\[(__IP__)\]: server dropped connection without sending the initial SMTP greeting\)$',
+        'recipient = 2',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- 99C2243F0: to=<mounderek@bigfot.com>, relay=none, delay=385069, status=deferred (connect to mail.ehostinginc.com[66.172.49.6]: Connection refused)
+-- 2F5C643E9: to=<fj.azuaje@ieee.org>, orig_to=<francisco.azuaje@cs.tcd.ie>, relay=none, delay=0, status=deferred (connect to hormel.ieee.org[140.98.193.224]: Connection refused)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('connection to remote host failed', 'smtp client could not connect to remote server',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=deferred \(connect to (__HOSTNAME__)\[(__IP__)\]: Connection refused\)$',
+        'recipient = 2',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+
+-- 47C384392: to=<EarleneaDwHoneycutt@raysbaseball.com>, relay=raysbaseball.com[205.214.86.22], delay=1, status=bounced (host raysbaseball.com[205.214.86.22] said: 550-"The recipient cannot be verified.  Please check all recipients of this 550 message to verify they are valid." (in reply to RCPT TO command))
+-- 
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Remote server rejected a recipient', 'The remote server rejected a recipient',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=bounced \(host \3\[\4\] said: ((__SMTP_CODE__).*) \(in reply to __COMMAND__ command\)\)$',
+        'recipient = 2, smtp_code = 6, data = 5',
+        'queueid = 1, host = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- 0A6634382: to=<ala.biometry@rret.com>, relay=smtp.getontheweb.com[66.36.236.47], delay=57719, status=deferred (host smtp.getontheweb.com[66.36.236.47] said: 451 qqt failure (#4.3.0) (in reply to DATA command))
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Temporary remote failure', 'There is a temporary failure of some sort on the remote side',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=deferred \(host \3[\4] said: ((__SMTP_CODE__).*) \(in reply to __COMMAND__ command\)\)$',
+        'recipient = 2, smtp_code = 6, data = 5',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- 2A2DB4496: conversation with mail.zust.it[213.213.93.228] timed out while sending RCPT TO
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Conversation timed out (2)', 'There was an awkward pause in the conversation and eventually it died',
+        'postfix/smtp',
+        '^(__QUEUEID__): conversation with (__HOSTNAME__)\[(__IP__)\] timed out while sending __COMMAND__$',
+        '',
+        'queueid = 1, hostname = 2, ip = 3',
+        'SAVE',
+        1
+);
+
+-- 2A2DB4496: enabling PIX <CRLF>.<CRLF> workaround for mail.zust.it[213.213.93.228]
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Working around broken PIX SMTP Fixup', 'The Cisco PIX has braindead SMTP Fixup, Postfix is working around it so that mail can be delivered',
+        'postfix/smtp',
+        '^(__QUEUEID__): enabling PIX <CRLF>.<CRLF> workaround for (__HOSTNAME__)\[(__IP__)\]$',
+        '',
+        'queueid = 1, hostname = 2, ip = 3',
+        'SAVE',
+        1
+);
+
+-- 16B6A3F50: to=<skenny@relay.cs.tcd.ie>, relay=none, delay=0, status=bounced (mail for relay.cs.tcd.ie loops back to myself)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Mail loop detected', 'This host is the MX for the addresses domain, but is not final destination for that domain',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=none, delay=\d+, status=bounced \(mail for (__HOSTNAME__) loops back to myself\)$',
+        'recipient = 2, data = 3',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
+-- 833CF438C: to=<essack@ion.co.za>, relay=spamfilter.ion.co.za[196.33.120.7], delay=603, status=deferred (conversation with spamfilter.ion.co.za[196.33.120.7] timed out while sending end of data -- message may be sent more than once)
+-- 74AA93554: to=<kinshuk@athabascau.ca>, relay=smtp.athabascau.ca[131.232.10.21], delay=435, status=deferred (lost connection with smtp.athabascau.ca[131.232.10.21] while sending end of data -- message may be sent more than once)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Conversation timed out after sending <CR>.<CR>', 'The conversation timed out after Postfix had finished sending the data; mail will be retried, but may have already been delivered on the remote end',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=deferred \((?:lost connection with|conversation with) \3\[\4\] (?:timed out )?while sending end of data -- message may be sent more than once\)$',
+        'recipient = 2',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- libsldap: Status: 2  Mesg: Unable to load configuration '/var/ldap/ldap_client_file' ('').
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Solaris LDAP throwing a wobbly', 'Something went wrong with Solaris LDAP, yet again.',
+        'postfix/smtp',
+        '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file. .*$',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- 122E141CD: to=<Taught.Admissions@tcd.ie>, relay=imx1.tcd.ie[134.226.17.160], delay=2, status=bounced (message size 10694768 exceeds size limit 10240000 of server imx1.tcd.ie[134.226.17.160])
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Mail too big for remote server', 'The remote server will not accept mails bigger than X, and this mail is bigger',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=bounced \((message size \d+ exceeds size limit \d+ of server) \3\[\4\]\)$',
+        'recipient = 2, data = 5',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- 5499D44A3: conversation with drip.STJAMES.IE[194.106.141.85] timed out while performing the initial protocol handshake
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Conversation timed out while handshaking', 'The initial handshake timed out',
+        'postfix/smtp',
+        '^(__QUEUEID__): conversation with (__HOSTNAME__)\[(__IP__)\] timed out while performing the initial protocol handshake$',
+        '',
+        'queueid = 1, hostname = 2, ip = 3',
+        'SAVE',
+        1
+);
+
+-- 431844388: to=<matthew@sammon.info>, orig_to=<matthew.sammon@cs.tcd.ie>, relay=redir-mail-telehouse1.gandi.net[217.70.180.1], delay=390, status=deferred (host redir-mail-telehouse1.gandi.net[217.70.180.1] refused to talk to me: 450 Server configuration problem)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Server refused to talk (politely)', 'The remote server politely declied to talk to our server',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=deferred \(host \3\[\4\] refused to talk to me: ((__SMTP_CODE__).*)\)',
+        'recipient = 2, data = 5, smtp_code = 6',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- 47F5C438A: to=<matthew@sammon.info>, orig_to=<matthew.sammon@cs.tcd.ie>, relay=redir-mail-telehouse2.gandi.net[217.70.178.1], delay=4106, status=deferred (conversation with redir-mail-telehouse2.gandi.net[217.70.178.1] timed out while performing the initial protocol handshake)
+-- 820A94385: to=<Romanu6jMassey@photoeye.com>, relay=relay1.edgewebhosting.net[69.63.128.201], delay=1132, status=deferred (lost connection with relay1.edgewebhosting.net[69.63.128.201] while performing the initial protocol handshake)
+-- E49EC438A: to=<DanR@Burton.com>, relay=mail.Burton.com[204.52.244.205], delay=3, status=deferred (lost connection with mail.Burton.com[204.52.244.205] while performing the initial protocol handshake)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Initial handshake timed out', 'The initial handshake did not complete within the timeout',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=deferred \((?:lost connection with|conversation with) \3\[\4\] (?:timed out )?while performing the initial protocol handshake\)$',
+        'recipient= 2',
+        'queueid = 1, hostname = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- 979054314: to=<lionel.dahyot@cegetel.net>, relay=av.mgp.neufgp.fr[84.96.92.100], delay=10, status=deferred (lost connection with av.mgp.neufgp.fr[84.96.92.100] while sending RCPT TO)
+-- CD3EC41CC: to=<resume@athabascau.ca>, relay=smtp.athabascau.ca[131.232.10.21], delay=63, status=deferred (lost connection with smtp.athabascau.ca[131.232.10.21] while sending RCPT TO)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Lost connection with server', 'Lost connection with remote host during transaction',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=deferred \(lost connection with \3\[\4\] while sending __COMMAND__\)',
+        'recipient = 2',
+        'queueid = 1, host = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- gethostbyaddr: eta.routhost.com. != 66.98.227.100
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Mismatched DNS warning', 'A warning about mismatched DNS',
+        'postfix/smtp',
+        '^gethostbyaddr: __HOSTNAME__ != __IP__$',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- 1324443A2: to=<zenobig@virgilio.it>, orig_to=<gabriele.zenobi@cs.tcd.ie>, relay=mxrm.virgilio.it[62.211.72.33], delay=8248, status=deferred (conversation with mxrm.virgilio.it[62.211.72.33] timed out while sending MAIL FROM)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Conversation timed out', 'The conversation timed out at some stage',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=deferred \(conversation with \3\[\4\] timed out while sending __COMMAND__\)$',
+        'recipient = 2',
+        'queueid = 1, host = 3, ip = 4',
+        'SAVE',
+        1
+);
+
+-- libsldap: Status: 7  Mesg: Session error no available conn.
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Bloody Solaris LDAP (yet again)', 'Oh look, Solaris LDAP cannot cope, yet again',
+        'postfix/smtp',
+        '^libsldap: Status: 7  Mesg: Session error no available conn.$',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- 8007B41CD: host redir-mail-telehouse2.gandi.net[217.70.178.1] refused to talk to me: 450 Server configuration problem
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Server refused to talk (short)', 'Another server refusing to talk',
+        'postfix/smtp',
+        '^(__QUEUEID__): host (__HOSTNAME__)\[(__IP__)\] refused to talk to me: ((__SMTP_CODE__).*)$',
+        '',
+        'queueid = 1, hostname= 2, ip = 3, data = 4, smtp_code = 5',
+        'SAVE',
+        1
+);
+
+-- C8B0C437E: lost connection with mx3.mail.yahoo.com[67.28.113.10] while performing the initial protocol handshake
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Lost connection during initial handshake', 'The connection was lost during the initial handshake, before the greeting',
+        'postfix/smtp',
+        '^(__QUEUEID__): lost connection with (__HOSTNAME__)\[(__IP__)\] while performing the initial protocol handshake$',
+        '',
+        'queueid = 1, hostname = 2, ip = 3',
+        'SAVE',
+        1
+);
+
+-- 01061437E: lost connection with mx1.mail.yahoo.com[4.79.181.168] while sending end of data -- message may be sent more than once
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+VALUES('Lost connection after data', 'Lost connection fter end-of-data - message may be sent more than once',
+        'postfix/smtp',
+        '^(__QUEUEID__): lost connection with (__HOSTNAME__)\[(__IP__)\] while sending end of data -- message may be sent more than once$',
+        '',
+        'queueid = 1, hostname = 2, ip = 3',
+        'SAVE',
+        1
+);
+
+-- 5F505437C: to=<smcblvacprbio@ekholden.com>, relay=none, delay=241762, status=bounced (Host or domain name not found. Name service error for name=ekholden.com type=A: Host found but no data record of requested type)
+-- 94C1643AB: to=<alicechateau@royahoo.com>, relay=none, delay=0, status=bounced (Name service error for name=royahoo.com type=MX: Malformed name server reply)
+-- CDBAC43F6: to=<smcginnes@coras.com>, orig_to=<smcginns@cs.tcd.ie>, relay=none, delay=52, status=deferred (Host or domain name not found. Name service error for name=mail.indigo.ie type=A: Host not found, try again)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Malformed DNS reply, or no data', 'The DNS reply was malformed, or the requested record was not found',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=(bounced|deferred) \(((?:Host or domain name not found. )?Name service error for name=__HOSTNAME__ type=(?:A|MX): (?:Malformed name server reply|Host found but no data record of requested type|Host not found, try again))\)$',
+        'recipient = 2, data = 3',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
 -- }}}
+
+
+-- LOCAL RULES {{{1
+
+
+-- 3FF7C4317: to=<mcadoor@cs.tcd.ie>, relay=local, delay=0, status=sent (forwarded as 56F5B43FD)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Mail reinjected for forwarding', 'The mail was sent to a local address, but is aliased to an external address',
+        'postfix/local',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=local, delay=\d+, status=sent \(forwarded as (__QUEUEID__)\)$',
+        'recipient = 2',
+        'queueid = 1, new_queueid = 3',
+        'TRACK',
+        1
+);
+
+-- This will be followed by a 'postfix/qmgr: 8025E43F0: removed' line, so don't commit yet.
+-- 7FD1443FD: to=<tobinjt@cs.tcd.ie>, orig_to=<root>, relay=local, delay=0, status=sent (delivered to command: /mail/procmail/bin/procmail -p -t /mail/procmail/etc/procmailrc)
+-- 8025E43F0: to=<tobinjt@cs.tcd.ie>, relay=local, delay=0, status=sent (delivered to command: /mail/procmail/bin/procmail -p -t /mail/procmail/etc/procmailrc)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Mail has been delivered locally', 'Mail has been delivered to the LDA (typically procmail)',
+        'postfix/local',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=sent \((delivered to command: .*)\)$',
+        'recipient = 2, data = 3',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
+-- table cdb:/mail/postfix/etc/aliases.out(0,34100) has changed -- restarting
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Postfix noticed a table changed', 'Postfix noticed that a lookup table has changed, so it is restarting',
+        'postfix/local',
+        '^table .* has changed -- restarting$',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- D9FC14493: to=<osulldps@cs.tcd.ie>, orig_to=<declan.osullivan@cs.tcd.ie>, relay=local, delay=2, status=deferred (temporary failure. Command output: procmail: Quota exceeded while writing "/users/staff/osulldps/Maildir/tmp/1157969601.28098_0.relay.cs.tcd.ie" )
+-- E7ED243DA: to=<muckleys@cs.tcd.ie>, relay=local, delay=223453, status=deferred (temporary failure. Command output: procmail: Couldn't chdir to "/users/pg/muckleys" procmail: Couldn't chdir to "/users/pg/muckleys" procmail: Couldn't chdir to "/users/pg/muckleys/Maildir" procmail: Unable to treat as directory "./new" procmail: Skipped "." )
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Local delivery failed temporarily', 'Something went wrong with local delivery, so it will be retried later',
+        'postfix/local',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=deferred \(temporary failure. Command output: (.*)\)$',
+        'recipient = 2, data = 3',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
+-- 609504400: to=<gap@cs.tcd.ie>, relay=local, delay=0, status=bounced (mail forwarding loop for gap@cs.tcd.ie)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Mail forwarding loop', 'Postfix bounced a mail due to a mail forwarding loop',
+        'postfix/local',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=bounced \(mail forwarding loop for \2\)$',
+        'recipient = 2',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
+-- warning: required alias not found: mailer-daemon
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Postifx warning about something', 'Postfix has logged a warning; probably it should be investigated',
+        'postfix/local',
+        '^warning: required alias not found: .*$',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- A15004400: to=<Jean-Marc.Seigneur@cs.tcd.ie>, relay=local, delay=0, status=bounced (unknown user: "jean-marc.seigneur")
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Unknown user??  This should have been caught long ago!', 'We should never have an unknown user at this stage, it should have been caught by smtpd',
+        'postfix/local',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=bounced \((unknown user: ".*")\)$',
+        'recipient = 2, data = 3',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
+-- 165173E19: to=<pbyrne6@cs.tcd.ie>, relay=local, delay=0, status=sent (delivered to file: /dev/null)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Local delivery to a file was successful', 'Local delivery of an email succeeded; the final destination was a file',
+        'postfix/local',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=sent \(delivered to file: (.*)\)$',
+        'recipient = 2, data = 3',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
+-- 8344043FD: to=<MAILER-DAEMON@cs.tcd.ie>, relay=local, delay=0, status=sent (discarded)
+-- 1522F4317: to=<MAILER-DAEMON@cs.tcd.ie>, orig_to=<MAILER-DAEMON>, relay=local, delay=0, status=sent (discarded)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('local delivery - discarded??', 'Why was a locally delivered mail discarded??  Should be investigated I think',
+        'postfix/local',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=sent \(discarded\)$',
+        'recipient = 2',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
+-- E3B36450D: to=<eganjo@cs.tcd.ie>, relay=local, delay=36526, status=deferred (temporary failure)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Temporary failure in local delivery', 'Temporary unspecified failure in local delivery',
+        'postfix/local',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=deferred \(temporary failure\)$',
+        'recipient = 2',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
+-- warning: database /mail/postfix/etc/aliases.out.cdb is older than source file /mail/postfix/etc/aliases.out
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('The aliases file was not rebuilt', 'The aliases file is newer than the compiled database',
+        'postfix/local',
+        '^warning: database .* is older than source file .*',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- 5822E4444: to=<cogsci@cs.tcd.ie>, relay=local, delay=0, status=deferred (cannot find alias database owner)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Delivery delayed, owner unknown', 'Delivery was delayed because the owenr of the alias files is unknown',
+        'postfix/local',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=local, delay=\d+, status=deferred \(cannot find alias database owner\)$',
+        'recipient = 2',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
+-- D1E494386: to=<scss-staff-bounces+bcollin=cs.tcd.ie@cs.tcd.ie>, relay=local, delay=0, status=bounced (Command died with status 8: "/mail/mailman-2.1.6/mail/mailman bounces scss-staff". Command output: Failure to find group name mailman.  Try adding this group to your system, or re-run configure, providing an existing group name with the command line option --with-mail-gid. )
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Local delivery (pipe to command) failed', 'The command that the mail was piped into failed for some reason',
+        'postfix/local',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=local, delay=\d+, status=bounced \((Command died with status \d+: .* Command output: .* )\)$',
+        'recipient = 2, data = 3',
+        'queueid = 1',
+        'SAVE',
+        1
+);
+
+-- warning: cannot find alias database owner for cdb:/mail/mailman/data/aliases(0,34100)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Table owner cannot be determined', 'The owner of the table foo cannot be determined; probably becaise Solaris LDAP has gone for a nap',
+        'postfix/local',
+        '^warning: cannot find alias database owner for .*$',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
+-- 1}}}
 
 -- INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
 --     VALUES('', '',
