@@ -23,6 +23,7 @@ __PACKAGE__->add_columns(
         action
         queueid
         rule_order
+        priority
     )
 );
 __PACKAGE__->set_primary_key(q{id});
