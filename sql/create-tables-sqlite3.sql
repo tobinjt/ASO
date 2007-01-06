@@ -4,6 +4,7 @@
 -- This is sqlite3 specific.
 
 DROP TABLE IF EXISTS rules; --{{{1
+
 CREATE TABLE rules (
     id                      integer NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     name                    text    NOT NULL UNIQUE,
@@ -27,11 +28,16 @@ CREATE TABLE rules (
     -- e.g. $1, $5, whatever.  smtpd rules won't need this, as restriction_start
     -- handles it for them.
     queueid                 integer NOT NULL,
-    -- The order to apply the rules in: lowest first.
-    rule_order              integer NOT NULL DEFAULT 0
+    -- The order to apply the rules in: lowest first; this is automatically
+    -- updates after every run of the program.
+    rule_order              integer NOT NULL DEFAULT 0,
+    -- This is the user-configurable part of the rule ordering; it supercedes
+    -- rule_order, and won't be changed by the program.  Higher goes first.
+    priority                integer NOT NULL DEFAULT 0
 );
 
 DROP TABLE IF EXISTS connections; --{{{1
+
 CREATE TABLE connections (
     id                      integer NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     -- The IP address of the connection
@@ -49,6 +55,7 @@ CREATE TABLE connections (
 );
 
 DROP TABLE IF EXISTS results; --{{{1
+
 CREATE TABLE results (
     -- Reference to connections->id
     connection_id           integer NOT NULL,

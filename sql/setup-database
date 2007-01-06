@@ -1,0 +1,48 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use DBI;
+use IO::File;
+
+
+my $DB = DBI->connect(
+    q{dbi:SQLite:dbname=db.sq3},
+    q{},
+    q{},
+    { 
+        RaiseError => 1,
+        AutoCommit => 0,
+    }
+);
+if (not $DB) {
+    die(qq{$0: Couldn't connect to database: } . $DBI::errstr . qq{\n});
+}
+
+$| = 1;
+$/ = qq{\n\n};
+while (<>) {
+    #print qq{Read this chunk: \n$_\nend of chunk\n\n\n};
+    # Try to skip comment only blocks
+    s/^--.*//gm;
+    m/../m or next;
+    #print qq{Trying the above block\n};
+
+    eval {
+        # Warning!!!!  SQLite3 only runs the first command in the block of code,
+        # ignoring any others there may be, so you need to separate them into
+        # paragraphs.
+        $DB->do($_);
+        $DB->commit();
+    };
+    if ($@) {
+        warn qq{Failed to run SQL: $ARGV: $.:\n},
+             qq{error message: $DBI::errstr\n},
+             qq{SQL: $_};
+    }
+}
+
+$DB->disconnect ();
