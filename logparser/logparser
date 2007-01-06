@@ -60,7 +60,7 @@ my $current_logfile;
 foreach my $logfile (@logs) {
     print qq{$0: Starting to read $logfile\n};
     $current_logfile = $logfile;
-    my $syslog = Parse::Syslog->new($logfile);
+    my $syslog = Parse::Syslog->new($logfile, year => 2006);
     if (not $syslog) {
         croak qq{Failed creating parser for $logfile: $@\n};
     }
@@ -132,11 +132,19 @@ foreach my $logfile (@logs) {
                 next LINE;
             }
 
+            # We need to track a mail across queueids, typically when mail
+            # goes through amavisd-new.
+            if (uc $rule->{action} eq q{TRACK}) {
+                save($line, $rule, \@matches);
+                track($line, $rule, \@matches);
+                next LINE;
+            }
+
             my_warn(qq{unknown action $rule->{action}\n} . Dumper($rule));
         }
 
         # Last ditch: complain to the user
-        print qq{$text\n};
+        print qq{$line->{program}: $text\n};
         #my_warn(qq{unknown line: $line->{program}: $line->{pid}: $text\n});
     }
 }
@@ -220,14 +228,16 @@ sub get_connection {
     my $connection;
 
     # Is it a program which makes connections?
-    if (exists $connect_programs{$line->{program}}) {
+    # $queueid supercedes $line->{pid}, for when we use TRACK with programs
+    # which create connections.
+    if (not $queueid and exists $connect_programs{$line->{program}}) {
         $connection = $connections{$line->{pid}};
         if (not $connection) {
             my_warn(qq{get_connection: no connection for pid $line->{pid}\n});
             $connection = make_connection($line);
         }
         if (not $connection) {
-            my_die(qq{failed to make_connection()\n});
+            my_die(qq{get_connection: failed to make_connection()\n});
         }
         return $connection;
     }
@@ -235,32 +245,48 @@ sub get_connection {
     # Or is it a program we track by queueid?
     if (not $queueid) {
         my $dump = dump_rule($rule);
-        my_warn(qq{no queueid for rule $dump\n});
+        my_warn(qq{get_connection: no queueid for rule $dump\n});
         return {};
     }
 
     if (not exists $queueids{$queueid}) {
-        my_warn(qq{get_connection: queueid $queueid not found\n});
-        $queueids{$queueid} = {};
+        # Reasons this happen: reinjection due to forwarding, filtering through
+        # amavisd??
+        $queueids{$queueid} = { faked => 1 };
     }
 
     return $queueids{$queueid};
 }
 
+# TODO: extend this so it checks that tracked connections are committed.
 sub delete_connection {
     my ($line, $queueid) = @_;
 
+    my $deleted = 0;
 
     if (exists $connect_programs{$line->{program}}) {
         if (not exists $connections{$line->{pid}}) {
             my_warn(qq{delete_connection: no connection for pid $line->{pid}\n});
+        } else {
+            delete $connections{$line->{pid}};
+            $deleted++;
         }
-        delete $connections{$line->{pid}};
-    } else {
+    }
+
+    if ($queueid) {
         if (not exists $queueids{$queueid}) {
             my_warn(qq{delete_connection: no connection for queueid $queueid\n});
+        } else {
+            delete $queueids{$queueid};
+            $deleted++;
         }
-        delete $queueids{$queueid};
+    }
+
+    if (not $deleted) {
+        my_warn(qq{delete_connection: didn't delete anything!\n},
+            qq{\tqueueid => $queueid\n},
+            qq{\tline    => } . dump_line($line) . qq{\n},
+        );
     }
 }
 
@@ -272,6 +298,7 @@ sub load_rules {
             id               => $rule->id(),
             name             => $rule->name(),
             rule_order       => $rule->rule_order(),
+            priority         => $rule->priority(),
             action           => $rule->action(),
             program          => $rule->program(),
             queueid          => $rule->queueid(),
@@ -292,13 +319,20 @@ sub load_rules {
 
         push @results, $rule_hash;
     }
-    return sort { $a->{rule_order} <=> $b->{rule_order} } @results;
+    return sort {      $a->{priority}   <=> $b->{priority} 
+                    or $a->{rule_order} <=> $b->{rule_order} } @results;
 }
 
 sub dump_connection {
     my ($connection) = @_;
 
     return Data::Dumper->Dump([$connection], [q{connection}]);
+}
+
+sub dump_line {
+    my ($line) = @_;
+
+    return Data::Dumper->Dump([$line], [q{line}]);
 }
 
 sub dump_rule {
@@ -332,17 +366,20 @@ sub filter_regex {
     $regex =~ s/__RECIPIENT__   /__EMAIL__/gx;
     # We see some pretty screwey hostnames in HELO commands.
     $regex =~ s/__HELO__        /__HOSTNAME__|(?:\\[)__IP__(?:\\])|(.*?)/gx;
+#   This doesn't work, as it matches valid addresses, not real world addresses.
 #   $regex =~ s/__EMAIL__       /$RE{Email}{Address}/gx;
 #   The empty alternative below is to allow for <> as the sender address
 #   We also allow up to 7 @ signs in the address . . . I have seen that many :(
     $regex =~ s/__EMAIL__       /(?:|[^@]+(?:\@(?:__HOSTNAME__|\\[__IP__\\])){0,7})/gx;
     $regex =~ s/__HOSTNAME_IP__ /__HOSTNAME__\[__IP__\]/gx;
+    # This doesn't match, for varous reason - I think numeric subnets are one.
     #$regex =~ s/__HOSTNAME__    /$RE{net}{domain}{-nospace}/gx;
     $regex =~ s/__HOSTNAME__    /$hostname_re/gx;
     $regex =~ s/__IP__          /$RE{net}{IPv4}/gx;
     $regex =~ s/__SMTP_CODE__   /\\d{3}/gx;
     # 3-9 is a guess.
     $regex =~ s/__QUEUEID__     /(?:NOQUEUE|[\\dA-F]{3,9})/gx;
+    $regex =~ s/__COMMAND__/(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gx;
 #   $regex =~ s/____/$RE{}{}/gx;
 
     return $regex;
@@ -385,6 +422,16 @@ sub disconnection {
     delete $connections{$line->{pid}};
 }
 
+# TODO: write this.  Collapse adjacent sets of results which should be relaxed
+# (how will I know this?).  If necessary (and available) pull data from tracked
+# connections to suplement the data we have - we don't usually have the sender
+# for tracked connections.  Mark the connection as fixuped.
+sub fixup_connection {
+    my ($connection) = @_;
+
+}
+
+# XXX: THIS ISN'T ACCURATE ANY MORE.
 # My logic in relation to smtpd pids and queueids is:
 # There has to be a line from smtpd saying "queueid: accepted" or something 
 # similar, so we have to have gotten a queueid at some stage, or the mail
@@ -396,16 +443,14 @@ sub save {
     my $queueid     = $matches->[$rule->{queueid}];
     my $connection  = get_connection($line, $queueid, $rule);
 
-    # Deal with the lack of connection lines sometimes.
-    if (not $connection) {
-        my_warn(qq{no connection\n});
-    }
-
     # Ensure we save the connection by queueid; this allows us to tie the whole
     # lot together.
     if ($queueid and not exists $queueids{$queueid}) {
         $queueids{$queueid} = $connection;
     }
+
+    # Clear the faked flag as soon as we see the queueid from a log line
+    delete $connection->{faked};
 
     my $connection_cols = $rule->{connection_cols};
     foreach my $ccol (keys %{$connection_cols}) {
@@ -426,6 +471,29 @@ sub save {
     }
 }
 
+sub track {
+    my ($line, $rule, $matches) = @_;
+
+    my $queueid         = $matches->[$rule->{queueid}];
+    my $connection      = get_connection($line, $queueid, $rule);
+
+    my $new_queueid     = $connection->{new_queueid};
+    my $new_connection  = get_connection($line, $new_queueid, $rule);
+
+    if (exists $new_connection->{old_queueid}) {
+        my_warn(qq{Trying to track for a second time! (old_queueid exists)\n},
+            qq{\tqueueid        => $queueid\n},
+            qq{\tnew_queueid    => $new_queueid\n},
+            qq{\told_queueid    => $new_connection->{old_queueid}\n},
+        );
+    }
+    # We can't detect tracking for a second time by checking new_queueid,
+    # because that's been unconditionally overwritten by save().
+
+    $new_connection->{old_queueid} = $queueid;
+    $connection->{new_queueid} = $new_queueid;
+}
+
 # TODO: WRITE
 sub commit {
     my ($line, $rule, $matches) = @_;
@@ -438,11 +506,21 @@ sub commit {
         return;
     }
 
+    fixup_connection($connection);
     commit_connection($connection);
+    $connection->{committed} = 1;
     delete_connection($line, $queueid);
 }
 
+# TODO: WRITE
 sub commit_connection {
+    my ($connection) = @_;
+
+    if ($connection->{faked}) {
+        my_warn(qq{commit_connection: trying to commit faked connection\n},
+            qq{\tconnection => } . dump_connection($connection) . qq{\n}
+        );
+    }
 }
 
 sub my_warn {
