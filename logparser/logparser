@@ -258,7 +258,7 @@ sub get_connection {
     if (not exists $queueids{$queueid}) {
         # Reasons this happen: reinjection due to forwarding, filtering through
         # amavisd??
-        $queueids{$queueid} = { faked => 1 };
+        $queueids{$queueid} = {};
     }
 
     return $queueids{$queueid};
@@ -495,9 +495,6 @@ sub save {
         $queueids{$queueid} = $connection;
     }
 
-    # Clear the faked flag as soon as we see the queueid from a log line
-    delete $connection->{faked};
-
     my $connection_cols = $rule->{connection_cols};
     foreach my $ccol (keys %{$connection_cols}) {
         $connection->{$ccol} = $matches->[$connection_cols->{$ccol}];
@@ -565,11 +562,6 @@ sub commit {
 sub commit_connection {
     my ($connection) = @_;
 
-    if ($connection->{faked}) {
-        my_warn(qq{commit_connection: trying to commit faked connection\n},
-            qq{\tconnection => } . dump_connection($connection) . qq{\n}
-        );
-    }
 }
 
 sub my_warn {
