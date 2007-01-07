@@ -38,8 +38,10 @@ if (not @logs) {
     @logs = q{-};
 }
 
-my @rules                   = load_rules();
-my %rules_by_program        = map { $_->{program} => [] } @rules;
+my %required_connection_cols    = get_required_columns(q{Connection});
+my %required_result_cols        = get_required_columns(q{Result});
+my @rules                       = load_rules();
+my %rules_by_program            = map { $_->{program} => [] } @rules;
 map { push @{$rules_by_program{$_->{program}}}, $_ } @rules;
 
 # programs which can create connections
@@ -301,6 +303,7 @@ sub load_rules {
         my $rule_hash = {
             id               => $rule->id(),
             name             => $rule->name(),
+            description      => $rule->description(),
             rule_order       => $rule->rule_order(),
             priority         => $rule->priority(),
             result           => $rule->result(),
@@ -324,7 +327,7 @@ sub load_rules {
 
         push @results, $rule_hash;
     }
-    return sort {      $a->{priority}   <=> $b->{priority} 
+    return sort {      $b->{priority}   <=> $a->{priority} 
                     or $a->{rule_order} <=> $b->{rule_order} } @results;
 }
 
@@ -427,6 +430,21 @@ sub disconnection {
     delete $connections{$line->{pid}};
 }
 
+sub get_required_columns {
+    my ($table) = @_;
+
+    my $object    = $dbix->resultset($table)->new_result({});
+    my %cols      = $object->get_columns();
+
+    # XXX need to add start and end to connections
+    delete $cols{id};
+    delete $cols{rule_id};
+    delete $cols{connection_id};
+    delete $cols{warning};
+
+    return %cols;
+}
+
 # TODO: write this.  Collapse adjacent sets of results which should be relaxed
 # (how will I know this?).  If necessary (and available) pull data from tracked
 # connections to suplement the data we have - we don't usually have the sender
@@ -434,6 +452,29 @@ sub disconnection {
 sub fixup_connection {
     my ($connection) = @_;
 
+    my $results = $connection->{results};
+
+    my %combined_data;
+
+    # Populate %combined_data.
+    foreach my $result (@{$results}) {
+        KEY:
+        foreach my $key (keys %{$result}) {
+            if ($key eq q{rule}) {
+                next KEY;
+            }
+            if (exists $combined_data{$key}
+                and $combined_data{$key} ne $result->{$key}
+                #and $key ne q{data}
+                ) {
+                my_warn(qq{Different values for $key: \n}
+                    . qq{\told: $combined_data{$key}\n}
+                    . qq{\tnew: $result->{$key}\n}
+                );
+                $combined_data{$key} = $result->{$key};
+            }
+        }
+    }
 }
 
 # XXX: THIS ISN'T ACCURATE ANY MORE.
@@ -487,11 +528,12 @@ sub track {
     my $new_queueid     = $connection->{new_queueid};
     my $new_connection  = get_connection($line, $new_queueid, $rule);
 
-    if (exists $new_connection->{old_queueid}) {
-        my_warn(qq{Trying to track for a second time! (old_queueid exists)\n},
-            qq{\tqueueid        => $queueid\n},
-            qq{\tnew_queueid    => $new_queueid\n},
-            qq{\told_queueid    => $new_connection->{old_queueid}\n},
+    if (exists $new_connection->{old_queueid}
+        and $new_connection->{old_queueid} ne $queueid) {
+        my_warn(qq{Trying to track for a second time! (old_queueid differs)\n},
+            qq{\tqueueid (new_queueid->old_queueid) => $queueid\n},
+            qq{\tnew_queueid                        => $new_queueid\n},
+            qq{\told_queueid                        => $new_connection->{old_queueid}\n},
         );
     }
     # We can't detect tracking for a second time by checking new_queueid,
