@@ -24,11 +24,29 @@ if (not $DB) {
 
 $| = 1;
 $/ = qq{\n\n};
+my $line_number = 0;
+my $current_file;
 while (<>) {
-    #print qq{Read this chunk: \n$_\nend of chunk\n\n\n};
+    #print qq{Read this chunk: \n$_ end of chunk\n\n\n};
+    # Keep track of the line number; $. tracks lines as defined by $/, not
+    # giving line numbers you'd expect in paragraph mode.
+    if (not $current_file or $current_file ne $ARGV) {
+        $current_file = $ARGV;
+        $line_number = 0;
+    }
+    my $lines_this_chunk = 0;
+    while (m/$/gm) {
+        $lines_this_chunk++;
+    }
+    # We get one too many lines per chunk, so correct here.
+    $lines_this_chunk--;
+
     # Try to skip comment only blocks
-    s/^--.*//gm;
-    m/../m or next;
+    s/^\s*--.*//gm;
+    if (not m/../m) {
+        $line_number += $lines_this_chunk;
+        next;
+    }
     #print qq{Trying the above block\n};
 
     eval {
@@ -39,10 +57,11 @@ while (<>) {
         $DB->commit();
     };
     if ($@) {
-        warn qq{Failed to run SQL: $ARGV: $.:\n},
+        warn qq{Failed to run SQL: $ARGV: $line_number:\n},
              qq{error message: $DBI::errstr\n},
              qq{SQL: $_};
     }
+    $line_number += $lines_this_chunk;
 }
 
 $DB->disconnect ();
