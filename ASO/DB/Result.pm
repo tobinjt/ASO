@@ -20,7 +20,6 @@ __PACKAGE__->add_columns(
         smtp_code
         sender
         recipient
-        log_line
         data
     )
 );

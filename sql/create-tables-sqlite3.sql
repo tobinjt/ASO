@@ -72,8 +72,6 @@ CREATE TABLE results (
     -- The recipient; checks after DATA won't have a recipient, so allow it to
     -- be null.
     recipient               text,
-    -- The full line from the log
-    log_line                text    NOT NULL,
     -- A place to plop anything not already covered.
     data                    text
 );
