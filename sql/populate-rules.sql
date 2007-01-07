@@ -63,6 +63,17 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0
 );
 
+-- gethostbyaddr: eta.routhost.com. != 66.98.227.100
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('Mismatched DNS warning', 'A warning about mismatched DNS',
+        'postfix/smtpd',
+        '^gethostbyaddr: __HOSTNAME__ != __IP__$',
+        '',
+        '',
+        'IGNORE',
+        0
+);
+
 -- }}}
 
 -- SMTPD Other lines we want to ignore {{{2
@@ -125,6 +136,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0
 );
 
+-- <  sharyn.davies@cs.tcd.ie>: Recipient address rejected: User unknown in local recipient table; from=<newsletter@globalmediaserver.com> to=<??sharyn.davies@cs.tcd.ie> proto=ESMTP helo=<mail1.globalmediaserver.com>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority)
+    VALUES('A weird address was rejected', 'A weird address was rejected by Postfix, which escaped it in one part of the message, but not in the other',
+        'postfix/smtpd',
+        '^<([^>]+)>: Recipient address rejected: User unknown in local recipient table; from=<(__SENDER__)> to=<[^>]+> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 1, sender = 2',
+        'helo = 3',
+        'SAVE',
+        0,
+        -1
+);
+
 -- <munin@cs.tcd.ie>: Sender address rejected: User unknown in local recipient table; from=<munin@cs.tcd.ie> to=<john.tobin@cs.tcd.ie> proto=ESMTP helo=<lg12x36.cs.tcd.ie>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Unknown sender', 'The sender address is unknown on our system',
@@ -164,7 +187,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- Service unavailable; Client host [210.236.32.153] blocked using sbl-xbl.spamhaus.org; http://www.spamhaus.org/SBL/sbl.lasso?query=SBL47877; from=<euyery@linuxmail.org> to=<vinny.cahill@cs.tcd.ie> proto=SMTP helo=<eworuetyberiyneortmweprmuete57197179680.com>
 -- Service unavailable; Client host [204.14.1.123] blocked using sbl-xbl.spamhaus.org; http://www.spamhaus.org/SBL/sbl.lasso?query=SBL27197 / http://www.spamhaus.org/SBL/sbl.lasso?query=SBL47903; from=<tia@baraskaka.com> to=<vjcahill@dsg.cs.tcd.ie> proto=SMTP helo=<customer.optindirectmail.123.sls-hosting.com>
 -- Service unavailable; Client host [82.119.202.142] blocked using sbl-xbl.spamhaus.org; http://www.spamhaus.org/query/bl?ip=82.119.202.142; from=<001topzine-hypertext@123point.net> to=<ecdlf@cs.tcd.ie.> proto=ESMTP helo=<cs.tcd.ie.>
-
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Blacklisted by SpamHaus SBL-XBL', 'The client IP address is blacklisted by SpamHaus SBL-XBL',
         'postfix/smtpd',
@@ -754,6 +776,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'SAVE',
         1
 );
+
 -- warning: numeric domain name in resource data of MX record for phpcompiler.org: 80.68.89.7
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Warning from smtp', 'Warning of some sort from smtp - rare',
@@ -985,17 +1008,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         1
 );
 
--- gethostbyaddr: eta.routhost.com. != 66.98.227.100
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
-    VALUES('Mismatched DNS warning', 'A warning about mismatched DNS',
-        'postfix/smtp',
-        '^gethostbyaddr: __HOSTNAME__ != __IP__$',
-        '',
-        '',
-        'IGNORE',
-        0
-);
-
 -- 1324443A2: to=<zenobig@virgilio.it>, orig_to=<gabriele.zenobi@cs.tcd.ie>, relay=mxrm.virgilio.it[62.211.72.33], delay=8248, status=deferred (conversation with mxrm.virgilio.it[62.211.72.33] timed out while sending MAIL FROM)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Conversation timed out', 'The conversation timed out at some stage',
@@ -1196,10 +1208,11 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- 5822E4444: to=<cogsci@cs.tcd.ie>, relay=local, delay=0, status=deferred (cannot find alias database owner)
+-- 05CC64462: to=<cs-ugvisitors-list@cs.tcd.ie>, orig_to=<alldayug-list@cs.tcd.ie>, relay=local, delay=1, status=deferred (cannot find alias database owner)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
     VALUES('Delivery delayed, owner unknown', 'Delivery was delayed because the owenr of the alias files is unknown',
         'postfix/local',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=local, delay=\d+, status=deferred \(cannot find alias database owner\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=deferred \(cannot find alias database owner\)$',
         'recipient = 2',
         'queueid = 1',
         'SAVE',
@@ -1228,6 +1241,16 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0
 );
 
+-- warning: 781E44393: address with illegal extension: mailman-bounces+john_collins/hq/omron_europe.omron=eu.omron.com
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
+    VALUES('warning from local', 'A warning message from the local delivery agent',
+        'postfix/local',
+        '^warning: __QUEUEID__: address with illegal extension: .*$',
+        '',
+        '',
+        'IGNORE',
+        1
+);
 -- 1}}}
 
 -- INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid)
