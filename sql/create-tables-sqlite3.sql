@@ -33,7 +33,10 @@ CREATE TABLE rules (
     rule_order              integer NOT NULL DEFAULT 0,
     -- This is the user-configurable part of the rule ordering; it supercedes
     -- rule_order, and won't be changed by the program.  Higher goes first.
-    priority                integer NOT NULL DEFAULT 0
+    priority                integer NOT NULL DEFAULT 0,
+    -- Specifies one of IGNORED, INFO, BOUNCED, EXPIRED, SENT, ACCEPTED or
+    -- REJECTED, saying what the rule does.
+    result                  text    NOT NULL
 );
 
 DROP TABLE IF EXISTS connections; --{{{1

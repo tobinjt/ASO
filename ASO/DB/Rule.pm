@@ -24,6 +24,7 @@ __PACKAGE__->add_columns(
         queueid
         rule_order
         priority
+        result
     )
 );
 __PACKAGE__->set_primary_key(q{id});

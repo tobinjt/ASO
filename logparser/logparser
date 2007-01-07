@@ -154,7 +154,7 @@ if ($num_connections_uncommitted) {
 
 #print dump_state();
 update_check_order();
-#print_totals();
+#print dump_totals();
 
 sub make_restriction_start {
 
@@ -174,7 +174,8 @@ sub make_restriction_start {
     return $special_rule;
 }
 
-sub print_totals {
+# Maybe use Text::Table?
+sub dump_totals {
     my (%map, $length);
     $length = 0;
 
@@ -185,10 +186,13 @@ sub print_totals {
         }
     }
 
+    my $result = q{};
     my @names = sort { $map{$b} <=> $map{$a} } keys %map;
     foreach my $name (@names) {
-        print $name, q{ } x (3 + $length - length $name), $map{$name}, qq{\n};
+        $result .= $name . (q{ } x (3 + $length - length $name)) . $map{$name} . qq{\n};
     }
+
+    return $result;
 }
 
 sub update_check_order {
@@ -299,6 +303,7 @@ sub load_rules {
             name             => $rule->name(),
             rule_order       => $rule->rule_order(),
             priority         => $rule->priority(),
+            result           => $rule->result(),
             action           => $rule->action(),
             program          => $rule->program(),
             queueid          => $rule->queueid(),
@@ -457,18 +462,20 @@ sub save {
         $connection->{$ccol} = $matches->[$connection_cols->{$ccol}];
     }
 
-    my %result;
+    # Believe it or not, I do have rules where nothing is saved in %result
+    # except $rule.
+    my %result = (
+        rule => $rule,
+    );
     my $result_cols = $rule->{result_cols};
     foreach my $rcol (keys %{$result_cols}) {
         $result{$rcol} = $matches->[$result_cols->{$rcol}];
     }
 
-    if (%result) {
-        if (not exists $connection->{results}) {
-            $connection->{results} = [];
-        }
-        push @{$connection->{results}}, \%result;
+    if (not exists $connection->{results}) {
+        $connection->{results} = [];
     }
+    push @{$connection->{results}}, \%result;
 }
 
 sub track {
