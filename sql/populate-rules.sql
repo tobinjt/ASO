@@ -207,7 +207,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'postfix/smtpd',
         '^Service unavailable; Client host (?>\[(__IP__)\]) blocked using sbl-xbl.spamhaus.org;(?:((?:(?:(?: http://www.spamhaus.org/SBL/sbl.lasso\?query=\w+)|(?: http://www.spamhaus.org/query/bl\?ip=\1))(?: /)?)*);)? (?>from=<(__SENDER__)>) to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 4, data = 2, sender = 3',
-        'helo = 5, ip = 2',
+        'helo = 5, ip = 1',
         'SAVE',
         0,
         'REJECTED'
@@ -757,7 +757,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('mail deferred because of a problem at the remote end', 'mail deferred because of a problem at the remote end',
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=deferred \(host \3\[\4\] said: ((__SMTP_CODE__).*) \(in reply to __COMMAND__ command\)\)',
-        'recipient = 2, smtp_code = 5, data = 6',
+        'recipient = 2, smtp_code = 6, data = 5',
         'queueid = 1, host = 3, ip = 4',
         'SAVE',
         1,
