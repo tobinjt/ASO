@@ -38,8 +38,6 @@ if (not @logs) {
     @logs = q{-};
 }
 
-my %required_connection_cols    = get_required_columns(q{Connection});
-my %required_result_cols        = get_required_columns(q{Result});
 my @rules                       = load_rules();
 my %rules_by_program            = map { $_->{program} => [] } @rules;
 map { push @{$rules_by_program{$_->{program}}}, $_ } @rules;
@@ -82,12 +80,14 @@ foreach my $logfile (@logs) {
 
         # The start of every restriction line is the same, so strip it off here;
         # however, not every line matches restriction_start.
-        if (exists $restriction_programs{$line->{program}}) {
+        if (exists $restriction_programs{$line->{program}}
+                and $text =~ m/$restriction_start->{regex}/) {
             my @matches = $text =~ m/$restriction_start->{regex}/;
-            if (@matches) {
-                $text =~ s/$restriction_start->{regex}//;
-                save($line, $restriction_start, \@matches);
-            }
+            # regex matches start at one, but array indices start at 0.
+            # shift the array forward so they're aligned
+            unshift @matches, undef;
+            $text =~ s/$restriction_start->{regex}//;
+            save($line, $restriction_start, \@matches);
         }
 
         RULE:
@@ -165,11 +165,14 @@ sub make_restriction_start {
         name                => q{special rule matching the start of restrictions},
         program             => q{postfix/smtpd},
         queueid             => 0,
-        result_cols         => parse_result_cols(q{queueid = 1, hostname = 3, ip = 4}),
-        connection_cols     => parse_result_cols(q{result = 2, smtp_code = 5}),
+        result_cols         => parse_result_cols(q{}),
+        connection_cols     => parse_result_cols(q{hostname = 1, ip = 2, smtp_code = 3}),
         regex               => filter_regex(
-            qr/^([A-Z0-9]{9}|NOQUEUE): (reject(?:_warning)?): (?:RCPT|DATA) from (?>(__HOSTNAME__)\[)(?>(__IP__)\]): (__SMTP_CODE__) /
-        )
+            qr/^__QUEUEID__: reject(?:_warning)?: (?:RCPT|DATA) from (?>(__HOSTNAME__)\[)(?>(__IP__)\]): (__SMTP_CODE__) /
+        ),
+        result              => q{INFO},
+        action              => q{SAVE},
+        priority            => 0,
     };
     $special_rule->{regex}  = qr/$special_rule->{regex}/;
 
@@ -259,6 +262,7 @@ sub get_connection {
         # Reasons this happen: reinjection due to forwarding, filtering through
         # amavisd??
         $queueids{$queueid} = {};
+#my_warn(qq{get_connection: creating connection: } . dump_line($line));
     }
 
     return $queueids{$queueid};
@@ -403,7 +407,9 @@ sub make_connection {
         my_warn(qq{trying to create a connection for program $line->{program}\n});
     }
 
-    $connections{$line->{pid}} = {};
+    $connections{$line->{pid}} = {
+        start => $line->{timestamp},
+    };
     return $connections{$line->{pid}};
 }
 
@@ -411,38 +417,28 @@ sub disconnection {
     my ($line) = @_;
 
     if (not exists $connections{$line->{pid}}) {
-        my_warn(qq{no connection hash for pid $line->{pid} - perhaps the connect line is in a previous log file?\n});
+        my_warn(qq{disconnection: no connection for pid $line->{pid} - perhaps the connect line is in a previous log file?\n});
         return;
     }
 
     my $connection = $connections{$line->{pid}};
-    if (exists $connection->{queueid}
-            and $connection->{queueid} eq q{NOQUEUE}) {
-        my_warn(qq{$line->{pid}: queueid is NOQUEUE, ignored\n});
-        delete $connection->{queueid};
-    }
-
     # This is quite common - it happens every time we reject at SMTP time.
     if (not exists $connection->{queueid} and exists $connection->{results}) {
+        $connection->{end} = $line->{timestamp};
+        fixup_connection($connection);
         commit_connection($connection);
     }
 
     delete $connections{$line->{pid}};
 }
 
-sub get_required_columns {
+sub get_mock_object {
     my ($table) = @_;
+    return $dbix->resultset($table)->new_result({});
+}
 
-    my $object    = $dbix->resultset($table)->new_result({});
-    my %cols      = $object->get_columns();
-
-    # XXX need to add start and end to connections
-    delete $cols{id};
-    delete $cols{rule_id};
-    delete $cols{connection_id};
-    delete $cols{warning};
-
-    return %cols;
+sub make_hash {
+    return map { $_ => 1 } @_;
 }
 
 # TODO: write this.  Collapse adjacent sets of results which should be relaxed
@@ -450,29 +446,55 @@ sub get_required_columns {
 # connections to suplement the data we have - we don't usually have the sender
 # for tracked connections.  Mark the connection as fixuped.
 sub fixup_connection {
-    my ($connection) = @_;
+    my ($connection)                = @_;
+    my $results                     = $connection->{results};
+    my $fake_result                 = get_mock_object(q{Result});
+    my $fake_connection             = get_mock_object(q{Connection});
+    my %required_connection_cols    = make_hash($fake_connection->required_columns());
+    my %required_result_cols        = make_hash($fake_result->required_columns());
+    my %nochange_result_cols        = make_hash($fake_result->nochange_columns());
 
-    my $results = $connection->{results};
 
-    my %combined_data;
-
-    # Populate %combined_data.
+    my %data;
+    # Populate %data.
     foreach my $result (@{$results}) {
-        KEY:
         foreach my $key (keys %{$result}) {
-            if ($key eq q{rule}) {
-                next KEY;
-            }
-            if (exists $combined_data{$key}
-                and $combined_data{$key} ne $result->{$key}
-                #and $key ne q{data}
-                ) {
-                my_warn(qq{Different values for $key: \n}
-                    . qq{\told: $combined_data{$key}\n}
+            if (exists $nochange_result_cols{$key}
+                and exists $data{$key}
+                and $data{$key} ne $result->{$key}) {
+                my_warn(qq{fixup_connection: Different values for $key: \n}
+                    . qq{\told: $data{$key}\n}
                     . qq{\tnew: $result->{$key}\n}
                 );
-                $combined_data{$key} = $result->{$key};
             }
+            $data{$key} = $result->{$key};
+        }
+    }
+
+    # Check that we have everything we need
+    RESULT:
+    foreach my $result (@{$results}) {
+        if (uc $result->{result} eq q{INFO}) {
+            next RESULT;
+        }
+        foreach my $rcol (keys %required_result_cols) {
+            if (not exists $result->{$rcol}) {
+                if (exists $data{$rcol}) {
+                    $result->{$rcol} = $data{$rcol};
+                } else {
+                    my_warn(qq{fixup_connection: missing result col: $rcol\n},
+                        dump_connection($connection),
+                    );
+                }
+            }
+        }
+    }
+
+    foreach my $ccol (keys %required_connection_cols) {
+        if (not exists $connection->{$ccol}) {
+            my_warn(qq{fixup_connection: missing connection col: $ccol\n},
+                dump_connection($connection),
+            );
         }
     }
 }
@@ -500,10 +522,11 @@ sub save {
         $connection->{$ccol} = $matches->[$connection_cols->{$ccol}];
     }
 
-    # Believe it or not, I do have rules where nothing is saved in %result
-    # except $rule.
     my %result = (
-        rule => $rule,
+        #rule    => $rule,
+        rule_id => $rule->{id},
+        result  => $rule->{result},
+        line    => $line,
     );
     my $result_cols = $rule->{result_cols};
     foreach my $rcol (keys %{$result_cols}) {
@@ -531,6 +554,7 @@ sub track {
             qq{\tqueueid (new_queueid->old_queueid) => $queueid\n},
             qq{\tnew_queueid                        => $new_queueid\n},
             qq{\told_queueid                        => $new_connection->{old_queueid}\n},
+            qq{\t$line->{program}: $line->{text}\n},
         );
     }
     # We can't detect tracking for a second time by checking new_queueid,
@@ -540,7 +564,6 @@ sub track {
     $connection->{new_queueid} = $new_queueid;
 }
 
-# TODO: WRITE
 sub commit {
     my ($line, $rule, $matches) = @_;
 
@@ -552,6 +575,7 @@ sub commit {
         return;
     }
 
+    $connection->{end} = $line->{timestamp};
     fixup_connection($connection);
     commit_connection($connection);
     $connection->{committed} = 1;
