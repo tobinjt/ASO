@@ -51,7 +51,7 @@ CREATE TABLE connections (
     -- TODO: how do I deal with clients who RSET and HELO again?
     helo                    text    NOT NULL,
     -- The queueid of the mail
-    queueid                 text    NOT NULL,
+    queueid                 text    NOT NULL DEFAULT 'NOQUEUE',
     -- Unix timestamp giving the start and end of the connection
     start                   integer NOT NULL,
     end                     integer NOT NULL
