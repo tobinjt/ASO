@@ -9,18 +9,38 @@ package ASO::DB::Connection;
 use base qw{DBIx::Class};
 use base qw{ASO::DB::Base};
 
+my %cols = (
+    id          => {
+    },
+    ip          => {
+        required    => 1,
+        nochange    => 1,
+    },
+    hostname    => {
+        required    => 1,
+        nochange    => 1,
+    },
+    helo        => {
+        nochange    => 1,
+    },
+    queueid     => {
+        nochange    => 1,
+    },
+    start       => {
+    },
+    end         => {
+    },
+);
+
+sub get_cols {
+    my ($self) = @_;
+    return %cols;
+}
+
 __PACKAGE__->load_components(qw(PK::Auto Core));
 __PACKAGE__->table(q{connections});
 __PACKAGE__->add_columns(
-    qw(
-        id
-        ip
-        hostname
-        helo
-        queueid
-        start
-        end
-    )
+    keys %cols
 );
 __PACKAGE__->set_primary_key(q{id});
 # Foreign keys: other tables reference this one.
