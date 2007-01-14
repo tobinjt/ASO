@@ -1373,6 +1373,21 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- 1}}}
 
+-- RESTRICTION_START {{{1
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result, priority)
+    VALUES('special rule matching the start of restrictions', 'A special rule to avoid repeating the samwe thing at the start of every smtpd rejection',
+        'postfix/smtpd',
+        '^__QUEUEID__: reject(?:_warning)?: (?:RCPT|DATA) from (?>(__HOSTNAME__)\[)(?>(__IP__)\]): (__SMTP_CODE__) ',
+        '',
+        'hostname = 1, ip = 2, smtp_code = 3',
+        'SUBSTITUTE',
+        0,
+        'INFO',
+        100
+);
+
+-- }}}
+
 -- INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
 --     VALUES('', '',
 --         '',

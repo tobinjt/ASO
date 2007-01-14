@@ -46,12 +46,6 @@ map { push @{$rules_by_program{$_->{program}}}, $_ } @rules;
 my %connect_programs        = (
     q{postfix/smtpd}        => 1,
 );
-# programs which implement restrictions, and thus need to be processed by 
-# restriction_start below.
-my %restriction_programs    = (
-    q{postfix/smtpd}        => 1,
-);
-my $restriction_start       = make_restriction_start();
 
 my (%connections, %queueids);
 my $num_connections_uncommitted = 0;
@@ -77,18 +71,6 @@ foreach my $logfile (@logs) {
         # contents of the hash will be propogated, thus we need to work on a
         # copy of the text of the line from now on.
         my $text = $line->{text};
-
-        # The start of every restriction line is the same, so strip it off here;
-        # however, not every line matches restriction_start.
-        if (exists $restriction_programs{$line->{program}}
-                and $text =~ m/$restriction_start->{regex}/) {
-            my @matches = $text =~ m/$restriction_start->{regex}/;
-            # regex matches start at one, but array indices start at 0.
-            # shift the array forward so they're aligned
-            unshift @matches, undef;
-            $text =~ s/$restriction_start->{regex}//;
-            save($line, $restriction_start, \@matches);
-        }
 
         RULE:
         foreach my $rule (@{$rules_by_program{$line->{program}}}) {
@@ -142,6 +124,16 @@ foreach my $logfile (@logs) {
                 next LINE;
             }
 
+            # We match the start of every restriction line with the same regex,
+            # to make restriction rules easier to write.
+            # NOTE: we now try the remainder of the rules too, we don't move
+            # on to the next line.
+            if (uc $rule->{action} eq q{SUBSTITUTE}) {
+                $text =~ s/$rule->{regex}//;
+                save($line, $rule, \@matches);
+                next RULE;
+            }
+
             my_warn(qq{unknown action $rule->{action}\n} . Dumper($rule));
         }
 
@@ -157,27 +149,6 @@ if ($num_connections_uncommitted) {
 #print dump_state();
 update_check_order();
 #print dump_totals();
-
-sub make_restriction_start {
-
-    my $special_rule = {
-        id                  => -1,
-        name                => q{special rule matching the start of restrictions},
-        program             => q{postfix/smtpd},
-        queueid             => 0,
-        result_cols         => parse_result_cols(q{}),
-        connection_cols     => parse_result_cols(q{hostname = 1, ip = 2, smtp_code = 3}),
-        regex               => filter_regex(
-            qr/^__QUEUEID__: reject(?:_warning)?: (?:RCPT|DATA) from (?>(__HOSTNAME__)\[)(?>(__IP__)\]): (__SMTP_CODE__) /
-        ),
-        result              => q{INFO},
-        action              => q{SAVE},
-        priority            => 0,
-    };
-    $special_rule->{regex}  = qr/$special_rule->{regex}/;
-
-    return $special_rule;
-}
 
 # Maybe use Text::Table?
 sub dump_totals {
