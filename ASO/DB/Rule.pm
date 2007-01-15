@@ -25,6 +25,8 @@ __PACKAGE__->add_columns(
         rule_order
         priority
         result
+        result_data
+        connection_data
     )
 );
 __PACKAGE__->set_primary_key(q{id});

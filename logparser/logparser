@@ -187,16 +187,36 @@ sub update_check_order {
     }
 }
 
-sub parse_result_cols {
-    my ($spec) = @_;
+sub parse_result_data {
+    my ($spec, $rule) = @_;
 
     my $assignments = {};
     foreach my $assign (split /\s*,\s*/, $spec) {
         if (not length $assign) {
-            croak qq{empty assignment found in: $assignments\n};
+            my_warn(qq{parse_result_data: empty assignment found in: \n},
+                dump_rule_from_db($rule));
+        }
+        if ($assign !~ m/^\s*(\w+)\s*=\s*(.+)\s*/) {
+            my_warn(qq{parse_result_data: bad assignment found in: \n},
+                dump_rule_from_db($rule));
+        }
+        $assignments->{$1} = $2;
+    }
+    return $assignments;
+}
+
+sub parse_result_cols {
+    my ($spec, $rule) = @_;
+
+    my $assignments = {};
+    foreach my $assign (split /\s*,\s*/, $spec) {
+        if (not length $assign) {
+            my_warn(qq{parse_result_cols: empty assignment found in: \n},
+                dump_rule_from_db($rule));
         }
         if ($assign !~ m/^\s*(\w+)\s*=\s*(\d+)\s*/) {
-            croak qq{bad assignment: $assign\n};
+            my_warn(qq{parse_result_cols: bad assignment found in: \n},
+                dump_rule_from_db($rule));
         }
         $assignments->{$1} = $2;
     }
@@ -285,8 +305,12 @@ sub load_rules {
             action           => $rule->action(),
             program          => $rule->program(),
             queueid          => $rule->queueid(),
-            result_cols      => parse_result_cols($rule->result_cols()),
-            connection_cols  => parse_result_cols($rule->connection_cols()),
+            result_cols      => parse_result_cols($rule->result_cols(), $rule),
+            connection_cols  => parse_result_cols($rule->connection_cols(), $rule),
+            # for the moment we're reusing the result_cols format, but we 
+            # remove the restriction limiting the RHS to \d+
+            result_data      => parse_result_data($rule->result_data(), $rule),
+            connection_data  => parse_result_data($rule->connection_data(), $rule),
         };
 
         # Compile the regex for efficiency, otherwise it'll be recompiled every
@@ -488,10 +512,10 @@ sub save {
         $queueids{$queueid} = $connection;
     }
 
-    my $connection_cols = $rule->{connection_cols};
-    foreach my $ccol (keys %{$connection_cols}) {
-        $connection->{$ccol} = $matches->[$connection_cols->{$ccol}];
-    }
+    my $c_data = $rule->{connection_data};
+    map { $connection->{$_} = $c_data->{$_} } keys %{$c_data};
+    my $c_cols = $rule->{connection_cols};
+    map { $connection->{$_} = $matches->[$c_cols->{$_}] } keys %{$c_cols};
 
     my %result = (
         #rule    => $rule,
@@ -499,10 +523,10 @@ sub save {
         result  => $rule->{result},
         line    => $line,
     );
-    my $result_cols = $rule->{result_cols};
-    foreach my $rcol (keys %{$result_cols}) {
-        $result{$rcol} = $matches->[$result_cols->{$rcol}];
-    }
+    my $r_data = $rule->{result_data};
+    map { $result{$_} = $r_data->{$_} } keys %{$r_data};
+    my $r_cols = $rule->{result_cols};
+    map { $result{$_} = $matches->[$r_cols->{$_}] } keys %{$r_cols};
 
     if (not exists $connection->{results}) {
         $connection->{results} = [];

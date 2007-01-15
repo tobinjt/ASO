@@ -36,7 +36,10 @@ CREATE TABLE rules (
     priority                integer NOT NULL DEFAULT 0,
     -- Specifies one of IGNORED, INFO, BOUNCED, EXPIRED, SENT, ACCEPTED or
     -- REJECTED, saying what the rule does.
-    result                  text    NOT NULL
+    result                  text    NOT NULL,
+    -- additional data to be saved; same format as result_cols, for now.
+    result_data             text    NOT NULL DEFAULT '',
+    connection_data         text    NOT NULL DEFAULT ''
 );
 
 DROP TABLE IF EXISTS connections; --{{{1
