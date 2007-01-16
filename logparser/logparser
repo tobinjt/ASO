@@ -359,38 +359,6 @@ sub get_connection {
     return $queueids{$queueid};
 }
 
-# TODO: extend this so it checks that tracked connections are committed.
-sub delete_connection {
-    my ($line, $queueid) = @_;
-
-    my $deleted = 0;
-
-    if (exists $connect_programs{$line->{program}}) {
-        if (not exists $connections{$line->{pid}}) {
-            my_warn(qq{delete_connection: no connection for pid $line->{pid}\n});
-        } else {
-            delete $connections{$line->{pid}};
-            $deleted++;
-        }
-    }
-
-    if ($queueid) {
-        if (not exists $queueids{$queueid}) {
-            my_warn(qq{delete_connection: no connection for queueid $queueid\n});
-        } else {
-            delete $queueids{$queueid};
-            $deleted++;
-        }
-    }
-
-    if (not $deleted) {
-        my_warn(qq{delete_connection: didn't delete anything!\n},
-            qq{\tqueueid => $queueid\n},
-            qq{\tline    => } . dump_line($line) . qq{\n},
-        );
-    }
-}
-
 sub load_rules {
     my @results;
 
@@ -672,24 +640,6 @@ sub track {
 
     $new_connection->{old_queueid} = $queueid;
     $connection->{new_queueid} = $new_queueid;
-}
-
-sub commit {
-    my ($line, $rule, $matches) = @_;
-
-    my $queueid = $matches->[$rule->{queueid}];
-    my $connection = get_connection($line, $queueid, $rule);
-
-    if (not $connection) {
-        my_warn(qq{no connection for $line->{text}\n});
-        return;
-    }
-
-    $connection->{end} = $line->{timestamp};
-    fixup_connection($connection);
-    commit_connection($connection);
-    $connection->{committed} = 1;
-    delete_connection($line, $queueid);
 }
 
 # TODO: WRITE
