@@ -159,6 +159,26 @@ foreach my $logfile (@logs) {
                 next RULE;
             }
 
+            if (uc $rule->{action} eq q{QMGR_CHOOSES_MAIL}) {
+                my $connection;
+                my $queueid = get_queueid($line, $rule, \@matches);
+                if (not exists $queueids{$queueid}) {
+                    $connection = make_connection_by_queueid($line, $queueid);
+                } else {
+                    $connection = get_connection_by_queueid($line, $queueid);
+                }
+                save($connection, $line, $rule, \@matches);
+                next LINE;
+            }
+
+            if (uc $rule->{action} eq q{PICKUP}) {
+                my $queueid = get_queueid($line, $rule, \@matches);
+                my $connection = make_connection_by_queueid($line, $queueid);
+                save($connection, $line, $rule, \@matches);
+                delete $connection->{faked};
+                next LINE;
+            }
+
             my_warn(qq{unknown action $rule->{action}\n} . Dumper($rule));
         }
 
