@@ -172,6 +172,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTED'
 );
 
+-- <                      >: Sender address rejected: User unknown in local recipient table; from=<??????????????????????> to=<emcmanus@cs.tcd.ie> proto=SMTP helo=<mail.com>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, result)
+    VALUES('Unknown sender (escaped)', 'The sender address is unknown on our system (postfix escaped it)',
+        'postfix/smtpd',
+        '^<(.*)>: Sender address rejected: User unknown in local recipient table; from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 2, sender = 1',
+        'helo = 3',
+        'SAVE',
+        0,
+        -1,
+        'REJECTED'
+);
+
 -- <ocalladw@toad.toad>: Sender address rejected: Domain not found; from=<ocalladw@toad.toad> to=<submit@bugs.gnome.org> proto=SMTP helo=<toad>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
     VALUES('Unknown sender domain', 'We do not accept mail from unknown domains',
@@ -181,6 +194,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'helo = 3',
         'SAVE',
         0,
+        'REJECTED'
+);
+
+-- <                     @thai.co.th>: Sender address rejected: Domain not found; from=<?????????????????????@thai.co.th> to=<faircloc@cs.tcd.ie> proto=SMTP helo=<mail.com>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, result)
+    VALUES('Unknown sender domain (escaped)', 'We do not accept mail from unknown domains (postfix partially escaped it)',
+        'postfix/smtpd',
+        '^<(.*)>: Sender address rejected: Domain not found; from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 2, sender = 1',
+        'helo = 3',
+        'SAVE',
+        0,
+        -1,
         'REJECTED'
 );
 
@@ -1374,18 +1400,46 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- 1}}}
 
 -- RESTRICTION_START {{{1
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result, priority)
-    VALUES('special rule matching the start of restrictions', 'A special rule to avoid repeating the samwe thing at the start of every smtpd rejection',
+-- NOQUEUE: reject: RCPT from toad.cs.tcd.ie[134.226.53.197]: 550
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, result)
+    VALUES('special rule matching the start of restrictions', 'A special rule to avoid repeating the same thing at the start of every smtpd rejection',
         'postfix/smtpd',
         '^__QUEUEID__: reject(?:_warning)?: (?:RCPT|DATA) from (?>(__HOSTNAME__)\[)(?>(__IP__)\]): (__SMTP_CODE__) ',
         '',
         'hostname = 1, ip = 2, smtp_code = 3',
-        'SUBSTITUTE',
+        'RESTRICTION_START',
         0,
+        100,
+        'INFO'
+);
+-- }}}
+
+-- PICKUP RULES {{{1
+
+-- 39DE44317: uid=8515 from=<kennyau>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result, connection_data)
+    VALUES('Mail submitted with sendmail', 'Mail submitted locally on the machine via sendmail is being picked up',
+        'postfix/pickup',
+        '^(__QUEUEID__): uid=\d+ from=<\w+>$',
+        '',
+        'queueid = 1',
+        'SAVE',
+        1,
         'INFO',
-        100
+        'hostname = localhost, ip = 127.0.0.1'
 );
 
+-- libsldap: Status: 2  Mesg: Unable to load configuration '/var/ldap/ldap_client_file' ('').
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
+    VALUES('Solaris LDAP fails again', 'Solaris LDAP has failed, yet again',
+        'postfix/pickup',
+        'libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file.*',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORE'
+);
 -- }}}
 
 -- INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
