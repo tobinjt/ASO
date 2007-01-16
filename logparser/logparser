@@ -47,6 +47,9 @@ my %connect_programs        = (
     q{postfix/smtpd}        => 1,
 );
 
+my $queueid_regex   = filter_regex(q{^__QUEUEID__$});
+$queueid_regex      = qr/$queueid_regex/;
+
 my (%connections, %queueids);
 my $num_connections_uncommitted = 0;
 my $current_logfile;
@@ -221,6 +224,53 @@ sub parse_result_cols {
         $assignments->{$1} = $2;
     }
     return $assignments;
+}
+
+sub get_queueid {
+    my ($line, $rule, $matches) = @_;
+
+    if (not $rule->{queueid}) {
+        my_die(qq{get_queueid: no queueid defined by: } . dump_rule($rule));
+    }
+    my $queueid     = $matches->[$rule->{queueid}];
+    if (not defined $queueid or not $queueid) {
+        my_die(qq{get_queueid: no queueid found in: },
+            dump_line($line),
+            qq{using: },
+            dump_rule($rule)
+        );
+    }
+    if ($queueid !~ m/$queueid_regex/) {
+        my_die(qq{get_queueid: queueid $queueid doesn't match __QUEUEID__;\n},
+            dump_line($line),
+            qq{using: },
+            dump_rule($rule)
+        );
+    }
+
+    return $queueid;
+}
+
+sub get_connection_by_queueid {
+    my ($line, $queueid) = @_;
+    if (not exists $queueids{$queueid}) {
+        my_warn(qq{get_connection_by_queueid: no connection for: },
+            dump_line($line)
+        );
+        return make_connection_by_queueid($line, $queueid);
+    }
+    return $queueids{$queueid};
+}
+
+sub get_connection_by_pid {
+    my ($line) = @_;
+    if (not exists $connections{$line->{pid}}) {
+        my_warn(qq{get_connection_by_pid: no connection for: },
+            dump_line($line)
+        );
+        return make_connection_by_pid($line);
+    }
+    return $connections{$line->{pid}};
 }
 
 sub get_connection {
