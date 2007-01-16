@@ -442,20 +442,37 @@ sub filter_regex {
     return $regex;
 }
 
+sub make_connection_by_queueid {
+    my ($line, $queueid) = @_;
+    if (exists $queueids{$queueid}) {
+        my_warn(qq{make_connection_by_queueid: $queueid already exists},
+            dump_line($line)
+        );
+        return $queueids{$queueid};
+    }
+
+    # NOTE: We don't clear the faked flag here, that's up to the caller.
+    my $connection = make_connection($line);
+    $connection->{queueid} = $queueid;
+    $queueids{$queueid} = $connection;
+    return $connection;
+}
+
+sub make_connection_by_pid {
+    my ($line) = @_;
+    # NOTE: We don't clear the faked flag here, that's up to the caller.
+    my $connection = make_connection($line);
+    $connections{$line->{pid}} = $connection;
+    return $connection;
+}
+
 sub make_connection {
     my ($line) = @_;
 
-    if (exists $connections{$line->{pid}}) {
-        my_warn(qq{existing connection hash for pid $line->{pid}; this should never happen :(\n});
-    }
-    if (not exists $connect_programs{$line->{program}}) {
-        my_warn(qq{trying to create a connection for program $line->{program}\n});
-    }
-
-    $connections{$line->{pid}} = {
+    return {
         start => $line->{timestamp},
+        faked => $line,
     };
-    return $connections{$line->{pid}};
 }
 
 sub disconnection {
