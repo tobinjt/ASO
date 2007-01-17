@@ -302,9 +302,10 @@ sub get_queueid {
 }
 
 sub get_connection_by_queueid {
-    my ($line, $queueid) = @_;
+    my ($line, $queueid, @extra_messages) = @_;
     if (not exists $queueids{$queueid}) {
-        my_warn(qq{get_connection_by_queueid: no connection for: },
+        my_warn(@extra_messages,
+            qq{get_connection_by_queueid: no connection for: },
             dump_line($line)
         );
         return make_connection_by_queueid($line, $queueid);
@@ -321,42 +322,6 @@ sub get_connection_by_pid {
         return make_connection_by_pid($line);
     }
     return $connections{$line->{pid}};
-}
-
-sub get_connection {
-    my ($line, $queueid, $rule) = @_;
-    my $connection;
-
-    # Is it a program which makes connections?
-    # $queueid supercedes $line->{pid}, for when we use TRACK with programs
-    # which create connections.
-    if (not $queueid and exists $connect_programs{$line->{program}}) {
-        $connection = $connections{$line->{pid}};
-        if (not $connection) {
-            my_warn(qq{get_connection: no connection for pid $line->{pid}\n});
-            $connection = make_connection($line);
-        }
-        if (not $connection) {
-            my_die(qq{get_connection: failed to make_connection()\n});
-        }
-        return $connection;
-    }
-
-    # Or is it a program we track by queueid?
-    if (not $queueid) {
-        my $dump = dump_rule($rule);
-        my_warn(qq{get_connection: no queueid for rule $dump\n});
-        return {};
-    }
-
-    if (not exists $queueids{$queueid}) {
-        # Reasons this happen: reinjection due to forwarding, filtering through
-        # amavisd??
-        $queueids{$queueid} = {};
-#my_warn(qq{get_connection: creating connection: } . dump_line($line));
-    }
-
-    return $queueids{$queueid};
 }
 
 sub load_rules {
@@ -561,9 +526,10 @@ sub fixup_connection {
                 if (exists $data{$rcol}) {
                     $result->{$rcol} = $data{$rcol};
                 } else {
-                    my_warn(qq{fixup_connection: missing result col: $rcol\n},
-                        dump_connection($connection),
-                    );
+# XXX ADD THESE BACK IN
+#                    my_warn(qq{fixup_connection: missing result col: $rcol\n},
+#                        dump_connection($connection),
+#                    );
                 }
             }
         }
@@ -571,9 +537,10 @@ sub fixup_connection {
 
     foreach my $ccol (keys %required_connection_cols) {
         if (not exists $connection->{$ccol}) {
-            my_warn(qq{fixup_connection: missing connection col: $ccol\n},
-                dump_connection($connection),
-            );
+# XXX ADD THESE BACK IN
+#            my_warn(qq{fixup_connection: missing connection col: $ccol\n},
+#                dump_connection($connection),
+#            );
         }
     }
 }
@@ -624,7 +591,9 @@ sub track {
 
     my $new_queueid     = $connection->{new_queueid};
     # XXX I WANT A BETTER ERROR MESSAGE
-    my $new_connection  = get_connection_by_queueid($line, $new_queueid);
+    my $new_connection  = get_connection_by_queueid($line, $new_queueid,
+        qq{track: Trying to find $new_queueid, not $queueid\n},
+    );
 
     if (exists $new_connection->{old_queueid}
         and $new_connection->{old_queueid} ne $queueid) {
