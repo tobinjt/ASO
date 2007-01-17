@@ -603,6 +603,9 @@ sub track {
     } else {
         $new_connection = make_connection_by_queueid($line, $new_queueid);
     }
+    # Clear the faked flag; this is good when we haven't seen the connection
+    # yet, but bad when the connection has been and gone.
+    delete $new_connection->{faked};
 
     if (exists $new_connection->{old_queueid}
         and $new_connection->{old_queueid} ne $queueid) {
@@ -624,6 +627,11 @@ sub track {
 sub commit_connection {
     my ($connection) = @_;
 
+    if ($connection->{faked}) {
+        my_warn(qq{commit_connection: faked connection: \n},
+            dump_connection($connection)
+        );
+    }
 }
 
 sub my_warn {
