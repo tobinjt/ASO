@@ -606,7 +606,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): client=(__HOSTNAME__)\[(__IP__)\]$',
         '',
         'queueid = 1, hostname = 2, ip = 3',
-        'SAVE_BY_PID',
+        'CLONE',
         1,
         'ACCEPTED'
 );

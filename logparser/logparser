@@ -179,6 +179,13 @@ foreach my $logfile (@logs) {
                 next LINE;
             }
 
+            if (uc $rule->{action} eq q{CLONE}) {
+                my $connection = get_connection_by_pid($line);
+                my $clone = { %$connection };
+                save($clone, $line, $rule, \@matches);
+                next LINE;
+            }
+
             my_warn(qq{unknown action $rule->{action}\n} . Dumper($rule));
         }
 
