@@ -590,10 +590,12 @@ sub track {
     my $connection      = get_connection_by_queueid($line, $queueid);
 
     my $new_queueid     = $connection->{new_queueid};
-    # XXX I WANT A BETTER ERROR MESSAGE
-    my $new_connection  = get_connection_by_queueid($line, $new_queueid,
-        qq{track: Trying to find $new_queueid, not $queueid\n},
-    );
+    my $new_connection;
+    if (exists $queueids{$new_queueid}) {
+        $new_connection = $queueids{$new_queueid};
+    } else {
+        $new_connection = make_connection_by_queueid($line, $new_queueid);
+    }
 
     if (exists $new_connection->{old_queueid}
         and $new_connection->{old_queueid} ne $queueid) {
