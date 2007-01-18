@@ -506,6 +506,7 @@ sub fixup_connection {
     my %nochange_result_cols        = make_hash($fake_result->nochange_columns());
 
 
+    my $failure = 0;
     my %data;
     # Populate %data.
     foreach my $result (@{$results}) {
@@ -533,10 +534,10 @@ sub fixup_connection {
                 if (exists $data{$rcol}) {
                     $result->{$rcol} = $data{$rcol};
                 } else {
-# XXX ADD THESE BACK IN
-#                    my_warn(qq{fixup_connection: missing result col: $rcol\n},
-#                        dump_connection($connection),
-#                    );
+                    my_warn(qq{fixup_connection: missing result col: $rcol\n},
+                        dump_connection($connection),
+                    );
+                    $failure++;
                 }
             }
         }
@@ -544,11 +545,17 @@ sub fixup_connection {
 
     foreach my $ccol (keys %required_connection_cols) {
         if (not exists $connection->{$ccol}) {
-# XXX ADD THESE BACK IN
-#            my_warn(qq{fixup_connection: missing connection col: $ccol\n},
-#                dump_connection($connection),
-#            );
+            my_warn(qq{fixup_connection: missing connection col: $ccol\n},
+                dump_connection($connection),
+            );
+            $failure++;
         }
+    }
+
+    if ($failure) {
+        my_warn(qq{fixup_connection: fixup failed\n});
+    } else {
+        $connection->{fixuped} = 1;
     }
 }
 
