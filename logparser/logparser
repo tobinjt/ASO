@@ -24,6 +24,7 @@ use IO::File;
 use Carp;
 use Data::Dumper;
 use Regexp::Common qw(Email::Address net);
+use Storable qw(dclone);
 
 my $dbix = ASO::DB->connect(
     q{dbi:SQLite:dbname=../sql/db.sq3},
@@ -142,7 +143,6 @@ foreach my $logfile (@logs) {
             if (uc $rule->{action} eq q{TRACK}) {
                 my $queueid = get_queueid($line, $rule, \@matches);
                 my $connection = get_connection_by_queueid($line, $queueid);
-                # XXX
                 save($connection, $line, $rule, \@matches);
                 track($line, $rule, \@matches);
                 next LINE;
@@ -179,9 +179,11 @@ foreach my $logfile (@logs) {
                 next LINE;
             }
 
+            # Create a deep copy of the connection and save it by queueid so that
+            # subsequent mails sent on this connection don't clobber each other.
             if (uc $rule->{action} eq q{CLONE}) {
                 my $connection = get_connection_by_pid($line);
-                my $clone = { %$connection };
+                my $clone = dclone($connection);
                 save($clone, $line, $rule, \@matches);
                 next LINE;
             }
