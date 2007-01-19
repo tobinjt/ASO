@@ -16,6 +16,7 @@
 
 use strict;
 use warnings;
+$| = 1;
 
 use lib q{..};
 use ASO::DB;
@@ -196,12 +197,26 @@ foreach my $logfile (@logs) {
         #my_warn(qq{unknown line: $line->{program}: $line->{pid}: $text\n});
     }
 }
+
 if ($num_connections_uncommitted) {
     $dbix->txn_commit();
 }
-
-#print dump_state();
 update_check_order();
+
+# Dump any remaining connections so we can tell when we're missing something.
+if (%connections) {
+    print qq{Dumping mails from \%connections:\n};
+    foreach my $pid (keys %connections) {
+        print qq{pid: $pid\n}, dump_connection($connections{$pid});
+    }
+}
+if (%queueids) {
+    print qq{Dumping mails from \%queueids:\n};
+    foreach my $queueid (keys %queueids) {
+        print qq{queueid: $queueid\n}, dump_connection($queueids{$queueid});
+    }
+}
+#print dump_state();
 #print dump_totals();
 
 # Maybe use Text::Table?
@@ -640,7 +655,9 @@ sub commit_connection {
         my_warn(qq{commit_connection: faked connection: \n},
             dump_connection($connection)
         );
+        return;
     }
+    $connection->{committed} = 1;
 }
 
 sub my_warn {
