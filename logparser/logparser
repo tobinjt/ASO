@@ -189,12 +189,11 @@ foreach my $logfile (@logs) {
                 next LINE;
             }
 
-            my_warn(qq{unknown action $rule->{action}\n} . Dumper($rule));
+            my_warn(qq{unknown action $rule->{action}\n}, dump_rule($rule));
         }
 
         # Last ditch: complain to the user
         print qq{$line->{program}: $text\n};
-        #my_warn(qq{unknown line: $line->{program}: $line->{pid}: $text\n});
     }
 }
 
@@ -206,7 +205,7 @@ update_check_order();
 # Dump any remaining connections so we can tell when we're missing something.
 if (%connections) {
     print qq{Dumping mails from \%connections:\n};
-    foreach my $pid (keys %connections) {
+    foreach my $pid (sort keys %connections) {
         print qq(pid: $pid {{{1\n),
             dump_connection($connections{$pid}),
             qq(}}}\n);
@@ -214,7 +213,7 @@ if (%connections) {
 }
 if (%queueids) {
     print qq{Dumping mails from \%queueids:\n};
-    foreach my $queueid (keys %queueids) {
+    foreach my $queueid (sort keys %queueids) {
         print qq(queueid: $queueid {{{\n),
             dump_connection($queueids{$queueid}),
             qq(}}}\n);
@@ -514,6 +513,42 @@ sub make_hash {
     return map { $_ => 1 } @_;
 }
 
+# Update the values in a hash, complaining if we change existing values, unless
+# the existing (key, value) is found in silent_overwrite.
+sub update_hash {
+    my ($hash, $silent_overwrite, $updates, $rule, $line, $connection, $message) = @_;
+    my $conflicts = 0;
+
+    while (my ($u_key, $u_value) = each %{$updates}) {
+        if (exists $hash->{$u_key}
+                and $hash->{$u_key} ne $u_value) {
+            my $orig_value = $hash->{$u_key};
+            if (not exists $silent_overwrite->{$u_key}
+                    or not exists $silent_overwrite->{$u_key}->{$orig_value}) {
+                my $warning = $message;
+                $warning =~ s/__KEY__/$u_key/;
+                $warning =~ s/__ORIG_VALUE__/$orig_value/;
+                $warning =~ s/__NEW_VALUE__/$u_value/;
+                my_warn($warning);
+                $conflicts++;
+            }
+        }
+        $hash->{$u_key} = $u_value;
+    }
+
+    if ($conflicts) {
+        my_warn(qq{This rule produced conflicts: \n},
+            dump_rule($rule),
+            qq{in this line:\n},
+            dump_line($line),
+            qq{for this connection:\n},
+            dump_connection($connection),
+        );
+    }
+
+    return $conflicts;
+}
+
 # TODO: If necessary (and available) pull data from tracked
 # connections to suplement the data we have - we don't usually have the sender
 # for tracked connections.  Mark the connection as fixuped.
@@ -590,9 +625,28 @@ sub save {
     my ($connection, $line, $rule, $matches) = @_;
 
     my $c_data = $rule->{connection_data};
-    map { $connection->{$_} = $c_data->{$_} } keys %{$c_data};
+    update_hash($connection, {}, $c_data, $rule, $line, $connection,
+        <<"DIFFERS");
+save: connection_data: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
+DIFFERS
+
+    my %c_cols_silent_overwrite = (
+        ip          => {
+            q{127.0.0.1}    => 1,
+            q{::1}          => 1,
+        },
+        hostname    => {
+            q{localhost}    => 1,
+        },
+    );
     my $c_cols = $rule->{connection_cols};
-    map { $connection->{$_} = $matches->[$c_cols->{$_}] } keys %{$c_cols};
+    my $c_cols_updates = { map { $_ => $matches->[$c_cols->{$_}]; }
+        keys %{$c_cols} };
+    update_hash($connection, \%c_cols_silent_overwrite, $c_cols_updates, $rule,
+        $line, $connection, <<"DIFFERS");
+save: connection_cols: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
+DIFFERS
+
 
     my %result = (
         #rule    => $rule,
@@ -665,7 +719,20 @@ sub commit_connection {
 }
 
 sub my_warn {
-    warn qq{$0: $current_logfile: $.: }, @_;
+    my ($first_line, @rest) = @_;
+    my $prefix = qq{$0: $current_logfile: $.: };
+
+    if (@rest) {
+        # Make it easy to fold warnings
+        my $newline = q{};
+        if ($first_line =~ m/\n$/) {
+            $newline = qq{\n};
+            $first_line =~ s/\n$//;
+        }
+        warn $prefix, $first_line, q( {{{), $newline, @rest, qq(}}}\n);
+    } else {
+        warn $prefix, $first_line;
+    }
 }
 
 sub my_die {
