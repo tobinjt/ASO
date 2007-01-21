@@ -207,13 +207,17 @@ update_check_order();
 if (%connections) {
     print qq{Dumping mails from \%connections:\n};
     foreach my $pid (keys %connections) {
-        print qq{pid: $pid\n}, dump_connection($connections{$pid});
+        print qq(pid: $pid {{{1\n),
+            dump_connection($connections{$pid}),
+            qq(}}}\n);
     }
 }
 if (%queueids) {
     print qq{Dumping mails from \%queueids:\n};
     foreach my $queueid (keys %queueids) {
-        print qq{queueid: $queueid\n}, dump_connection($queueids{$queueid});
+        print qq(queueid: $queueid {{{\n),
+            dump_connection($queueids{$queueid}),
+            qq(}}}\n);
     }
 }
 #print dump_state();
