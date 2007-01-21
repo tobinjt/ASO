@@ -245,7 +245,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'postfix/smtpd',
         '^Service unavailable; Client host (?>\[(__IP__)\]) blocked using list.dsbl.org; (?>(http://dsbl.org/listing\?\1);) from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 4, data = 2, sender = 3',
-        'helo = 5, ip = 2',
+        'helo = 5, ip = 1',
         'SAVE_BY_PID',
         0,
         'REJECTED'
@@ -257,7 +257,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'postfix/smtpd',
         '^Service unavailable; Client host (?>\[(__IP__)\]) blocked using relays.ordb.org; (?>(This mail was handled by an open relay - please visit <http://ORDB.org/lookup/\?host=\1>);) from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 4, data = 2, sender = 3',
-        'helo = 5, ip = 2',
+        'helo = 5, ip = 1',
         'SAVE_BY_PID',
         0,
         'REJECTED'
@@ -270,7 +270,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'postfix/smtpd',
         '^Service unavailable; Client host (?>\[(__IP__)\]) blocked using cbl.abuseat.org;(?>( Blocked - see http://cbl.abuseat.org/lookup.cgi\?ip=\1);)? from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 4, data = 2, sender = 3',
-        'helo = 5, ip = 2',
+        'helo = 5, ip = 1',
         'SAVE_BY_PID',
         0,
         'REJECTED'
@@ -700,9 +700,9 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
     VALUES('mail delivered to outside world', 'a mail was delivered to an outside address',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \(((__SMTP_CODE__).*)\)$',
-        'recipient = 2, data = 5, smtp_code = 6',
-        'queueid = 1, hostname = 3, ip = 4',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, (relay=__HOSTNAME__\[__IP__\], delay=\d+, status=sent \((__SMTP_CODE__).*\))$',
+        'recipient = 2, data = 3, smtp_code = 4',
+        'queueid = 1',
         'SAVE_BY_QUEUEID',
         1,
         'SENT'
@@ -727,9 +727,9 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
     VALUES('mail aliased to outside world', 'mail was sent to a local alias which expanded to an external address',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \(((__SMTP_CODE__).*)\)$',
-        'recipient = 2, smtp_code = 6, data = 5',
-        'queueid = 1, hostname = 3, ip = 4',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? (relay=__HOSTNAME__\[__IP__\], delay=\d+, status=sent \((__SMTP_CODE__).*\))$',
+        'recipient = 2, smtp_code = 4, data = 3',
+        'queueid = 1',
         'SAVE_BY_QUEUEID',
         1,
         'SENT'
@@ -741,9 +741,9 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
     VALUES('mail discarded by amavisd', 'mail was passed to amavisd, which discarded it',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(127.0.0.1)\[(127.0.0.1)\], delay=\d+, status=sent \((250) (2.7.1 Ok, discarded, id=\d+(?:-\d+)+ - VIRUS: .*)\)$',
-        'recipient = 2, smtp_code = 5, data = 6',
-        'queueid = 1, hostname = 3, ip = 4',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=127.0.0.1\[127.0.0.1\], delay=\d+, status=sent \(((250) 2.7.1 Ok, discarded, id=\d+(?:-\d+)+ - VIRUS: .*)\)$',
+        'recipient = 2, smtp_code = 4, data = 3',
+        'queueid = 1',
         'SAVE_BY_QUEUEID',
         1,
         'SENT'
@@ -1405,8 +1405,8 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('special rule matching the start of restrictions', 'A special rule to avoid repeating the same thing at the start of every smtpd rejection',
         'postfix/smtpd',
         '^__QUEUEID__: reject(?:_warning)?: (?:RCPT|DATA) from (?>(__HOSTNAME__)\[)(?>(__IP__)\]): (__SMTP_CODE__) ',
-        '',
-        'hostname = 1, ip = 2, smtp_code = 3',
+        'smtp_code = 3',
+        'hostname = 1, ip = 2',
         'RESTRICTION_START',
         0,
         100,
