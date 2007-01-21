@@ -46,10 +46,17 @@ DROP TABLE IF EXISTS connections; --{{{1
 
 CREATE TABLE connections (
     id                      integer NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-    -- The IP address of the connection
-    ip                      text    NOT NULL,
-    -- The hostname, if known; use NULL if it's not known
-    hostname                text,
+    -- Sometimes we're the client (we're sending mail), sometimes we're the
+    -- server (we're receiving mail).
+    -- The IP address of the client
+    client_ip               text    NOT NULL,
+    -- The hostname of the client
+    -- TODO use NULL if it's not known
+    client_hostname         text,
+    -- The IP address of the server
+    server_ip               text    NOT NULL,
+    -- The hostname of the server
+    server_hostname         text,
     -- The name used in the HELO command
     -- TODO: how do I deal with clients who RSET and HELO again?
     helo                    text    NOT NULL,

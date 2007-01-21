@@ -10,25 +10,33 @@ use base qw{DBIx::Class};
 use base qw{ASO::DB::Base};
 
 my %cols = (
-    id          => {
+    id                  => {
     },
-    ip          => {
-        required    => 1,
-        nochange    => 1,
+    server_ip           => {
+        required            => 1,
+        nochange            => 1,
     },
-    hostname    => {
-        required    => 1,
-        nochange    => 1,
+    server_hostname     => {
+        required            => 1,
+        nochange            => 1,
     },
-    helo        => {
-        nochange    => 1,
+    client_ip           => {
+        required            => 1,
+        nochange            => 1,
     },
-    queueid     => {
-        nochange    => 1,
+    client_hostname     => {
+        required            => 1,
+        nochange            => 1,
     },
-    start       => {
+    helo                => {
+        nochange            => 1,
     },
-    end         => {
+    queueid             => {
+        nochange            => 1,
+    },
+    start               => {
+    },
+    end                 => {
     },
 );
 
