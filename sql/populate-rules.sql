@@ -713,10 +713,10 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, result)
     VALUES('mail passed to amavisd', 'mail has been passed to amavisd for filtering',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(127.0.0.1)\[(127.0.0.1)\], delay=\d+, status=sent \((250) (2.6.0 Ok, id=\d+(?:-\d+)+, from MTA\(\[127.0.0.1\]:\d+\): 250 Ok: queued as (__QUEUEID__))\)$',
-        'recipient = 2, smtp_code = 5, data = 6',
-        'queueid = 1, hostname = 3, ip = 4, new_queueid = 7',
-        'TRACK',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=127.0.0.1\[127.0.0.1\], delay=\d+, status=sent \(((250) 2.6.0 Ok, id=\d+(?:-\d+)+, from MTA\(\[127.0.0.1\]:\d+\): 250 Ok: queued as (__QUEUEID__))\)$',
+        'recipient = 2, smtp_code = 4, data = 3',
+        'queueid = 1',
+        'SAVE_BY_QUEUEID',
         1,
         5,
         'SENT'
