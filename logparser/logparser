@@ -624,6 +624,26 @@ sub fixup_connection {
 sub save {
     my ($connection, $line, $rule, $matches) = @_;
 
+    # Save the new result.
+    my %result = (
+        #rule    => $rule,
+        rule_id => $rule->{id},
+        result  => $rule->{result},
+        line    => $line,
+    );
+    if (not exists $connection->{results}) {
+        $connection->{results} = [];
+    }
+    push @{$connection->{results}}, \%result;
+
+    # Populate it
+    # XXX switch to update_hash().
+    my $r_data = $rule->{result_data};
+    map { $result{$_} = $r_data->{$_} } keys %{$r_data};
+    my $r_cols = $rule->{result_cols};
+    map { $result{$_} = $matches->[$r_cols->{$_}] } keys %{$r_cols};
+
+    # Populate connection.
     my $c_data = $rule->{connection_data};
     update_hash($connection, {}, $c_data, $rule, $line, $connection,
         <<"DIFFERS");
@@ -631,11 +651,18 @@ save: connection_data: new value for __KEY__ (__NEW_VALUE__) differs from existi
 DIFFERS
 
     my %c_cols_silent_overwrite = (
-        ip          => {
+        client_ip       => {
             q{127.0.0.1}    => 1,
             q{::1}          => 1,
         },
-        hostname    => {
+        client_hostname => {
+            q{localhost}    => 1,
+        },
+        server_ip       => {
+            q{127.0.0.1}    => 1,
+            q{::1}          => 1,
+        },
+        server_hostname => {
             q{localhost}    => 1,
         },
     );
@@ -646,23 +673,6 @@ DIFFERS
         $line, $connection, <<"DIFFERS");
 save: connection_cols: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
 DIFFERS
-
-
-    my %result = (
-        #rule    => $rule,
-        rule_id => $rule->{id},
-        result  => $rule->{result},
-        line    => $line,
-    );
-    my $r_data = $rule->{result_data};
-    map { $result{$_} = $r_data->{$_} } keys %{$r_data};
-    my $r_cols = $rule->{result_cols};
-    map { $result{$_} = $matches->[$r_cols->{$_}] } keys %{$r_cols};
-
-    if (not exists $connection->{results}) {
-        $connection->{results} = [];
-    }
-    push @{$connection->{results}}, \%result;
 
     # XXX WHERE SHOULD I DO THIS?  Should it be based on ACCEPT?
     # Ensure we save the connection by queueid; this allows us to tie the whole
