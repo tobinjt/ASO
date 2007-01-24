@@ -699,13 +699,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- 058654401: to=<autosupport@netapp.com>, relay=mx1.netapp.com[216.240.18.38], delay=53, status=sent (250 ok:  Message 348102483 accepted)
 -- 253234317: to=<shanneneables@granherne.com>, relay=houmail002.halliburton.com[34.254.16.14], delay=2, status=sent (250 2.0.0 kA50s0cL029158 Message accepted for delivery)
 -- 0226B4317: to=<rajaverma@gmail.com>, relay=gmail-smtp-in.l.google.com[66.249.93.114], delay=1, status=sent (250 2.0.0 OK 1162706943 x33si2914313ugc)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, result)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
     VALUES('mail delivered to outside world', 'a mail was delivered to an outside address',
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>, (relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \((__SMTP_CODE__).*\))$',
         'recipient = 2, data = 5, smtp_code = 6',
         'queueid = 1, server_hostname = 3, server_ip = 4',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_BY_QUEUEID',
         1,
         'SENT'
@@ -713,13 +712,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- 1C8E84317: to=<dolan@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=8, status=sent (250 2.6.0 Ok, id=00218-02, from MTA([127.0.0.1]:11025): 250 Ok: queued as 2677C43FD)
 -- 730AC43FD: to=<grid-ireland-alert@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=0, status=sent (250 2.6.0 Ok, id=15759-01-2, from MTA([127.0.0.1]:11025): 250 Ok: queued as A3B7C4403)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, priority, result)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, result)
     VALUES('mail passed to amavisd', 'mail has been passed to amavisd for filtering',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(127.0.0.1)\[(127.0.0.1)\], delay=\d+, status=sent \(((250) 2.6.0 Ok, id=\d+(?:-\d+)+, from MTA\(\[127.0.0.1\]:\d+\): 250 Ok: queued as (__QUEUEID__))\)$',
-        'recipient = 2, smtp_code = 6, data = 5',
-        'queueid = 1, server_hostname = 3, server_ip = 4',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=127.0.0.1\[127.0.0.1\], delay=\d+, status=sent \(((250) 2.6.0 Ok, id=\d+(?:-\d+)+, from MTA\(\[127.0.0.1\]:\d+\): 250 Ok: queued as (__QUEUEID__))\)$',
+        'recipient = 2, smtp_code = 4, data = 3',
+        'queueid = 1',
         'SAVE_BY_QUEUEID',
         1,
         5,
