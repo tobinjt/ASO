@@ -699,10 +699,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- 058654401: to=<autosupport@netapp.com>, relay=mx1.netapp.com[216.240.18.38], delay=53, status=sent (250 ok:  Message 348102483 accepted)
 -- 253234317: to=<shanneneables@granherne.com>, relay=houmail002.halliburton.com[34.254.16.14], delay=2, status=sent (250 2.0.0 kA50s0cL029158 Message accepted for delivery)
 -- 0226B4317: to=<rajaverma@gmail.com>, relay=gmail-smtp-in.l.google.com[66.249.93.114], delay=1, status=sent (250 2.0.0 OK 1162706943 x33si2914313ugc)
+-- DC1484406: to=<elisab@gmail.com>, orig_to=<elisa.baniassad@cs.tcd.ie>, relay=gmail-smtp-in.l.google.com[66.249.93.114], delay=1, status=sent (250 2.0.0 OK 1162686664 53si2666246ugd)
+-- B7F9D4400: to=<dalyj1@tcd.ie>, orig_to=<dalyj1@cs.tcd.ie>, relay=imx1.tcd.ie[134.226.17.160], delay=0, status=sent (250 Ok: queued as BE7B04336)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
     VALUES('mail delivered to outside world', 'a mail was delivered to an outside address',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>, (relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \((__SMTP_CODE__).*\))$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \(((__SMTP_CODE__).*)\)$',
         'recipient = 2, data = 5, smtp_code = 6',
         'queueid = 1, server_hostname = 3, server_ip = 4',
         'SAVE_BY_QUEUEID',
@@ -724,32 +726,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'SENT'
 );
 
--- DC1484406: to=<elisab@gmail.com>, orig_to=<elisa.baniassad@cs.tcd.ie>, relay=gmail-smtp-in.l.google.com[66.249.93.114], delay=1, status=sent (250 2.0.0 OK 1162686664 53si2666246ugd)
--- B7F9D4400: to=<dalyj1@tcd.ie>, orig_to=<dalyj1@cs.tcd.ie>, relay=imx1.tcd.ie[134.226.17.160], delay=0, status=sent (250 Ok: queued as BE7B04336)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, result)
-    VALUES('mail aliased to outside world', 'mail was sent to a local alias which expanded to an external address',
-        'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? (relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \((__SMTP_CODE__).*\))$',
-        'recipient = 2, smtp_code = 6, data = 3',
-        'queueid = 1, server_hostname = 4, server_ip = 5',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
-        1,
-        'SENT'
-);
 
 -- XXX: why is this being discarded?
 -- 56EE54317: to=<creans@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=3, status=sent (250 2.7.1 Ok, discarded, id=00218-04 - VIRUS: HTML.Phishing.Bank-753)
 -- D93E84400: to=<diana.wilson@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=1, status=sent (250 2.7.1 Ok, discarded, id=00218-03-2 - VIRUS: HTML.Phishing.Bank-753)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, result)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, result)
     VALUES('mail discarded by amavisd', 'mail was passed to amavisd, which discarded it',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=(127.0.0.1)\[(127.0.0.1)\], delay=\d+, status=sent \(((250) 2.7.1 Ok, discarded, id=\d+(?:-\d+)+ - VIRUS: .*)\)$',
-        'recipient = 2, smtp_code = 6, data = 5',
-        'queueid = 1, server_hostname = 3, server_ip = 4',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>, relay=127.0.0.1\[127.0.0.1\], delay=\d+, status=sent \(((250) 2.7.1 Ok, discarded, id=\d+(?:-\d+)+ - VIRUS: .*)\)$',
+        'recipient = 2, smtp_code = 4, data = 3',
+        'queueid = 1',
         'SAVE_BY_QUEUEID',
         1,
+        5,
         'SENT'
 );
 

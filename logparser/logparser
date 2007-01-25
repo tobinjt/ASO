@@ -163,6 +163,7 @@ foreach my $logfile (@logs) {
             if (uc $rule->{action} eq q{QMGR_CHOOSES_MAIL}) {
                 my $connection;
                 my $queueid = get_queueid($line, $rule, \@matches);
+                # XXX why do I make connections?  They should exist.
                 if (not exists $queueids{$queueid}) {
                     $connection = make_connection_by_queueid($line, $queueid);
                 } else {
@@ -480,8 +481,13 @@ sub make_connection {
     my ($line) = @_;
 
     return {
-        start => $line->{timestamp},
-        faked => $line,
+        start           => $line->{timestamp},
+        faked           => $line,
+        # We'll always start with client = localhost, because I can't figure 
+        # out which rule should set these initially without clobbering 
+        # something else.
+        client_hostname => q{localhost},
+        client_ip       => q{127.0.0.1},
     };
 }
 
@@ -636,20 +642,20 @@ sub save {
     }
     push @{$connection->{results}}, \%result;
 
-    # Populate it
-    # XXX switch to update_hash().
-    my $r_data = $rule->{result_data};
-    map { $result{$_} = $r_data->{$_} } keys %{$r_data};
-    my $r_cols = $rule->{result_cols};
-    map { $result{$_} = $matches->[$r_cols->{$_}] } keys %{$r_cols};
-
-    # Populate connection.
-    my $c_data = $rule->{connection_data};
-    update_hash($connection, {}, $c_data, $rule, $line, $connection,
+    # Populate %result
+    update_hash(\%result, {}, $rule->{result_data}, $rule, $line, $connection,
         <<"DIFFERS");
-save: connection_data: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
+save: result_data: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
 DIFFERS
 
+    my %r_cols_updates = map { $_ => $matches->[$rule->{result_cols}->{$_}] }
+        keys %{$rule->{result_cols}};
+    update_hash(\%result, {}, \%r_cols_updates, $rule, $line, $connection,
+        <<"DIFFERS");
+save: result_cols: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
+DIFFERS
+
+    # Populate connection.
     my %c_cols_silent_overwrite = (
         client_ip       => {
             q{127.0.0.1}    => 1,
@@ -666,10 +672,15 @@ DIFFERS
             q{localhost}    => 1,
         },
     );
-    my $c_cols = $rule->{connection_cols};
-    my $c_cols_updates = { map { $_ => $matches->[$c_cols->{$_}]; }
-        keys %{$c_cols} };
-    update_hash($connection, \%c_cols_silent_overwrite, $c_cols_updates, $rule,
+
+    update_hash($connection, \%c_cols_silent_overwrite,
+        $rule->{connection_data}, $rule, $line, $connection, <<"DIFFERS");
+save: connection_data: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
+DIFFERS
+
+    my %c_cols_updates = map { $_ => $matches->[$rule->{connection_cols}->{$_}] }
+        keys %{$rule->{connection_cols}};
+    update_hash($connection, \%c_cols_silent_overwrite, \%c_cols_updates, $rule,
         $line, $connection, <<"DIFFERS");
 save: connection_cols: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
 DIFFERS
