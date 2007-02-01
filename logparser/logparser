@@ -56,6 +56,9 @@ my (%connections, %queueids);
 my $num_connections_uncommitted = 0;
 my $current_logfile;
 
+# Save the startup times seperately, when profiling with Devel::Profile.
+devel_profile_startup();
+
 foreach my $logfile (@logs) {
     print qq{$0: Starting to read $logfile\n};
     $current_logfile = $logfile;
@@ -70,131 +73,7 @@ foreach my $logfile (@logs) {
             # It's not from a program we're interested in, skip it.
             next LINE;
         }
-
-        # Parse::Syslog handles "last line repeated n times" by returning the 
-        # same hash as it did on the last call, so any changes we make to the 
-        # contents of the hash will be propogated, thus we need to work on a
-        # copy of the text of the line from now on.
-        my $text = $line->{text};
-
-        RULE:
-        foreach my $rule (@{$rules_by_program{$line->{program}}}) {
-            if ($text !~ m/$rule->{regex}/) {
-                next RULE;
-            }
-            $rule->{count}++;
-
-            # XXX: is there a way I can do this without matching twice??
-            my @matches = ($text =~ m/$rule->{regex}/);
-            # regex matches start at one, but array indices start at 0.
-            # shift the array forward so they're aligned
-            unshift @matches, undef;
-
-            # A line we want to ignore
-            if (uc $rule->{action} eq q{IGNORE}) {
-                next LINE;
-            }
-
-            # Someone has connected to us
-            if (uc $rule->{action} eq q{CONNECT}) {
-                my $connection = make_connection_by_pid($line);
-                delete $connection->{faked};
-                # We also want to save the hostname/ip info
-                save($connection, $line, $rule, \@matches);
-                next LINE;
-            }
-
-            # Someone has disconnected
-            if (uc $rule->{action} eq q{DISCONNECT}) {
-                disconnection($line);
-                next LINE;
-            }
-
-            # We want to save some information
-            if (uc $rule->{action} eq q{SAVE_BY_PID}) {
-                my $connection = get_connection_by_pid($line);
-                save($connection, $line, $rule, \@matches);
-                next LINE;
-            }
-
-            # We want to save some information
-            if (uc $rule->{action} eq q{SAVE_BY_QUEUEID}) {
-                my $queueid = get_queueid($line, $rule, \@matches);
-                my $connection = get_connection_by_queueid($line, $queueid);
-                save($connection, $line, $rule, \@matches);
-                next LINE;
-            }
-
-            # We want to create db entries with the information we've saved.
-            if (uc $rule->{action} eq q{COMMIT}) {
-                my $queueid = get_queueid($line, $rule, \@matches);
-                my $connection = get_connection_by_queueid($line, $queueid);
-
-                $connection->{end} = $line->{timestamp};
-                fixup_connection($connection);
-                commit_connection($connection);
-                $connection->{committed} = 1;
-                maybe_delete_by_queueid($connection, $line, $rule);
-
-                next LINE;
-            }
-
-            # We need to track a mail across queueids, typically when mail
-            # goes through amavisd-new.
-            if (uc $rule->{action} eq q{TRACK}) {
-                my $queueid = get_queueid($line, $rule, \@matches);
-                my $connection = get_connection_by_queueid($line, $queueid);
-                save($connection, $line, $rule, \@matches);
-                track($line, $rule, \@matches);
-                next LINE;
-            }
-
-            # We match the start of every restriction line with the same regex,
-            # to make restriction rules easier to write.
-            # NOTE: we now try the remainder of the rules too, we don't move
-            # on to the next line.
-            if (uc $rule->{action} eq q{RESTRICTION_START}) {
-                $text =~ s/$rule->{regex}//;
-                my $connection = get_connection_by_pid($line);
-                save($connection, $line, $rule, \@matches);
-                next RULE;
-            }
-
-            if (uc $rule->{action} eq q{QMGR_CHOOSES_MAIL}) {
-                my $connection;
-                my $queueid = get_queueid($line, $rule, \@matches);
-                # XXX why do I make connections?  They should exist.
-                if (not exists $queueids{$queueid}) {
-                    $connection = make_connection_by_queueid($line, $queueid);
-                } else {
-                    $connection = get_connection_by_queueid($line, $queueid);
-                }
-                save($connection, $line, $rule, \@matches);
-                next LINE;
-            }
-
-            if (uc $rule->{action} eq q{PICKUP}) {
-                my $queueid = get_queueid($line, $rule, \@matches);
-                my $connection = make_connection_by_queueid($line, $queueid);
-                save($connection, $line, $rule, \@matches);
-                delete $connection->{faked};
-                next LINE;
-            }
-
-            # Create a deep copy of the connection and save it by queueid so that
-            # subsequent mails sent on this connection don't clobber each other.
-            if (uc $rule->{action} eq q{CLONE}) {
-                my $connection = get_connection_by_pid($line);
-                my $clone = dclone($connection);
-                save($clone, $line, $rule, \@matches);
-                next LINE;
-            }
-
-            my_warn(qq{unknown action $rule->{action}\n}, dump_rule($rule));
-        }
-
-        # Last ditch: complain to the user
-        print qq{$line->{program}: $text\n};
+        parse_line($line);
     }
 }
 
@@ -294,6 +173,134 @@ sub parse_result_cols {
         $assignments->{$1} = $2;
     }
     return $assignments;
+}
+
+sub parse_line {
+    my ($line) = @_;
+    # Parse::Syslog handles "last line repeated n times" by returning the 
+    # same hash as it did on the last call, so any changes we make to the 
+    # contents of the hash will be propogated, thus we need to work on a
+    # copy of the text of the line from now on.
+    my $text = $line->{text};
+
+    RULE:
+    foreach my $rule (@{$rules_by_program{$line->{program}}}) {
+        if ($text !~ m/$rule->{regex}/) {
+            next RULE;
+        }
+        $rule->{count}++;
+
+        # XXX: is there a way I can do this without matching twice??
+        my @matches = ($text =~ m/$rule->{regex}/);
+        # regex matches start at one, but array indices start at 0.
+        # shift the array forward so they're aligned
+        unshift @matches, undef;
+
+        # A line we want to ignore
+        if (uc $rule->{action} eq q{IGNORE}) {
+            return;
+        }
+
+        # Someone has connected to us
+        if (uc $rule->{action} eq q{CONNECT}) {
+            my $connection = make_connection_by_pid($line);
+            delete $connection->{faked};
+            # We also want to save the hostname/ip info
+            save($connection, $line, $rule, \@matches);
+            return;
+        }
+
+        # Someone has disconnected
+        if (uc $rule->{action} eq q{DISCONNECT}) {
+            disconnection($line);
+            return;
+        }
+
+        # We want to save some information
+        if (uc $rule->{action} eq q{SAVE_BY_PID}) {
+            my $connection = get_connection_by_pid($line);
+            save($connection, $line, $rule, \@matches);
+            return;
+        }
+
+        # We want to save some information
+        if (uc $rule->{action} eq q{SAVE_BY_QUEUEID}) {
+            my $queueid = get_queueid($line, $rule, \@matches);
+            my $connection = get_connection_by_queueid($line, $queueid);
+            save($connection, $line, $rule, \@matches);
+            return;
+        }
+
+        # We want to create db entries with the information we've saved.
+        if (uc $rule->{action} eq q{COMMIT}) {
+            my $queueid = get_queueid($line, $rule, \@matches);
+            my $connection = get_connection_by_queueid($line, $queueid);
+
+            $connection->{end} = $line->{timestamp};
+            fixup_connection($connection);
+            commit_connection($connection);
+            $connection->{committed} = 1;
+            maybe_delete_by_queueid($connection, $line, $rule);
+
+            return;
+        }
+
+        # We need to track a mail across queueids, typically when mail
+        # goes through amavisd-new.
+        if (uc $rule->{action} eq q{TRACK}) {
+            my $queueid = get_queueid($line, $rule, \@matches);
+            my $connection = get_connection_by_queueid($line, $queueid);
+            save($connection, $line, $rule, \@matches);
+            track($line, $rule, \@matches);
+            return;
+        }
+
+        # We match the start of every restriction line with the same regex,
+        # to make restriction rules easier to write.
+        # NOTE: we now try the remainder of the rules too, we don't move
+        # on to the next line.
+        if (uc $rule->{action} eq q{RESTRICTION_START}) {
+            $text =~ s/$rule->{regex}//;
+            my $connection = get_connection_by_pid($line);
+            save($connection, $line, $rule, \@matches);
+            next RULE;
+        }
+
+        if (uc $rule->{action} eq q{QMGR_CHOOSES_MAIL}) {
+            my $connection;
+            my $queueid = get_queueid($line, $rule, \@matches);
+            # XXX why do I make connections?  They should exist.
+            if (not exists $queueids{$queueid}) {
+                $connection = make_connection_by_queueid($line, $queueid);
+            } else {
+                $connection = get_connection_by_queueid($line, $queueid);
+            }
+            save($connection, $line, $rule, \@matches);
+            return;
+        }
+
+        if (uc $rule->{action} eq q{PICKUP}) {
+            my $queueid = get_queueid($line, $rule, \@matches);
+            my $connection = make_connection_by_queueid($line, $queueid);
+            save($connection, $line, $rule, \@matches);
+            delete $connection->{faked};
+            return;
+        }
+
+        # Create a deep copy of the connection and save it by queueid so that
+        # subsequent mails sent on this connection don't clobber each other.
+        if (uc $rule->{action} eq q{CLONE}) {
+            my $connection = get_connection_by_pid($line);
+            my $clone = dclone($connection);
+            save($clone, $line, $rule, \@matches);
+            return;
+        }
+
+        my_warn(qq{unknown action $rule->{action}\n}, dump_rule($rule));
+    }
+
+    # Last ditch: complain to the user
+    print qq{$line->{program}: $text\n};
 }
 
 # For the moment, this just deletes, but later it'll need to wait until every 
@@ -758,6 +765,20 @@ sub my_warn {
 
 sub my_die {
     die qq{$0: $current_logfile: $.: }, @_;
+}
+
+sub devel_profile_startup {
+    if (exists $ENV{PERL_PROFILE_SAVETIME}) {
+        DB::reset();
+        my $filename;
+        if (exists $ENV{PERL_PROFILE_FILENAME}) {
+            $filename = $ENV{PERL_PROFILE_FILENAME};
+        } else {
+            $filename = q{prof.out};
+        }
+        rename $filename, qq{$filename.startup}
+            or warn qq{$0: failed renaming $filename: $!\n};
+    }
 }
 
 __DATA__
