@@ -101,6 +101,7 @@ if (%queueids) {
 }
 #print dump_state();
 #print dump_totals();
+redirect_stdout();
 
 # Maybe use Text::Table?
 sub dump_totals {
@@ -793,6 +794,13 @@ sub devel_profile_startup {
         }
         rename $filename, qq{$filename.startup}
             or warn qq{$0: failed renaming $filename: $!\n};
+    }
+}
+
+sub redirect_stdout {
+    if (exists $ENV{REDIRECT_STDOUT}) {
+        close STDOUT;
+        open STDOUT, qq{> $ENV{REDIRECT_STDOUT}};
     }
 }
 
