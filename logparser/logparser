@@ -237,10 +237,16 @@ sub parse_line {
             my $queueid = get_queueid($line, $rule, \@matches);
             my $connection = get_connection_by_queueid($line, $queueid);
 
+            save($connection, $line, $rule, \@matches);
             $connection->{end} = $line->{timestamp};
+            if (exists $connection->{faked}) {
+                # I'm assuming that anything marked as faked is waiting to be
+                # track()ed, and will be dealt with by committing tracked
+                # connections later.
+                return;
+            }
             fixup_connection($connection);
             commit_connection($connection);
-            $connection->{committed} = 1;
             maybe_delete_by_queueid($connection, $line, $rule);
 
             return;
@@ -520,6 +526,8 @@ sub make_connection {
 sub disconnection {
     my ($line) = @_;
 
+    # NOTE: We deliberately don't use get_connection_by_pid() here because we
+    # don't want a new connection returned, we need more control.
     if (not exists $connections{$line->{pid}}) {
         my_warn(qq{disconnection: no connection for pid $line->{pid} - perhaps the connect line is in a previous log file?\n});
         return;
@@ -606,6 +614,9 @@ sub fixup_connection {
     # the latter part of a tracked connection which hasn't been tracked yet, so
     # it should be retried later with the faked flag cleared.
     if (exists $connection->{faked}) {
+        my_warn(qq{fixup_connection: faked connection: \n},
+            dump_connection($connection)
+        );
         return;
     }
 
@@ -662,12 +673,6 @@ sub fixup_connection {
     }
 }
 
-# XXX: THIS ISN'T ACCURATE ANY MORE.
-# My logic in relation to smtpd pids and queueids is:
-# There has to be a line from smtpd saying "queueid: accepted" or something 
-# similar, so we have to have gotten a queueid at some stage, or the mail
-# couldn't be in the system at all.  I know this doesn't handle submission by
-# sendmail or anything like that, I'll have to figure that bit out later.
 sub save {
     my ($connection, $line, $rule, $matches) = @_;
 
