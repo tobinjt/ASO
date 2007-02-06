@@ -724,7 +724,7 @@ DIFFERS
     # XXX WHERE SHOULD I DO THIS?  Should it be based on ACCEPT?
     if (exists $connection->{queueid}
             and exists $queueids{$connection->{queueid}}
-            and $connection->{queueid} ne $queueids{$connection->{queueid}}) {
+            and $connection ne $queueids{$connection->{queueid}}) {
         my_warn(qq{save: queueid clash:\n},
             qq{old:\n},
             dump_connection($queueids{$connection->{queueid}}),
