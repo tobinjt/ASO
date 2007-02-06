@@ -242,7 +242,9 @@ sub parse_line {
             if (exists $connection->{faked}) {
                 # I'm assuming that anything marked as faked is waiting to be
                 # track()ed, and will be dealt with by committing tracked
-                # connections later.
+                # connections later; mark it so we know it's reached commitment
+                # and can be tried again.
+                $connection->{commit_reached} = 1;
                 return;
             }
             fixup_connection($connection);
@@ -333,6 +335,12 @@ sub maybe_delete_by_queueid {
         );
         return;
     }
+
+    if (exists $connection->{new_queueids} and %{$connection->{new_queueids}}) {
+        # Don't delete it yet, there are tracked connections yet to be dealt
+        # with.
+        return;
+    }
     delete $queueids{$connection->{queueid}};
 }
 
@@ -362,12 +370,15 @@ sub get_queueid {
 }
 
 sub get_connection_by_queueid {
-    my ($line, $queueid, @extra_messages) = @_;
+    my ($line, $queueid, $dont_fake, @extra_messages) = @_;
     if (not exists $queueids{$queueid}) {
         my_warn(@extra_messages,
             qq{get_connection_by_queueid: no connection for: },
             dump_line($line)
         );
+        if ($dont_fake) {
+            return;
+        }
         return make_connection_by_queueid($line, $queueid);
     }
     return $queueids{$queueid};
@@ -753,6 +764,14 @@ sub track {
 
     my $results         = $connection->{results};
     my $new_queueid     = $results->[-1]->{new_queueid};
+    if (not exists $connection->{new_queueids}) {
+        $connection->{new_queueids} = {};
+    }
+    if (exists $connection->{new_queueids}->{$new_queueid}) {
+        my_warn(qq{track: tracking $new_queueid for a second time:\n});
+    }
+    $connection->{new_queueids}->{$new_queueid} = 1;
+
     my $new_connection;
     if (exists $queueids{$new_queueid}) {
         $new_connection = $queueids{$new_queueid};
@@ -792,6 +811,14 @@ sub commit_connection {
             dump_connection($connection)
         );
         return;
+    }
+    if (exists $connection->{new_queueids}) {
+        foreach my $new_queueid (keys %{$connection->{new_queueids}}) {
+            if (exists $queueids{$new_queueid}) {
+                my $new_connection = $queueids{$new_queueid};
+                # XXX DO STUFF HERE
+            }
+        }
     }
     $connection->{committed} = 1;
 }
