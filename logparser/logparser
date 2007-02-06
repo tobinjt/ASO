@@ -190,7 +190,7 @@ sub parse_line {
         }
         $rule->{count}++;
 
-        # XXX: is there a way I can do this without matching twice??
+        # TODO: is there a way I can do this without matching twice??
         my @matches = ($text =~ m/$rule->{regex}/);
         # regex matches start at one, but array indices start at 0.
         # shift the array forward so they're aligned
@@ -308,6 +308,12 @@ sub parse_line {
 sub maybe_delete_by_queueid {
     my ($connection, $line, $rule) = @_;
 
+    if (exists $connection->{faked}) {
+        my_warn(qq{maybe_delete_by_queueid: faked connection: \n},
+            dump_connection($connection)
+        );
+        return;
+    }
     delete $queueids{$connection->{queueid}};
 }
 
@@ -532,21 +538,30 @@ sub update_hash {
     my ($hash, $silent_overwrite, $updates, $rule, $line, $connection, $message) = @_;
     my $conflicts = 0;
 
-    while (my ($u_key, $u_value) = each %{$updates}) {
-        if (exists $hash->{$u_key}
-                and $hash->{$u_key} ne $u_value) {
-            my $orig_value = $hash->{$u_key};
-            if (not exists $silent_overwrite->{$u_key}
-                    or not exists $silent_overwrite->{$u_key}->{$orig_value}) {
+    while (my ($key, $value) = each %{$updates}) {
+        if (exists $hash->{$key} and $hash->{$key} ne $value) {
+            my $orig_value = $hash->{$key};
+            my $skip_warning = 0;
+            # If $key exists, and there are no restrictions on values which can
+            # be overwritten, then don't warn.
+            if (exists $silent_overwrite->{$key}
+                    and not defined $silent_overwrite->{$key}) {
+                $skip_warning++;
+            }
+            if (exists $silent_overwrite->{$key}
+                    and exists $silent_overwrite->{$key}->{$orig_value}) {
+                $skip_warning++;
+            }
+            if (not $skip_warning) {
                 my $warning = $message;
-                $warning =~ s/__KEY__/$u_key/;
+                $warning =~ s/__KEY__/$key/;
                 $warning =~ s/__ORIG_VALUE__/$orig_value/;
-                $warning =~ s/__NEW_VALUE__/$u_value/;
+                $warning =~ s/__NEW_VALUE__/$value/;
                 my_warn($warning);
                 $conflicts++;
             }
         }
-        $hash->{$u_key} = $u_value;
+        $hash->{$key} = $value;
     }
 
     if ($conflicts) {
@@ -671,13 +686,8 @@ DIFFERS
         client_hostname => {
             q{localhost}    => 1,
         },
-        server_ip       => {
-            q{127.0.0.1}    => 1,
-            q{::1}          => 1,
-        },
-        server_hostname => {
-            q{localhost}    => 1,
-        },
+        server_ip       => undef,
+        server_hostname => undef,
     );
 
     update_hash($connection, \%c_cols_silent_overwrite,
@@ -706,7 +716,8 @@ sub track {
     my $queueid         = get_queueid($line, $rule, $matches);
     my $connection      = get_connection_by_queueid($line, $queueid);
 
-    my $new_queueid     = $connection->{new_queueid};
+    my $results         = $connection->{results};
+    my $new_queueid     = $results->[-1]->{new_queueid};
     my $new_connection;
     if (exists $queueids{$new_queueid}) {
         $new_connection = $queueids{$new_queueid};
@@ -716,6 +727,10 @@ sub track {
     # Clear the faked flag; this is good when we haven't seen the connection
     # yet, but bad when the connection has been and gone.
     delete $new_connection->{faked};
+
+    # Mark both connections as tracked.
+    $connection->{tracked}      = 1;
+    $new_connection->{tracked}  = 1;
 
     if (exists $new_connection->{old_queueid}
         and $new_connection->{old_queueid} ne $queueid) {
