@@ -315,6 +315,18 @@ sub maybe_delete_by_queueid {
         );
         return;
     }
+    if (not exists $connection->{fixuped}) {
+        my_warn(qq{maybe_delete_by_queueid: non-fixuped connection: \n},
+            dump_connection($connection)
+        );
+        return;
+    }
+    if (not exists $connection->{committed}) {
+        my_warn(qq{maybe_delete_by_queueid: uncommitted connection: \n},
+            dump_connection($connection)
+        );
+        return;
+    }
     delete $queueids{$connection->{queueid}};
 }
 
@@ -590,6 +602,12 @@ sub fixup_connection {
     my %required_result_cols        = make_hash($fake_result->required_columns());
     my %nochange_result_cols        = make_hash($fake_result->nochange_columns());
 
+    # Don't even try if it's faked; faked more or less (I hope) means that it's
+    # the latter part of a tracked connection which hasn't been tracked yet, so
+    # it should be retried later with the faked flag cleared.
+    if (exists $connection->{faked}) {
+        return;
+    }
 
     my $failure = 0;
     my %data;
@@ -704,9 +722,20 @@ save: connection_cols: new value for __KEY__ (__NEW_VALUE__) differs from existi
 DIFFERS
 
     # XXX WHERE SHOULD I DO THIS?  Should it be based on ACCEPT?
+    if (exists $connection->{queueid}
+            and exists $queueids{$connection->{queueid}}
+            and $connection->{queueid} ne $queueids{$connection->{queueid}}) {
+        my_warn(qq{save: queueid clash:\n},
+            qq{old:\n},
+            dump_connection($queueids{$connection->{queueid}}),
+            qq{new:\n},
+            dump_connection($connection),
+        );
+    }
     # Ensure we save the connection by queueid; this allows us to tie the whole
     # lot together.
-    if ($connection->{queueid} and not exists $queueids{$connection->{queueid}}) {
+    if (exists $connection->{queueid}
+            and not exists $queueids{$connection->{queueid}}) {
         $queueids{$connection->{queueid}} = $connection;
     }
 }
