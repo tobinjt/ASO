@@ -1,3 +1,9 @@
+# $Id$
+
+# Use bash so we get a nice time, rather than GNU time, which has horrible
+# output.
+SHELL=bash
+
 all: test summary
 
 test: test.1
@@ -19,7 +25,7 @@ profile:
 	rm -rf "${PROFILE_TEMP}"
 	mkdir -p "${PROFILE_TEMP}"
 	tar cf - .. | tar xf - -C "${PROFILE_TEMP}"
-	make -C "${PROFILE_TEMP}" profile2
+	make -C "${PROFILE_TEMP}/logparser" profile2
 
 profile2:
 	echo "profiling started"; date
@@ -34,16 +40,30 @@ profile.Profile:
 	# Running time is about 400% of normal.
 	PERL5OPT=-d:Profile PERL_PROFILE_SAVETIME=15 make test
 
+# We need this for Windows
+DPROFPP=dprofpp.bat
+profile.DProf.stats:
+	# Process tmon.out in various ways
+	# This has a running time of roughly 500% of make test
+	time nice --adjustment=19 ${DPROFPP} -l > ${DPROF_OUT}.by-calls
+	# This has a running time of roughly 500% of make test
+	time nice --adjustment=19 ${DPROFPP}    > ${DPROF_OUT}.top-15
+	# This has a running time of roughly 900% of make test
+	time nice --adjustment=19 ${DPROFPP} -S > ${DPROF_OUT}.call-tree-merged
+	# This has a running time of roughly 500% of make test
+	time nice --adjustment=19 ${DPROFPP} -v > ${DPROF_OUT}.by-avg-time
+
 profile.DProf:
 	# Devel::DProf; use dprofpp to do something useful with tmon.out
-	# Running time is about 200% of normal.
-	# Can't figure out whether this works or not.
+	# Running time is about 300% of normal.
 	PERL5OPT=-d:DProf make test
+	DPROF_OUT=dprof make profile.DProf.stats
 
 profile.DProfLB:
 	# Devel::DProfLB; use dprofpp to do something useful with tmonlb.out
 	# Running time is about 600% of normal.
 	PERL_DPROF_OUT_FILE_NAME=tmonlb.out PERL5OPT=-d:DProfLB make test
+	DPROFPP_OPTS=tmonlb.out DPROF_OUT=dproflb make profile.DProf.stats
 
 profile.SmallProf:
 	# Devel::SmallProf; sort -k 2nr,2 smallprof.out | less
