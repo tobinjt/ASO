@@ -350,6 +350,7 @@ sub maybe_delete_by_queueid {
         # Don't delete it yet, there are tracked connections yet to be dealt
         # with.  When the last child is deleted the final call to
         # maybe_delete_parent() will delete this connection.
+        $connection->{waiting_for_children} = 1;
         return;
     }
 
@@ -363,13 +364,83 @@ sub maybe_delete_by_queueid {
 
 sub maybe_commit_children {
     my ($connection, $line, $rule) = @_;
-#    foreach my $child_queueid (keys %{$connection->{children}}) {
-#        my $child = get_connection_by_queueid($line, $child_queueid, 1,
-#            qq{maybe_delete_by_queueid: trying to find child $child_queueid}
+
+    # We check for this in maybe_delete_parent(), so that we don't trample over
+    # ourselves.
+    $connection->{committing_children} = 1;
+
+    CHILD:
+    foreach my $child (keys %{$connection->{children}}) {
+#my_warn(qq{maybe_commit_children: searching for $child\n});
+        my $child_con = get_connection_by_queueid($line, $child, 1,
+            qq{maybe_commit_children: parent $connection->{queueid} }
+            . qq{trying to find child $child});
+        if (not defined $child_con) {
+            my_warn(qq{maybe_commit_children: missing child $child\n});
+            next CHILD;
+        }
+
+        if (exists $child_con->{commit_reached}) {
+            # We deliberately don't check for success here; there's nothing we
+            # can do at this stage.  These are children which weren't being
+            # tracked when the yreached commit, so they were still faked - see
+            # the check in the COMMIT action in parse_line().
+            fixup_connection($child_con);
+            commit_connection($child_con);
+            maybe_delete_by_queueid($child_con, $line, $rule);
+            # This is safe: see perldoc -f each for the guarantee.
+            delete $connection->{children}->{$child};
+        }
+
+        # We don't do anything with other children, they'll reach committal by
+        # themselves later,
+    }
+
+    delete $connection->{committing_children};
 }
 
 sub maybe_delete_parent {
     my ($connection, $line, $rule) = @_;
+    # It's the child in the relationship, not the child of the connection.
+    my $child = $connection->{queueid};
+
+    if (not exists $connection->{parent}) {
+        my_warn(qq{maybe_delete_parent: missing parent:\n},
+            dump_connection($connection));
+        return;
+    }
+
+    my $parent_con = get_connection_by_queueid($line, $connection->{parent},
+        1, qq{maybe_delete_parent: trying to find parent\n});
+    if (not defined $parent_con) {
+        my_warn(qq{maybe_delete_parent: missing parent $connection->{parent}\n},
+            dump_connection($connection));
+        return;
+    }
+
+    # maybe_commit_children() -> maybe_delete_by_queueid() -> maybe_delete_parent()
+    # We don't want to trample over maybe_commit_children().
+    if (exists $parent_con->{committing_children}) {
+        return;
+    }
+
+    if (not exists $parent_con->{children}
+            or not exists $parent_con->{children}->{$child}) {
+        my_warn(qq{maybe_delete_parent: $child not found in \%children:\n},
+            qq{parent: },
+            dump_connection($parent_con),
+            qq{child: },
+            dump_connection($connection));
+        return;
+    }
+
+    delete $parent_con->{children}->{$child};
+
+    if (not %{$parent_con->{children}}
+            and exists $parent_con->{waiting_for_children}) {
+        # All the children are gone, and the parent has been committed.
+        maybe_delete_by_queueid($parent_con, $line, $rule);
+    }
 }
 
 sub get_queueid {
