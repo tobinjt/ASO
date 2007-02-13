@@ -730,6 +730,13 @@ sub fixup_connection {
         return;
     }
 
+    my $parent_con;
+    if (exists $connection->{parent}) {
+        $parent_con = get_connection_by_queueid(undef, $connection->{parent},
+            1, qq{fixup_connection: searching for $connection->{parent}, }
+                . qq{parent of $connection->{queueid}\n});
+    }
+
     my $failure = 0;
     my %data;
     # Populate %data.
@@ -747,7 +754,8 @@ sub fixup_connection {
         }
     }
 
-    # Check that we have everything we need
+    # Check that we have everything we need; we can't pull any of this from the
+    # parent, I think.  Maybe I can?  I don't need to, at least at this stage.
     RESULT:
     foreach my $result (@{$results}) {
         if (uc $result->{result} eq q{INFO}) {
@@ -768,6 +776,14 @@ sub fixup_connection {
     }
 
     foreach my $ccol (keys %required_connection_cols) {
+        # NOTE: I'm assuming that anything we're going to require from the
+        # parent connection has already been saved there; if not I'll need to
+        # revisit this and complicate it much further.
+        if (not exists $connection->{$ccol}
+                and defined $parent_con
+                and exists $parent_con->{$ccol}) {
+            $connection->{$ccol} = $parent_con->{$ccol};
+        }
         if (not exists $connection->{$ccol}) {
             my_warn(qq{fixup_connection: missing connection col: $ccol\n},
                 dump_connection($connection),
