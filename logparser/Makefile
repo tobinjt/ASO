@@ -12,7 +12,7 @@ test-all:
 	(date; time nice --adjustment=19 perl logparser $$( < log-list )  > rejects.all 2> warnings.all; wc rejects.all warnings.all; date ) >> results 2>&1; tail -n 9 results	
 
 test.%: ../../../../logs/mail.log.%
-	(date; time nice --adjustment=19 perl logparser "$<" > rejects 2> warnings; wc rejects warnings; date ) >> results 2>&1; tail -n 9 results
+	((date; time nice --adjustment=19 perl logparser "$<" > rejects 2> warnings; wc rejects warnings; date ) 2>&1 ) | tee -a results
 
 db:
 	( cd ../sql/; perl setup-database create-tables-sqlite3.sql populate-rules.sql )
