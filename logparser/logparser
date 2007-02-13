@@ -666,10 +666,20 @@ sub make_hash {
 # Update the values in a hash, complaining if we change existing values, unless
 # the existing (key, value) is found in silent_overwrite.
 sub update_hash {
-    my ($hash, $silent_overwrite, $updates, $rule, $line, $connection, $message) = @_;
+    my ($hash, $silent_overwrite, $updates, $silent_discard, $rule, $line,
+        $connection, $message) = @_;
     my $conflicts = 0;
 
+    UPDATE:
     while (my ($key, $value) = each %{$updates}) {
+        if (exists $hash->{$key} 
+            and exists $silent_discard->{$key}
+            and exists $silent_discard->{$key}->{$value}) {
+            # The update is a default value, and shouldn't clobber the existing
+            # value: skip it.
+            next UPDATE;
+        }
+
         if (exists $hash->{$key} and $hash->{$key} ne $value) {
             my $orig_value = $hash->{$key};
             my $skip_warning = 0;
@@ -679,6 +689,8 @@ sub update_hash {
                     and not defined $silent_overwrite->{$key}) {
                 $skip_warning++;
             }
+            # If the existing value can be silently overwritten (i.e. is a
+            # default value) then silently overwrite it.
             if (exists $silent_overwrite->{$key}
                     and exists $silent_overwrite->{$key}->{$orig_value}) {
                 $skip_warning++;
@@ -692,6 +704,7 @@ sub update_hash {
                 $conflicts++;
             }
         }
+
         $hash->{$key} = $value;
     }
 
@@ -815,14 +828,14 @@ sub save {
     push @{$connection->{results}}, \%result;
 
     # Populate %result
-    update_hash(\%result, {}, $rule->{result_data}, $rule, $line, $connection,
-        <<"DIFFERS");
+    update_hash(\%result, {}, $rule->{result_data}, {}, $rule, $line,
+        $connection, <<"DIFFERS");
 save: result_data: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
 DIFFERS
 
     my %r_cols_updates = map { $_ => $matches->[$rule->{result_cols}->{$_}] }
         keys %{$rule->{result_cols}};
-    update_hash(\%result, {}, \%r_cols_updates, $rule, $line, $connection,
+    update_hash(\%result, {}, \%r_cols_updates, {}, $rule, $line, $connection,
         <<"DIFFERS");
 save: result_cols: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
 DIFFERS
@@ -841,14 +854,15 @@ DIFFERS
     );
 
     update_hash($connection, \%c_cols_silent_overwrite,
-        $rule->{connection_data}, $rule, $line, $connection, <<"DIFFERS");
+        $rule->{connection_data}, \%c_cols_silent_overwrite,
+        $rule, $line, $connection, <<"DIFFERS");
 save: connection_data: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
 DIFFERS
 
     my %c_cols_updates = map { $_ => $matches->[$rule->{connection_cols}->{$_}] }
         keys %{$rule->{connection_cols}};
-    update_hash($connection, \%c_cols_silent_overwrite, \%c_cols_updates, $rule,
-        $line, $connection, <<"DIFFERS");
+    update_hash($connection, \%c_cols_silent_overwrite, \%c_cols_updates, {},
+        $rule, $line, $connection, <<"DIFFERS");
 save: connection_cols: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
 DIFFERS
 
