@@ -86,3 +86,4 @@ profile.GraphVizProf:
 
 summary:
 	grep ^logparser warnings | cut -d ' ' -f 4-9 | sort | uniq -c | sort -n
+	echo -n "rejects: "; grep -c queueid: rejects
