@@ -667,8 +667,11 @@ sub make_hash {
 # the existing (key, value) is found in silent_overwrite.
 sub update_hash {
     my ($hash, $silent_overwrite, $updates, $silent_discard, $rule, $line,
-        $connection, $message) = @_;
+        $connection, $name) = @_;
     my $conflicts = 0;
+    my $template = <<'TEMPLATE';
+__NAME__: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
+TEMPLATE
 
     UPDATE:
     while (my ($key, $value) = each %{$updates}) {
@@ -696,7 +699,8 @@ sub update_hash {
                 $skip_warning++;
             }
             if (not $skip_warning) {
-                my $warning = $message;
+                my $warning = $template;
+                $warning =~ s/__NAME__/$name/;
                 $warning =~ s/__KEY__/$key/;
                 $warning =~ s/__ORIG_VALUE__/$orig_value/;
                 $warning =~ s/__NEW_VALUE__/$value/;
@@ -815,32 +819,33 @@ sub fixup_connection {
 sub save {
     my ($connection, $line, $rule, $matches) = @_;
 
-    # Save the new result.
+    # Save the new result in $connection.
+    # RESULT_DATA
     my %result = (
-        #rule    => $rule,
         rule_id => $rule->{id},
         result  => $rule->{result},
         line    => $line,
+        # Sneakily inline result_data here
+        %{$rule->{result_data}},
     );
     if (not exists $connection->{results}) {
         $connection->{results} = [];
     }
     push @{$connection->{results}}, \%result;
 
-    # Populate %result
-    update_hash(\%result, {}, $rule->{result_data}, {}, $rule, $line,
-        $connection, <<"DIFFERS");
-save: result_data: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
-DIFFERS
-
-    my %r_cols_updates = map { $_ => $matches->[$rule->{result_cols}->{$_}] }
-        keys %{$rule->{result_cols}};
+    # We do use update_hash() for result_cols, just in case a rule has internal
+    # conflicts between result_cols and result_data.
+    # RESULT_COLS
+    my %r_cols_updates;
+    foreach my $r_col (keys %{$rule->{result_cols}}) {
+        $r_cols_updates{$r_col} = $matches->[$rule->{result_cols}->{$r_col}];
+    }
     update_hash(\%result, {}, \%r_cols_updates, {}, $rule, $line, $connection,
-        <<"DIFFERS");
-save: result_cols: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
-DIFFERS
+        q{save: result_cols});
+
 
     # Populate connection.
+    # CONNECTION_DATA
     my %c_cols_silent_overwrite = (
         client_ip       => {
             q{127.0.0.1}    => 1,
@@ -855,18 +860,20 @@ DIFFERS
 
     update_hash($connection, \%c_cols_silent_overwrite,
         $rule->{connection_data}, \%c_cols_silent_overwrite,
-        $rule, $line, $connection, <<"DIFFERS");
-save: connection_data: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
-DIFFERS
+        $rule, $line, $connection, q{save: connection_data});
 
-    my %c_cols_updates = map { $_ => $matches->[$rule->{connection_cols}->{$_}] }
-        keys %{$rule->{connection_cols}};
+
+    # CONNECTION_COLS
+    my %c_cols_updates;
+    foreach my $c_col (keys %{$rule->{connection_cols}}) {
+        $c_cols_updates{$c_col}
+            = $matches->[$rule->{connection_cols}->{$c_col}];
+    }
     update_hash($connection, \%c_cols_silent_overwrite, \%c_cols_updates, {},
-        $rule, $line, $connection, <<"DIFFERS");
-save: connection_cols: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
-DIFFERS
+        $rule, $line, $connection, q{save: connection_cols});
 
-    # XXX WHERE SHOULD I DO THIS?  Should it be based on ACCEPT?
+
+    # Check for a queueid change.
     if (exists $connection->{queueid}
             and exists $queueids{$connection->{queueid}}
             and $connection ne $queueids{$connection->{queueid}}) {
