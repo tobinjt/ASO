@@ -336,12 +336,40 @@ sub maybe_delete_by_queueid {
         return;
     }
 
+    # Let the parent know we're being deleted
+    if (exists $connection->{parent}) {
+        maybe_delete_parent($connection, $line, $rule);
+    }
+
+    # Try to commit any children we can.
+    if (exists $connection->{children} and %{$connection->{children}}) {
+        maybe_commit_children($connection, $line, $rule);
+    }
+
     if (exists $connection->{children} and %{$connection->{children}}) {
         # Don't delete it yet, there are tracked connections yet to be dealt
-        # with.
+        # with.  When the last child is deleted the final call to
+        # maybe_delete_parent() will delete this connection.
         return;
     }
+
+    # This seems pointless, but it may help identify deleted connections which
+    # live on because there's a reference to them elsewhere.  I'd need something
+    # which walks all the variables remaining at the end of execution to find
+    # them though,
+    $connection->{deleted} = 1;
     delete $queueids{$connection->{queueid}};
+}
+
+sub maybe_commit_children {
+    my ($connection, $line, $rule) = @_;
+#    foreach my $child_queueid (keys %{$connection->{children}}) {
+#        my $child = get_connection_by_queueid($line, $child_queueid, 1,
+#            qq{maybe_delete_by_queueid: trying to find child $child_queueid}
+}
+
+sub maybe_delete_parent {
+    my ($connection, $line, $rule) = @_;
 }
 
 sub get_queueid {
@@ -800,22 +828,22 @@ sub track {
 }
 
 # TODO: WRITE
+# We commit unfaked, fixuped connections, regardless of parent/children -
+# commit_connection() has nothing to do with that stuff.
 sub commit_connection {
     my ($connection) = @_;
 
-    if ($connection->{faked}) {
+    if (exists $connection->{faked}) {
         my_warn(qq{commit_connection: faked connection: \n},
             dump_connection($connection)
         );
         return;
     }
-    if (exists $connection->{children}) {
-        foreach my $child (keys %{$connection->{children}}) {
-            if (exists $queueids{$child}) {
-                my $new_connection = $queueids{$child};
-                # XXX DO STUFF HERE
-            }
-        }
+    if (not exists $connection->{fixuped}) {
+        my_warn(qq{commit_connection: un-fixuped connection: \n},
+            dump_connection($connection)
+        );
+        return;
     }
     $connection->{committed} = 1;
 }
