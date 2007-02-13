@@ -336,7 +336,7 @@ sub maybe_delete_by_queueid {
         return;
     }
 
-    if (exists $connection->{new_queueids} and %{$connection->{new_queueids}}) {
+    if (exists $connection->{children} and %{$connection->{children}}) {
         # Don't delete it yet, there are tracked connections yet to be dealt
         # with.
         return;
@@ -763,43 +763,40 @@ sub track {
     my $connection      = get_connection_by_queueid($line, $queueid);
 
     my $results         = $connection->{results};
-    my $new_queueid     = $results->[-1]->{new_queueid};
-    if (not exists $connection->{new_queueids}) {
-        $connection->{new_queueids} = {};
+    my $child           = $results->[-1]->{child};
+    if (not exists $connection->{children}) {
+        $connection->{children} = {};
     }
-    if (exists $connection->{new_queueids}->{$new_queueid}) {
-        my_warn(qq{track: tracking $new_queueid for a second time:\n});
+    if (exists $connection->{children}->{$child}) {
+        my_warn(qq{track: tracking $child for a second time:\n});
     }
-    $connection->{new_queueids}->{$new_queueid} = 1;
+    $connection->{children}->{$child} = 1;
 
     my $new_connection;
-    if (exists $queueids{$new_queueid}) {
-        $new_connection = $queueids{$new_queueid};
+    if (exists $queueids{$child}) {
+        $new_connection = $queueids{$child};
     } else {
-        $new_connection = make_connection_by_queueid($line, $new_queueid);
+        $new_connection = make_connection_by_queueid($line, $child);
     }
-    # Clear the faked flag; this is good when we haven't seen the connection
-    # yet, but bad when the connection has been and gone.
+    # Clear the faked flag; we should never have committed a connection before
+    # tracking now.
     delete $new_connection->{faked};
 
     # Mark both connections as tracked.
     $connection->{tracked}      = 1;
     $new_connection->{tracked}  = 1;
 
-    if (exists $new_connection->{old_queueid}
-        and $new_connection->{old_queueid} ne $queueid) {
-        my_warn(qq{Trying to track for a second time! (old_queueid differs)\n},
-            qq{\tqueueid (new_queueid->old_queueid) => $queueid\n},
-            qq{\tnew_queueid                        => $new_queueid\n},
-            qq{\told_queueid                        => $new_connection->{old_queueid}\n},
+    if (exists $new_connection->{parent}
+        and $new_connection->{parent} ne $queueid) {
+        my_warn(qq{Trying to track for a second time! (parent differs)\n},
+            qq{\tnew parent     => $queueid\n},
+            qq{\tchild          => $child\n},
+            qq{\told parent     => $new_connection->{parent}\n},
             qq{\t$line->{program}: $line->{text}\n},
         );
     }
-    # We can't detect tracking for a second time by checking new_queueid,
-    # because that's been unconditionally overwritten by save().
 
-    $new_connection->{old_queueid} = $queueid;
-    $connection->{new_queueid} = $new_queueid;
+    $new_connection->{parent} = $queueid;
 }
 
 # TODO: WRITE
@@ -812,10 +809,10 @@ sub commit_connection {
         );
         return;
     }
-    if (exists $connection->{new_queueids}) {
-        foreach my $new_queueid (keys %{$connection->{new_queueids}}) {
-            if (exists $queueids{$new_queueid}) {
-                my $new_connection = $queueids{$new_queueid};
+    if (exists $connection->{children}) {
+        foreach my $child (keys %{$connection->{children}}) {
+            if (exists $queueids{$child}) {
+                my $new_connection = $queueids{$child};
                 # XXX DO STUFF HERE
             }
         }

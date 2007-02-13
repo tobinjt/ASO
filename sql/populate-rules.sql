@@ -1220,7 +1220,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('Mail reinjected for forwarding', 'The mail was sent to a local address, but is aliased to an external address',
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=sent \(forwarded as (__QUEUEID__)\)$',
-        'recipient = 2, new_queueid = 3',
+        'recipient = 2, child = 3',
         'queueid = 1',
         'TRACK',
         1,
