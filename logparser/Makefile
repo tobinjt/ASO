@@ -30,8 +30,10 @@ profile:
 profile2:
 	echo "profiling started"; date
 	echo "This will take over an hour - 70 minutes or so last time."
-	for profile in Profile DProf DProfLB SmallProf GraphVizProf; do \
+	for profile in Profile DProf SmallProf ; do \
 		make "profile.$$profile"; \
+		mv "warnings" "warnings.$$profile"
+		mv "rejects" "rejects.$$profile"
 	done
 	echo "profiling ended"; date
 
@@ -62,6 +64,7 @@ profile.DProf:
 profile.DProfLB:
 	# Devel::DProfLB; use dprofpp to do something useful with tmonlb.out
 	# Running time is about 600% of normal.
+	# dprofpp doesn't do anything useful with tmonlb.out, dunno why,
 	PERL_DPROF_OUT_FILE_NAME=tmonlb.out PERL5OPT=-d:DProfLB make test
 	DPROFPP_OPTS=tmonlb.out DPROF_OUT=dproflb make profile.DProf.stats
 
@@ -85,5 +88,5 @@ profile.GraphVizProf:
 	dot -Tpng -o profile.png profile.dot
 
 summary:
-	grep ^logparser warnings | cut -d ' ' -f 4-9 | sort | uniq -c | sort -n
-	echo -n "rejects: "; grep -c queueid: rejects
+	grep ^logparser warnings | cut -d ' ' -f 4-9 | sort | uniq -c | sort -n | tee -a results
+	( echo -n "rejects: "; grep -c queueid: rejects ) | tee -a results
