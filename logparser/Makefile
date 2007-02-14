@@ -31,33 +31,33 @@ profile2:
 	echo "profiling started"; date
 	echo "This will take over an hour - 70 minutes or so last time."
 	for profile in Profile DProf SmallProf ; do \
-		make "profile.$$profile"; \
-		mv "warnings" "warnings.$$profile"
-		mv "rejects" "rejects.$$profile"
+		make "profile.$$profile"; 				\
+		mv "warnings" "warnings.$$profile";		\
+		mv "rejects" "rejects.$$profile";		\
 	done
 	echo "profiling ended"; date
 
 profile.Profile:
 	# Devel::Profile; see prof.out and prof.out.startup
-	# Running time is about 400% of normal.
+	# Running time is about 300% of normal.
 	PERL5OPT=-d:Profile PERL_PROFILE_SAVETIME=15 make test
 
 # We need this for Windows
 DPROFPP=dprofpp.bat
 profile.DProf.stats:
 	# Process tmon.out in various ways
-	# This has a running time of roughly 500% of make test
+	# This has a running time of roughly 400% of make test
 	time nice --adjustment=19 ${DPROFPP} -l > ${DPROF_OUT}.by-calls
-	# This has a running time of roughly 500% of make test
+	# This has a running time of roughly 200% of make test
 	time nice --adjustment=19 ${DPROFPP}    > ${DPROF_OUT}.top-15
-	# This has a running time of roughly 900% of make test
+	# This has a running time of roughly 400% of make test
 	time nice --adjustment=19 ${DPROFPP} -S > ${DPROF_OUT}.call-tree-merged
-	# This has a running time of roughly 500% of make test
+	# This has a running time of roughly 200% of make test
 	time nice --adjustment=19 ${DPROFPP} -v > ${DPROF_OUT}.by-avg-time
 
 profile.DProf:
 	# Devel::DProf; use dprofpp to do something useful with tmon.out
-	# Running time is about 300% of normal.
+	# Running time is about 150% of normal.
 	PERL5OPT=-d:DProf make test
 	DPROF_OUT=dprof make profile.DProf.stats
 
@@ -70,7 +70,7 @@ profile.DProfLB:
 
 profile.SmallProf:
 	# Devel::SmallProf; sort -k 2nr,2 smallprof.out | less
-	# Running time is about 2200% of normal.
+	# Running time is about 2000% of normal.
 	PERL5OPT=-d:SmallProf make test
 
 profile.CallStack:
@@ -81,12 +81,12 @@ profile.CallStack:
 
 profile.GraphVizProf:
 	# Devel::GraphVizProf; make a graphviz call graph.
-	# Running time is about 2200% of normal.
+	# Running time is about 2000% of normal.
 	PERL5OPT=-d:GraphVizProf REDIRECT_STDOUT=profile.dot make test
 	# See profile.png for the call graph.
 	# This failed last time.
 	dot -Tpng -o profile.png profile.dot
 
 summary:
-	grep ^logparser warnings | cut -d ' ' -f 4-9 | sort | uniq -c | sort -n | tee -a results
+	(echo "warning summary: "; grep ^logparser warnings | cut -d ' ' -f 4-9 | sort | uniq -c | sort -n ) | tee -a results
 	( echo -n "rejects: "; grep -c queueid: rejects ) | tee -a results
