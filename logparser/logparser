@@ -725,17 +725,21 @@ TEMPLATE
     return $conflicts;
 }
 
+my (%required_connection_cols, %required_result_cols, %nochange_result_cols);
+
 # TODO: If necessary (and available) pull data from tracked
 # connections to suplement the data we have - we don't usually have the sender
 # for tracked connections.  Mark the connection as fixuped.
 sub fixup_connection {
     my ($connection)                = @_;
     my $results                     = $connection->{results};
-    my $fake_result                 = get_mock_object(q{Result});
-    my $fake_connection             = get_mock_object(q{Connection});
-    my %required_connection_cols    = make_hash($fake_connection->required_columns());
-    my %required_result_cols        = make_hash($fake_result->required_columns());
-    my %nochange_result_cols        = make_hash($fake_result->nochange_columns());
+    if (not %required_result_cols) {
+        my $fake_result             = get_mock_object(q{Result});
+        my $fake_connection         = get_mock_object(q{Connection});
+        %required_connection_cols   = make_hash($fake_connection->required_columns());
+        %required_result_cols       = make_hash($fake_result->required_columns());
+        %nochange_result_cols       = make_hash($fake_result->nochange_columns());
+    }
 
     # Don't even try if it's faked; faked more or less (I hope) means that it's
     # the latter part of a tracked connection which hasn't been tracked yet, so
