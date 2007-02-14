@@ -278,7 +278,9 @@ sub parse_line {
         if (uc $rule->{action} eq q{QMGR_CHOOSES_MAIL}) {
             my $connection;
             my $queueid = get_queueid($line, $rule, \@matches);
-            # XXX why do I make connections?  They should exist.
+            # Sometimes I need to create connections here because there are
+            # tracked connections where the child shows up before the parent
+            # logs the tracking line; there's a similar requirement in track().
             if (not exists $queueids{$queueid}) {
                 $connection = make_connection_by_queueid($line, $queueid);
             } else {
@@ -850,6 +852,7 @@ sub save {
 
     # Populate connection.
     # CONNECTION_DATA
+
     my %c_cols_silent_overwrite = (
         client_ip       => {
             q{127.0.0.1}    => 1,
