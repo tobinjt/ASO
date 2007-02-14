@@ -697,6 +697,7 @@ TEMPLATE
             # If the existing value can be silently overwritten (i.e. is a
             # default value) then silently overwrite it.
             if (exists $silent_overwrite->{$key}
+                    and defined $silent_overwrite->{$key}
                     and exists $silent_overwrite->{$key}->{$orig_value}) {
                 $skip_warning++;
             }
@@ -822,6 +823,7 @@ sub fixup_connection {
     }
 }
 
+my %c_cols_silent_overwrite;
 sub save {
     my ($connection, $line, $rule, $matches) = @_;
 
@@ -852,18 +854,19 @@ sub save {
 
     # Populate connection.
     # CONNECTION_DATA
-
-    my %c_cols_silent_overwrite = (
-        client_ip       => {
-            q{127.0.0.1}    => 1,
-            q{::1}          => 1,
-        },
-        client_hostname => {
-            q{localhost}    => 1,
-        },
-        server_ip       => undef,
-        server_hostname => undef,
-    );
+    if (not %c_cols_silent_overwrite) {
+        %c_cols_silent_overwrite = (
+            client_ip       => {
+                q{127.0.0.1}    => 1,
+                q{::1}          => 1,
+            },
+            client_hostname => {
+                q{localhost}    => 1,
+            },
+            server_ip       => undef,
+            server_hostname => undef,
+        );
+    }
 
     update_hash($connection, \%c_cols_silent_overwrite,
         $rule->{connection_data}, \%c_cols_silent_overwrite,
