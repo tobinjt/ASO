@@ -963,6 +963,12 @@ sub commit_connection {
         );
         return;
     }
+    if (exists $connection->{committed}) {
+        my_warn(qq{commit_connection: previously committed connection: \n},
+            dump_connection($connection)
+        );
+        return;
+    }
     $connection->{committed} = 1;
 }
 

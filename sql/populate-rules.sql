@@ -601,12 +601,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- }}}
 
 -- SMTPD ACCEPT RULES {{{1
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, result)
     VALUES('Mail accepted', 'Postfix accepted the mail; it is hardly obvious from the log message though',
         'postfix/smtpd',
         '^(__QUEUEID__): client=(__HOSTNAME__)\[(__IP__)\]$',
         '',
         'queueid = 1, client_hostname = 2, client_ip = 3',
+        'smtp_code = 250',
         'CLONE',
         1,
         'ACCEPTED'
@@ -1216,12 +1217,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 
 -- 3FF7C4317: to=<mcadoor@cs.tcd.ie>, relay=local, delay=0, status=sent (forwarded as 56F5B43FD)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, result)
     VALUES('Mail reinjected for forwarding', 'The mail was sent to a local address, but is aliased to an external address',
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=sent \(forwarded as (__QUEUEID__)\)$',
         'recipient = 2, child = 3',
         'queueid = 1',
+        'smtp_code = 250',
         'TRACK',
         1,
         'SENT'
@@ -1230,12 +1232,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- This will be followed by a 'postfix/qmgr: 8025E43F0: removed' line, so don't commit yet.
 -- 7FD1443FD: to=<tobinjt@cs.tcd.ie>, orig_to=<root>, relay=local, delay=0, status=sent (delivered to command: /mail/procmail/bin/procmail -p -t /mail/procmail/etc/procmailrc)
 -- 8025E43F0: to=<tobinjt@cs.tcd.ie>, relay=local, delay=0, status=sent (delivered to command: /mail/procmail/bin/procmail -p -t /mail/procmail/etc/procmailrc)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, result)
     VALUES('Mail has been delivered locally', 'Mail has been delivered to the LDA (typically procmail)',
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=sent \((delivered to command: .*)\)$',
         'recipient = 2, data = 3',
         'queueid = 1',
+        'smtp_code = 250',
         'SAVE_BY_QUEUEID',
         1,
         'SENT'
@@ -1303,12 +1306,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- 165173E19: to=<pbyrne6@cs.tcd.ie>, relay=local, delay=0, status=sent (delivered to file: /dev/null)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, result)
     VALUES('Local delivery to a file was successful', 'Local delivery of an email succeeded; the final destination was a file',
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=sent \(delivered to file: (.*)\)$',
         'recipient = 2, data = 3',
         'queueid = 1',
+        'smtp_code = 250',
         'SAVE_BY_QUEUEID',
         1,
         'SENT'
@@ -1316,12 +1320,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- 8344043FD: to=<MAILER-DAEMON@cs.tcd.ie>, relay=local, delay=0, status=sent (discarded)
 -- 1522F4317: to=<MAILER-DAEMON@cs.tcd.ie>, orig_to=<MAILER-DAEMON>, relay=local, delay=0, status=sent (discarded)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, result)
     VALUES('local delivery - discarded??', 'Why was a locally delivered mail discarded??  Should be investigated I think',
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=sent \(discarded\)$',
         'recipient = 2',
         'queueid = 1',
+        'smtp_code = 250',
         'SAVE_BY_QUEUEID',
         1,
         'SENT'

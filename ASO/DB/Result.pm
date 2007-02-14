@@ -21,6 +21,7 @@ my %cols = (
     warning         => {
     },
     smtp_code       => {
+        required        => 1,
     },
     # sender changes if the connection is reused.
     sender          => {
