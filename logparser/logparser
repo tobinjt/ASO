@@ -969,7 +969,51 @@ sub commit_connection {
         );
         return;
     }
+
+    if ($num_connections_uncommitted == 0) {
+        $dbix->txn_begin();
+    }
+
+    my $connection_in_db = $dbix->resultset(q{Connection})->new_result({
+            server_ip       => $connection->{server_ip},
+            server_hostname => $connection->{server_hostname},
+            client_ip       => $connection->{client_ip},
+            client_hostname => $connection->{client_hostname},
+            helo            => $connection->{helo},
+            start           => $connection->{start},
+            end             => $connection->{end},
+        });
+    if (exists $connection->{queueid}) {
+        $connection_in_db->queueid($connection->{queueid});
+    }
+    $connection_in_db->insert();
+    $num_connections_uncommitted++;
     $connection->{committed} = 1;
+
+    my $connection_id = $connection_in_db->id();
+    RESULT:
+    foreach my $result (@{$connection->{results}}) {
+        if (uc $result->{result} eq q{INFO}) {
+            next RESULT;
+        }
+
+        my $result_in_db = $dbix->resultset(q{Result})->new_result({
+                connection_id   => $connection_id,
+                rule_id         => $result->{rule_id},
+                result          => $result->{result},
+                #warning         => $result->{warning},
+                smtp_code       => $result->{smtp_code},
+                sender          => $result->{sender},
+                recipient       => $result->{recipient},
+                data            => $result->{data},
+            });
+        $result_in_db->insert();
+    }
+
+    if ($num_connections_uncommitted > 1000) {
+        $dbix->txn_commit();
+        $num_connections_uncommitted = 0;
+    }
 }
 
 sub my_warn {

@@ -40,7 +40,7 @@ sub get_cols {
 }
 
 __PACKAGE__->load_components(qw(PK::Auto Core));
-__PACKAGE__->table(q{check_results});
+__PACKAGE__->table(q{results});
 __PACKAGE__->add_columns(
     keys %cols
 );

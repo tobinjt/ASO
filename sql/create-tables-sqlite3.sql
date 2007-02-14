@@ -59,7 +59,8 @@ CREATE TABLE connections (
     server_hostname         text,
     -- The name used in the HELO command
     -- TODO: how do I deal with clients who RSET and HELO again?
-    helo                    text    NOT NULL,
+    -- TODO: I can't get the HELO for successful mails.
+    helo                    text, --    NOT NULL,
     -- The queueid of the mail
     queueid                 text    NOT NULL DEFAULT 'NOQUEUE',
     -- Unix timestamp giving the start and end of the connection
