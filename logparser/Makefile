@@ -17,6 +17,9 @@ test.%: ../../../../logs/mail.log.%
 db:
 	( cd ../sql/; perl setup-database create-tables-sqlite3.sql populate-rules.sql )
 
+db-clean:
+	( cd ../sql/; perl setup-database cleanup.sql )
+
 # A full profile run on one logfile takes upwards of an hour, blocking any
 # development during that time.  Create a copy of the directories required and
 # do the profiling there to allow work to continue.
@@ -88,5 +91,9 @@ profile.GraphVizProf:
 	dot -Tpng -o profile.png profile.dot
 
 summary:
-	(echo "warning summary: "; grep ^logparser warnings | cut -d ' ' -f 4-9 | sort | uniq -c | sort -n ) | tee -a results
+	( echo "warning summary: "; grep ^logparser warnings | cut -d ' ' -f 4-9 | sort | uniq -c | sort -n ) | tee -a results
 	( echo -n "rejects: "; grep -c queueid: rejects ) | tee -a results
+
+summary-all:
+	( echo "warning.all summary: "; grep ^logparser warnings.all | cut -d ' ' -f 4-9 | sort | uniq -c | sort -n ) | tee -a results
+	( echo -n "rejects.all: "; grep -c queueid: rejects.all ) | tee -a results
