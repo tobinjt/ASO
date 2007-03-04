@@ -945,7 +945,10 @@ sub track {
     $new_connection->{parent} = $queueid;
 }
 
-# TODO: WRITE
+my $skip_commits;
+BEGIN {
+    $skip_commits = 1;
+}
 # We commit unfaked, fixuped connections, regardless of parent/children -
 # commit_connection() has nothing to do with that stuff.
 sub commit_connection {
@@ -967,6 +970,13 @@ sub commit_connection {
         my_warn(qq{commit_connection: previously committed connection: \n},
             dump_connection($connection)
         );
+        return;
+    }
+
+    # Occasionally we want to test without committing to the database, because 
+    # committing roughly quadrouples the run time.
+    if ($skip_commits) {
+        $connection->{committed} = 1;
         return;
     }
 
