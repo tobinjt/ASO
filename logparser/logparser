@@ -679,7 +679,12 @@ TEMPLATE
     while (my ($key, $value) = each %{$updates}) {
         if (exists $hash->{$key} 
             and exists $silent_discard->{$key}
-            and exists $silent_discard->{$key}->{$value}) {
+            and (not defined $silent_discard->{$key}
+                 or (defined $silent_discard->{$key}
+                        and exists $silent_discard->{$key}->{$value}
+                    )
+                )
+            ) {
             # The update is a default value, and shouldn't clobber the existing
             # value: skip it.
             next UPDATE;
