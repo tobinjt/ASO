@@ -1,0 +1,175 @@
+/* $Id$ */
+
+digraph logparser {
+    graph [
+        size = "7.3, 10.7"
+        margin = "0"
+        center = true
+    ]
+    node [
+        shape = box
+    ]
+    edge [
+        color = blue
+        fontcolor = red
+        minlen = 2
+    ]
+
+    /* EDGES */
+    /* Connect from client */
+    connect                         -> { save_by_pid }
+    save_by_pid                     -> { save_by_pid } [dir = back, headport = s, tailport = nw]
+    save_by_pid                     -> { disconnect }
+    clone                           -> { save_by_pid }
+    save_by_pid                     -> { clone }
+
+    /* Disconnect without queueid */
+    disconnect                      -> { if_no_queueid }
+    if_no_queueid                   -> { fixup_disconnect }
+    fixup_disconnect                -> { enter_in_db_disconnect }
+    enter_in_db_disconnect          -> { delete_by_pid_disconnect }
+
+    /* Disconnect with queueid */
+    if_no_queueid                   -> { save_by_queueid } [weight = 5]
+
+    /* Misc entry */
+    pickup                          -> { save_by_queueid } [headport = n]
+    qmgr_chooses_mail               -> { save_by_queueid } [headport = ne]
+
+    /* Save results by queueid */
+    save_by_queueid                 -> { track } [minlen = 5]
+    track                           -> { save_by_queueid }
+    save_by_queueid                 -> { save_by_queueid } [dir = back, headport = s, tailport = nw]
+    save_by_queueid                 -> { commit }
+
+    /* Commit is complicated */
+    /* Neither parent nor child. */
+    commit                          -> { if_neither_parent_nor_child }
+    if_neither_parent_nor_child     -> { fixup_npc }
+    fixup_npc                       -> { enter_in_db_npc }
+    enter_in_db_npc                 -> { delete_npc }
+    /* Untracked child */
+    if_neither_parent_nor_child     -> { if_untracked_child }
+    if_untracked_child              -> { mark_for_commit }
+    mark_for_commit                 -> { wait_for_parent_to_commit_me }
+    if_untracked_child              -> { if_tracked_child }
+    /* Tracked child */
+    if_tracked_child                -> { fixup_tc }
+    fixup_tc                        -> { enter_in_db_tc }
+    enter_in_db_tc                  -> { delete_tc }
+    delete_tc                       -> { maybe_delete_parent }
+    /* Parent */
+    if_tracked_child                -> { parent }
+    parent                          -> { fixup_parent }
+    fixup_parent                    -> { enter_in_db_parent }
+    enter_in_db_parent              -> { commit_children }
+    commit_children                 -> { wait_for_children_to_be_deleted }
+    wait_for_children_to_be_deleted -> { delete_parent }
+
+    /* NODE LABELS */
+    save_by_pid                     [label = "Save by pid.\nIf queueid found,\nsave by queueid also"]
+    connect                         [label = "Connect from remote host"]
+    clone                           [label = "Clone when multiple mails\n(not recipients) are delivered\non one connection"]
+
+    /* Disconnect without queueid */
+    disconnect                      [label = "Disconnection by client"]
+    if_no_queueid                   [label = "If no queueid:", shape = diamond]
+    fixup_disconnect                [label = "Fixup"]
+    enter_in_db_disconnect          [label = "Enter in DB"]
+    delete_by_pid_disconnect        [label = "Delete by pid"]
+
+    /* Disconnect with queueid - already covered */
+
+    /* Misc entry */
+    pickup                          [label = "Mail submitted via sendmail"]
+    qmgr_chooses_mail               [label = "QMGR picks mail to deliver"]
+
+    /* Save results by queueid */
+    save_by_queueid                 [label = "Save by queueid"]
+    track                           [label = "Track child of this mail\n(usually due to aliases)"]
+
+    /* Commit is complicated */
+    /* Neither parent nor child. */
+    commit                          [label = "Mail delivered"]
+    if_neither_parent_nor_child     [label = "If not a tracked mail:", shape = diamond]
+    fixup_npc                       [label = "Fixup"]
+    enter_in_db_npc                 [label = "Enter in DB"]
+    delete_npc                      [label = "Delete by queueid"]
+
+    /* Untracked child */
+    if_untracked_child              [label = "If child waiting\nto be tracked:", shape = diamond]
+    mark_for_commit                 [label = "Mark for later entry in db"]
+    wait_for_parent_to_commit_me    [label = "Wait for parent to track and enter in db"]
+
+    /* Tracked child */
+    if_tracked_child                [label = "If tracked child:", shape = diamond]
+    fixup_tc                        [label = "Fixup"]
+    enter_in_db_tc                  [label = "Enter in DB"]
+    delete_tc                       [label = "Delete by queueid"]
+    maybe_delete_parent             [label = "Inform parent child has finished"]
+
+    /* Parent */
+    parent                          [label = "Parent"]
+    fixup_parent                    [label = "Fixup"]
+    enter_in_db_parent              [label = "Enter in DB"]
+    commit_children                 [label = "foreach child marked for commit:\l  fixup child\l  enter child in db\l  delete child by queueid\l", labeljust = l]
+    delete_parent                   [label = "Delete by queueid"]
+    wait_for_children_to_be_deleted [label = "Wait for any remaining \nchildren to be deleted"]
+
+    /* SUB-GRAPHS */
+    subgraph sources {
+        rank = source
+        pickup
+        qmgr_chooses_mail
+        connect
+    }
+    subgraph clone_or_save {
+        rank = same
+        clone
+        save_by_pid
+    }
+    subgraph disconnect_without_queueid {
+        rank = same
+        if_no_queueid
+        fixup_disconnect
+        enter_in_db_disconnect
+        delete_by_pid_disconnect
+    }
+    subgraph save_or_track {
+        rank = same
+        track
+        save_by_queueid
+    }
+    subgraph not_tracked {
+        rank = same
+        if_neither_parent_nor_child
+        fixup_npc
+        enter_in_db_npc
+        delete_npc
+    }
+    subgraph untracked_child {
+        rank = same
+        if_untracked_child
+        mark_for_commit
+        wait_for_parent_to_commit_me
+    }
+    subgraph tracked_child {
+        rank = same
+        if_tracked_child
+        fixup_tc
+        enter_in_db_tc
+        delete_tc
+        maybe_delete_parent
+    }
+    subgraph parent {
+        rank = same
+        parent
+        fixup_parent
+        enter_in_db_parent
+        commit_children
+        wait_for_children_to_be_deleted
+        delete_parent
+    }
+
+
+}
