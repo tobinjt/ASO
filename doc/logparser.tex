@@ -1,0 +1,224 @@
+\documentclass[a4paper,12pt,draft]{article}
+
+% Better typesetting of URLs.
+\usepackage{url}
+\usepackage[final]{graphicx}
+
+\begin{document}
+
+\title{Parsing Postfix log files}
+\author{John Tobin \\ Computer Science Department \\ Trinity College \\
+Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
+\date{}
+\maketitle
+
+\section{Abstract}
+
+Most mail server administrators will have performed some basic processing
+of Postfix logs at one time or another, whether it was to figure out why
+something isn't working, why mail is being rejected, or to check whether
+their new anti-spam measures are working.  The more adventurous will have
+generated some statistics to show how many hits each of their anti-spam
+measures have gotten in the last week, and possibly even generated some
+graphs to clearly illustrate the point to management or complaining
+users\footnote{This was the author's first real foray into processing
+Postfix logs}.  Very few will have performed in-depth parsing and analysis
+of their logs, where the parsing needs to be per-connection or per-queueid,
+rather than per-line.  One of the barriers to this type of processing is
+the unstructured nature of Postfix's logs: each logging line was added on
+an ad hoc basis as Wietse found a requirement or added new functionality.
+This paper attempts to document the difficult process of parsing Postfix
+logs, and presents a program which parses logs and places the resulting
+data into a database for further processing.
+
+
+\section{Background}
+
+Postfix is a highly configurable, high performance, secure and scalable
+Mail Transport Agent (MTA),  It features extensive anti-spam restrictions,
+allowing a mail administrator to deploy those restrictions which they judge
+suitable for their needs, rather than a fixed set chosen by Postfix's
+author.  These restrictions can be applied and combined on a per-host,
+per-recipient or per-sender basis, allowing clients/recipients to be
+whitelisted with respect to specific restrictions.  Postfix leverages
+simple lookup tables to support arbitrarily complicated user-defined
+sequences of checks and exceptions, with the ultimate in flexibility being
+the facility to consult an external process which can implement whatever
+logic is required; if you wish you can restrict some users to sending mail
+on the third Tuesday after pay day only, if that is of any use to you.
+Administrators can also supply their own rejection messages, to make it
+clear to senders why exactly their mail was rejected.  Unfortunately this
+flexibility has a cost: complexity in the logs generated.  While it is easy
+to use \texttt{grep(1)} to determine the fate of an individual email, and
+even to extend that into generating some useful graphs, following the
+progress of an email through Postfix can be quite difficult.  The logs tend
+to follow a 90\%/10\% pattern: 90\% of the time the logging is simple, and
+the other 10\% of the logging requires 90\% of the code.
+
+This paper and the program it describes are part of a larger project to
+optimise your Postfix restrictions, generate statistics and graphs, and
+provide a platform on which new restrictions can be trialled and evaluated
+to see if they are worth using in the fight against spam.  The program
+parses Postfix logs and populates a database with the data gleamed from
+those logs, providing a consistent and simple view of your logs which
+future tools can utilise.  
+
+
+\section{Parsing details}
+
+The complexity and variation in Postfix's logs requires similar flexibility
+in the parser; decoupling the parsing rules from the associated actions
+allows the rules to be loaded from an external source without modifications
+to the parser source code (significantly lowering the barrier to entry for
+new users), and simplifies both parser and rules.  The separation also
+allows for a XXX REWRITE separation of functionality: rules handle low
+level details of identifying a line, whereas the parser handles the higher
+level details of following the path a mail takes through postfix,
+assembling the required information, etc.
+
+\subsection{Rules}
+
+Rules are relatively simple, defining the following for each rule:
+
+\begin{description}
+
+    \item [Name] A short name for the rule.
+
+    \item [Description] A longer, more detailed description of the rule.
+
+    \item [Program] The program (smtp, smtpd, qmgr, etc) which the rule
+        applies to.  This avoids needlessly trying rules which won't
+        match, or worse, might match unintentionally.
+
+    \item [Regex] The regex to compare the log line against.  The regex
+        will first have several keywords expanded; this simplifies writing
+        rules and avoids needless repetition of complex regexs.
+
+    \item [Result\_cols and connection\_cols] This is how we extract the
+        fields in the log line matched by the regex.  The format is:
+        \newline 
+        hostname = 1; helo = 2; sender = 4; \newline
+        i.e. semi-colon separated assignment statements, with the column
+        name on the left and the match from the regex (\$1, \$2 etc) on the
+        right hand side (without \$).
+
+    \item [Action] The action for the parser to take.
+
+    \item [Queueid] The index of the field in regex giving the queueid.
+
+    \item [Rule\_order] This is used to sort the rules, so that rules
+        matching more commonly occurring log lines will be tried first, and
+        is updated every time the program is run.
+
+    \item [Priority] This is the user-configurable companion to
+        rule\_order: rules with a higher priority will be tried first,
+        overriding rule\_order, allowing more specific rules to take
+        precedence over more general rules.
+
+    \item [Result]  The result the log line represents: rejection,
+        acceptance, info, etc.
+
+    \item [Result\_data and connection\_data] Sometimes rules need to fake
+        a piece of data which isn't present in the log line: the most
+        common would be smtp\_code when mail is accepted.  The format is
+        the same as result\_cols and connection\_cols.
+
+\end{description}
+
+
+\subsection{Algorithm}
+
+Lets start with a flow chart describing the program:
+
+XXX FLOW CHART GOES HERE
+
+%\includegraphics{logparser-flow-chart.ps}
+
+A high level view of the algorithm could be expressed as:
+
+\begin{enumerate}
+
+    \item Mail enters the system via SMTP or local submission.
+    \item If the mail is rejected, log all data, and finish with the mail.
+    \item Follow the progress of the mail until it's either delivered or
+        bounced, log all data, and finish with the mail.
+
+\end{enumerate}
+
+Unfortunately it's not that easy.
+
+\subsubsection{Complications}
+
+\begin{enumerate}
+
+    \item The mail lacks a queueid until the mail has been accepted, so log
+        lines must first be correlated by the smtpd pid, then transition to
+        being correlated by the queueid.  This is relatively minor, but
+        does require two versions of several functions,
+        \texttt{per\_pid} and \texttt{per\_queueid}.
+
+    \item Multiple independent mails may be delivered during one
+        connection; this requires cloning the current data, so that
+        subsequent mails won't trample over each other.  This must be done
+        every time a mail is accepted, as it's impossible to tell in
+        advance which connections will accept multiple mails.  Happily once
+        the mail has been accepted log entries won't be correlated by pid
+        for that mail any more, so there isn't any ambiguity about which
+        mail a given log line belongs to.  One possible (as yet unseen)
+        difficulty is distinguishing between rejects which belong to the
+        current mail, and rejects which belong to previous, unaccepted,
+        mails.
+
+    \item The most difficult complication is that mails are not always
+        delivered directly to a mailbox: sometimes they are aliased and
+        need to be delivered to an address (or addresses) on another
+        server.  When this occurs a child mail will be injected into the
+        postfix queue, but without the explicit logging smtpd or sendmail
+        injected mails have, so the source is not immediately discernible;
+        from a strictly linear reading of the logs it \textit{usually}
+        appears as if the child mail has appeared from thin air.
+        Subsequently the parent mail will log the creation of the child
+        mail:
+
+        \texttt{3FF7C4317: to=<username@cs.tcd.ie>, relay=local, \newline delay=0,
+        status=sent (forwarded as 56F5B43FD)}
+
+        Unfortunately while all log lines from an individual process appear
+        in the logs in monotonic order, the order in which log lines from
+        different processes are interleaved is subject to the vagaries of
+        process scheduling.  In addition the first log line belonging to
+        the child mail (the log line cited above properly belongs to the
+        parent mail) is logged by qmgr, so depending on how busy qmgr (and
+        the server generally) is, the parent's creation log line may appear
+        before or after (generally after) the child's log line from qmgr.
+        This has the effect that the parser cannot complain when it
+        encounters a log line from qmgr for a previously unseen mail; it
+        must mark the mail as potentially fake and subsequently clear the
+        faked flag if and when the origin of the mail becomes clear.
+        Obviously the parser could omit checking of where mails originate
+        from, but I feel that it is better to require an explicit source,
+        as bugs are more likely to be exposed.
+
+        Process scheduling can have a still more confusing effect: quite
+        often the child mail will be created, delivered and removed
+        \textbf{before} the parent logs the creation line!  Thus mails
+        marked as faked cannot be committed, instead they must be marked as
+        commit ready and subsequently committed by the parent mail.  Quite
+        apart from identifying mail injected in an unknown fashion, or bugs
+        in the parser, faked mails need to be marked as such because they
+        lack some data present in the parent mail, and must copy that data
+        from their parent.
+
+
+\end{enumerate}
+
+XXX TODO what happens to the original connection?? XXX
+
+XXX TODO is it possible to distinguish between different rejected mails on
+one connection??  XXX
+
+\appendix
+
+
+
+\end{document}
