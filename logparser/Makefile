@@ -4,7 +4,11 @@
 # output.
 SHELL=bash
 
-all: test summary
+all: test summary diff
+
+diff:
+	diff -u warnings.working warnings
+	diff -u rejects.working rejects
 
 test: test.1
 
@@ -33,7 +37,7 @@ profile:
 profile2:
 	echo "profiling started"; date
 	echo "This will take over an hour - 70 minutes or so last time."
-	for profile in Profile DProf SmallProf ; do \
+	for profile in Profile DProf SmallProf Cover; do \
 		make "profile.$$profile"; 				\
 		mv "warnings" "warnings.$$profile";		\
 		mv "rejects" "rejects.$$profile";		\
@@ -75,6 +79,11 @@ profile.SmallProf:
 	# Devel::SmallProf; sort -k 2nr,2 smallprof.out | less
 	# Running time is about 2000% of normal.
 	PERL5OPT=-d:SmallProf make test
+
+profile.Cover:
+	# DeveL::Cover; generates coverage reports.
+	PERL5OPT=-d:Cover make test
+	perl cover
 
 profile.CallStack:
 	# DeveL::CallStack; do something with callstack.out
