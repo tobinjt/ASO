@@ -1,8 +1,9 @@
+/* vim: set textwidth=160 : */
 /* $Id$ */
 
 digraph logparser {
     graph [
-        size = "7.3, 10.7"
+        size = "5.8, 8.7"
         margin = "0"
         center = true
     ]
@@ -62,13 +63,14 @@ digraph logparser {
     if_tracked_child                -> { parent }
     parent                          -> { fixup_parent }
     fixup_parent                    -> { enter_in_db_parent }
+//    enter_in_db_parent                    -> { wait_for_children_to_be_deleted } [style = invis]
     enter_in_db_parent              -> { commit_children }
-    commit_children                 -> { wait_for_children_to_be_deleted }
+    commit_children                 -> { wait_for_children_to_be_deleted } [headport = w, tailport = e]
     wait_for_children_to_be_deleted -> { delete_parent }
 
     /* NODE LABELS */
     save_by_pid                     [label = "Save by pid.\nIf queueid found,\nsave by queueid also"]
-    connect                         [label = "Connect from remote host"]
+    connect                         [label = "Connection from remote host"]
     clone                           [label = "Clone when multiple mails\n(not recipients) are delivered\non one connection"]
 
     /* Disconnect without queueid */
@@ -81,8 +83,8 @@ digraph logparser {
     /* Disconnect with queueid - already covered */
 
     /* Misc entry */
-    pickup                          [label = "Mail submitted via sendmail"]
-    qmgr_chooses_mail               [label = "QMGR picks mail to deliver"]
+    pickup                          [label = "Mail submitted\nvia sendmail"]
+    qmgr_chooses_mail               [label = "QMGR picks mail\nto deliver"]
 
     /* Save results by queueid */
     save_by_queueid                 [label = "Save by queueid"]
@@ -106,7 +108,7 @@ digraph logparser {
     fixup_tc                        [label = "Fixup"]
     enter_in_db_tc                  [label = "Enter in DB"]
     delete_tc                       [label = "Delete by queueid"]
-    maybe_delete_parent             [label = "Inform parent child has finished"]
+    maybe_delete_parent             [label = "Inform parent child\lhas finished"]
 
     /* Parent */
     parent                          [label = "Parent"]
@@ -167,6 +169,9 @@ digraph logparser {
         fixup_parent
         enter_in_db_parent
         commit_children
+    }
+    subgraph parent_waiting {
+        rank = same
         wait_for_children_to_be_deleted
         delete_parent
     }
