@@ -9,30 +9,47 @@
 \begin{document}
 
 \title{Parsing Postfix log files}
-\author{John Tobin \\ Computer Science Department \\ Trinity College \\
-Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
+\author{John Tobin \\ School of Computer Science and Statistics \\ 
+Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 \date{}
 \maketitle
 
-\section{Abstract}
+\begin{abstract}
+    
+    Parsing Postfix logs is much more difficult than it first appears, but
+    it is possible.  This paper describes the process required, documenting
+    the algorithm and difficulties encountered, with reference to an
+    implementation which stores data gathered from the logs in an SQL
+    database.
+
+\end{abstract}
+
+XXX WHAT IS THE CONCLUSION??? XXX
+
+\newpage
+\tableofcontents
+
+\section{Introduction}
 
 Most mail server administrators will have performed some basic processing
-of Postfix logs at one time or another, whether it was to debug out a
-problem, explain why mail is being rejected, or to check whether their new
+of Postfix logs at one time or another, whether it was to debug a problem,
+explain to a user why mail is being rejected, or to check whether their new
 anti-spam measures are working.  The more adventurous will have generated
 some statistics to show how many hits each of their anti-spam measures have
 gotten in the last week, and possibly even generated some graphs to clearly
-illustrate the point to management or complaining users\footnote{This was
-the author's first real foray into processing Postfix logs}.  Very few will
+illustrate the point to management or complaining users.\footnote{This was
+the author's first real foray into processing Postfix logs.}  Very few will
 have performed in-depth parsing and analysis of their logs, where the
 parsing must correlate the log lines per-connection or per-queueid, rather
 than processing lines independently.  One of the barriers to this type of
 processing is the unstructured nature of Postfix's logs, where each logging
-line was added on an ad hoc basis as Wietse found a requirement or added
-new functionality, and further complication comes from user defined log
-messages.  This paper attempts to document the difficult process of parsing
-Postfix logs, and presents a program which parses logs and places the
-resulting data into a database for further processing.
+line was added on an ad hoc basis as a requirement was discovered or new
+functionality was added.  Further complication arises the ability to have
+rejection messages defined by the administrator, and every Real time Black
+List returns a different message.  This paper documents the difficult
+process of parsing Postfix logs, and presents a program which parses logs
+and places the resulting data into a database for further processing by
+other applications.
 
 
 \section{Background}
@@ -58,7 +75,9 @@ generated.  While it is easy to use \texttt{grep(1)} to determine the fate
 of an individual email, following the progress of an email through Postfix
 can be quite difficult.  The logs tend to follow a 90\%/10\% pattern: 90\%
 of the time following the log entries is simple, but the other 10\% of the
-logging requires 90\% of the code.
+logging requires 90\% of the code.\footnote{These numbers don't have a
+solid scientific basis, they're based on gut feeling from writing the
+software.}
 
 \subsection{Paper background}
 
@@ -69,8 +88,29 @@ to see if they are worth using in the fight against spam.  The program
 parses Postfix logs and populates a database with the data gleamed from
 those logs, providing a consistent and simple view of your logs which
 future tools can utilise.  The program should be reasonably easily
-extensible, so if logging to a database doesn't meet your requirements, you
-can implement your own processing.
+extensible, so if logging to a database doesn't meet requirements, one
+can implement one's own processing.
+
+\subsection{Parser background}
+
+Before getting into detail about the parser, a brief overview is in order.
+The parser is split into two parts: the parsing algorithm, and the rules
+which are applied to the lines.  
+
+\begin{description}
+
+    \item [Rules] The first matching rule wins: no further rules are tried
+        against that line,\footnote{With one exception, detailed later.}
+        but there is a facility for the specifying the order of the rules,
+        so that more specific rules can be matched first.  Rules are
+        completely self-contained: there are no sub-rules, so the
+        complexity is linear.  Rules are similar to the tokeniser/Lex part
+        of a Lex/YACC parser.
+
+    \item [Algorithm]
+
+\end{description}
+
 
 
 \section{Adaptable parsing: user defined rules}
@@ -78,12 +118,12 @@ can implement your own processing.
 The complexity and variation in Postfix's logs requires similar flexibility
 in the parser; decoupling the parsing rules from the associated actions
 allows the rules to be loaded from an external source without modifications
-to the parser source code (significantly lowering the barrier to entry for
-new users), and greatly simplifies both parser and rules.  The separation
-also allows for a clear separation of functionality: rules handle low level
-details of identifying a line, whereas the parser handles the higher level
-details of following the path a mail takes through postfix, assembling the
-required information, etc.
+to the algorithm source code (significantly lowering the barrier to entry
+for new users), and greatly simplifies both algorithm and rules.  The
+separation also allows for a clear separation of functionality: rules
+handle low level details of identifying a line, whereas the algorithm
+handles the higher level details of following the path a mail takes through
+postfix, assembling the required information, etc.
 
 Rules are relatively simple, defining the following for each rule:
 
@@ -137,8 +177,10 @@ Rules are relatively simple, defining the following for each rule:
 
 \section{Parsing algorithm}
 
-The most substantive part of the parser is the parser al . . . . blah
-
+While the rules are more than double (treble with 2.3.x rules?) the size of
+the parser, the rules are quite simple, and each rule is very much
+independent of its fellows.  The parser is significantly more complicated,
+and highly interdependent.
 
 
 \subsection{Naive approach}
@@ -149,10 +191,10 @@ A high level view of the algorithm could be expressed as:
 
     \item Mail enters the system via SMTP or local submission.
 
-    \item If the mail is rejected, log all data, and finish with the mail.
+    \item If the mail is rejected, log all data and finish.
 
     \item Follow the progress of the mail until it's either delivered or
-        bounced, log all data, and finish with the mail.
+        bounced, log all data, and finish.
 
 \end{enumerate}
 
@@ -163,26 +205,29 @@ Unfortunately it's not that easy.
 
 \begin{enumerate}
 
-    \item The mail lacks a queueid until the mail has been accepted, so log
-        lines must first be correlated by the smtpd pid, then transition to
-        being correlated by the queueid.  This is relatively minor, but
-        does require two versions of several functions,
-        \texttt{per\_pid} and \texttt{per\_queueid}.
+    \item The mail lacks a queueid until it has been accepted, so log lines
+        must first be correlated by the smtpd pid, then transition to being
+        correlated by the queueid.  This is relatively minor, but does
+        require two versions of several functions, \texttt{by\_pid} and
+        \texttt{by\_queueid}.
 
     \item Multiple independent mails may be delivered during one
         connection; this requires cloning the current data, so that
         subsequent mails won't trample over each other.  This must be done
         every time a mail is accepted, as it's impossible to tell in
-        advance which connections will accept multiple mails.  Happily once
-        the mail has been accepted log entries won't be correlated by pid
-        for that mail any more, so there isn't any ambiguity about which
-        mail a given log line belongs to.  One possible (as yet unseen)
-        difficulty is distinguishing between rejects which belong to the
-        current mail, and rejects which belong to previous, unaccepted,
-        mails.
+        advance which connections will accept multiple mails.  It is quite
+        easy to overlook this complication because only a small minority of
+        connections accept more than one mail. Happily once the mail has
+        been accepted log entries won't be correlated by pid for that mail
+        any more, so there isn't any ambiguity about which mail a given log
+        line belongs to.  The original connection will be discarded when
+        the client disconnects.  One possible (as yet unseen) difficulty is
+        distinguishing between rejects which belong to the current mail,
+        and rejects which belong to previous, unaccepted, mails.
 
     \item The most difficult complication is that mails are not always
-        delivered directly to a mailbox: sometimes they are aliased and
+        delivered directly to a mailbox (or program; there is very little
+        difference between the two): sometimes they are aliased and
         need to be delivered to an address (or addresses) on another
         server.  When this occurs a child mail will be injected into the
         postfix queue, but without the explicit logging smtpd or sendmail
@@ -192,7 +237,7 @@ Unfortunately it's not that easy.
         Subsequently the parent mail will log the creation of the child
         mail:
 
-        \texttt{3FF7C4317: to=<username@cs.tcd.ie>, relay=local, \newline 
+        \texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline 
         delay=0, status=sent (forwarded as 56F5B43FD)}
 
         Unfortunately while all log lines from an individual process appear
@@ -202,7 +247,14 @@ Unfortunately it's not that easy.
         the child mail (the log line cited above properly belongs to the
         parent mail) is logged by qmgr, so depending on how busy qmgr (and
         the server generally) is, the parent's creation log line may appear
-        before or after (generally after) the child's log line from qmgr.
+        before or after (usually after) the child's log line from
+        qmgr.\footnote{Postfix is quite paranoid about mail delivery, an
+        excellent characteristic for an MTA to posess, so it won't log that
+        the child has been created until it is absolutely certain that the
+        mail has been written to disk.  Because the parent then has to be
+        informed that the mail has been committed, it's most likely that
+        the qmgr will log first.}
+
         This has the effect that the parser cannot complain when it
         encounters a log line from qmgr for a previously unseen mail; it
         must mark the mail as potentially fake and subsequently clear the
@@ -229,16 +281,44 @@ Unfortunately it's not that easy.
 Lets start with a flow chart describing the program:
 
 \includegraphics{logparser-flow-chart.ps}
+\label{flow-chart}
 
+\section{Limitations and possible improvements}
 
-\section{Limitations and improvements}
+Every piece of software suffers from some limitations, and there is almost
+always room for improvement.
 
-\section{Summary}
+\subsection{Limitations}
 
-XXX TODO what happens to the original connection?? XXX
+\begin{itemize}
 
-XXX TODO is it possible to distinguish between different rejected mails on
-one connection??  XXX
+    \item Each new Postfix release requires new rules to be written, to
+        cope with the new messages.
+
+    \item The program should save state at the end of each run, and reload
+        it at the start of the next run, to properly cope with mails which
+        span logs.  This might also require purging old mails once they've
+        been in the state tables for too long.
+
+    \item It appears that the hostname used in the HELO command is not
+        logged if the mail is accepted.\footnote{Tested with Postfix
+        2.2.10, this may possibly have changed in Postfix 2.3, or the
+        upcoming 2.4.}
+
+\end{itemize}
+
+\subsection{Possible improvements}
+\begin{itemize}
+
+    \item A progress bar would be useful when run interactively, as the
+        program takes roughly one minute per 10MB of
+        logs.\footnote{Approximately 80\% of the run time is consumed by
+        logging to the database.}  Obviously performance is entirely
+        dependant on the machine the program is running on.
+
+\end{itemize}
+
+\section{Conclusion}
 
 \appendix
 
