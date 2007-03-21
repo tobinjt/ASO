@@ -1450,6 +1450,46 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 -- }}}
 
+-- POSTSUPER RULES {{{1
+
+-- 5A01B444E: removed
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
+    VALUES('Mail deleted using postsuper', 'The mail administrator used postsuper to delete mail from the queue',
+        'postfix/postsuper',
+        '^(__QUEUEID__): removed$',
+        '',
+        '',
+        'COMMIT',
+        1,
+        'DELETED'
+);
+
+-- Deleted: 1 message
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
+    VALUES('Postsuper logging how many messages were deleted', 'Postsuper logs how many messages were deleted by the administrator',
+        'postfix/postsuper',
+        '^Deleted \d+ message(?:s)?$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+-- fatal: usage: postsuper [-c config_dir] [-d queue_id (delete)] [-h queue_id (hold)] [-H queue_id (un-hold)] [-p (purge temporary files)] [-r queue_id (requeue)] [-s (structure fix)] [-v (verbose)] [queue...]
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
+    VALUES('Postsuper usage message', 'Postsuper logging its usage message',
+        'postfix/postsuper',
+        '^fatal: usage: postsuper .*$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+-- }}}
+
 -- INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, result)
 --     VALUES('', '',
 --         '',
