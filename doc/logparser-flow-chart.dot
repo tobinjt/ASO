@@ -3,10 +3,10 @@
 
 digraph logparser {
     graph [
-        size = "6.8, 8.0"
+        size = "6.8, 7.7"
         margin = "0"
         center = true
-        label = "Logparser flowchart"
+//        label = "Logparser flowchart"
         labelloc = "t"
     ]
     node [
