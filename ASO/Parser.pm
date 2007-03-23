@@ -16,14 +16,17 @@ use Carp;
 use Data::Dumper;
 use Regexp::Common qw(Email::Address net);
 use Storable qw(dclone);
+use List::Util qw(shuffle);
 
 # new takes a hash reference of options.
 sub new {
     my ($package, $options) = @_;
-    my %defaults;
+    my %defaults = (
+        sort_rules  => q{normal}
+    );
 
     if (not exists $options->{data_source}) {
-        croak qq{${package}::new: you must provide a data_source\n};
+        croak qq{${package}->new: you must provide a data_source\n};
     }
 
     my $self = {
@@ -98,19 +101,20 @@ sub parse {
 # Update the rule order in the database so that more frequently hit rules will
 # be tried earlier on the next run.
 sub update_check_order {
-    my ($self)          = @_;
-    my ($i, %order_map) = (1);
+    my ($self) = @_;
 
-    map { exists $_->{count} or $_->{count} = 0 } @{$self->{rules}};
-    my @sorted_rules = sort { $b->{count} <=> $a->{count} } @{$self->{rules}};
-    foreach my $rule (@sorted_rules) {
-        $order_map{$rule->{id}} = $i++;
-    }
+    my (%id_map) = map { ($_->{id}, $_) } @{$self->{rules}};
     foreach my $rule ($self->{dbix}->resultset(q{Rule})->search()) {
         # Sometimes a rule won't have been hit; just use the next value
         # in the sequence.
-        $rule->rule_order($order_map{$rule->id()} || $i++);
-        $rule->update();
+        my $id = $rule->id();
+        if (not exists $id_map{$id}) {
+            $self->my_warn(qq{update_check_order: Missing rule:},
+                dump_rule_from_db($rule));
+        } else {
+            $rule->rule_order($id_map{$id}->{count});
+            $rule->update();
+        }
     }
 }
 
@@ -496,6 +500,7 @@ sub load_rules {
                                     $rule),
             connection_data  => $self->parse_result_cols($rule->connection_data(),
                                     $rule),
+            count            => 0,
         };
 
         # Compile the regex for efficiency, otherwise it'll be recompiled every
@@ -511,8 +516,25 @@ sub load_rules {
 
         push @results, $rule_hash;
     }
-    return sort {      $b->{priority}   <=> $a->{priority} 
-                    or $a->{rule_order} <=> $b->{rule_order} } @results;
+
+    $self->{sort_rules} = lc $self->{sort_rules};
+    if ($self->{sort_rules} eq q{normal}) {
+        # Normal, most efficient order.
+        @results = sort { $b->{rule_order} <=> $a->{rule_order} } @results;
+    } elsif ($self->{sort_rules} eq q{reverse}) {
+        # Reverse order - should be least efficient.
+        @results = sort { $a->{rule_order} <=> $b->{rule_order} } @results;
+    } elsif ($self->{sort_rules} eq q{shuffle}) {
+        # Shuffle the results.
+        @results = shuffle @results;
+    } else {
+        croak qq{load_rules: unknown sort_rules value: $self->{sort_rules}\n},
+            qq{Valid values: normal, reverse, shuffle\n};
+    }
+
+    # Regardless of the sort order we always respect priority; not doing so
+    # would break the rule set.
+    return sort { $b->{priority} <=> $a->{priority} } @results;
 }
 
 sub dump_connection {
