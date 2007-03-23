@@ -85,47 +85,56 @@ This paper and the program it describes are part of a larger project to
 optimise your Postfix restrictions, generate statistics and graphs, and
 provide a platform on which new restrictions can be trialled and evaluated
 to see if they are worth using in the fight against spam.  The program
-parses Postfix logs and populates a database with the data gleamed from
+parses Postfix logs and populates a database with the data gleaned from
 those logs, providing a consistent and simple view of your logs which
 future tools can utilise.  The program should be reasonably easily
-extensible, so if logging to a database doesn't meet requirements, one
-can implement one's own processing.
+extensible, so if logging to a database doesn't meet requirements, one can
+implement one's own processing.
 
 \subsection{Parser background}
 
 Before getting into detail about the parser, a brief overview is in order.
-The parser is split into two parts: the parsing algorithm, and the rules
-which are applied to the lines.  
-
-\begin{description}
-
-    \item [Rules] The first matching rule wins: no further rules are tried
-        against that line,\footnote{With one exception, detailed later.}
-        but there is a facility for the specifying the order of the rules,
-        so that more specific rules can be matched first.  Rules are
-        completely self-contained: there are no sub-rules, so the
-        complexity is linear.  Rules are similar to the tokeniser/Lex part
-        of a Lex/YACC parser.
-
-    \item [Algorithm]
-
-\end{description}
-
+The parser is split into two parts: the parsing algorithm and the rules
+which are applied to the lines.  Rules can be thought of as the
+tokeniser/Lex part of a Lex/YACC parser; they identify the line and return
+some data, which the algorithm (the YACC part) receives, performing the
+correct action.  Rules are all about identifying a line and extracting data
+from it, whereas the algorithm is all about following the path the mail
+takes through Postfix, piecing the data together into a coherent whole, and
+performing housekeeping duties.
 
 
 \section{Adaptable parsing: user defined rules}
 
 The complexity and variation in Postfix's logs requires similar flexibility
 in the parser; decoupling the parsing rules from the associated actions
-allows the rules to be loaded from an external source without modifications
-to the algorithm source code (significantly lowering the barrier to entry
-for new users), and greatly simplifies both algorithm and rules.  The
-separation also allows for a clear separation of functionality: rules
-handle low level details of identifying a line, whereas the algorithm
-handles the higher level details of following the path a mail takes through
-postfix, assembling the required information, etc.
+allows new rules to be written and tested without modifications to the
+algorithm source code (significantly lowering the barrier to entry for new
+or casual users), and greatly simplifies both algorithm and rules.  It also
+allows for a clear separation of functionality: rules handle low level
+details of identifying a line, whereas the algorithm handles the higher
+level details of following the path a mail takes through postfix,
+assembling the required data, etc.
 
-Rules are relatively simple, defining the following for each rule:
+Rule characteristics:
+
+\begin{itemize}
+
+    \item The first matching rule wins: no further rules are tried against
+        that line,\footnote{With one exception, detailed later in Section
+        \ref{actions-in-detail}.} but there is a facility for the specifying
+        the order of the rules, so that more specific rules can be matched
+        first.
+        
+    \item Rules are completely self-contained: there are no sub-rules, so
+        rules have linear complexity, and can be understood without
+        reference to any other rules.
+        
+\end{itemize}
+
+\subsection{Rule attributes}
+
+Each rule defines the following:
 
 \begin{description}
 
@@ -135,40 +144,70 @@ Rules are relatively simple, defining the following for each rule:
 
     \item [program] The program (smtp, smtpd, qmgr, etc) which the rule
         applies to.  This avoids needlessly trying rules which won't
-        match, or worse, might match unintentionally.
+        match the line, or worse, might match unintentionally.
 
     \item [regex] The regex to compare the log line against.  The regex
-        will first have several keywords expanded; this simplifies writing
-        rules and avoids needless repetition of complex regex components.
+        will first have several keywords expanded; this simplifies reading
+        and writing rules, avoids needless repetition of complex regex
+        components, and allows the components to be corrected and/or
+        improved in one location.
 
-    \item [result\_cols and connection\_cols] This is how we extract the
-        fields in the log line matched by the regex.  The format is:
-        \newline 
-        hostname = 1; helo = 2; sender = 4; \newline
-        i.e. semi-colon separated assignment statements, with the column
-        name on the left and the match from the regex (\$1, \$2 etc) on the
+    \item [result\_cols, connection\_cols] This specifies how the fields in
+        the log line will be extracted.  The format is: \newline
+        client\_hostname = 1; helo = 2; sender = 4; \newline
+        i.e.  semi-colon separated assignment statements, with the variable
+        name on the left and the match from the regex (\$1, \$2 etc.) on the
         right hand side (without \$).
 
-    \item [action] The action for the parser to take.
+    \item [result\_data, connection\_data] Sometimes rules need to fake
+        a piece of data which isn't present in the log line: the most
+        common would be smtp\_code when mail is accepted.  The format of
+        the same as result\_cols and connection\_cols.
 
-    \item [queueid] The index of the field in regex giving the queueid.
+    \item [result]  XXX RESULT NEEDS TO BE RENAMED XXX This is the action
+        Postfix would have taken to generate this line.  Info is represents
+        an unspecified intermediate action that the parser is not
+        interested in per se, but which does log useful information.  The
+        extracted information will be used, but the other results will be
+        discarded.
 
-    \item [rule\_order] This is used to sort the rules, so that rules
-        matching more commonly occurring log lines will be tried first, and
-        is updated every time the program is run.
+    \item [action] The action the algorithm will take, e.g.
+        \begin{description}
+            
+            \item [ignore] Ignore this line.  The simplest action, it is
+                required because every line from a program of interest to
+                the parser must be parsed properly; any unparsed line is
+                considered an error.
+            
+            \item [save\_by\_pid] Use the pid from the log line to lookup a
+                connection, then save the data from the log line in the
+                connection data structure.
+
+            \item [commit] The mail is finished with, enter it in the
+                database.
+
+        \end{description}
+
+        A full list can be found in Section \ref{actions-in-detail}.
+
+    \item [queueid] Specifies the match from the regex which gives the
+        queueid, or zero if the log line doesn't contain a queueid.
+
+    \item [rule\_order] This is an efficiency measure.  A counter is
+        maintained for every rule and incremented each time the rule
+        successfully matches.  At the start of each run the program sorts
+        the rules in ascending rule\_order, and at the end of the run
+        updates every rule's rule\_order so that rules which matched more
+        frequently have a lower rule\_order.  Assuming that the 
+        distribution of log lines is reasonably consistent, rules matching
+        more commonly occurring log lines will be tried before rules
+        matching less commonly occurring log lines, lowering the program's
+        execution time.  XXX GIVE EXAMPLE TIMINGS XXX
 
     \item [priority] This is the user-configurable companion to
         rule\_order: rules with a higher priority will be tried first,
         overriding rule\_order, allowing more specific rules to take
         precedence over more general rules.
-
-    \item [result]  The result the log line represents: rejection,
-        acceptance, info, etc.
-
-    \item [result\_data and connection\_data] Sometimes rules need to fake
-        a piece of data which isn't present in the log line: the most
-        common would be smtp\_code when mail is accepted.  The format is
-        the same as result\_cols and connection\_cols.
 
 \end{description}
 
@@ -276,12 +315,20 @@ Unfortunately it's not that easy.
 
 \end{enumerate}
 
-\subsection{Full algorithm}
-
-Lets start with a flow chart describing the program:
+\subsection{Algorithm flow chart}
 
 \includegraphics{logparser-flow-chart.ps}
 \label{flow-chart}
+
+\subsection{Full algorithm}
+
+\label{full-algorithm}
+
+
+\subsection{Actions in detail}
+
+\label{actions-in-detail}
+
 
 \section{Limitations and possible improvements}
 
