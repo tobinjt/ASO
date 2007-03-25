@@ -526,7 +526,7 @@ sub load_rules {
         @results = sort { $a->{rule_order} <=> $b->{rule_order} } @results;
     } elsif ($self->{sort_rules} eq q{shuffle}) {
         # Shuffle the results.
-        @results = shuffle @results;
+        @results = shuffle(@results);
     } else {
         croak qq{load_rules: unknown sort_rules value: $self->{sort_rules}\n},
             qq{Valid values: normal, reverse, shuffle\n};
