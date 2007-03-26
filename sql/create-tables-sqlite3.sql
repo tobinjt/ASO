@@ -39,7 +39,9 @@ CREATE TABLE rules (
     result                  text    NOT NULL,
     -- additional data to be saved; same format as result_cols, for now.
     result_data             text    NOT NULL DEFAULT '',
-    connection_data         text    NOT NULL DEFAULT ''
+    connection_data         text    NOT NULL DEFAULT '',
+    -- The name of the restriction which caused the rejection.
+    restriction_name        text    NOT NULL DEFAULT ''
 );
 
 DROP TABLE IF EXISTS connections; --{{{1

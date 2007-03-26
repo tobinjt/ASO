@@ -27,6 +27,7 @@ __PACKAGE__->add_columns(
         result
         result_data
         connection_data
+        restriction_name
     )
 );
 __PACKAGE__->set_primary_key(q{id});
