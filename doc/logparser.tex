@@ -156,6 +156,10 @@ Each rule defines the following:
         the rule applies to.  This avoids needlessly trying rules which
         won't match the line, or worse, might match unintentionally.
 
+    \item [restriction\_name] The restriction which caused the mail to be
+        rejected.  Only applicable to rules which have a result of
+        \texttt{rejected}, other rules will have an empty string.
+
     \item [regex] The regex to match the log line against.  The regex will
         first have several keywords expanded: this simplifies reading and
         writing rules, avoids needless repetition of complex regex
@@ -267,6 +271,37 @@ Each rule defines the following:
 \end{description}
 
 
+\subsection{Example rule}
+
+This example rule matches the message Postfix logs when it rejects mail
+from a sender address where the domain has neither an MX record nor an A
+record, i.e. mail could not be delivered to the sender's address.  
+For full details see
+http://www.postfix.org/postconf.5.html\#reject\_unknown\_sender\_domain
+
+
+% Don't reformat this!
+\begin{tabular}[]{ll}
+
+name                & Unknown sender domain                             \\
+description         & We do not accept mail from unknown domains        \\
+program             & postfix/smtpd                                     \\
+restriction\_name   & reject\_unknown\_sender\_domain                   \\
+regex               & \verb!^<(__SENDER__)>: Sender address rejected: ! \\
+                    & \verb!  Domain not found; from=<\1> !             \\
+                    & \verb!  to=<(__RECIPIENT__)> proto=E?SMTP !       \\
+                    & \verb!  helo=<(__HELO__)>$!                       \\
+result\_cols        & recipient = 2; sender = 1                         \\
+connection\_cols    & helo = 3                                          \\
+result\_data        &                                                   \\
+connection\_data    &                                                   \\
+result              & REJECTED                                          \\
+action              & SAVE\_BY\_PID                                     \\
+queueid             & 0                                                 \\
+rule\_order         & 0                                                 \\
+priority            & 0                                                 \\
+
+\end{tabular}
 
 
 \section{Parsing algorithm}
