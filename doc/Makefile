@@ -20,3 +20,7 @@ logparser-flow-chart.ps: logparser-flow-chart.dot
 
 clean:
 	rm -f *.dvi *.ps *.aux *.toc *.log
+
+check:
+	lacheck logparser.tex
+	chktex logparser.tex
