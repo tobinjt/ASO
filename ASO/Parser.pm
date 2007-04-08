@@ -129,9 +129,10 @@ sub update_check_order {
 # This is also used to parse result_data and connection_data, hence the relaxed
 # regex (.* instead of \d+).
 my $NUMBER_REQUIRED = 1;
+# TODO: get this data from DBIC somehow.
 my %column_names = map { $_ => 1 } qw(
     client_hostname client_ip server_ip server_hostname
-    helo recipient sender smtp_code data queueid child
+    helo recipient sender smtp_code data child
 );
 sub parse_result_cols {
     my ($self, $spec, $rule, $number_required) = @_;
@@ -639,11 +640,14 @@ sub make_connection {
     return {
         start           => $line->{timestamp},
         faked           => $line,
+        # TODO: fix this.
         # We'll always start with client = localhost, because I can't figure 
         # out which rule should set these initially without clobbering 
         # something else.
-        client_hostname => q{localhost},
-        client_ip       => q{127.0.0.1},
+        connection      => {
+            client_hostname => q{localhost},
+            client_ip       => q{127.0.0.1},
+        },
     };
 }
 
@@ -747,6 +751,7 @@ TEMPLATE
     return $conflicts;
 }
 
+# TODO: hang these off $self.
 my (%required_connection_cols, %required_result_cols, %nochange_result_cols);
 
 sub fixup_connection {
@@ -772,9 +777,10 @@ sub fixup_connection {
 
     my $parent_con;
     if (exists $connection->{parent}) {
-        $parent_con = $self->get_connection_by_queueid(undef, $connection->{parent},
-            1, qq{fixup_connection: searching for $connection->{parent}, }
-                . qq{parent of $connection->{queueid}\n});
+        $parent_con = $self->get_connection_by_queueid(undef,
+            $connection->{parent}, 1,
+            qq{fixup_connection: searching for $connection->{parent}, }
+            . qq{parent of $connection->{queueid}\n});
     }
 
     my $failure = 0;
@@ -819,12 +825,12 @@ sub fixup_connection {
         # NOTE: I'm assuming that anything we're going to require from the
         # parent connection has already been saved there; if not I'll need to
         # revisit this and complicate it much further.
-        if (not exists $connection->{$ccol}
+        if (not exists $connection->{connection}->{$ccol}
                 and defined $parent_con
-                and exists $parent_con->{$ccol}) {
-            $connection->{$ccol} = $parent_con->{$ccol};
+                and exists $parent_con->{connection}->{$ccol}) {
+            $connection->{connection}->{$ccol} = $parent_con->{connection}->{$ccol};
         }
-        if (not exists $connection->{$ccol}) {
+        if (not exists $connection->{connection}->{$ccol}) {
             $self->my_warn(qq{fixup_connection: missing connection col: $ccol\n},
                 dump_connection($connection),
             );
@@ -839,9 +845,32 @@ sub fixup_connection {
     }
 }
 
-my %c_cols_silent_overwrite;
+# TODO: should this come from the connection objects?
+# TODO: hang this off $self.
+my %c_cols_silent_overwrite = (
+    client_ip       => {
+        q{127.0.0.1}    => 1,
+        q{::1}          => 1,
+    },
+    client_hostname => {
+        q{localhost}    => 1,
+    },
+    server_ip       => undef,
+    server_hostname => undef,
+);
+
 sub save {
     my ($self, $connection, $line, $rule, $matches) = @_;
+
+    if ($rule->{queueid}) {
+        my $queueid = $matches->[$rule->{queueid}];
+        if (exists $connection->{queueid}
+                and $connection->{queueid} ne $queueid) {
+            $self->my_warn(qq{queueid change: was $connection->{queueid}; }
+                . qq{now $queueid\n});
+        }
+        $connection->{queueid} = $queueid;
+    }
 
     # Save the new result in $connection.
     # RESULT_DATA
@@ -857,35 +886,20 @@ sub save {
     }
     push @{$connection->{results}}, \%result;
 
-    # We do use $self->update_hash() for result_cols, just in case a rule has internal
-    # conflicts between result_cols and result_data.
+    # We do use $self->update_hash() for result_cols, just in case a rule has
+    # internal conflicts between result_cols and result_data.
     # RESULT_COLS
     my %r_cols_updates;
     foreach my $r_col (keys %{$rule->{result_cols}}) {
         $r_cols_updates{$r_col} = $matches->[$rule->{result_cols}->{$r_col}];
     }
-    $self->update_hash(\%result, {}, \%r_cols_updates, {}, $rule, $line, $connection,
-        q{save: result_cols});
+    $self->update_hash(\%result, {}, \%r_cols_updates, {}, $rule, $line,
+        $connection, q{save: result_cols});
 
 
     # Populate connection.
     # CONNECTION_DATA
-    # TODO: should this come from the connection objects?
-    if (not %c_cols_silent_overwrite) {
-        %c_cols_silent_overwrite = (
-            client_ip       => {
-                q{127.0.0.1}    => 1,
-                q{::1}          => 1,
-            },
-            client_hostname => {
-                q{localhost}    => 1,
-            },
-            server_ip       => undef,
-            server_hostname => undef,
-        );
-    }
-
-    $self->update_hash($connection, \%c_cols_silent_overwrite,
+    $self->update_hash($connection->{connection}, \%c_cols_silent_overwrite,
         $rule->{connection_data}, \%c_cols_silent_overwrite,
         $rule, $line, $connection, q{save: connection_data});
 
@@ -896,8 +910,9 @@ sub save {
         $c_cols_updates{$c_col}
             = $matches->[$rule->{connection_cols}->{$c_col}];
     }
-    $self->update_hash($connection, \%c_cols_silent_overwrite, \%c_cols_updates, {},
-        $rule, $line, $connection, q{save: connection_cols});
+    $self->update_hash($connection->{connection}, \%c_cols_silent_overwrite,
+        \%c_cols_updates, {}, $rule, $line, $connection,
+        q{save: connection_cols});
 
 
     # Check for a queueid change.
@@ -997,15 +1012,8 @@ sub commit_connection {
         $self->{dbix}->txn_begin();
     }
 
-    my $connection_in_db = $self->{dbix}->resultset(q{Connection})->new_result({
-            server_ip       => $connection->{server_ip},
-            server_hostname => $connection->{server_hostname},
-            client_ip       => $connection->{client_ip},
-            client_hostname => $connection->{client_hostname},
-            helo            => $connection->{helo},
-            start           => $connection->{start},
-            end             => $connection->{end},
-        });
+    my $connection_in_db = $self->{dbix}->resultset(q{Connection})->new_result(
+            $connection->{connection});
     if (exists $connection->{queueid}) {
         $connection_in_db->queueid($connection->{queueid});
     }
