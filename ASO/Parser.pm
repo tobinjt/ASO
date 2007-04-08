@@ -47,6 +47,11 @@ sub new {
 sub init_globals {
     my ($self) = @_;
 
+    # Used in $self->my_warn() and $self->my_die() to report the logfile we're
+    # currently parsing.
+    $self->{current_logfile}  = q{INITIALISATION};
+    $.                        = 0;
+
     # Load the rules, and collate them by program, so that later we'll only try
     # rules for the program that logged the line.
     $self->{rules}            = [$self->load_rules()];
@@ -56,9 +61,6 @@ sub init_globals {
 
     $self->{queueid_regex}    = $self->filter_regex(q{^__QUEUEID__$});
     $self->{queueid_regex}    = qr/$self->{queueid_regex}/;
-
-    # Used in $self->my_warn() and $self->my_die() to report the logfile we're currently parsing.
-    $self->{current_logfile}  = q{NO LOGFILE SPECIFIED YET};
 
     # All mail starts off in %connections, unless submitted locally by
     # sendmail/postgrop, and then moves into %queueids if it gets a queueid.
@@ -127,6 +129,10 @@ sub update_check_order {
 # This is also used to parse result_data and connection_data, hence the relaxed
 # regex (.* instead of \d+).
 my $NUMBER_REQUIRED = 1;
+my %column_names = map { $_ => 1 } qw(
+    client_hostname client_ip server_ip server_hostname
+    helo recipient sender smtp_code data queueid child
+);
 sub parse_result_cols {
     my ($self, $spec, $rule, $number_required) = @_;
 
@@ -146,6 +152,11 @@ sub parse_result_cols {
         my ($key, $value) = ($1, $2);
         if ($number_required and $value !~ m/^\d+$/) {
             $self->my_warn(qq{parse_result_cols: $value: not a number in: \n},
+                dump_rule_from_db($rule));
+            next ASSIGNMENT;
+        }
+        if (not exists $column_names{$key}) {
+            $self->my_die(qq{parse_result_cols: $key: unknown variable in: \n},
                 dump_rule_from_db($rule));
             next ASSIGNMENT;
         }
@@ -585,7 +596,6 @@ sub filter_regex {
 #   The empty alternative below is to allow for <> as the sender address
 #   We also allow up to 7 @ signs in the address . . . I have seen that many :(
     $regex =~ s/__EMAIL__       /(?:|[^@]+(?:\@(?:__HOSTNAME__|\\[__IP__\\])){0,7})/gx;
-    $regex =~ s/__HOSTNAME_IP__ /__HOSTNAME__\[__IP__\]/gx;
     # This doesn't match, for varous reason - I think numeric subnets are one.
     #$regex =~ s/__HOSTNAME__    /$RE{net}{domain}{-nospace}/gx;
     $regex =~ s/__HOSTNAME__    /$hostname_re/gx;
@@ -593,7 +603,7 @@ sub filter_regex {
     $regex =~ s/__SMTP_CODE__   /\\d{3}/gx;
     # 3-9 is a guess.
     $regex =~ s/__QUEUEID__     /(?:NOQUEUE|[\\dA-F]{3,9})/gx;
-    $regex =~ s/__COMMAND__/(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gx;
+    $regex =~ s/__COMMAND__     /(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gx;
 #   $regex =~ s/____/$RE{}{}/gx;
 
     return $regex;
@@ -1047,7 +1057,7 @@ sub my_warn {
 }
 
 sub my_die {
-    my ($self) = @_;
+    my ($self) = shift @_;
     die qq{$0: $self->{current_logfile}: $.: }, @_;
 }
 

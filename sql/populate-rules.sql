@@ -671,7 +671,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'postfix/qmgr',
         '^(__QUEUEID__): from=<(__SENDER__)>, size=\d+, nrcpt=(\d+) \(queue active\)$',
         'sender = 2',
-        'queueid = 1, nrcpt = 3',
+        'queueid = 1',
         'QMGR_CHOOSES_MAIL',
         1,
         'INFO'
@@ -1014,7 +1014,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=bounced \(host \3\[\4\] said: ((__SMTP_CODE__).*) \(in reply to __COMMAND__ command\)\)$',
         'recipient = 2, smtp_code = 6, data = 5',
-        'queueid = 1, client_host = 3, server_ip = 4',
+        'queueid = 1, client_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_BY_QUEUEID',
         1,
