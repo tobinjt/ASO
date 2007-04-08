@@ -24,3 +24,6 @@ clean:
 check:
 	lacheck logparser.tex
 	chktex logparser.tex
+
+2up:
+	psnup -2 logparser.ps logparser-2up.ps
