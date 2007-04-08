@@ -77,7 +77,7 @@ digraph logparser {
     disconnect                      [label = "6: Disconnection by client"]
     if_no_queueid                   [label = "7: If no queueid:", shape = diamond]
     fixup_enter_in_db_disconnect    [label = "8: Fixup, enter in db"]
-    delete_by_pid_disconnect        [label = "9: Delete by pid"]
+    delete_by_pid_disconnect        [label = "9: Delete from memory by pid"]
 
     /* Disconnect with queueid - already covered */
 
@@ -94,7 +94,7 @@ digraph logparser {
     commit                          [label = "12: Mail delivered, bounced or deleted"]
     if_neither_parent_nor_child     [label = "13: If not a tracked mail:", shape = diamond]
     fixup_enter_in_db_npc           [label = "14: Fixup, enter in db"]
-    delete_npc                      [label = "15: Delete by queueid"]
+    delete_npc                      [label = "15: Delete from memory by queueid"]
 
     /* Untracked child */
     if_untracked_child              [label = "16: If child waiting\nto be tracked:", shape = diamond]
@@ -104,7 +104,7 @@ digraph logparser {
     /* Tracked child */
     if_tracked_child                [label = "19: If tracked child:", shape = diamond]
     fixup_enter_in_db_tc            [label = "20: Fixup, enter in db"]
-    delete_tc                       [label = "21: Delete by queueid"]
+    delete_tc                       [label = "21: Delete from memory by queueid"]
     maybe_delete_parent             [label = "22: Inform parent child\lhas finished"]
 
     /* Parent */
@@ -112,7 +112,7 @@ digraph logparser {
     fixup_enter_in_db_parent        [label = "24: Fixup, enter in db"]
     commit_children                 [label = "25: foreach child waiting for parent:\l  fixup and enter child in db\l  delete child by queueid\l", labeljust = l]
     wait_for_children_to_be_deleted [label = "26: Wait for any remaining \nchildren to be deleted"]
-    delete_parent                   [label = "27: Delete by queueid"]
+    delete_parent                   [label = "27: Delete from memory by queueid"]
 
     /* SUB-GRAPHS */
     subgraph sources {
