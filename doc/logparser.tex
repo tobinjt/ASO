@@ -68,11 +68,38 @@ transports to those destinations; identifying high volume uses (e.g.
 customer newsletters) and restricting those uses to off-peak times; as a
 base for billing customers on a shared server; etc.
 
+Section~\ref{background} provides background information about: the
+motivation for this project; the Postfix Mail Transport Agent; a short
+overview of the parser; the assumptions inherent in the design of the
+algorithm and program; and a list of other Postfix log parsers.
 
+Section~\ref{rules} discusses the parsing rules in detail, explaining their
+structure, giving an example rule and sample data it matches successfully
+against.
 
-XXX MAYBE EXPLAIN WHAT WILL BE IN THE FOLLOWING SECTIONS??? XXX
+Section~\ref{parsing-algorithm} contains the meat of the paper, describing
+a naive parsing algorithm and the complications encountered which shaped
+the full algorithm, followed by a comprehensive explanation of the
+different stages of the algorithm and the actions taken during the
+execution of the algorithm.
+
+Section~\ref{limitations-improvements} lists the limitations of the program
+and/or the algorithm, then suggests some ways of dealing with the
+limitations, with the goal of improving parsing and reproducing the journey
+a mail takes through the internals of Postfix.
+
+Section~\ref{conclusion} describes the results of the project to date.  XXX
+IMPROVE THIS.
+
+Section~\ref{references} catalogues resources used in developing the
+algorithm, writing the program and preparing this paper.  
+Any resources referred to in the paper are also given, plus some additional
+resources expected to be helpful in understanding Postfix, anti-spam
+techniques, or the paper.
 
 \section{Background}
+
+\label{background}
 
 \subsection{Motivation}
 
@@ -181,6 +208,8 @@ XXX ADD INFORMATION ABOUT OTHER POSTFIX LOG PARSERS HERE XXX
 
 
 \section{Adaptable parsing: user defined rules}
+
+\label{rules}
 
 The complexity and variation in Postfix's logs requires similar flexibility
 in the parser; decoupling the parsing rules from the associated actions
@@ -416,6 +445,8 @@ priority            & 0                                                 \\
 
 
 \section{Parsing algorithm}
+
+\label{parsing-algorithm}
 
 While the rules are more than double (treble with 2.3.x rules? XXX ADD
 2.3.X RULES AND CHECK XXX) the size of
@@ -749,6 +780,8 @@ in which they tend to occur in practice.
 
 \section{Limitations and possible improvements}
 
+\label{limitations-improvements}
+
 Every piece of software suffers from some limitations and there is almost
 always room for improvement.
 
@@ -812,6 +845,14 @@ always room for improvement.
 
 \appendix
 
+
+\label{conclusion}
+
 \section{References}
+
+\label{references}
+
+XXX ADD RESOURCES ONCE THE PAPER IS REASONABLY COMPLETE AND THEN REFERENCE
+THEM FROM WITHIN THE PAPER XXX
 
 \end{document}
