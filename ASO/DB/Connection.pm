@@ -16,11 +16,13 @@ my %cols = (
         required            => 1,
         nochange            => 1,
         silent_overwrite    => undef,
+        connection_cols     => 1,
     },
     server_hostname     => {
         required            => 1,
         nochange            => 1,
         silent_overwrite    => undef,
+        connection_cols     => 1,
     },
     client_ip           => {
         required            => 1,
@@ -29,6 +31,7 @@ my %cols = (
             q{127.0.0.1}        => 1,
             q{::1}              => 1,
         },
+        connection_cols     => 1,
     },
     client_hostname     => {
         required            => 1,
@@ -36,12 +39,13 @@ my %cols = (
         silent_overwrite    => {
             q{localhost}        => 1,
         },
+        connection_cols     => 1,
     },
     helo                => {
         nochange            => 1,
+        connection_cols     => 1,
     },
     queueid             => {
-        nochange            => 1,
     },
     start               => {
     },
@@ -52,6 +56,16 @@ my %cols = (
 sub get_cols {
     my ($self) = @_;
     return %cols;
+}
+
+sub connection_cols_columns {
+    my ($self) = @_;
+    return $self->col_grep(q{connection_cols});
+}
+
+sub silent_overwrite_columns {
+    my ($self) = @_;
+    return $self->col_grep(q{silent_overwrite});
 }
 
 __PACKAGE__->load_components(qw(PK::Auto Core));

@@ -22,21 +22,30 @@ my %cols = (
     },
     smtp_code       => {
         required        => 1,
+        result_cols    => 1,
     },
     # sender changes if the connection is reused.
     sender          => {
         required        => 1,
+        result_cols    => 1,
     },
     recipient       => {
         required        => 1,
+        result_cols    => 1,
     },
     data            => {
+        result_cols    => 1,
     },
 );
 
 sub get_cols {
     my ($self) = @_;
     return %cols;
+}
+
+sub result_cols_columns {
+    my ($self) = @_;
+    return $self->col_grep(q{result_cols});
 }
 
 __PACKAGE__->load_components(qw(PK::Auto Core));

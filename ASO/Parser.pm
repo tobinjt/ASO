@@ -104,6 +104,11 @@ sub init_globals {
         helo recipient sender smtp_code data child
     );
     $self->{column_names} = \%column_names;
+    $self->{result_cols_names}          = $mock_result->result_cols_columns();
+    $self->{connection_cols_names}
+        = $mock_connection->connection_cols_columns();
+    # XXX: Hack!  Figure out how to do this properly.
+    $self->{result_cols_names}->{child} = 1;
     # Load the rules, and collate them by program, so that later we'll only try
     # rules for the program that logged the line.
     $self->{rules}            = [$self->load_rules()];
@@ -170,7 +175,7 @@ sub update_check_order {
 # regex (.* instead of \d+).
 my $NUMBER_REQUIRED = 1;
 sub parse_result_cols {
-    my ($self, $spec, $rule, $number_required) = @_;
+    my ($self, $spec, $rule, $number_required, $column_names) = @_;
 
     my $assignments = {};
     ASSIGNMENT:
@@ -191,7 +196,7 @@ sub parse_result_cols {
                 dump_rule_from_db($rule));
             next ASSIGNMENT;
         }
-        if (not exists $self->{column_names}->{$key}) {
+        if (not exists $column_names->{$key}) {
             $self->my_die(qq{parse_result_cols: $key: unknown variable in: \n},
                 dump_rule_from_db($rule));
             next ASSIGNMENT;
@@ -574,13 +579,17 @@ sub load_rules {
             program          => $rule->program(),
             queueid          => $rule->queueid(),
             result_cols      => $self->parse_result_cols($rule->result_cols(),
-                                    $rule, $NUMBER_REQUIRED),
+                                    $rule, $NUMBER_REQUIRED,
+                                    $self->{result_cols_names}),
             connection_cols  => $self->parse_result_cols($rule->connection_cols(),
-                                    $rule, $NUMBER_REQUIRED),
+                                    $rule, $NUMBER_REQUIRED,
+                                    $self->{connection_cols_names}),
             result_data      => $self->parse_result_cols($rule->result_data(),
-                                    $rule),
+                                    $rule, 0,
+                                    $self->{result_cols_names}),
             connection_data  => $self->parse_result_cols($rule->connection_data(),
-                                    $rule),
+                                    $rule, 0,
+                                    $self->{connection_cols_names}),
             count            => 0,
         };
 
