@@ -102,6 +102,20 @@ sub init_globals {
             = { make_hash($mock_result->required_columns()) };
     $self->{nochange_result_cols}
             = { make_hash($mock_result->nochange_columns()) };
+
+    # TODO: should this come from the connection objects?
+    $self->{c_cols_silent_overwrite} = {
+        client_ip       => {
+            q{127.0.0.1}    => 1,
+            q{::1}          => 1,
+        },
+        client_hostname => {
+            q{localhost}    => 1,
+        },
+        server_ip       => undef,
+        server_hostname => undef,
+    };
+
 }
 
 # The main loop: most of it is really in parse_line(), to make profiling easier.
@@ -905,20 +919,6 @@ sub fixup_connection {
     }
 }
 
-# TODO: should this come from the connection objects?
-# TODO: hang this off $self.
-my %c_cols_silent_overwrite = (
-    client_ip       => {
-        q{127.0.0.1}    => 1,
-        q{::1}          => 1,
-    },
-    client_hostname => {
-        q{localhost}    => 1,
-    },
-    server_ip       => undef,
-    server_hostname => undef,
-);
-
 sub save {
     my ($self, $connection, $line, $rule, $matches) = @_;
 
@@ -959,8 +959,9 @@ sub save {
 
     # Populate connection.
     # CONNECTION_DATA
-    $self->update_hash($connection->{connection}, \%c_cols_silent_overwrite,
-        $rule->{connection_data}, \%c_cols_silent_overwrite,
+    $self->update_hash($connection->{connection},
+        $self->{c_cols_silent_overwrite},
+        $rule->{connection_data}, $self->{c_cols_silent_overwrite},
         $rule, $line, $connection, q{save: connection_data});
 
 
@@ -970,7 +971,8 @@ sub save {
         $c_cols_updates{$c_col}
             = $matches->[$rule->{connection_cols}->{$c_col}];
     }
-    $self->update_hash($connection->{connection}, \%c_cols_silent_overwrite,
+    $self->update_hash($connection->{connection},
+        $self->{c_cols_silent_overwrite},
         \%c_cols_updates, {}, $rule, $line, $connection,
         q{save: connection_cols});
 
