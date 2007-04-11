@@ -86,13 +86,6 @@ sub init_globals {
         CLONE               => 1,
     };
 
-    # Load the rules, and collate them by program, so that later we'll only try
-    # rules for the program that logged the line.
-    $self->{rules}            = [$self->load_rules()];
-    my %rules_by_program;
-    map {        $rules_by_program{$_->{program}} = []; }   @{$self->{rules}};
-    map { push @{$rules_by_program{$_->{program}}}, $_; }   @{$self->{rules}};
-    $self->{rules_by_program} = \%rules_by_program;
 
     # Used in fixup_connection() to verify data.
     my $mock_result         = $self->get_mock_object(q{Result});
@@ -104,6 +97,20 @@ sub init_globals {
     # Used in save().
     $self->{c_cols_silent_overwrite}    =
         $mock_connection->silent_overwrite_columns();
+
+    # Used in parse_result_cols().
+    my %column_names = map { $_ => 1 } qw(
+        client_hostname client_ip server_ip server_hostname
+        helo recipient sender smtp_code data child
+    );
+    $self->{column_names} = \%column_names;
+    # Load the rules, and collate them by program, so that later we'll only try
+    # rules for the program that logged the line.
+    $self->{rules}            = [$self->load_rules()];
+    my %rules_by_program;
+    map {        $rules_by_program{$_->{program}} = []; }   @{$self->{rules}};
+    map { push @{$rules_by_program{$_->{program}}}, $_; }   @{$self->{rules}};
+    $self->{rules_by_program} = \%rules_by_program;
 }
 
 # The main loop: most of it is really in parse_line(), to make profiling easier.
@@ -162,11 +169,6 @@ sub update_check_order {
 # This is also used to parse result_data and connection_data, hence the relaxed
 # regex (.* instead of \d+).
 my $NUMBER_REQUIRED = 1;
-# TODO: get this data from DBIC somehow.
-my %column_names = map { $_ => 1 } qw(
-    client_hostname client_ip server_ip server_hostname
-    helo recipient sender smtp_code data child
-);
 sub parse_result_cols {
     my ($self, $spec, $rule, $number_required) = @_;
 
@@ -189,7 +191,7 @@ sub parse_result_cols {
                 dump_rule_from_db($rule));
             next ASSIGNMENT;
         }
-        if (not exists $column_names{$key}) {
+        if (not exists $self->{column_names}->{$key}) {
             $self->my_die(qq{parse_result_cols: $key: unknown variable in: \n},
                 dump_rule_from_db($rule));
             next ASSIGNMENT;
