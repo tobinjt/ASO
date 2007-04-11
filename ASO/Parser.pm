@@ -52,13 +52,6 @@ sub init_globals {
     $self->{current_logfile}  = q{INITIALISATION};
     $.                        = 0;
 
-    # Load the rules, and collate them by program, so that later we'll only try
-    # rules for the program that logged the line.
-    $self->{rules}            = [$self->load_rules()];
-    my %rules_by_program      = map { $_->{program} => [] } @{$self->{rules}};
-    map { push @{$rules_by_program{$_->{program}}}, $_ } @{$self->{rules}};
-    $self->{rules_by_program} = \%rules_by_program;
-
     $self->{queueid_regex}    = $self->filter_regex(q{^__QUEUEID__$});
     $self->{queueid_regex}    = qr/$self->{queueid_regex}/;
 
@@ -71,6 +64,35 @@ sub init_globals {
     $self->{skip_inserting_results}      = 1;
     # Keep track of the number of inserts uncommitted.
     $self->{num_connections_uncommitted} = 0;
+
+    # Return values for actions
+    $self->{ACTION_SUCCESS} = 1;
+    $self->{ACTION_FAILURE} = 0;
+    # This one returns the new text to be parsed.
+    $self->{ACTION_REPARSE} = 2;
+
+    # Actions available to rules.
+    $self->{actions} = {
+        IGNORE              => 1,
+        CONNECT             => 1,
+        DISCONNECT          => 1,
+        SAVE_BY_PID         => 1,
+        SAVE_BY_QUEUEID     => 1,
+        COMMIT              => 1,
+        TRACK               => 1,
+        RESTRICTION_START   => 1,
+        QMGR_CHOOSES_MAIL   => 1,
+        PICKUP              => 1,
+        CLONE               => 1,
+    };
+
+    # Load the rules, and collate them by program, so that later we'll only try
+    # rules for the program that logged the line.
+    $self->{rules}            = [$self->load_rules()];
+    my %rules_by_program      = map { $_->{program} => [] } @{$self->{rules}};
+    map { push @{$rules_by_program{$_->{program}}}, $_ } @{$self->{rules}};
+    $self->{rules_by_program} = \%rules_by_program;
+
 }
 
 # The main loop: most of it is really in parse_line(), to make profiling easier.
@@ -191,121 +213,155 @@ sub parse_line {
         # shift the array forward so they're aligned
         unshift @matches, undef;
 
-        # A line we want to ignore
-        if (uc $rule->{action} eq q{IGNORE}) {
-            return;
+        if (not exists $self->{actions}->{$rule->{action}}) {
+            $self->my_warn(qq{unknown action $rule->{action}\n},
+                dump_rule($rule));
+            next LINE;
         }
 
-        # Someone has connected to us
-        if (uc $rule->{action} eq q{CONNECT}) {
-            my $connection = $self->make_connection_by_pid($line);
-            delete $connection->{faked};
-            # We also want to save the hostname/ip info
-            $self->save($connection, $line, $rule, \@matches);
+        # Hmmm, I can't figure out how to combine the next two lines.
+        my $action = $rule->{action};
+        my ($result, @more) = $self->$action($rule, $line, \@matches);
+
+        if ($result eq $self->{ACTION_SUCCESS}) {
             return;
         }
-
-        # Someone has disconnected
-        if (uc $rule->{action} eq q{DISCONNECT}) {
-            $self->disconnection($line);
-            return;
+        if ($result eq $self->{ACTION_FAILURE}) {
+            $self->my_die(qq{ACTION FAILURE: }, dump_rule($rule),
+                dump_line($line), qq{EXTRA INFORMATION: }, @more);
         }
-
-        # We want to save some information
-        if (uc $rule->{action} eq q{SAVE_BY_PID}) {
-            my $connection = $self->get_connection_by_pid($line);
-            $self->save($connection, $line, $rule, \@matches);
-            return;
-        }
-
-        # We want to save some information
-        if (uc $rule->{action} eq q{SAVE_BY_QUEUEID}) {
-            my $queueid = $self->get_queueid($line, $rule, \@matches);
-            my $connection = $self->get_connection_by_queueid($line, $queueid);
-            $self->save($connection, $line, $rule, \@matches);
-            return;
-        }
-
-        # We want to create db entries with the information we've saved.
-        if (uc $rule->{action} eq q{COMMIT}) {
-            my $queueid = $self->get_queueid($line, $rule, \@matches);
-            my $connection = $self->get_connection_by_queueid($line, $queueid);
-
-            $self->save($connection, $line, $rule, \@matches);
-            $connection->{connection}->{end} = $line->{timestamp};
-            if (exists $connection->{faked}) {
-                # I'm assuming that anything marked as faked is waiting to be
-                # track()ed, and will be dealt with by committing tracked
-                # connections later; mark it so we know it's reached commitment
-                # and can be tried again.
-                $connection->{commit_reached} = 1;
-                return;
-            }
-            $self->fixup_connection($connection);
-            $self->commit_connection($connection);
-            $self->maybe_delete_by_queueid($connection, $line, $rule);
-
-            return;
-        }
-
-        # We need to track a mail across queueids, typically when mail
-        # goes through amavisd-new.
-        if (uc $rule->{action} eq q{TRACK}) {
-            my $queueid = $self->get_queueid($line, $rule, \@matches);
-            my $connection = $self->get_connection_by_queueid($line, $queueid);
-            $self->save($connection, $line, $rule, \@matches);
-            $self->track($line, $rule, \@matches);
-            return;
-        }
-
-        # We match the start of every restriction line with the same regex,
-        # to make restriction rules easier to write.
-        # NOTE: we now try the remainder of the rules too, we don't move
-        # on to the next line.
-        if (uc $rule->{action} eq q{RESTRICTION_START}) {
-            $text =~ s/$rule->{regex}//;
-            my $connection = $self->get_connection_by_pid($line);
-            $self->save($connection, $line, $rule, \@matches);
+        if ($result eq $self->{ACTION_REPARSE}) {
+            $text = $more[0];
             next RULE;
         }
-
-        if (uc $rule->{action} eq q{QMGR_CHOOSES_MAIL}) {
-            my $connection;
-            my $queueid = $self->get_queueid($line, $rule, \@matches);
-            # Sometimes I need to create connections here because there are
-            # tracked connections where the child shows up before the parent
-            # logs the tracking line; there's a similar requirement in track().
-            if (not exists $self->{queueids}->{$queueid}) {
-                $connection = $self->make_connection_by_queueid($line, $queueid);
-            } else {
-                $connection = $self->get_connection_by_queueid($line, $queueid);
-            }
-            $self->save($connection, $line, $rule, \@matches);
-            return;
-        }
-
-        if (uc $rule->{action} eq q{PICKUP}) {
-            my $queueid = $self->get_queueid($line, $rule, \@matches);
-            my $connection = $self->make_connection_by_queueid($line, $queueid);
-            $self->save($connection, $line, $rule, \@matches);
-            delete $connection->{faked};
-            return;
-        }
-
-        # Create a deep copy of the connection and save it by queueid so that
-        # subsequent mails sent on this connection don't clobber each other.
-        if (uc $rule->{action} eq q{CLONE}) {
-            my $connection = $self->get_connection_by_pid($line);
-            my $clone = dclone($connection);
-            $self->save($clone, $line, $rule, \@matches);
-            return;
-        }
-
-        $self->my_warn(qq{unknown action $rule->{action}\n}, dump_rule($rule));
+        $self->my_warn(qq{parse_line: unknown action result: $result},
+            dump_rule($rule), dump_line($line), qq{EXTRA INFORMATION: }, @more);
     }
 
     # Last ditch: complain to the user
     print qq{$line->{program}: $text\n};
+}
+
+# A line we want to ignore
+sub IGNORE {
+    my ($self, $rule, $line, $matches) = @_;
+    return $self->{ACTION_SUCCESS};
+}
+
+# Someone has connected to us
+sub CONNECT {
+    my ($self, $rule, $line, $matches) = @_;
+    my $connection = $self->make_connection_by_pid($line);
+    delete $connection->{faked};
+    # We also want to save the hostname/ip info
+    $self->save($connection, $line, $rule, $matches);
+    return $self->{ACTION_SUCCESS};
+}
+
+# Someone has disconnected
+sub DISCONNECT {
+    my ($self, $rule, $line, $matches) = @_;
+    $self->disconnection($line);
+    return $self->{ACTION_SUCCESS};
+}
+
+# We want to save some information
+sub SAVE_BY_PID {
+    my ($self, $rule, $line, $matches) = @_;
+    my $connection = $self->get_connection_by_pid($line);
+    $self->save($connection, $line, $rule, $matches);
+    return $self->{ACTION_SUCCESS};
+}
+
+# We want to save some information
+sub SAVE_BY_QUEUEID {
+    my ($self, $rule, $line, $matches) = @_;
+    my $queueid = $self->get_queueid($line, $rule, $matches);
+    my $connection = $self->get_connection_by_queueid($line, $queueid);
+    $self->save($connection, $line, $rule, $matches);
+    return $self->{ACTION_SUCCESS};
+}
+
+# We want to create db entries with the information we've saved.
+sub COMMIT {
+    my ($self, $rule, $line, $matches) = @_;
+    my $queueid = $self->get_queueid($line, $rule, $matches);
+    my $connection = $self->get_connection_by_queueid($line, $queueid);
+
+    $self->save($connection, $line, $rule, $matches);
+    $connection->{connection}->{end} = $line->{timestamp};
+    if (exists $connection->{faked}) {
+        # I'm assuming that anything marked as faked is waiting to be
+        # track()ed, and will be dealt with by committing tracked
+        # connections later; mark it so we know it's reached commitment
+        # and can be tried again.
+        $connection->{commit_reached} = 1;
+        return $self->{ACTION_SUCCESS};
+    }
+    $self->fixup_connection($connection);
+    $self->commit_connection($connection);
+    $self->maybe_delete_by_queueid($connection, $line, $rule);
+
+    return $self->{ACTION_SUCCESS};
+}
+
+# We need to track a mail across queueids, typically when mail
+# goes through amavisd-new.
+sub TRACK {
+    my ($self, $rule, $line, $matches) = @_;
+    my $queueid = $self->get_queueid($line, $rule, $matches);
+    my $connection = $self->get_connection_by_queueid($line, $queueid);
+    $self->save($connection, $line, $rule, $matches);
+    $self->track($line, $rule, $matches);
+    return $self->{ACTION_SUCCESS};
+}
+
+# We match the start of every restriction line with the same regex,
+# to make restriction rules easier to write.
+# NOTE: we now try the remainder of the rules too, we don't move
+# on to the next line.
+sub RESTRICTION_START {
+    my ($self, $rule, $line, $matches) = @_;
+    my $text = $line->{text};
+    $text =~ s/$rule->{regex}//;
+    my $connection = $self->get_connection_by_pid($line);
+    $self->save($connection, $line, $rule, $matches);
+    return ($self->{ACTION_REPARSE}, $text);
+}
+
+sub QMGR_CHOOSES_MAIL {
+    my ($self, $rule, $line, $matches) = @_;
+    my $connection;
+    my $queueid = $self->get_queueid($line, $rule, $matches);
+    # Sometimes I need to create connections here because there are
+    # tracked connections where the child shows up before the parent
+    # logs the tracking line; there's a similar requirement in track().
+    if (not exists $self->{queueids}->{$queueid}) {
+        $connection = $self->make_connection_by_queueid($line, $queueid);
+    } else {
+        $connection = $self->get_connection_by_queueid($line, $queueid);
+    }
+    $self->save($connection, $line, $rule, $matches);
+    return $self->{ACTION_SUCCESS};
+}
+
+sub PICKUP {
+    my ($self, $rule, $line, $matches) = @_;
+    my $queueid = $self->get_queueid($line, $rule, $matches);
+    my $connection = $self->make_connection_by_queueid($line, $queueid);
+    $self->save($connection, $line, $rule, $matches);
+    delete $connection->{faked};
+    return $self->{ACTION_SUCCESS};
+}
+
+# Create a deep copy of the connection and save it by queueid so that
+# subsequent mails sent on this connection don't clobber each other.
+sub CLONE {
+    my ($self, $rule, $line, $matches) = @_;
+    my $connection = $self->get_connection_by_pid($line);
+    my $clone = dclone($connection);
+    $self->save($clone, $line, $rule, $matches);
+    return $self->{ACTION_SUCCESS};
 }
 
 # For the moment, this just deletes, but later it'll need to wait until every 
@@ -514,6 +570,11 @@ sub load_rules {
                                     $rule),
             count            => 0,
         };
+
+        if (not exists $self->{actions}->{$rule_hash->{action}}) {
+            $self->my_die(qq{load_rules: unknown action $rule_hash->{action}},
+                dump_rule_from_db($rule));
+        }
 
         # Compile the regex for efficiency, otherwise it'll be recompiled every
         # time it's used.
