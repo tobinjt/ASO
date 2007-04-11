@@ -31,14 +31,17 @@ sub col_grep {
 
 sub required_columns {
     my ($self) = @_;
-    my %cols = $self->get_cols();
     return $self->col_grep(q{required});
 }
 
 sub nochange_columns {
     my ($self) = @_;
-    my %cols = $self->get_cols();
     return $self->col_grep(q{nochange});
+}
+
+sub silent_overwrite_columns {
+    my ($self) = @_;
+    return $self->col_grep(q{silent_overwrite});
 }
 
 1;

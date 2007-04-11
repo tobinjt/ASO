@@ -15,18 +15,27 @@ my %cols = (
     server_ip           => {
         required            => 1,
         nochange            => 1,
+        silent_overwrite    => undef,
     },
     server_hostname     => {
         required            => 1,
         nochange            => 1,
+        silent_overwrite    => undef,
     },
     client_ip           => {
         required            => 1,
         nochange            => 1,
+        silent_overwrite    => {
+            q{127.0.0.1}        => 1,
+            q{::1}              => 1,
+        },
     },
     client_hostname     => {
         required            => 1,
         nochange            => 1,
+        silent_overwrite    => {
+            q{localhost}        => 1,
+        },
     },
     helo                => {
         nochange            => 1,

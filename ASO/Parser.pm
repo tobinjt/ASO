@@ -89,8 +89,9 @@ sub init_globals {
     # Load the rules, and collate them by program, so that later we'll only try
     # rules for the program that logged the line.
     $self->{rules}            = [$self->load_rules()];
-    my %rules_by_program      = map { $_->{program} => [] } @{$self->{rules}};
-    map { push @{$rules_by_program{$_->{program}}}, $_ } @{$self->{rules}};
+    my %rules_by_program;
+    map {        $rules_by_program{$_->{program}} = []; }   @{$self->{rules}};
+    map { push @{$rules_by_program{$_->{program}}}, $_; }   @{$self->{rules}};
     $self->{rules_by_program} = \%rules_by_program;
 
     # Used in fixup_connection() to verify data.
@@ -100,19 +101,9 @@ sub init_globals {
     $self->{required_result_cols}       = $mock_result->required_columns();
     $self->{nochange_result_cols}       = $mock_result->nochange_columns();
 
-    # TODO: should this come from the connection objects?
-    $self->{c_cols_silent_overwrite} = {
-        client_ip       => {
-            q{127.0.0.1}    => 1,
-            q{::1}          => 1,
-        },
-        client_hostname => {
-            q{localhost}    => 1,
-        },
-        server_ip       => undef,
-        server_hostname => undef,
-    };
-
+    # Used in save().
+    $self->{c_cols_silent_overwrite}    =
+        $mock_connection->silent_overwrite_columns();
 }
 
 # The main loop: most of it is really in parse_line(), to make profiling easier.
