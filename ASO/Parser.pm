@@ -232,7 +232,7 @@ sub parse_line {
             my $connection = $self->get_connection_by_queueid($line, $queueid);
 
             $self->save($connection, $line, $rule, \@matches);
-            $connection->{end} = $line->{timestamp};
+            $connection->{connection}->{end} = $line->{timestamp};
             if (exists $connection->{faked}) {
                 # I'm assuming that anything marked as faked is waiting to be
                 # track()ed, and will be dealt with by committing tracked
@@ -664,7 +664,7 @@ sub disconnection {
     my $connection = $self->{connections}->{$line->{pid}};
     # This is quite common - it happens every time we reject at SMTP time.
     if (not exists $connection->{queueid} and exists $connection->{results}) {
-        $connection->{end} = $line->{timestamp};
+        $connection->{connection}->{end} = $line->{timestamp};
         $self->fixup_connection($connection);
         $self->commit_connection($connection);
     }
