@@ -93,6 +93,15 @@ sub init_globals {
     map { push @{$rules_by_program{$_->{program}}}, $_ } @{$self->{rules}};
     $self->{rules_by_program} = \%rules_by_program;
 
+    # Used in fixup_connection() to verify data.
+    my $mock_result         = $self->get_mock_object(q{Result});
+    my $mock_connection     = $self->get_mock_object(q{Connection});
+    $self->{required_connection_cols}
+            = { make_hash($mock_connection->required_columns()) };
+    $self->{required_result_cols}
+            = { make_hash($mock_result->required_columns()) };
+    $self->{nochange_result_cols}
+            = { make_hash($mock_result->nochange_columns()) };
 }
 
 # The main loop: most of it is really in parse_line(), to make profiling easier.
@@ -812,19 +821,9 @@ TEMPLATE
     return $conflicts;
 }
 
-# TODO: hang these off $self.
-my (%required_connection_cols, %required_result_cols, %nochange_result_cols);
-
 sub fixup_connection {
     my ($self, $connection)         = @_;
     my $results                     = $connection->{results};
-    if (not %required_result_cols) {
-        my $fake_result             = $self->get_mock_object(q{Result});
-        my $fake_connection         = $self->get_mock_object(q{Connection});
-        %required_connection_cols   = make_hash($fake_connection->required_columns());
-        %required_result_cols       = make_hash($fake_result->required_columns());
-        %nochange_result_cols       = make_hash($fake_result->nochange_columns());
-    }
 
     # Don't even try if it's faked; faked more or less (I hope) means that it's
     # the latter part of a tracked connection which hasn't been tracked yet, so
@@ -849,7 +848,7 @@ sub fixup_connection {
     # Populate %data.
     foreach my $result (@{$results}) {
         foreach my $key (keys %{$result}) {
-            if (exists $nochange_result_cols{$key}
+            if (exists $self->{nochange_result_cols}->{$key}
                     and exists $data{$key}
                     and $data{$key} ne $result->{$key}) {
                 $self->my_warn(qq{fixup_connection: Different values for $key: \n}
@@ -868,7 +867,7 @@ sub fixup_connection {
         if (uc $result->{result} eq q{INFO}) {
             next RESULT;
         }
-        foreach my $rcol (keys %required_result_cols) {
+        foreach my $rcol (keys %{$self->{required_result_cols}}) {
             if (not exists $result->{$rcol}) {
                 if (exists $data{$rcol}) {
                     $result->{$rcol} = $data{$rcol};
@@ -882,7 +881,7 @@ sub fixup_connection {
         }
     }
 
-    foreach my $ccol (keys %required_connection_cols) {
+    foreach my $ccol (keys %{$self->{required_connection_cols}}) {
         # NOTE: I'm assuming that anything we're going to require from the
         # parent connection has already been saved there; if not I'll need to
         # revisit this and complicate it much further.
