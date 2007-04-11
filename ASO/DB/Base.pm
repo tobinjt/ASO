@@ -18,9 +18,15 @@ sub get_cols {
 }
 
 sub col_grep {
-    my ($self, $key) = @_;
+    my ($self, $tag) = @_;
     my %cols = $self->get_cols();
-    return grep { exists $cols{$_}->{$key} } keys %cols;
+    my %results;
+    foreach my $key (keys %cols) {
+        if (exists $cols{$key}->{$tag}) {
+            $results{$key} = $cols{$key}->{$tag};
+        }
+    }
+    return \%results;
 }
 
 sub required_columns {

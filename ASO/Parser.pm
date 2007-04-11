@@ -96,12 +96,9 @@ sub init_globals {
     # Used in fixup_connection() to verify data.
     my $mock_result         = $self->get_mock_object(q{Result});
     my $mock_connection     = $self->get_mock_object(q{Connection});
-    $self->{required_connection_cols}
-            = { make_hash($mock_connection->required_columns()) };
-    $self->{required_result_cols}
-            = { make_hash($mock_result->required_columns()) };
-    $self->{nochange_result_cols}
-            = { make_hash($mock_result->nochange_columns()) };
+    $self->{required_connection_cols}   = $mock_connection->required_columns();
+    $self->{required_result_cols}       = $mock_result->required_columns();
+    $self->{nochange_result_cols}       = $mock_result->nochange_columns();
 
     # TODO: should this come from the connection objects?
     $self->{c_cols_silent_overwrite} = {
@@ -759,10 +756,6 @@ sub disconnection {
 sub get_mock_object {
     my ($self, $table) = @_;
     return $self->{dbix}->resultset($table)->new_result({});
-}
-
-sub make_hash {
-    return map { $_ => 1 } @_;
 }
 
 # Update the values in a hash, complaining if we change existing values, unless
