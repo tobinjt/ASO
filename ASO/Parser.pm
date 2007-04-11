@@ -99,11 +99,7 @@ sub init_globals {
         $mock_connection->silent_overwrite_columns();
 
     # Used in parse_result_cols().
-    my %column_names = map { $_ => 1 } qw(
-        client_hostname client_ip server_ip server_hostname
-        helo recipient sender smtp_code data child
-    );
-    $self->{column_names} = \%column_names;
+    $self->{NUMBER_REQUIRED} = 1;
     $self->{result_cols_names}          = $mock_result->result_cols_columns();
     $self->{connection_cols_names}
         = $mock_connection->connection_cols_columns();
@@ -173,7 +169,6 @@ sub update_check_order {
 # left and the match from the regex ($1, $2 etc) on the right hand side (no $).
 # This is also used to parse result_data and connection_data, hence the relaxed
 # regex (.* instead of \d+).
-my $NUMBER_REQUIRED = 1;
 sub parse_result_cols {
     my ($self, $spec, $rule, $number_required, $column_names) = @_;
 
@@ -579,10 +574,10 @@ sub load_rules {
             program          => $rule->program(),
             queueid          => $rule->queueid(),
             result_cols      => $self->parse_result_cols($rule->result_cols(),
-                                    $rule, $NUMBER_REQUIRED,
+                                    $rule, $self->{NUMBER_REQUIRED},
                                     $self->{result_cols_names}),
             connection_cols  => $self->parse_result_cols($rule->connection_cols(),
-                                    $rule, $NUMBER_REQUIRED,
+                                    $rule, $self->{NUMBER_REQUIRED},
                                     $self->{connection_cols_names}),
             result_data      => $self->parse_result_cols($rule->result_data(),
                                     $rule, 0,
