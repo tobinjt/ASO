@@ -15,7 +15,7 @@ my %cols = (
     rule_id         => {
         required        => 1,
     },
-    result          => {
+    postfix_action  => {
         required        => 1,
     },
     warning         => {

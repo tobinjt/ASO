@@ -35,8 +35,8 @@ CREATE TABLE rules (
     -- rule_order, and won't be changed by the program.  Higher goes first.
     priority                integer NOT NULL DEFAULT 0,
     -- Specifies one of IGNORED, INFO, BOUNCED, EXPIRED, SENT, ACCEPTED or
-    -- REJECTED, saying what the rule does.
-    result                  text    NOT NULL,
+    -- REJECTED, giving the action Postfix performed to generate the log line.
+    postfix_action          text    NOT NULL,
     -- additional data to be saved; same format as result_cols, for now.
     result_data             text    NOT NULL DEFAULT '',
     connection_data         text    NOT NULL DEFAULT '',

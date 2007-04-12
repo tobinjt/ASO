@@ -569,7 +569,7 @@ sub load_rules {
             description      => $rule->description(),
             rule_order       => $rule->rule_order(),
             priority         => $rule->priority(),
-            result           => $rule->result(),
+            postfix_action   => $rule->postfix_action(),
             action           => $rule->action(),
             program          => $rule->program(),
             queueid          => $rule->queueid(),
@@ -868,7 +868,7 @@ sub fixup_connection {
     # parent, I think.  Maybe I can?  I don't need to, at least at this stage.
     RESULT:
     foreach my $result (@{$results}) {
-        if (uc $result->{result} eq q{INFO}) {
+        if (uc $result->{postfix_action} eq q{INFO}) {
             next RESULT;
         }
         foreach my $rcol (keys %{$self->{required_result_cols}}) {
@@ -925,9 +925,9 @@ sub save {
     # Save the new result in $connection.
     # RESULT_DATA
     my %result = (
-        rule_id => $rule->{id},
-        result  => $rule->{result},
-        line    => $line,
+        rule_id         => $rule->{id},
+        postfix_action  => $rule->{postfix_action},
+        line            => $line,
         # Sneakily inline result_data here
         %{$rule->{result_data}},
     );
@@ -1076,14 +1076,14 @@ sub commit_connection {
     my $connection_id = $connection_in_db->id();
     RESULT:
     foreach my $result (@{$connection->{results}}) {
-        if (uc $result->{result} eq q{INFO}) {
+        if (uc $result->{postfix_action} eq q{INFO}) {
             next RESULT;
         }
 
         my $result_in_db = $self->{dbix}->resultset(q{Result})->new_result({
                 connection_id   => $connection_id,
                 rule_id         => $result->{rule_id},
-                result          => $result->{result},
+                postfix_action  => $result->{postfix_action},
                 #warning         => $result->{warning},
                 smtp_code       => $result->{smtp_code},
                 sender          => $result->{sender},

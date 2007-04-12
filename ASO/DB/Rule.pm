@@ -24,7 +24,7 @@ __PACKAGE__->add_columns(
         queueid
         rule_order
         priority
-        result
+        postfix_action
         result_data
         connection_data
         restriction_name
