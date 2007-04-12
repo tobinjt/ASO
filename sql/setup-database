@@ -26,6 +26,7 @@ $| = 1;
 $/ = qq{\n\n};
 my $line_number = 0;
 my $current_file;
+my $failures = 0;
 while (<>) {
     #print qq{Read this chunk: \n$_ end of chunk\n\n\n};
     # Keep track of the line number; $. tracks lines as defined by $/, not
@@ -60,8 +61,10 @@ while (<>) {
         warn qq{Failed to run SQL: $ARGV: $line_number:\n},
              qq{error message: $DBI::errstr\n},
              qq{SQL: $_};
+        $failures++;
     }
     $line_number += $lines_this_chunk;
 }
 
 $DB->disconnect ();
+exit $failures;
