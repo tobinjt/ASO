@@ -28,16 +28,18 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
 \end{abstract}
 
-XXX WHAT IS THE CONCLUSION??? XXX
+XXX WHAT IS THE CONCLUSION???
 
-XXX FIGURE OUT WHEN TO USE MAIL AND WHEN TO USE CONNECTION; POSSIBLY STATE
-THAT THEY'RE MORE OR LESS EQUIVALENT  XXX
+XXX FIGURE OUT WHEN TO USE MAIL AND WHEN TO USE CONNECTION\@; POSSIBLY STATE
+THAT THEY'RE MORE OR LESS EQUIVALENT
 
 \newpage
 \tableofcontents
 
 \newpage
 \section{Introduction}
+
+\label{introduction}
 
 Most mail server administrators will have performed some basic processing
 of Postfix logs at one time or another, whether it was to debug a problem,
@@ -89,7 +91,7 @@ limitations, with the goal of improving parsing and reproducing the journey
 a mail takes through the internals of Postfix.
 
 Section~\ref{conclusion} describes the results of the project to date.  XXX
-IMPROVE THIS.
+IMPROVE THIS\@.
 
 Section~\ref{references} catalogues resources used in developing the
 algorithm, writing the program and preparing this paper.  
@@ -109,17 +111,120 @@ and provide a platform on which new restrictions can be trialled and
 evaluated to see if they are worth using in the fight against spam.  The
 program parses Postfix logs and populates a database with the data gleaned
 from those logs, providing a consistent and simple view of the logs which
-future tools can utilise.  
+future tools can utilise.  The gathered data can then be used to optimise
+current anti-spam measures, provide a baseline to test new anti-spam
+measures against, or to produce statistics showing how effective those
+measures are.\footnote{Section~\ref{introduction} lists some more example
+uses.}
 
-XXX EXPLAIN WHY THIS IS USEFUL AND IMPORTANT XXX
+A short example of the optimisation possible using data from the database
+is optimal ordering of Postfix restrictions:
 
-XXX ADD A SECTION EXPLAINING THE IMMEDIATE BENEFITS \\
-\texttt{SELECT name, description, restriction\_name, rule\_order \\
-    FROM rules \\
-    ORDER BY rule\_order;}\\
-Tells you which of your restrictions are most effective.
+\begin{verbatim}
+SELECT name, description, restriction_name, rule_order
+    FROM rules
+    WHERE postfix_action = 'REJECTED'
+    ORDER BY rule_order DESC;
+\end{verbatim}
 
-XXX COMPARE TO PREVIOUS WORK XXX
+If the database supports sub-selects percentages can be
+obtained:\footnote{This works for SQLite3, where || is the concatenation
+operator.  If the database containing the data does not support
+concatenation, simply remove ``|| '\%\''' from the query.}
+
+XXX STOP THIS FROM BEING SPLIT ACROSS PAGES IF POSSIBLE
+
+\begin{verbatim}
+SELECT name, description, restriction_name, rule_order,
+        (rule_order * 100.0 /
+            (SELECT SUM(rule_order)
+                FROM rules
+                WHERE postfix_action = 'REJECTED'
+            )
+        ) || '%' AS percentage
+    FROM rules
+    WHERE postfix_action = 'REJECTED'
+    ORDER BY rule_order DESC;
+\end{verbatim}
+
+Another example is determining which restrictions are not effective:
+
+\begin{verbatim}
+SELECT name, description, restriction_name, rule_order,
+        (rule_order * 100.0 /
+            (SELECT SUM(rule_order)
+                FROM rules
+                WHERE postfix_action = 'REJECTED'
+            )
+        ) || '%' AS percentage
+    FROM rules
+    WHERE postfix_action = 'REJECTED'
+        AND rule_order < 100
+    ORDER BY rule_order ASC;
+\end{verbatim}
+
+XXX COMPARE TO OTHER PARSERS
+
+\subsection{Database as Application Programming Interface}
+
+The database populated by this program provides a simple interface to
+Postfix logs.  Although the interface is a database schema, it is in effect
+quite similar to the API provided by a library: it insulates both user and
+provider of the API from changes in the implementation of the other.  The
+algorithm implemented by the program can be improved; support can be added
+for earlier or later releases of Postfix; bugs can be fixed or limitations
+removed from the program.  Statistics and/or graphs can be generated from
+the database; new restrictions can be tested and the results inspected;
+trends in the fight against spam can emerge from historical data saved in
+the database.  Using a database simplifies writing programs which need to
+interact with the data in several ways:
+
+\begin{enumerate}
+
+    \item Libraries exist for the majority of programming languages
+        allowing access to databases, whereas if this program was written
+        as a library a new interface layer would need to be written for
+        every programming language used with the API\@.
+
+    \item Databases provide complex querying and sorting functionality to
+        the user without requiring large amounts of programming.  All
+        databases provide one or more programs, of variable complexity and
+        sophistication, which can be used for ad hoc queries with minimal
+        investment of time.
+
+    \item Databases are easily extensible, e.g.:
+        
+        \begin{itemize}
+
+            \item Other tables can be added to the database.
+
+            \item New columns can be added to the tables used by the
+                program, with sufficient DEFAULT clauses or a clever
+                TRIGGER or two.
+
+            \item A VIEW gives a custom arrangement of data with very
+                little effort.
+
+            \item If the database supports it, access can be granted on a
+                fine-grained basis so that the finance department can
+                produce invoices, the helpdesk can run limited queries as
+                part of dealing with support calls, and the administrators
+                have full access to the data.
+
+            \item Triggers can be written to perform actions when certain
+                events occur.  In pseudo-SQL\@:
+
+\begin{verbatim}
+CREATE TRIGGER ON INSERT INTO results
+    WHERE sender = 'boss@example.com'
+        AND postfix_action = 'REJECTED'
+    SEND PANIC EMAIL TO 'postmaster@example.com';
+\end{verbatim}
+
+        \end{itemize}
+
+\end{enumerate}
+
 
 
 \subsection{Postfix background}
@@ -203,7 +308,7 @@ significant investment of time:
 
 \subsection{Other parsers}
 
-XXX ADD INFORMATION ABOUT OTHER POSTFIX LOG PARSERS HERE XXX
+XXX ADD INFORMATION ABOUT OTHER POSTFIX LOG PARSERS HERE
 
 
 
@@ -272,7 +377,7 @@ Each rule defines the following:
         \_\_HOSTNAME\_\_, \_\_IP\_\_, \newline\_\_SMTP\_CODE\_\_,
         \_\_QUEUEID\_\_ and \_\_COMMAND\_\_.}
 
-        \_\_COMMAND\_\_ is an SMTP command, e.g. MAIL FROM; hopefully the
+        \_\_COMMAND\_\_ is an SMTP command, e.g. MAIL FROM\@; hopefully the
         others are reasonably self explanatory.
 
         For efficiency the keywords are expanded and every rule's regex is
@@ -294,6 +399,8 @@ Each rule defines the following:
         \end{description}
 
         Logging to the database was disabled for the test runs.
+
+        XXX RERUN OVER MORE LOG FILES
 
         XXX DO I NEED TO SAY ANYTHING MORE ABOUT THIS??
 
@@ -317,8 +424,8 @@ Each rule defines the following:
         than large, so dealing with escape sequences seemed unnecessary.}
         is permitted on the right hand side of the assignment.
 
-    \item [result]  XXX RESULT NEEDS TO BE RENAMED XXX This is the action
-        Postfix must have taken to generate this line, with two exceptions:
+    \item [postfix\_action] This is the action Postfix must have taken to
+        generate this line, with two exceptions:
 
         \begin{itemize}
 
@@ -382,7 +489,7 @@ Each rule defines the following:
 
         \end{description}
 
-        XXX RERUN OVER MORE LOG FILES XXX
+        XXX RERUN OVER MORE LOG FILES
 
         Logging to the database was disabled for the test runs.
 
@@ -418,7 +525,7 @@ NOQUEUE: reject: RCPT from example.com[10.1.1.1]:
 XXX CARL SUGGESTS EXPANDING ON THIS SOME MORE, BUT I DON'T KNOW HOW\@.
 PERHAPS WHEN THE ALGORITHM IS PROPERLY EXPLAINED IT'LL BE EASIER\@?  MAKE
 REFERENCES TO THE ALGORITHM, EXPLAIN MORE CLEARLY HOW THE FIELDS ARE USED,
-HOW THE RULE MATCHES, ETC.  XXX
+HOW THE RULE MATCHES, ETC\@.
 
 % Don't reformat this!
 \begin{tabular}[]{ll}
@@ -435,7 +542,7 @@ result\_cols        & recipient = 2; sender = 1                         \\
 connection\_cols    & helo = 3                                          \\
 result\_data        &                                                   \\
 connection\_data    &                                                   \\
-result              & REJECTED                                          \\
+postfix\_action     & REJECTED                                          \\
 action              & SAVE\_BY\_PID                                     \\
 queueid             & 0                                                 \\
 rule\_order         & 0                                                 \\
@@ -448,11 +555,10 @@ priority            & 0                                                 \\
 
 \label{parsing-algorithm}
 
-While the rules are more than double (treble with 2.3.x rules? XXX ADD
-2.3.X RULES AND CHECK XXX) the size of
-the algorithm, the rules are quite simple and each rule is completely
-independent of its fellows.  The algorithm is significantly more
-complicated and highly internally interdependent.
+While the rules have more lines of code than the algorithm, the rules are
+quite simple and each rule is completely independent of its fellows.  The
+algorithm is significantly more complicated and highly internally
+interdependent.
 
 
 \subsection{A naive approach}
@@ -510,7 +616,7 @@ Unfortunately it's not that easy.
         instead), so there isn't any ambiguity about which mail a given log
         line belongs to.  The original connection will be discarded unsaved
         when the client disconnects.  One unsolved difficulty is
-        distinguishing between different groups of rejections, e.g. when
+        distinguishing between different groups of rejections, e.g.\ when
         dealing with the following sequence:
 
         \begin{enumerate}
@@ -577,7 +683,7 @@ Unfortunately it's not that easy.
         marked as such because they lack some data present in the parent
         mail, and must copy that data from their parent before being
         entered in the database.  XXX EITHER REMOVE THE LAST LINE OR EXPAND
-        ON IT SOME MORE.  FIGURE OUT WHY MORE DATA ISN'T REQUIRED.
+        ON IT SOME MORE\@.  FIGURE OUT WHY MORE DATA ISN'T REQUIRED\@.
 
         The algorithm requirements are discussed in
         section~\ref{tracking-re-injected-mail}.
@@ -616,8 +722,6 @@ code in the function named by the action.  From a high level viewpoint this
 design shares significant similarity with how an editor maintains state for
 multiple files and performs the actions the user initiates on the correct
 file.
-
-XXX USE A DISPATCH TABLE TO MAKE THIS ACCURATE XXX
 
 Section~\ref{actions-in-detail} explains the actions in substantive detail;
 this section will omit such detail because it would clutter and confuse the
@@ -713,6 +817,8 @@ It's probably apparent by now that tracking re-injected mails is the single
 most complex part of the parser.  Section~\ref{complications} complication
 3 has most of the previous discussion, should you wish to review it.  
 
+XXX EXPAND THIS
+
 there are two implicit indications:
 
 \begin{enumerate}
@@ -741,7 +847,7 @@ there are two implicit indications:
 
 \label{actions-in-detail}
 
-XXX ADD A LIST IN LOAD\_RULES() SPECIFYING THE ALLOWED ACTIONS XXX
+XXX USE THE SAME DOCUMENTATION HERE AS IN Parser.pm
 
 This list contains all the actions available in the algorithm, in the order
 in which they tend to occur in practice.
@@ -853,6 +959,6 @@ always room for improvement.
 \label{references}
 
 XXX ADD RESOURCES ONCE THE PAPER IS REASONABLY COMPLETE AND THEN REFERENCE
-THEM FROM WITHIN THE PAPER XXX
+THEM FROM WITHIN THE PAPER
 
 \end{document}
