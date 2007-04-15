@@ -69,15 +69,15 @@ anti-spam measures against, or to produce statistics showing how effective
 those measures are.  There are numerous other uses for such data: improving
 server performance by identifying troublesome destinations and
 reconfiguring appropriately or dedicating transports to those destinations;
-identifying high volume uses (e.g.  customer newsletters) and restricting
+identifying high volume uses (e.g.\ customer newsletters) and restricting
 those uses to off-peak times; as a base for billing customers on a shared
 server; etc.
 
 Section~\ref{background} provides background information about: the
 motivation for this project; the Postfix Mail Transport Agent; a short
 overview of the parser; the assumptions inherent in the design of the
-algorithm and program; using a database schema as an API; and a comparison
-against other Postfix log parsers.
+algorithm and program; using a database schema as an API\@; and a
+comparison against other Postfix log parsers.
 
 Section~\ref{rules} discusses the parsing rules in detail, explaining their
 structure, giving an example rule and sample data it matches successfully
@@ -981,7 +981,7 @@ always room for improvement.
 
     \item [pflogsumm.pl] \textit{pflogsumm.pl is designed to provide an
         over-view of postfix activity, with just enough detail to give the
-        administrator a "heads up" for potential trouble spots.}
+        administrator a ``heads up'' for potential trouble spots.\/}
         \url{http://jimsun.linxnet.com/postfix_contrib.html}
 
     \item [Sawmill Universal Log File Analysis and Reporting] is a
@@ -1006,12 +1006,12 @@ always room for improvement.
         browser. It produces Top domains output according to Sender,
         Receiver, Total mails and bytes; it keeps your main domain mail
         statistics with regard to Days Top Domain, Top Users values for per
-        day, per month and years.}  \newline
+        day, per month and years.\/}  \newline
         \url{http://www.enderunix.org/isoqlog/}
 
     \item [AWStats] \textit{AWStats is a free powerful and featureful tool
         that generates advanced web, streaming, ftp or mail server
-        statistics, graphically.}
+        statistics, graphically.\/}
         
         AWStats will produce simple graphs for many different services, but
         that restricts it to supporting the Lowest Common Denominator: the
@@ -1022,7 +1022,7 @@ always room for improvement.
         \url{http://awstats.sourceforge.net/awstats.mail.html} \newline
         \url{http://awstats.sourceforge.net/docs/awstats_faq.html#MAIL}
 
-    \item [Log analyser - throughput monitor] This utility tracks the
+    \item [Log analyser --- throughput monitor] This utility tracks the
         number of events which occurred over a particular time and warns if
         the frequency of events passes a certain threshold.  It's designed
         to provide real time alerts when dictionary attacks, mail loops or
@@ -1035,7 +1035,7 @@ always room for improvement.
         very easy to customize. Input, output, and the analysis are modular
         class objects with a clear interface. There are eight useful
         analyse modules, writing the result in plain ASCII or HTML, to
-        stdout or to files.}
+        stdout or to files.\/}
 
         Anteater hasn't been updated since November 2003, and doesn't have
         any English documentation.
@@ -1048,12 +1048,12 @@ always room for improvement.
         generation is handled by modules.  Using YAALA as a base would be
         only slightly less work as both input and output modules would need
         to be written; it may even be more work to implement the parser
-        within the constraints of YAALA.
+        within the constraints of YAALA\@.
 
         \url{http://yaala.org/}
 
     \item [Logparser/Lire] Lire is another general purpose log parser, but
-        is developed under the GNU GPL.  Like other general purpose log
+        is developed under the GNU GPL\@.  Like other general purpose log
         parsers it doesn't extract enough data from Postfix logs to be
         worthwhile.  Development also seems to have stalled, with only a
         minor update since October 2004.  \newline
@@ -1061,7 +1061,7 @@ always room for improvement.
 
     \item [Logrep] \textit{Logrep is a secure multi-platform framework for
         the collection, extraction, and presentation of information from
-        various log files.}
+        various log files.\/}
 
         The parsing Logrep performs is extremely basic, counting the number
         of different processes executed, from address, to addresses, number
