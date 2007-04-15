@@ -18,13 +18,15 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 \begin{abstract}
 
     Parsing Postfix logs is much more difficult than it first appears but
-    it is possible.  This paper describes the process required, documenting
-    the parsing algorithm and rules, explaining the difficulties
-    encountered, with reference to an implementation which stores data
-    gathered from the logs in an SQL database.  The gathered data can then
-    be used to optimise current anti-spam measures, provide a baseline to
-    test new anti-spam measures against, or to produce statistics showing
-    how effective those measures are.
+    it is possible to achieve a high degree of accuracy in understanding
+    the logs and reconstructing the actions taken by Postfix to generate
+    the logs.  This paper describes the process required, documenting the
+    parsing algorithm and rules, explaining the difficulties encountered,
+    with reference to an implementation which stores data gathered from the
+    logs in an SQL database.  The gathered data can then be used to
+    optimise current anti-spam measures, provide a baseline to test new
+    anti-spam measures against, or to produce statistics showing how
+    effective those measures are.
 
 \end{abstract}
 
@@ -56,24 +58,26 @@ One of the barriers to this type of processing is the unstructured nature
 of Postfix logs, where each logging line was added on an ad hoc basis as a
 requirement was discovered or new functionality was added.  Further
 complication arises as a result of the facility to have rejection messages
-defined by the administrator, every Real-time Black List returns a
-different explanatory message, policy servers may have different messages
-depending on the characteristics of the connection, \ldots.  This paper
-documents the difficult process of parsing Postfix logs, and presents a
-program which parses logs and places the resulting data into a database.
-The gathered data can then be used to optimise current anti-spam measures,
-provide a baseline to test new anti-spam measures against, or to produce
-statistics showing how effective those measures are.  There are numerous
-other uses for such data: improving server performance by identifying
-troublesome destinations and reconfiguring appropriately or dedicating
-transports to those destinations; identifying high volume uses (e.g.
-customer newsletters) and restricting those uses to off-peak times; as a
-base for billing customers on a shared server; etc.
+defined by the administrator; every Real-time Black List returns a
+different explanatory message; policy servers may have different messages
+depending on the characteristics of the connection; there are many ways in
+which the log lines may differ.  This paper documents the difficult process
+of parsing Postfix logs, presenting a program which parses logs and places
+the resulting data into a database.  The gathered data can then be used to
+optimise current anti-spam measures, provide a baseline to test new
+anti-spam measures against, or to produce statistics showing how effective
+those measures are.  There are numerous other uses for such data: improving
+server performance by identifying troublesome destinations and
+reconfiguring appropriately or dedicating transports to those destinations;
+identifying high volume uses (e.g.  customer newsletters) and restricting
+those uses to off-peak times; as a base for billing customers on a shared
+server; etc.
 
 Section~\ref{background} provides background information about: the
 motivation for this project; the Postfix Mail Transport Agent; a short
 overview of the parser; the assumptions inherent in the design of the
-algorithm and program; and a list of other Postfix log parsers.
+algorithm and program; using a database schema as an API; and a comparison
+against other Postfix log parsers.
 
 Section~\ref{rules} discusses the parsing rules in detail, explaining their
 structure, giving an example rule and sample data it matches successfully
@@ -162,8 +166,6 @@ SELECT name, description, restriction_name, rule_order,
         AND rule_order < 100
     ORDER BY rule_order ASC;
 \end{verbatim}
-
-XXX COMPARE TO OTHER PARSERS
 
 \subsection{Database as Application Programming Interface}
 
@@ -308,8 +310,21 @@ significant investment of time:
 
 \subsection{Other parsers}
 
-XXX ADD INFORMATION ABOUT OTHER POSTFIX LOG PARSERS HERE
+10 other parsers have been reviewed in Appendix~\ref{other-parsers} as part
+of the background research for this project.  None of the reviewed parsers
+perform the type of advanced parsing and log correlation described here;
+all are intended to perform a specific parsing and reporting task, rather
+than be a generic parser and leave generating reports from the data to
+other programs.  Some save the data extracted to a database but the
+majority discard all data once finished running, making historical analysis
+impossible.  The other parsers listed all produce a report of greater or
+lesser complexity and detail, whereas the program described here doesn't
+attempt to produce a report at all; that responsibility is deferred to a
+separate program, to be developed later.  The parsing algorithm and program
+described here are designed to enable much more detailed log analysis by
+providing a stable platform for subsequent programs to develop upon.
 
+XXX DO I NEED TO SAY MORE??
 
 
 \section{Adaptable parsing: user defined rules}
@@ -958,7 +973,107 @@ always room for improvement.
 
 \label{references}
 
-XXX ADD RESOURCES ONCE THE PAPER IS REASONABLY COMPLETE AND THEN REFERENCE
-THEM FROM WITHIN THE PAPER
+\subsection{Other Postfix log parsers}
+
+\label{other-parsers}
+
+\begin{description}
+
+    \item [pflogsumm.pl] \textit{pflogsumm.pl is designed to provide an
+        over-view of postfix activity, with just enough detail to give the
+        administrator a "heads up" for potential trouble spots.}
+        \url{http://jimsun.linxnet.com/postfix_contrib.html}
+
+    \item [Sawmill Universal Log File Analysis and Reporting] is a
+        general purpose commercial product which parses 687 log file
+        formats (correct as of 2007/04/15) and produces reports.  I have not
+        experimented with it due to its limited data extraction facilities;
+        it does have three different sets of data for Postfix (as of
+        2007/04/15, one is beta), but they do not appear to be interlinked,
+        nor does it save sufficient data for the purposes of this project.
+        The source code is available in an obfuscated form only (presumably
+        for a fee), and the product is quite expensive, as it requires a
+        license for each report which is to be generated. \newline
+        \url{http://www.thesawmill.co.uk/formats/postfix.html} \newline
+        \url{http://www.thesawmill.co.uk/formats/postfix_ii.html} \newline
+        \url{http://www.thesawmill.co.uk/formats/beta_postfix.html}
+
+    \item [Splunk] XXX INVESTIGATE FURTHER \url{http://www.splunk.com}
+
+    \item [Isoqlog] \textit{Isoqlog is an MTA log analysis program written
+        in C. It designed to scan qmail, postfix, sendmail and exim logfile
+        and produce usage statistics in HTML format for viewing through a
+        browser. It produces Top domains output according to Sender,
+        Receiver, Total mails and bytes; it keeps your main domain mail
+        statistics with regard to Days Top Domain, Top Users values for per
+        day, per month and years.}  \newline
+        \url{http://www.enderunix.org/isoqlog/}
+
+    \item [AWStats] \textit{AWStats is a free powerful and featureful tool
+        that generates advanced web, streaming, ftp or mail server
+        statistics, graphically.}
+        
+        AWStats will produce simple graphs for many different services, but
+        that restricts it to supporting the Lowest Common Denominator: the
+        data it will extract from an MTA log file is:
+        \texttt{time2, email, email\_r, host, host\_r, method, url, code,
+        and bytesd.} \newline
+        \url{http://awstats.sourceforge.net/} \newline
+        \url{http://awstats.sourceforge.net/awstats.mail.html} \newline
+        \url{http://awstats.sourceforge.net/docs/awstats_faq.html#MAIL}
+
+    \item [Log analyser - throughput monitor] This utility tracks the
+        number of events which occurred over a particular time and warns if
+        the frequency of events passes a certain threshold.  It's designed
+        to provide real time alerts when dictionary attacks, mail loops or
+        similar problems occur.  \newline
+        \url{http://home.uninet.ee/~ragnar/throughput_monitor/}
+
+    \item [Anteater] \textit{The Anteater project is a Mail Traffic
+        Analyser. Anteater supports currently the logformat produced by
+        Sendmail and by Postfix. The tool is written in 100\% C++ and is
+        very easy to customize. Input, output, and the analysis are modular
+        class objects with a clear interface. There are eight useful
+        analyse modules, writing the result in plain ASCII or HTML, to
+        stdout or to files.}
+
+        Anteater hasn't been updated since November 2003, and doesn't have
+        any English documentation.
+        
+        \url{http://anteater.drzoom.ch/}
+
+    \item [Yet Another Advanced Logfile Analyser] uses a plugin based
+        system to analyse log files and produce output reports.  The core
+        code is merely 91 lines long, as all the parsing and report
+        generation is handled by modules.  Using YAALA as a base would be
+        only slightly less work as both input and output modules would need
+        to be written; it may even be more work to implement the parser
+        within the constraints of YAALA.
+
+        \url{http://yaala.org/}
+
+    \item [Logparser/Lire] Lire is another general purpose log parser, but
+        is developed under the GNU GPL.  Like other general purpose log
+        parsers it doesn't extract enough data from Postfix logs to be
+        worthwhile.  Development also seems to have stalled, with only a
+        minor update since October 2004.  \newline
+        \url{http://logreport.org/lire/}
+
+    \item [Logrep] \textit{Logrep is a secure multi-platform framework for
+        the collection, extraction, and presentation of information from
+        various log files.}
+
+        The parsing Logrep performs is extremely basic, counting the number
+        of different processes executed, from address, to addresses, number
+        of recipients, bytes transferred and delay.  \newline
+        \url{http://www.itefix.no/phpws/index.php}
+
+\end{description}
+
+\subsection{Postfix resources}
+
+\subsection{SMTP references}
+
+XXX ADD RESOURCES/REFERENCES HERE AND THEN MAKE REFERENCES TO THEM FROM WITHIN THE PAPER
 
 \end{document}
