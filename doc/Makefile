@@ -22,7 +22,6 @@ clean:
 	rm -f *.dvi *.ps *.aux *.toc *.log
 
 check:
-	lacheck logparser.tex
 	chktex logparser.tex
 
 2up:
