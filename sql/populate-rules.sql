@@ -299,7 +299,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'SAVE_BY_PID',
         0,
         'REJECTED',
-        'check_polocy_service'
+        'check_policy_service'
 );
 
 -- <nicholas@seaton.biz>: Sender address rejected: Address uses MX in loopback address space (127.0.0.0/8); from=<nicholas@seaton.biz> to=<gillian.long@cs.tcd.ie> proto=ESMTP helo=<friend>

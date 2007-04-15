@@ -80,6 +80,8 @@ profile.SmallProf:
 	# Running time is about 2000% of normal.
 	PERL5OPT=-d:SmallProf make test
 
+cover: profile.Cover
+
 profile.Cover:
 	# DeveL::Cover; generates coverage reports.
 	PERL5OPT=-d:Cover make test
