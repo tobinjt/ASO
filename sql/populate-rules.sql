@@ -827,9 +827,9 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- B028035EB: to=<Iain@fibernetix.com>, relay=none, delay=282964, status=deferred (Host or domain name not found. Name service error for name=fibernetix.com type=MX: Host not found, try again)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
-    VALUES('Recipient MX not found (try again)', 'No MX server for the recipient was found',
+    VALUES('Recipient MX not found (try again)', 'No MX server for the recipient was found (try again, temporary failure)',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=deferred \(Host or domain name not found. Name service error for name=(__HOSTNAME__) type=(?:A|MX): Host not found, try again\)',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=deferred \((?:Host or domain name not found. )?Name service error for name=(__HOSTNAME__) type=(?:A|MX): Host not found, try again\)',
         'recipient = 2',
         'server_hostname = 3',
         'client_hostname = localhost, client_ip = 127.0.0.1',
@@ -859,7 +859,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('mail to outside world rejected', 'mail to the outside world was rejected',
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, (?>status=bounced) \(host \3\[\4\] said: ((__SMTP_CODE__).*) \(in reply to __COMMAND__ command\)\)$',
-        'recipient = 2, smtp_code = 5, data = 6',
+        'recipient = 2, smtp_code = 6, data = 5',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_BY_QUEUEID',
@@ -1004,21 +1004,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'SAVE_BY_QUEUEID',
         1,
         'INFO'
-);
-
-
--- 47C384392: to=<EarleneaDwHoneycutt@raysbaseball.com>, relay=raysbaseball.com[205.214.86.22], delay=1, status=bounced (host raysbaseball.com[205.214.86.22] said: 550-"The recipient cannot be verified.  Please check all recipients of this 550 message to verify they are valid." (in reply to RCPT TO command))
--- 
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
-    VALUES('Remote server rejected a recipient', 'The remote server rejected a recipient',
-        'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=bounced \(host \3\[\4\] said: ((__SMTP_CODE__).*) \(in reply to __COMMAND__ command\)\)$',
-        'recipient = 2, smtp_code = 6, data = 5',
-        'client_hostname = 3, server_ip = 4',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
-        1,
-        'BOUNCED'
 );
 
 -- 2A2DB4496: conversation with mail.zust.it[213.213.93.228] timed out while sending RCPT TO
@@ -1232,19 +1217,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'SAVE_BY_QUEUEID',
         1,
         'BOUNCED'
-);
-
--- CDBAC43F6: to=<smcginnes@coras.com>, orig_to=<smcginns@cs.tcd.ie>, relay=none, delay=52, status=deferred (Host or domain name not found. Name service error for name=mail.indigo.ie type=A: Host not found, try again)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
-    VALUES('Host not found, try again', 'Host not found, try again and hopefully their DNS will be working',
-        'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=deferred \(((?:Host or domain name not found. )?Name service error for name=__HOSTNAME__ type=(?:A|MX): Host not found, try again)\)$',
-        'recipient = 2, data = 3',
-        '',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
-        1,
-        'INFO'
 );
 
 -- }}}
