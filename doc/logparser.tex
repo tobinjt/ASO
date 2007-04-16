@@ -134,7 +134,8 @@ SELECT name, description, restriction_name, rule_order
 If the database supports sub-selects percentages can be
 obtained:\footnote{This works for SQLite3, where || is the concatenation
 operator.  If the database containing the data does not support
-concatenation, simply remove ``|| '\%\''' from the query.}
+this syntax, simply remove ``|| '\%\''' from the query; the results will be
+the same, just slightly less visually pleasing.}
 
 XXX STOP THIS FROM BEING SPLIT ACROSS PAGES IF POSSIBLE
 
@@ -680,8 +681,8 @@ Unfortunately it's not that easy.
         the mail has been written to disk.}
 
         Because of this the parser cannot complain when it encounters a log
-        line from qmgr for a previously unseen mail; it must mark the mail
-        as potentially fake and subsequently clear the faked flag if and
+        line from qmgr for a previously unseen mail; it must flag the mail
+        as coming from an unknown origin and subsequently clear the flag if and
         when the origin of the mail becomes clear.  Obviously the parser
         could omit checking of where mails originate from, but I feel that
         it is better to require an explicit source, as bugs are more likely
@@ -690,15 +691,16 @@ Unfortunately it's not that easy.
         Process scheduling can have a still more confusing effect: quite
         often the child mail will be created, delivered and entirely
         finished with \textbf{before} the parent logs the creation line!
-        Thus mails marked as faked cannot be entered into the database when
-        their final log line is parsed; instead they must be marked as
-        database ready and subsequently entered by the parent mail once it
-        has been identified.  Quite apart from identifying mail injected in
-        an unknown fashion, or bugs in the parser, faked mails need to be
-        marked as such because they lack some data present in the parent
-        mail, and must copy that data from their parent before being
-        entered in the database.  XXX EITHER REMOVE THE LAST LINE OR EXPAND
-        ON IT SOME MORE\@.  FIGURE OUT WHY MORE DATA ISN'T REQUIRED\@.
+        Thus mails flagged as coming from an unknown origin cannot be
+        entered into the database when their final log line is parsed;
+        instead they must be marked as database ready and subsequently
+        entered by the parent mail once it has been identified.  Quite
+        apart from identifying mail injected in an unknown fashion, or bugs
+        in the parser, unknown origin mails need to be marked as such
+        because they lack some data present in the parent mail, and must
+        copy that data from their parent before being entered in the
+        database.  XXX EITHER REMOVE THE LAST LINE OR EXPAND ON IT SOME
+        MORE\@.  FIGURE OUT WHY MORE DATA ISN'T REQUIRED\@.
 
         The algorithm requirements are discussed in
         section~\ref{tracking-re-injected-mail}.
@@ -740,8 +742,8 @@ file.
 
 Section~\ref{actions-in-detail} explains the actions in substantive detail;
 this section will omit such detail because it would clutter and confuse the
-algorithm description.  The flow chart in section~\ref{flow-chart} should
-be consulted while reading this section also.
+algorithm description.  The data flow chart in section~\ref{flow-chart}
+should be consulted while reading this section also.
 
 \subsubsection{Mail enters the system}
 
@@ -766,15 +768,14 @@ SMTP is more complicated:
         flowchart:~5,~4); or some interleaving of both.
         
     \item The client disconnects (action: disconnect; flowchart:~6).  As
-        soon as a mail is accepted it is assigned a queueid; if there is no
-        queueid Postfix didn't accept any mail over that connection, it
-        rejected all attempted deliveries due to the configured
+        soon as a mail is accepted it is assigned a queueid; thus if there
+        is no queueid Postfix didn't accept any mail over that connection,
+        it rejected all attempted deliveries due to the configured
         restrictions.  Absence of a queueid is checked for during
-        disconnection handling (action: still disconnect; flowchart:~7) and
-        if none is found the data is cleaned up and entered in the database
-        (action: still disconnect; flowchart:~8; subroutines:
-        fixup\_connection and commit\_connection), then removed from memory
-        (action: still disconnect; flowchart:~9).
+        disconnection handling (flowchart:~7) and if none is found the data
+        is cleaned up and entered in the database (flowchart:~8;
+        subroutines: fixup\_connection and commit\_connection), then
+        removed from memory (flowchart:~9).
 
     \item If one or more mails were accepted there will be more log entries
         later, see section~\ref{mail-delivery}.
@@ -802,61 +803,109 @@ three are handled in exactly the same way:
 
     \item Sometimes mail is re-injected and the child mail needs to be
         tracked by the parent mail (action: track; flowchart:~11) --- see
-        section~\ref{tracking-re-injected-mail}.
+        section~\ref{tracking-re-injected-mail} for further details.
 
-    \item Eventually the mail will be delivered (even if re-injected),
-        bounced, or deleted by the administrator (action: commit;
-        flowchart:~12).  This is the last log line for this particular mail
-        (though it may be indirectly referred to if it was re-injected).
-        If it is neither parent nor child of re-injection the data is
-        cleaned up and entered in the database (action: still commit;
-        flowchart:~14; subroutines fixup\_connection and
-        commit\_connection), then deleted from memory (action: still
-        commit; flowchart:~15).  For re-injected mails see
-        section~\ref{tracking-re-injected-mail}.
+    \item Eventually the mail will be delivered, bounced, or deleted by the
+        administrator (action: commit; flowchart:~12).  This is the last
+        log line for this particular mail (though it may be indirectly
+        referred to if it was re-injected).  If it is neither parent nor
+        child of re-injection the data is cleaned up and entered in the
+        database (flowchart:~14; subroutines fixup\_connection and
+        commit\_connection), then deleted from memory (flowchart:~15).  For
+        re-injected mails see section~\ref{tracking-re-injected-mail}.
 
 \end{enumerate}
 
 I'd like to reiterate that the actions above happen whether the mail is
 delivered to a mailbox, piped to a command, delivered to a remote server,
 bounced (due to a mail loop, delivery failure, or five day timeout), or
-deleted by the administrator.  The exception is when the mail is
-re-injected due to forwarding, and that deserves its own section, which is
-coming up next.
+deleted by the administrator.  The exception is what happens after delivery
+to the parent or children of mail re-injected due to forwarding, and that
+is explained in section~\ref{tracking-re-injected-mail}.
 
 \subsubsection{Tracking re-injected mail}
 
 \label{tracking-re-injected-mail}
 
 It's probably apparent by now that tracking re-injected mails is the single
-most complex part of the parser.  Section~\ref{complications} complication
+most complex part of the parser.  Section~\ref{complications}, complication
 3 has most of the previous discussion, should you wish to review it.  
 
-XXX EXPAND THIS
-
-there are two implicit indications:
+The crux of the problem is that re-injected mails appear in the logs
+without explicit logging indicating their source.  There are two implicit
+indications:
 
 \begin{enumerate}
 
-    \item The more commonly occurring indicator is qmgr selecting a mail
-        with a previously unseen queueid for delivery (action:
-        qmgr\_chooses\_mail; flowchart:~3), in which case a new data
-        structure will be created.  The mail will be marked as faked; this
-        flag should be subsequently cleared.  The data is then saved
-        (action: still qmgr\_chooses\_mail; flowchart:~3).  
+    \item The indicator which more commonly introduces re-injection is qmgr
+        selecting a mail with a previously unseen queueid for delivery
+        (action: qmgr\_chooses\_mail; flowchart:~3), in which case a new
+        data structure will be created.  The mail will be flagged as having
+        unknown origins; this flag should be subsequently cleared once the
+        origin has been established.  The data is then saved (flowchart:~3;
+        subroutine: save).  
 
-    \item This indicator will be seen for every mail that is re-injected
-        but is less common in identifying re-injected mail because it
-        typically occurs after the indicator explained above.  Local
-        delivery re-injects the mail and logs a successful delivery rather
-        than delivering directly to a mailbox or program (action: track;
-        flowchart:~11).  In this case the mail may already have been
-        created (by qmgr\_chooses\_mail, above); if not a new data
-        structure will be created.  In both cases the new mail is marked as
-        a child of the parent.
+    \item Local delivery re-injects the mail and logs a relayed delivery
+        rather than delivering directly to a mailbox or program as it
+        usually would (action: track; flowchart:~11).\footnote{Relayed
+        delivery is performed by the SMTP client; local delivery means
+        local to the server, i.e.\ an address the server accepts mail for.}
+        In this case the mail may already have been created (action:
+        qmgr\_chooses\_mail; flowchart:~3; described above) and the unknown
+        origin flag will be cleared; if not a new data structure will be
+        created.  In both cases the new mail is marked as a child of the
+        parent.  The log line in question is:
+
+        \texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline 
+        delay=0, status=sent (forwarded as 56F5B43FD)}
+
+        This second indicator always occurs for re-injected mail but
+        typically it occurs after the first indicator explained above, and
+        so rarely introduces re-injection.  This indicator is required to
+        tie the parent and child mails together and so is central to the
+        process of tracking re-injected mails.
 
 \end{enumerate}
 
+The algorithm for tracking and saving re-injected mail to the database will
+finally be described:
+
+\begin{itemize}
+
+    \item If the mail is of unknown origin it is a child mail whose parent
+        hasn't yet been identified (action: commit; flowchart:~16).  Mark
+        the mail as ready for entry in the database (flowchart:~17), and
+        wait for the parent to deal with it ( flowchart:~18).  The mail
+        should never have another directly associated log entry; only its
+        parent should refer to it.
+
+    \item If the mail is a child mail then it has already been tracked
+        (action: commit; flowchart:~19): the data is cleaned up, pulling
+        data from its parent if necessary, and entered in the database
+        (flowchart:~20; subroutines fixup\_connection and
+        commit\_connection), then deleted from memory (flowchart:~21).  The
+        child mail will inform the parent mail that it is finished with
+        (flowchart:~22); if this is the last child and the parent is also
+        finished the parent will delete itself.  The child mail is now
+        finished with.
+
+    \item The last alternative is that the mail is a parent mail (action:
+        commit; flowchart:~23).  Regardless of the state of its children
+        the data is cleaned up and entered in the database ( flowchart:~24;
+        subroutines fixup\_connection and commit\_connection).  The parent
+        may have children which are waiting to be entered in the database (
+        flowchart:~25); for each of those children their data is cleaned up
+        and entered in the database, then the child is finished with and
+        its data discarded.  The parent may also have outstanding children
+        which are not yet delivered, in which case (flowchart:~26) the
+        parent must wait for all children to finish.  As soon as the last
+        child is finished with the parent is also finished with
+        (flowchart:~27).
+
+\end{itemize}
+
+A parent mail can have multiple children, which may be delivered before or
+after the parent mail.  
 
 \subsection{Actions in detail}
 
