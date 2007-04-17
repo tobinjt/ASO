@@ -23,47 +23,63 @@ if (not $DB) {
 }
 
 $| = 1;
-$/ = qq{\n\n};
-my $line_number = 0;
 my $current_file;
+my $line_number;
 my $failures = 0;
+my $current_block = q{};
+
+READ:
 while (<>) {
-    #print qq{Read this chunk: \n$_ end of chunk\n\n\n};
-    # Keep track of the line number; $. tracks lines as defined by $/, not
-    # giving line numbers you'd expect in paragraph mode.
-    if (not $current_file or $current_file ne $ARGV) {
+    # Initialise on the first iteration.
+    if (not defined $current_file) {
         $current_file = $ARGV;
-        $line_number = 0;
+        $line_number = $.;
     }
-    my $lines_this_chunk = 0;
-    while (m/$/gm) {
-        $lines_this_chunk++;
-    }
-    # We get one too many lines per chunk, so correct here.
-    $lines_this_chunk--;
 
-    # Try to skip comment only blocks
-    s/^\s*--.*//gm;
-    if (not m/../m) {
-        $line_number += $lines_this_chunk;
-        next;
+    # Skip comment lines.
+    if (m/^\s*--/) {
+        next READ;
     }
-    #print qq{Trying the above block\n};
 
+    if ($current_file ne $ARGV) {
+        # We've run off the end of the file
+        run_sql($current_block);
+        $current_block = $_;
+        $current_file = $ARGV;
+        $line_number = $.;
+        next READ;
+    }
+
+    if (m/^\s*$/) {
+        # End of the SQL paragraph.
+        run_sql($current_block);
+        $current_block = q{};
+        $line_number = $. + 1;
+    } else {
+        $current_block .= $_;
+    }
+}
+
+sub run_sql {
+    my ($sql) = @_;
+    if ($sql !~ m/\w/) {
+        # Only empty lines, skip.
+        return;
+    }
+#    print qq{running $sql};
     eval {
         # Warning!!!!  SQLite3 only runs the first command in the block of code,
         # ignoring any others there may be, so you need to separate them into
         # paragraphs.
-        $DB->do($_);
+        $DB->do($sql);
         $DB->commit();
     };
     if ($@) {
         warn qq{Failed to run SQL: $ARGV: $line_number:\n},
              qq{error message: $DBI::errstr\n},
-             qq{SQL: $_};
+             qq{SQL: $sql};
         $failures++;
     }
-    $line_number += $lines_this_chunk;
 }
 
 $DB->disconnect ();
