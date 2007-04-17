@@ -25,6 +25,7 @@ devel_profile_startup();
 
 my $parser = ASO::Parser->new({
         data_source => q{dbi:SQLite:dbname=../sql/db.sq3},
+        sort_rules  => q{reverse},
     });
 # The main loop: most of it is really in parse_line(), to make profiling easier.
 foreach my $logfile (@logs) {

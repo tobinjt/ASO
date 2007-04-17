@@ -1,0 +1,36 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use File::stat;
+
+if (not @ARGV) {
+    die qq{Usage: $0 files\n};
+}
+
+my %stats;
+foreach my $filename (@ARGV) {
+    my $stat = stat($filename)
+        or die qq{$0: failed to stat $filename: $!\n};
+    my $timestamp = $stat->mtime();
+    if (not exists $stats{$timestamp}) {
+        $stats{$timestamp} = [];
+    }
+    push @{$stats{$timestamp}}, $filename;
+}
+
+my ($last_timestamp, $cumulative_timestamp);
+foreach my $timestamp (sort keys %stats) {
+    if (not defined $last_timestamp) {
+        $cumulative_timestamp = $last_timestamp = $timestamp;
+    }
+    my $difference = localtime($timestamp - $last_timestamp);
+    my $cumulative = localtime($timestamp - $cumulative_timestamp);
+    foreach my $filename (@{$stats{$timestamp}}) {
+        print qq{$filename: $difference; $cumulative\n};
+    }
+    $last_timestamp = $timestamp;
+}
