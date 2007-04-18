@@ -1,0 +1,34 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use File::Slurp;
+use List::Util qw(sum);
+require q{time2secs.pl};
+
+if (not @ARGV) {
+    die qq{Usage: $0 <list of files>\n};
+}
+
+print qq{# file_num first_value mean stddev\n};
+my $file_num = 1;
+foreach my $file (@ARGV) {
+    my @values = read_file($file);
+    chomp @values;
+
+    @values = map { time2secs($_) } @values;
+
+    my $first_value = $values[0];
+    my $num_values = @values;
+    my $mean = sum(@values) / $num_values;
+    my $sum_of_differences = 0;
+    foreach my $value (@values) {
+        $sum_of_differences += (($value - $mean) ** 2);
+    }
+    my $stddev = sqrt ($sum_of_differences / $num_values);
+    print qq{$file_num $first_value $mean $stddev\n};
+    $file_num++;
+}

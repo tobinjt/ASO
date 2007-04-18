@@ -1,0 +1,12 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+require q{time2secs.pl};
+
+while (<>) {
+    print time2secs($_), qq{\n};
+}
