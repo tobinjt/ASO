@@ -5,6 +5,7 @@
 \usepackage{url}
 % Include images
 \usepackage[final]{graphicx}
+% Change how nested enumerate environments are labelled.
 \renewcommand{\labelenumii}{\roman{enumii}:}
 
 \begin{document}
@@ -30,7 +31,8 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
 \end{abstract}
 
-XXX WHAT IS THE CONCLUSION???
+XXX WHAT IS THE CONCLUSION???  FIRST THING IS TO COMPARE TO OTHER PARSERS
+REVIEWED
 
 XXX FIGURE OUT WHEN TO USE MAIL AND WHEN TO USE CONNECTION\@; POSSIBLY STATE
 THAT THEY'RE MORE OR LESS EQUIVALENT
@@ -240,24 +242,82 @@ author.  These restrictions can be selectively applied, combined and
 bypassed on a per-client, per-recipient or per-sender basis, allowing
 varying levels of defense and or permissiveness.  Postfix leverages simple
 lookup tables to support arbitrarily complicated user-defined sequences of
-restrictions and exceptions, with the ultimate in flexibility being the
-facility to consult an external process which can implement whatever logic
-is required: some users can be restricted to sending mail on the third
-Tuesday after pay day only, if that is of any use.\footnote{This example
-may actually be useful in a payroll system.  More commonly encountered
-scenarios are restricting posting to large mailing lists (e.g.\ sending
-weekly offers to customers) to out of office hours, rate limiting clients,
-or checking SPF records (see http://www.openspf.org/ or
-http://en.wikipedia.org/wiki/Sender\_Policy\_Framework for details)}
-Administrators can also supply their own rejection messages to make it
-clear to senders why exactly their mail was rejected.  Unfortunately this
-flexibility has a cost: complexity in the logs generated.  While it is easy
-to use \texttt{grep(1)} to determine the fate of an individual email,
-following the journey an email takes through Postfix can be quite
-difficult.  The logs tend to follow a 90\%-10\% pattern: 90\% of the time
-the journey is simple, but the other 10\% of the time requires 90\% of the
-code.\footnote{These numbers don't have a solid scientific basis, they're
-based on gut feeling from writing and debugging the software.}
+restrictions and exceptions, with policy servers as the ultimate in
+flexibility.  Administrators can also supply their own rejection messages
+to make it clear to senders why exactly their mail was rejected.
+Unfortunately this flexibility has a cost: complexity in the logs
+generated.  While it is easy to use \texttt{grep(1)} to determine the fate
+of an individual email, following the journey an email takes through
+Postfix can be quite difficult.  The logs tend to follow a 90\%-10\%
+pattern: 90\% of the time the journey is simple, but the other 10\% of the
+time requires 90\% of the code.\footnote{These numbers don't have a solid
+scientific basis, they're based on gut feeling from writing and debugging
+the software.}
+
+A policy server is an external program that accepts state information from
+Postfix for each SMTP command not rejected by an earlier restriction; the
+policy server can utilise that state information to implement whatever
+logic is required.  E.g.\ some users can be restricted to sending mail on
+the third Tuesday after pay day only --- this example may actually be
+useful in a payroll system to prevent spam or (worse) phishing mails with
+faked sender addresses.  More commonly encountered scenarios are:
+
+\begin{itemize}
+
+    \item Checking Sender Policy Framework records.  SPF records specify
+        which mail servers are allowed to send mail claiming to be from a
+        particular domain.  The intention is to reduce faked sender
+        addresses, which will in turn reduce spam, backscatter and
+        joe-jobs; however there has been a lot of resistance to the
+        proposal because it breaks or vastly complicates some features of
+        SMTP.  For more details see \url{http://www.openspf.org/} or
+        \url{http://en.wikipedia.org/wiki/Sender_Policy_Framework} XXX ADD
+        REFERENCES FOR SPAM BACKSCATTER AND JOE-JOBS TO THE APPENDIX.
+
+    \item Greylisting, a technique that temporarily rejects mail where the
+        triple of (sender, recipient, remote IP address) is unknown; the
+        assumption is that it's uneconomical for a spammer to retry, but
+        that a legitimate mail server must retry.  Sadly spammers are using
+        increasingly complex and well written programs to distribute spam,
+        frequently using an ISP provided SMTP server from a compromised
+        machine on its network, so greylisting is slowly becoming less
+        useful, but it does block a large percentage of spam mail at the
+        moment.  See \url{http://www.greylisting.org/} for full details.
+
+    \item Using a scoring system such as Policyd-weight where 
+        tests accumulate points against the sending system --- if the
+        eventual score is too high the mail is rejected.
+        \url{http://www.policyd-weight.org/} 
+        
+    \item Policyd performs the following: \textit{Greylisting,
+        Sender-(envelope, SASL or host / ip)-based throttling (on messages
+        and/or volume per defined time unit), Recipient rate limiting,
+        Spamtrap monitoring / blacklisting, HELO auto blacklisting and HELO
+        randomization preventation.\/}  \url{http://policyd.sourceforge.net}
+
+\end{itemize}
+
+Example attributes taken from \newline
+\url{http://www.postfix.org/SMTPD_POLICY_README.html}:
+
+\begin{tabular}[]{ll}
+
+    request                 & smtpd\_access\_policy     \\
+    protocol\_state         & RCPT                      \\
+    protocol\_name          & SMTP                      \\
+    helo\_name              & some.domain.tld           \\
+    queue\_id               & 8045F2AB23                \\
+    sender                  & foo@bar.tld               \\
+    recipient               & bar@foo.tld               \\
+    recipient\_count        & 0                         \\
+    client\_address         & 1.2.3.4                   \\
+    client\_name            & another.domain.tld        \\
+    reverse\_client\_name   & another.domain.tld        \\
+    instance                & 123.456.7                 \\
+
+\end{tabular}
+
+
 
 \subsection{Parser background}
 
@@ -272,6 +332,7 @@ mail takes through Postfix, piecing the data together into a coherent
 whole, saving it in a useful and consistent form, and performing
 housekeeping duties.
 
+XXX REFER TO THE GRAMMAR COMPARISON SECTION ONCE ITS WRITTEN.
 
 \subsection{Assumptions}
 
@@ -360,6 +421,10 @@ parser:
         complexity.
 
 \end{itemize}
+
+XXX COMPARE AND CONTRAST WITH CONTEXT FREE GRAMMARS, OTHER GRAMMARS.
+
+XXX DESCRIBE IT IN LEFT: RIGHT PRODUCTION TERMS, IF POSSIBLE.
 
 \subsection{Rule attributes}
 
@@ -507,6 +572,10 @@ Each rule defines the following:
 
         XXX RERUN OVER MORE LOG FILES
 
+        XXX RERUN AGAIN ONCE POSTFIX 2.3 RULES HAVE BEEN ADDED TO SEE WHAT
+        THE DIFFERENCE IS.  THERE ARE 110 POSTFIX 2.2 RULES AS OF
+        2007/04/18
+
         Logging to the database was disabled for the test runs.
 
         It is hoped that this will prove to have greater effectiveness as
@@ -541,7 +610,7 @@ NOQUEUE: reject: RCPT from example.com[10.1.1.1]:
 XXX CARL SUGGESTS EXPANDING ON THIS SOME MORE, BUT I DON'T KNOW HOW\@.
 PERHAPS WHEN THE ALGORITHM IS PROPERLY EXPLAINED IT'LL BE EASIER\@?  MAKE
 REFERENCES TO THE ALGORITHM, EXPLAIN MORE CLEARLY HOW THE FIELDS ARE USED,
-HOW THE RULE MATCHES, ETC\@.
+HOW THE RULE MATCHES, AND SO ON\@.
 
 % Don't reformat this!
 \begin{tabular}[]{ll}
@@ -948,6 +1017,20 @@ in which they tend to occur in practice.
 \end{description}
 
 
+\section{Parsing coverage}
+
+XXX THIS SECTION NEEDS TO BE WRITTEN
+
+\label{parsing-coverage}
+
+\subsection{Log lines covered}
+
+\label{log-lines-covered}
+
+\subsection{Mails covered}
+
+\label{mails-covered}
+
 \section{Limitations and possible improvements}
 
 \label{limitations-improvements}
@@ -960,7 +1043,7 @@ always room for improvement.
 \begin{itemize}
 
     \item Each new Postfix release requires new rules to be written to cope
-        with the new messages.  Similarly new RBLs, new policy servers and
+        with the new log lines.  Similarly new RBLs, new policy servers and
         new administrator defined rejection messages require new rules.
 
     \item The program doesn't cope with mails which span log files:
