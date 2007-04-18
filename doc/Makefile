@@ -24,5 +24,7 @@ clean:
 check:
 	chktex logparser.tex
 
-2up:
+2up: logparser-2up.ps
+
+logparser-2up.ps: logparser.ps
 	psnup -2 logparser.ps logparser-2up.ps
