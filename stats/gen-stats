@@ -5,22 +5,27 @@
 
 set -u -e
 
-if [ "$#" != 1 ]; then
-    echo "Usage: $0 output-directory" 1>&2
+if [ "$#" != 2 ]; then
+    echo "Usage: $0 output-directory file-list" 1>&2
     exit 1
 fi
 
-dir=$1
+dir="$1"
+loglist="$2"
+if [ ! -f "$loglist" ]; then
+    echo "$0: $loglist is not a file" 1>&2
+    exit 1;
+fi
 mkdir -p "$dir"
 
-for log in $( < log-list.stats ); do
+for log in $( < "$loglist" ); do
     filename=$( basename "$log" )
     date 1>&2
     echo "$filename: cat" 1>&2
     cat "$log" > /dev/null
     for i in $( seq 1 10 ); do
         echo "$filename: $i" 1>&2
-        ( nice --adjustment=19 time -v bash -c "perl logparser \"$log\" > \"$dir/stdout.$filename\" 2> \"$dir/warnings.$filename\"" 2>&1 ) | awk '$1 == "Elapsed" { print $8 }'
+        ( nice --adjustment=0 time -v bash -c "perl logparser \"$log\" > \"$dir/stdout.$filename\" 2> \"$dir/warnings.$filename\"" 2>&1 ) | awk '$1 == "Elapsed" { print $8 }'
     done > "$dir/results.$filename"
     echo "$filename: finished" 1>&2
 done
