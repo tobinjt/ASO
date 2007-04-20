@@ -22,7 +22,8 @@ use List::Util qw(shuffle);
 sub new {
     my ($package, $options) = @_;
     my %defaults = (
-        sort_rules  => q{normal}
+        sort_rules              => q{normal},
+        discard_compiled_regex  => 0,
     );
 
     if (not exists $options->{data_source}) {
@@ -602,6 +603,9 @@ sub load_rules {
         if ($@) {
             croak qq{$0: failed to compile regex $regex: $@\n} .
                 dump_rule_from_db($rule);
+        }
+        if ($self->{discard_compiled_regex}) {
+            $rule_hash->{regex} = $regex;
         }
 
         push @results, $rule_hash;
