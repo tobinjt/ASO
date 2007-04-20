@@ -1477,7 +1477,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Postsuper logging how many messages were deleted', 'Postsuper logs how many messages were deleted by the administrator',
         'postfix/postsuper',
-        '^Deleted \d+ message(?:s)?$',
+        '^Deleted: \d+ message(?:s)?$',
         '',
         '',
         'IGNORE',
