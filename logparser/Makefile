@@ -14,7 +14,7 @@ copy.working:
 	cp -p warnings warnings.working 
 	cp -p rejects  rejects.working 
 
-test: test.1
+test: test.01
 
 test-all:
 	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( < log-list )  > rejects.all 2> warnings.all'; wc rejects.all warnings.all; date ) 2>&1 ) | tee -a results
