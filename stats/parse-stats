@@ -7,17 +7,46 @@ use warnings;
 
 use File::Slurp;
 use List::Util qw(sum);
+use Getopt::Long;
 require q{time2secs.pl};
 
-if (not @ARGV) {
-    die qq{Usage: $0 <list of files>\n};
+sub usage {
+    my ($status) = @_;
+    my $usage = qq{Usage: $0 [--discard-first] [--help] <list of files>\n};
+    if ($status) {
+        warn $usage;
+    } else {
+        print $usage;
+    }
+    exit $status;
 }
 
-print qq{# file_num first_value mean stddev\n};
+@ARGV or usage(1);
+
+my %Options = (
+    q{discard-first}    => 0,
+    help                => 0,
+);
+GetOptions(\%Options,
+    q{discard-first},
+    q{help|h},
+) or usage(1);
+
+if ($Options{help}) {
+    usage(0);
+}
+
+print qq{# file_num first_value mean stddev num_values filename\n};
 my $file_num = 1;
 foreach my $file (@ARGV) {
     my @values = read_file($file);
     chomp @values;
+
+    # The first value is sometimes quite divergent from the others, so there's
+    # an option to discard it.
+    if ($Options{q{discard-first}}) {
+        shift @values;
+    }
 
     @values = map { time2secs($_) } @values;
 
@@ -29,6 +58,6 @@ foreach my $file (@ARGV) {
         $sum_of_differences += (($value - $mean) ** 2);
     }
     my $stddev = sqrt ($sum_of_differences / $num_values);
-    print qq{$file_num $first_value $mean $stddev\n};
+    print qq{$file_num $first_value $mean $stddev $num_values "$file"\n};
     $file_num++;
 }
