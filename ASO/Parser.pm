@@ -725,7 +725,7 @@ sub make_connection {
 
     return {
         faked           => $line,
-        start           => localtime $line->{timestamp},
+        start           => scalar localtime $line->{timestamp},
         # TODO: fix this.
         # We'll always start with client = localhost, because I can't figure 
         # out which rule should set these initially without clobbering 
