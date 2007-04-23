@@ -17,7 +17,7 @@ copy.working:
 test: test.01
 
 test-all:
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser ../../../../logs/mail.log.* > rejects.all 2> warnings.all'; wc rejects.all warnings.all; date ) 2>&1 ) | tee -a results
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( ls -r ../../../../logs/mail.log.* ) > rejects.all 2> warnings.all'; wc rejects.all warnings.all; date ) 2>&1 ) | tee -a results
 
 test.%: ../../../../logs/mail.log.%
 	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser "$<"                        > rejects     2> warnings';     wc rejects     warnings;     date ) 2>&1 ) | tee -a results
