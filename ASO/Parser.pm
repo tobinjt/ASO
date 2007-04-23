@@ -304,6 +304,7 @@ sub COMMIT {
 
     $self->save($connection, $line, $rule, $matches);
     $connection->{connection}->{end} = $line->{timestamp};
+    $connection->{end} = localtime $line->{timestamp};
     if (exists $connection->{faked}) {
         # I'm assuming that anything marked as faked is waiting to be
         # track()ed, and will be dealt with by committing tracked
@@ -387,18 +388,21 @@ sub maybe_delete_by_queueid {
         $self->my_warn(qq{maybe_delete_by_queueid: faked connection: \n},
             dump_connection($connection)
         );
+        delete $self->{queueids}->{$connection->{queueid}};
         return;
     }
     if (not exists $connection->{fixuped}) {
         $self->my_warn(qq{maybe_delete_by_queueid: non-fixuped connection: \n},
             dump_connection($connection)
         );
+        delete $self->{queueids}->{$connection->{queueid}};
         return;
     }
     if (not exists $connection->{committed}) {
         $self->my_warn(qq{maybe_delete_by_queueid: uncommitted connection: \n},
             dump_connection($connection)
         );
+        delete $self->{queueids}->{$connection->{queueid}};
         return;
     }
 
@@ -720,8 +724,8 @@ sub make_connection {
     my ($line) = @_;
 
     return {
-        start           => $line->{timestamp},
         faked           => $line,
+        start           => localtime $line->{timestamp},
         # TODO: fix this.
         # We'll always start with client = localhost, because I can't figure 
         # out which rule should set these initially without clobbering 
@@ -729,6 +733,7 @@ sub make_connection {
         connection      => {
             client_hostname => q{localhost},
             client_ip       => q{127.0.0.1},
+            start           => $line->{timestamp},
         },
     };
 }
