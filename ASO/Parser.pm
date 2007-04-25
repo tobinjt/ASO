@@ -660,12 +660,45 @@ sub dump_rule_from_db {
     return Data::Dumper->Dump([\%columns], [q{rule}]);
 }
 
+# I used to use Data::Dumper on the entire hash, but it's horrendously slow once
+# the number of connections remaining grows, so . . . 
 sub dump_state {
     my ($self) = @_;
-    return Data::Dumper->Dump(
-        [$self->{connections}, $self->{queueids}],
-        [qw(connections queueids)]
-    );
+    my $state = q{};
+    my %tracked;
+
+    local $Data::Dumper::Sortkeys = 1;
+    $state = <<'PREAMBLE';
+sub reload_state {
+    my %queueids;
+    my %connections;
+
+PREAMBLE
+
+    foreach my $data_source (qw(queueids connections)) {
+        my $untracked = q{};
+        foreach my $queueid (keys %{$self->{$data_source}}) {
+            my $connection = $self->{$data_source}->{$queueid};
+            if (exists $connection->{tracked}) {
+                $tracked{$queueid} = $connection;
+            } else {
+                $untracked .= Data::Dumper->Dump([$connection],
+                    # This is pretty ugly looking, but should result in 
+                    #   $queueids{q{38C1F4493}}
+                    # or similar.
+                    [qq{\$${data_source}{q{$queueid}}}]);
+            }
+        }
+        $state .= Data::Dumper->Dump([\%tracked], [qq{*$data_source}]);
+        $state .= $untracked;
+    }
+
+    $state .= <<'POSTAMBLE';
+
+    return (\%queueids, \%connections);
+}
+POSTAMBLE
+    return $state;
 }
 
 sub filter_regex {
@@ -741,10 +774,13 @@ sub make_connection {
 sub disconnection {
     my ($self, $line) = @_;
 
-    # NOTE: We deliberately don't use $self->get_connection_by_pid() here because we
-    # don't want a new connection returned, we need more control.
+    # NOTE: We deliberately don't use $self->get_connection_by_pid() here
+    # because we don't want a new connection returned, we need more control.
     if (not exists $self->{connections}->{$line->{pid}}) {
-        $self->my_warn(qq{disconnection: no connection for pid $line->{pid} - perhaps the connect line is in a previous log file?\n});
+        $self->my_warn(qq{disconnection: no connection found for pid }
+            . qq{$line->{pid} - perhaps the connect line is in a }
+            . qq{previous log file?\n},
+            dump_line($line));
         return;
     }
 

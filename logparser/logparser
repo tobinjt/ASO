@@ -30,7 +30,7 @@ my $parser = ASO::Parser->new({
     });
 # The main loop: most of it is really in parse_line(), to make profiling easier.
 foreach my $logfile (@logs) {
-    print qq{$0: Starting to read $logfile\n};
+    warn qq{$0: Starting to read $logfile\n};
     $parser->parse($logfile);
 }
 
