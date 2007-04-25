@@ -315,7 +315,7 @@ sub COMMIT {
     }
     $self->fixup_connection($connection);
     $self->commit_connection($connection);
-    $self->maybe_delete_by_queueid($connection, $line, $rule);
+    $self->delete_by_queueid($connection, $line, $rule);
 
     return $self->{ACTION_SUCCESS};
 }
@@ -379,27 +379,25 @@ sub CLONE {
     return $self->{ACTION_SUCCESS};
 }
 
-# For the moment, this just deletes, but later it'll need to wait until every 
-# tracked connection is ready to be committed.
-sub maybe_delete_by_queueid {
+sub delete_by_queueid {
     my ($self, $connection, $line, $rule) = @_;
 
     if (exists $connection->{faked}) {
-        $self->my_warn(qq{maybe_delete_by_queueid: faked connection: \n},
+        $self->my_warn(qq{delete_by_queueid: faked connection: \n},
             dump_connection($connection)
         );
         delete $self->{queueids}->{$connection->{queueid}};
         return;
     }
     if (not exists $connection->{fixuped}) {
-        $self->my_warn(qq{maybe_delete_by_queueid: non-fixuped connection: \n},
+        $self->my_warn(qq{delete_by_queueid: non-fixuped connection: \n},
             dump_connection($connection)
         );
         delete $self->{queueids}->{$connection->{queueid}};
         return;
     }
     if (not exists $connection->{committed}) {
-        $self->my_warn(qq{maybe_delete_by_queueid: uncommitted connection: \n},
+        $self->my_warn(qq{delete_by_queueid: uncommitted connection: \n},
             dump_connection($connection)
         );
         delete $self->{queueids}->{$connection->{queueid}};
@@ -408,108 +406,82 @@ sub maybe_delete_by_queueid {
 
     # Let the parent know we're being deleted
     if (exists $connection->{parent}) {
-        $self->maybe_delete_parent($connection, $line, $rule);
+        $self->delete_child_from_parent($connection, $line, $rule);
     }
 
     # Try to commit any children we can.
-    if (exists $connection->{children} and %{$connection->{children}}) {
+    if (exists $connection->{children}) {
         $self->maybe_commit_children($connection, $line, $rule);
     }
 
-    if (exists $connection->{children} and %{$connection->{children}}) {
-        # Don't delete it yet, there are tracked connections yet to be dealt
-        # with.  When the last child is deleted the final call to
-        # maybe_delete_parent() will delete this connection.
-        $connection->{waiting_for_children} = 1;
-        return;
-    }
-
-    # This seems pointless, but it may help identify deleted connections which
-    # live on because there's a reference to them elsewhere.  I'd need something
-    # which walks all the variables remaining at the end of execution to find
-    # them though,
-    $connection->{deleted} = 1;
     delete $self->{queueids}->{$connection->{queueid}};
 }
 
 sub maybe_commit_children {
-    my ($self, $connection, $line, $rule) = @_;
+    my ($self, $parent, $line, $rule) = @_;
 
-    # We check for this in maybe_delete_parent(), so that we don't trample over
-    # ourselves.
-    $connection->{committing_children} = 1;
+    # We check for this in delete_child_from_parent(), so that we don't trample
+    # over ourselves in the sequence
+    # maybe_commit_children() -> delete_by_queueid() -> delete_child_from_parent()
+    $parent->{committing_children} = 1;
 
     CHILD:
-    foreach my $child (keys %{$connection->{children}}) {
-        my $child_con = $self->get_connection_by_queueid($line, $child, 1,
-            qq{maybe_commit_children: parent $connection->{queueid} }
-            . qq{trying to find child $child});
-        if (not defined $child_con) {
-            $self->my_warn(qq{maybe_commit_children: missing child $child\n});
-            next CHILD;
-        }
-
-        if (exists $child_con->{commit_reached}) {
+    foreach my $child_queueid (keys %{$parent->{children}}) {
+        my $child = $parent->{children}->{$child_queueid};
+        if (exists $child->{commit_reached}) {
             # We deliberately don't check for success here; there's nothing we
             # can do at this stage.  These are children which weren't being
-            # tracked when the yreached commit, so they were still faked - see
-            # the check in the COMMIT action in parse_line().
-            $self->fixup_connection($child_con);
-            $self->commit_connection($child_con);
-            $self->maybe_delete_by_queueid($child_con, $line, $rule);
+            # tracked when they reached commit, so they were still faked - see
+            # the check in the COMMIT action.
+            $self->fixup_connection($child);
+            $self->commit_connection($child);
+            $self->delete_by_queueid($child, $line, $rule);
             # This is safe: see perldoc -f each for the guarantee.
-            delete $connection->{children}->{$child};
+            delete $parent->{children}->{$child_queueid};
         }
 
         # We don't do anything with other children, they'll reach committal by
         # themselves later,
     }
 
-    delete $connection->{committing_children};
+    delete $parent->{committing_children};
 }
 
-sub maybe_delete_parent {
-    my ($self, $connection, $line, $rule) = @_;
-    # It's the child in the relationship, not the child of the connection.
-    my $child = $connection->{queueid};
+sub delete_child_from_parent {
+    my ($self, $child, $line, $rule) = @_;
+    my $child_queueid = $child->{queueid};
 
-    if (not exists $connection->{parent}) {
-        $self->my_warn(qq{maybe_delete_parent: missing parent:\n},
-            dump_connection($connection));
+    if (not exists $child->{parent}) {
+        $self->my_warn(qq{delete_child_from_parent: missing parent:\n},
+            dump_connection($child));
         return;
     }
 
-    my $parent_con = $self->get_connection_by_queueid($line, $connection->{parent},
-        1, qq{maybe_delete_parent: trying to find parent\n});
-    if (not defined $parent_con) {
-        $self->my_warn(qq{maybe_delete_parent: missing parent $connection->{parent}\n},
-            dump_connection($connection));
+    my $parent = $child->{parent};
+    if (not defined $parent) {
+        $self->my_warn(qq{delete_child_from_parent: missing parent:\n},
+            dump_connection($child));
         return;
     }
 
-    # maybe_commit_children() -> maybe_delete_by_queueid() -> maybe_delete_parent()
+    # maybe_commit_children() -> delete_by_queueid() -> delete_child_from_parent()
     # We don't want to trample over maybe_commit_children().
-    if (exists $parent_con->{committing_children}) {
+    if (exists $parent->{committing_children}) {
         return;
     }
 
-    if (not exists $parent_con->{children}
-            or not exists $parent_con->{children}->{$child}) {
-        $self->my_warn(qq{maybe_delete_parent: $child not found in \%children:\n},
+    if (not exists $parent->{children}
+            or not exists $parent->{children}->{$child_queueid}) {
+        $self->my_warn(qq{delete_child_from_parent: $child_queueid }
+            . qq{not found in \%children:\n},
             qq{parent: },
-            dump_connection($parent_con),
+            dump_connection($parent),
             qq{child: },
-            dump_connection($connection));
+            dump_connection($child));
         return;
     }
 
-    delete $parent_con->{children}->{$child};
-
-    if (not %{$parent_con->{children}}
-            and exists $parent_con->{waiting_for_children}) {
-        # All the children are gone, and the parent has been committed.
-        $self->maybe_delete_by_queueid($parent_con, $line, $rule);
-    }
+    delete $parent->{children}->{$child_queueid};
 }
 
 sub get_queueid {
@@ -677,7 +649,7 @@ PREAMBLE
 
     foreach my $data_source (qw(queueids connections)) {
         my $untracked = q{};
-        foreach my $queueid (keys %{$self->{$data_source}}) {
+        foreach my $queueid (sort keys %{$self->{$data_source}}) {
             my $connection = $self->{$data_source}->{$queueid};
             if (exists $connection->{tracked}) {
                 $tracked{$queueid} = $connection;
@@ -884,13 +856,7 @@ sub fixup_connection {
         return;
     }
 
-    my $parent_con;
-    if (exists $connection->{parent}) {
-        $parent_con = $self->get_connection_by_queueid(undef,
-            $connection->{parent}, 1,
-            qq{fixup_connection: searching for $connection->{parent}, }
-            . qq{parent of $connection->{queueid}\n});
-    }
+    my $parent = $connection->{parent};
 
     my $failure = 0;
     my %data;
@@ -935,9 +901,9 @@ sub fixup_connection {
         # parent connection has already been saved there; if not I'll need to
         # revisit this and complicate it much further.
         if (not exists $connection->{connection}->{$ccol}
-                and defined $parent_con
-                and exists $parent_con->{connection}->{$ccol}) {
-            $connection->{connection}->{$ccol} = $parent_con->{connection}->{$ccol};
+                and defined $parent
+                and exists $parent->{connection}->{$ccol}) {
+            $connection->{connection}->{$ccol} = $parent->{connection}->{$ccol};
         }
         if (not exists $connection->{connection}->{$ccol}) {
             $self->my_warn(qq{fixup_connection: missing connection col: $ccol\n},
@@ -1035,43 +1001,43 @@ sub track {
     my ($self, $line, $rule, $matches) = @_;
 
     my $queueid         = $self->get_queueid($line, $rule, $matches);
-    my $connection      = $self->get_connection_by_queueid($line, $queueid);
+    my $parent          = $self->get_connection_by_queueid($line, $queueid);
 
-    my $results         = $connection->{results};
-    my $child           = $results->[-1]->{child};
-    if (not exists $connection->{children}) {
-        $connection->{children} = {};
+    my $child_queueid   = $parent->{results}->[-1]->{child};
+    if (not exists $parent->{children}) {
+        $parent->{children} = {};
     }
-    if (exists $connection->{children}->{$child}) {
-        $self->my_warn(qq{track: tracking $child for a second time:\n});
+    if (exists $parent->{children}->{$child_queueid}) {
+        $self->my_warn(qq{track: tracking $child_queueid for a second time:\n});
     }
-    $connection->{children}->{$child} = 1;
 
-    my $new_connection;
-    if (exists $self->{queueids}->{$child}) {
-        $new_connection = $self->{queueids}->{$child};
+    my $child;
+    if (exists $self->{queueids}->{$child_queueid}) {
+        $child = $self->{queueids}->{$child_queueid};
     } else {
-        $new_connection = $self->make_connection_by_queueid($line, $child);
+        $child = $self->make_connection_by_queueid($line, $child_queueid);
     }
     # Clear the faked flag; we should never have committed a connection before
     # tracking now.
-    delete $new_connection->{faked};
+    delete $child->{faked};
+    $parent->{children}->{$child_queueid} = $child;
 
     # Mark both connections as tracked.
-    $connection->{tracked}      = 1;
-    $new_connection->{tracked}  = 1;
+    $parent->{tracked} = 1;
+    $child->{tracked}  = 1;
 
-    if (exists $new_connection->{parent}
-        and $new_connection->{parent} ne $queueid) {
-        $self->my_warn(qq{Trying to track for a second time! (parent differs)\n},
+    if (exists $child->{parent}
+        and $child->{parent} ne $parent) {
+        $self->my_warn(qq{Trying to track for a second time!\n},
             qq{\tnew parent     => $queueid\n},
             qq{\tchild          => $child\n},
-            qq{\told parent     => $new_connection->{parent}\n},
+            qq{\told parent     => $child->{parent}\n},
             qq{\t$line->{program}: $line->{text}\n},
         );
     }
 
-    $new_connection->{parent} = $queueid;
+    $child->{parent}            = $parent;
+    $child->{parent_queueid}    = $parent->{queueid};
 }
 
 # We commit unfaked, fixuped connections, regardless of parent/children -
