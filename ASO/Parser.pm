@@ -697,7 +697,7 @@ sub filter_regex {
 
     $regex =~ s/__SENDER__      /__EMAIL__/gx;
     $regex =~ s/__RECIPIENT__   /__EMAIL__/gx;
-    $regex =~ s/__MESSAGE_ID__  /__EMAIL__/gx;
+    $regex =~ s/__MESSAGE_ID__  /.*/gx;
     # We see some pretty screwey hostnames in HELO commands.
     $regex =~ s/__HELO__        /__HOSTNAME__|(?:\\[)__IP__(?:\\])|(.*?)/gx;
 #   This doesn't work, as it matches valid addresses, not real world addresses.

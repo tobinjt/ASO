@@ -1513,8 +1513,8 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Cleanup doing its thing', 'Cleanup doing whatever it does with mail',
         'postfix/cleanup',
-        '^(__QUEUEID__): message-id=<(__MESSAGE_ID__)>$',
-        'data = 2',
+        '^(__QUEUEID__): (?:resent-)?message-id=(__MESSAGE_ID__)$',
+        'message_id = 2',
         '',
         'MAIL_PICKED_FOR_DELIVERY',
         '1',

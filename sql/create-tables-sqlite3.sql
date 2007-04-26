@@ -88,6 +88,10 @@ CREATE TABLE results (
     -- The recipient; checks after DATA won't have a recipient, so allow it to
     -- be null.
     recipient               text,
+    -- The message-id.  Useful when trying to figure whether the mail is a
+    -- bounce or not, I dunno if it's of any great use otherwise.  Will be NULL
+    -- for most results.
+    message_id              text,
     -- A place to plop anything not already covered.
     data                    text
 );

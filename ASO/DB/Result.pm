@@ -33,6 +33,9 @@ my %cols = (
         required        => 1,
         result_cols    => 1,
     },
+    message_id      => {
+        result_cols    => 1,
+    },
     data            => {
         result_cols    => 1,
     },
