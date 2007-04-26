@@ -679,12 +679,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- B1508348E: from=<tcd-mzones-management-bounces+79talbert=jinan.gov.cn@cs.tcd.ie>, status=expired, returned to sender
 -- 9C169364A: from=<>, status=expired, returned to sender
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action)
     VALUES('mail has been queued for too long', 'mail has been sitting in the queue for too long, postifx is giving up on it',
         'postfix/qmgr',
         '^(__QUEUEID__): from=<(__SENDER__)>, status=expired, returned to sender$',
         'sender = 1',
         '',
+        'smtp_code = 550',
         'SAVE_BY_QUEUEID',
         1,
         'EXPIRED'
