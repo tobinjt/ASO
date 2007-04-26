@@ -672,7 +672,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): from=<(__SENDER__)>, size=\d+, nrcpt=(\d+) \(queue active\)$',
         'sender = 2',
         '',
-        'QMGR_CHOOSES_MAIL',
+        'MAIL_PICKED_FOR_DELIVERY',
         1,
         'INFO'
 );
@@ -1503,6 +1503,22 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORE',
         0,
         'IGNORED'
+);
+
+-- }}}
+
+-- CLEANUP RULES {{{1
+
+-- 8D6A74406: message-id=<546891334.17703392316576@thebat.net>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Cleanup doing its thing', 'Cleanup doing whatever it does with mail',
+        'postfix/cleanup',
+        '^(__QUEUEID__): message-id=<(__MESSAGE_ID__)>$',
+        'data = 2',
+        '',
+        'MAIL_PICKED_FOR_DELIVERY',
+        '1',
+        'INFO'
 );
 
 -- }}}

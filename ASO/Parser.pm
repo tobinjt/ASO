@@ -74,17 +74,17 @@ sub init_globals {
 
     # Actions available to rules.
     $self->{actions} = {
-        IGNORE              => 1,
-        CONNECT             => 1,
-        DISCONNECT          => 1,
-        SAVE_BY_PID         => 1,
-        SAVE_BY_QUEUEID     => 1,
-        COMMIT              => 1,
-        TRACK               => 1,
-        RESTRICTION_START   => 1,
-        QMGR_CHOOSES_MAIL   => 1,
-        PICKUP              => 1,
-        CLONE               => 1,
+        IGNORE                      => 1,
+        CONNECT                     => 1,
+        DISCONNECT                  => 1,
+        SAVE_BY_PID                 => 1,
+        SAVE_BY_QUEUEID             => 1,
+        COMMIT                      => 1,
+        TRACK                       => 1,
+        RESTRICTION_START           => 1,
+        MAIL_PICKED_FOR_DELIVERY    => 1,
+        PICKUP                      => 1,
+        CLONE                       => 1,
     };
 
 
@@ -344,7 +344,7 @@ sub RESTRICTION_START {
     return ($self->{ACTION_REPARSE}, $text);
 }
 
-sub QMGR_CHOOSES_MAIL {
+sub MAIL_PICKED_FOR_DELIVERY {
     my ($self, $rule, $line, $matches) = @_;
     my $connection;
     my $queueid = $self->get_queueid($line, $rule, $matches);
@@ -697,6 +697,7 @@ sub filter_regex {
 
     $regex =~ s/__SENDER__      /__EMAIL__/gx;
     $regex =~ s/__RECIPIENT__   /__EMAIL__/gx;
+    $regex =~ s/__MESSAGE_ID__  /__EMAIL__/gx;
     # We see some pretty screwey hostnames in HELO commands.
     $regex =~ s/__HELO__        /__HOSTNAME__|(?:\\[)__IP__(?:\\])|(.*?)/gx;
 #   This doesn't work, as it matches valid addresses, not real world addresses.
@@ -749,6 +750,7 @@ sub make_connection {
         line_number     => $.,
         faked           => $line,
         start           => scalar localtime $line->{timestamp},
+        programs        => {},
         # TODO: fix this.
         # We'll always start with client = localhost, because I can't figure 
         # out which rule should set these initially without clobbering 
@@ -940,6 +942,8 @@ sub fixup_connection {
 
 sub save {
     my ($self, $connection, $line, $rule, $matches) = @_;
+
+    $connection->{programs}->{$line->{program}}++;
 
     if ($rule->{queueid}) {
         my $queueid = $matches->[$rule->{queueid}];
