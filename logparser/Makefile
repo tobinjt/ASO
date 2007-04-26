@@ -7,8 +7,7 @@ SHELL=bash
 all: test summary
 
 diff:
-	diff -u warnings.working warnings
-	diff -u rejects.working  rejects
+	diff -u warnings.working warnings; diff -u rejects.working  rejects
 
 copy.working:
 	cp -p warnings warnings.working 
