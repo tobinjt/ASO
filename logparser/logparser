@@ -11,6 +11,10 @@ use ASO::DB;
 use ASO::Parser;
 use Carp;
 
+sub timewarn {
+    warn qq{$0: }, scalar localtime, q{: }, @_;
+}
+
 # Ensure that we don't try to read from a terminal.
 my @logs = @ARGV;
 if (not @logs and -t STDIN) {
@@ -30,10 +34,11 @@ my $parser = ASO::Parser->new({
     });
 # The main loop: most of it is really in parse_line(), to make profiling easier.
 foreach my $logfile (@logs) {
-    warn qq{$0: Starting to read $logfile\n};
+    timewarn(qq{Starting to read $logfile\n});
     $parser->parse($logfile);
 }
 
+timewarn(qq{Updating rule_order\n});
 $parser->update_check_order();
 
 # Dump any remaining connections so we can tell when there are uncommitted
@@ -42,7 +47,9 @@ $parser->update_check_order();
 # a sequence of events properly.
 # In future we'll also use this to reload state from the previous run, to handle
 # mails which cross logfile boundaries.
+timewarn(qq{begin dumping state\n});
 print $parser->dump_state();
+timewarn(qq{finished dumping state\n});
 
 # Some profiling modules dump their data to stdout, but we want to redirect
 # that.  If the correct environment variable is set stdout will be redirected

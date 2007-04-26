@@ -253,7 +253,7 @@ sub parse_line {
     }
 
     # Last ditch: complain to the user
-    print qq{$line->{program}: $text\n};
+    print qq{$self->{current_logfile}: $.: $line->{program}: $text\n};
 }
 
 # A line we want to ignore
@@ -610,24 +610,28 @@ sub load_rules {
 sub dump_connection {
     my ($connection) = @_;
 
+    local $Data::Dumper::Sortkeys = 1;
     return Data::Dumper->Dump([$connection], [q{connection}]);
 }
 
 sub dump_line {
     my ($line) = @_;
 
+    local $Data::Dumper::Sortkeys = 1;
     return Data::Dumper->Dump([$line], [q{line}]);
 }
 
 sub dump_rule {
     my ($rule) = @_;
 
+    local $Data::Dumper::Sortkeys = 1;
     return Data::Dumper->Dump([$rule], [q{rule}]);
 }
 
 sub dump_rule_from_db {
     my ($rule) = @_;
 
+    local $Data::Dumper::Sortkeys = 1;
     my %columns = $rule->get_columns();
     return Data::Dumper->Dump([\%columns], [q{rule}]);
 }
@@ -641,6 +645,7 @@ sub dump_state {
 
     local $Data::Dumper::Sortkeys = 1;
     $state = <<'PREAMBLE';
+## vim: set foldmethod=marker :
 sub reload_state {
     my %queueids;
     my %connections;
@@ -648,20 +653,29 @@ sub reload_state {
 PREAMBLE
 
     foreach my $data_source (qw(queueids connections)) {
+        $state .= qq{## Starting dump of $data_source\n};
+        $state .= qq{## } . localtime() . qq{\n};
         my $untracked = q{};
         foreach my $queueid (sort keys %{$self->{$data_source}}) {
             my $connection = $self->{$data_source}->{$queueid};
             if (exists $connection->{tracked}) {
                 $tracked{$queueid} = $connection;
             } else {
-                $untracked .= Data::Dumper->Dump([$connection],
-                    # This is pretty ugly looking, but should result in 
-                    #   $queueids{q{38C1F4493}}
-                    # or similar.
-                    [qq{\$${data_source}{q{$queueid}}}]);
+                # This is pretty ugly looking, but should result in 
+                #   $queueids{q{38C1F4493}}
+                # or similar.
+                my $var = qq{\$${data_source}{q{$queueid}}};
+                $untracked .= qq(## $var {{{\n);
+                $untracked .= Data::Dumper->Dump([$connection], [$var]);
+                $untracked .= qq(## }}}\n);
             }
         }
+        $state .= qq{## Starting dump of tracked $data_source data\n};
+        $state .= qq{## } . localtime() . qq( {{{\n);
         $state .= Data::Dumper->Dump([\%tracked], [qq{*$data_source}]);
+        $state .= qq(## }}}\n);
+        $state .= qq{## Appending dump of untracked $data_source data\n};
+        $state .= qq{## } . localtime() . qq{\n};
         $state .= $untracked;
     }
 
@@ -669,6 +683,8 @@ PREAMBLE
 
     return (\%queueids, \%connections);
 }
+
+1;
 POSTAMBLE
     return $state;
 }
@@ -711,7 +727,7 @@ sub make_connection_by_queueid {
     }
 
     # NOTE: We don't clear the faked flag here, that's up to the caller.
-    my $connection = make_connection($line);
+    my $connection = $self->make_connection($line);
     $connection->{queueid} = $queueid;
     $self->{queueids}->{$queueid} = $connection;
     return $connection;
@@ -720,15 +736,17 @@ sub make_connection_by_queueid {
 sub make_connection_by_pid {
     my ($self, $line) = @_;
     # NOTE: We don't clear the faked flag here, that's up to the caller.
-    my $connection = make_connection($line);
+    my $connection = $self->make_connection($line);
     $self->{connections}->{$line->{pid}} = $connection;
     return $connection;
 }
 
 sub make_connection {
-    my ($line) = @_;
+    my ($self, $line) = @_;
 
     return {
+        logfile         => $self->{current_logfile},
+        line_number     => $.,
         faked           => $line,
         start           => scalar localtime $line->{timestamp},
         # TODO: fix this.
@@ -1052,7 +1070,7 @@ sub commit_connection {
         return;
     }
     if (not exists $connection->{fixuped}) {
-        $self->my_warn(qq{commit_connection: un-fixuped connection: \n},
+        $self->my_warn(qq{commit_connection: non-fixuped connection: \n},
             dump_connection($connection)
         );
         return;

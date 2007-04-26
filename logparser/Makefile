@@ -16,11 +16,14 @@ copy.working:
 
 test: test.01
 
+test-some:
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( < logs-some                       ) > rejects.some 2> warnings.some'; wc rejects.some warnings.some; date ) 2>&1 ) | tee -a results
+
 test-all:
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( ls -r ../../../../logs/mail.log.* ) > rejects.all 2> warnings.all'; wc rejects.all warnings.all; date ) 2>&1 ) | tee -a results
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( ls -r ../../../../logs/mail.log.* ) > rejects.all  2> warnings.all';  wc rejects.all  warnings.all;  date ) 2>&1 ) | tee -a results
 
 test.%: ../../../../logs/mail.log.%
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser "$<"                        > rejects     2> warnings';     wc rejects     warnings;     date ) 2>&1 ) | tee -a results
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser "$<"                          			 > rejects      2> warnings';      wc rejects      warnings;      date ) 2>&1 ) | tee -a results
 
 db:
 	( cd ../sql/; perl setup-database create-tables-sqlite3.sql populate-rules.sql )
@@ -106,9 +109,13 @@ profile.GraphVizProf:
 	dot -Tpng -o profile.png profile.dot
 
 summary:
-	( echo "warning summary: "; grep ^logparser warnings | cut -d ' ' -f 4-9 | sort | uniq -c | sort -n ) | tee -a results
-	( echo -n "rejects: "; grep -c queueid: rejects ) | tee -a results
+	( echo "warning summary: ";     grep ^logparser warnings     | cut -d ' ' -f 4- | sort | uniq -c | sort -n ) | tee -a results
+	( echo -n "rejects: ";     grep -c ^.queueids rejects     ) | tee -a results
 
 summary-all:
-	( echo "warning.all summary: "; grep ^logparser warnings.all | cut -d ' ' -f 4-9 | sort | uniq -c | sort -n ) | tee -a results
-	( echo -n "rejects.all: "; grep -c queueid: rejects.all ) | tee -a results
+	( echo "warning.all summary: "; grep ^logparser warnings.all | cut -d ' ' -f 4- | sort | uniq -c | sort -n ) | tee -a results
+	( echo -n "rejects.all: "; grep -c ^.queueids rejects.all ) | tee -a results
+
+summary-some:
+	( echo "warning.some summary: "; grep ^logparser warnings.some | cut -d ' ' -f 4- | sort | uniq -c | sort -n ) | tee -a results
+	( echo -n "rejects.some: "; grep -c ^.queueids rejects.some ) | tee -a results
