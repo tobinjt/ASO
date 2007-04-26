@@ -53,7 +53,7 @@ sub init_globals {
     $self->{current_logfile}  = q{INITIALISATION};
     $.                        = 0;
 
-    $self->{queueid_regex}    = $self->filter_regex(q{^__QUEUEID__$});
+    $self->{queueid_regex}    = $self->filter_regex(q{__QUEUEID__});
     $self->{queueid_regex}    = qr/$self->{queueid_regex}/;
 
     # All mail starts off in %connections, unless submitted locally by
@@ -305,6 +305,7 @@ sub COMMIT {
     $self->save($connection, $line, $rule, $matches);
     $connection->{connection}->{end} = $line->{timestamp};
     $connection->{end} = localtime $line->{timestamp};
+    $self->maybe_remove_faked($connection);
     if (exists $connection->{faked}) {
         # I'm assuming that anything marked as faked is waiting to be
         # track()ed, and will be dealt with by committing tracked
@@ -498,7 +499,7 @@ sub get_queueid {
             dump_rule($rule)
         );
     }
-    if ($queueid !~ m/$self->{queueid_regex}/o) {
+    if ($queueid !~ m/^$self->{queueid_regex}$/o) {
         $self->my_die(qq{get_queueid: queueid $queueid doesn't match __QUEUEID__;\n},
             dump_line($line),
             qq{using: },
@@ -1129,6 +1130,42 @@ sub commit_connection {
     if ($self->{num_connections_uncommitted} > 1000) {
         $self->{dbix}->txn_commit();
         $self->{num_connections_uncommitted} = 0;
+    }
+}
+
+sub maybe_remove_faked {
+    my ($self, $connection) = @_;
+
+    # First try to identify bounced notification mails.
+    # If it didn't come from either smtpd or pickup then it must have been
+    # generated internally by postfix.  We check that it's not a tracked mail,
+    # because those are internally generated too.
+    if (not exists $connection->{programs}->{q{postfix/smtpd}}
+            and not exists $connection->{programs}->{q{postfix/pickup}}
+            and not exists $connection->{tracked}) {
+        my $sender_found = 0;
+        my $bounce_message_id = 0;
+        foreach my $result (@{$connection->{results}}) {
+            # Bounces always have <> as the sender.
+            if (exists $result->{sender} and $result->{sender} eq q{}) {
+                $sender_found++;
+            }
+            # There'll always be a message-id; it _APPEARS_ that the message-id
+            # is preserved when forwarding mail but is generated for bounce
+            # notification.  The format for bounce notification is
+            # datetime.queueid@, so check for that.
+            if (exists $result->{message_id}
+                    and $result->{message_id}
+                        =~ m/^<\d{14}\.($self->{queueid_regex})\@/o
+                    and $1 eq $connection->{queueid}) {
+                $bounce_message_id++;
+            }
+        }
+        if ($sender_found and $bounce_message_id) {
+            delete $connection->{faked};
+            $connection->{bounce_notification} = 1;
+            return;
+        }
     }
 }
 

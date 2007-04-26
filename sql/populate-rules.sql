@@ -1246,13 +1246,14 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- This will be followed by a 'postfix/qmgr: 8025E43F0: removed' line, so don't commit yet.
 -- 7FD1443FD: to=<tobinjt@cs.tcd.ie>, orig_to=<root>, relay=local, delay=0, status=sent (delivered to command: /mail/procmail/bin/procmail -p -t /mail/procmail/etc/procmailrc)
 -- 8025E43F0: to=<tobinjt@cs.tcd.ie>, relay=local, delay=0, status=sent (delivered to command: /mail/procmail/bin/procmail -p -t /mail/procmail/etc/procmailrc)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Mail has been delivered locally', 'Mail has been delivered to the LDA (typically procmail)',
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=sent \((delivered to command: .*)\)$',
         'recipient = 2, data = 3',
         '',
         'smtp_code = 250',
+        'server_hostname = localhost, server_ip = 127.0.0.1',
         'SAVE_BY_QUEUEID',
         1,
         'SENT'
