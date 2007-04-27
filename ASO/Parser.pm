@@ -98,6 +98,8 @@ sub init_globals {
     # Used in save().
     $self->{c_cols_silent_overwrite}    =
         $mock_connection->silent_overwrite_columns();
+    $self->{c_cols_silent_discard}      =
+        $mock_connection->silent_discard_columns();
 
     # Used in parse_result_cols().
     $self->{NUMBER_REQUIRED} = 1;
@@ -985,7 +987,7 @@ sub save {
     # CONNECTION_DATA
     $self->update_hash($connection->{connection},
         $self->{c_cols_silent_overwrite},
-        $rule->{connection_data}, $self->{c_cols_silent_overwrite},
+        $rule->{connection_data}, $self->{c_cols_silent_discard},
         $rule, $line, $connection, q{save: connection_data});
 
 

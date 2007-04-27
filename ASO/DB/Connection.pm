@@ -16,12 +16,19 @@ my %cols = (
         required            => 1,
         nochange            => 1,
         silent_overwrite    => undef,
+        silent_discard      => {
+            q{127.0.0.1}        => 1,
+            q{::1}              => 1,
+        },
         connection_cols     => 1,
     },
     server_hostname     => {
         required            => 1,
         nochange            => 1,
         silent_overwrite    => undef,
+        silent_discard      => {
+            q{localhost}        => 1,
+        },
         connection_cols     => 1,
     },
     client_ip           => {
@@ -31,12 +38,19 @@ my %cols = (
             q{127.0.0.1}        => 1,
             q{::1}              => 1,
         },
+        silent_discard      => {
+            q{127.0.0.1}        => 1,
+            q{::1}              => 1,
+        },
         connection_cols     => 1,
     },
     client_hostname     => {
         required            => 1,
         nochange            => 1,
         silent_overwrite    => {
+            q{localhost}        => 1,
+        },
+        silent_discard      => {
             q{localhost}        => 1,
         },
         connection_cols     => 1,
@@ -66,6 +80,11 @@ sub connection_cols_columns {
 sub silent_overwrite_columns {
     my ($self) = @_;
     return $self->col_grep(q{silent_overwrite});
+}
+
+sub silent_discard_columns {
+    my ($self) = @_;
+    return $self->col_grep(q{silent_discard});
 }
 
 __PACKAGE__->load_components(qw(PK::Auto Core));
