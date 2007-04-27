@@ -759,8 +759,6 @@ sub make_connection {
         # out which rule should set these initially without clobbering 
         # something else.
         connection      => {
-            client_hostname => q{localhost},
-            client_ip       => q{127.0.0.1},
             start           => $line->{timestamp},
         },
     };

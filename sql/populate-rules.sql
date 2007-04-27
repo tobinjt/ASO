@@ -740,12 +740,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- 0226B4317: to=<rajaverma@gmail.com>, relay=gmail-smtp-in.l.google.com[66.249.93.114], delay=1, status=sent (250 2.0.0 OK 1162706943 x33si2914313ugc)
 -- DC1484406: to=<elisab@gmail.com>, orig_to=<elisa.baniassad@cs.tcd.ie>, relay=gmail-smtp-in.l.google.com[66.249.93.114], delay=1, status=sent (250 2.0.0 OK 1162686664 53si2666246ugd)
 -- B7F9D4400: to=<dalyj1@tcd.ie>, orig_to=<dalyj1@cs.tcd.ie>, relay=imx1.tcd.ie[134.226.17.160], delay=0, status=sent (250 Ok: queued as BE7B04336)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
     VALUES('mail delivered to outside world', 'a mail was delivered to an outside address',
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=sent \(((__SMTP_CODE__).*)\)$',
         'recipient = 2, data = 5, smtp_code = 6',
         'server_hostname = 3, server_ip = 4',
+        'client_ip = 127.0.0.1, client_hostname = localhost',
         'SAVE_BY_QUEUEID',
         1,
         'SENT'
@@ -821,7 +822,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2',
         'server_hostname = 3',
         'smtp_code = 550',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
+        'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
         'SAVE_BY_QUEUEID',
         1,
         'BOUNCED'
@@ -1253,7 +1254,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2, data = 3',
         '',
         'smtp_code = 250',
-        'server_hostname = localhost, server_ip = 127.0.0.1',
+        'server_hostname = localhost, server_ip = 127.0.0.1, client_ip = 127.0.0.1, client_hostname = localhost',
         'SAVE_BY_QUEUEID',
         1,
         'SENT'
@@ -1310,13 +1311,14 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- A15004400: to=<Jean-Marc.Seigneur@cs.tcd.ie>, relay=local, delay=0, status=bounced (unknown user: "jean-marc.seigneur")
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Unknown user??  This should have been caught long ago!', 'We should never have an unknown user at this stage, it should have been caught by smtpd',
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=bounced \((unknown user: ".*")\)$',
         'recipient = 2, data = 3',
         '',
         'smtp_code = 550',
+        'client_ip = 127.0.0.1, client_hostname = localhost, server_ip = 127.0.0.1, server_hostname = localhost',
         'SAVE_BY_QUEUEID',
         1,
         'BOUNCED'
