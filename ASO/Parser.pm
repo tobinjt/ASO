@@ -60,6 +60,9 @@ sub init_globals {
     # sendmail/postgrop, and then moves into %queueids if it gets a queueid.
     $self->{connections}      = {};
     $self->{queueids}         = {};
+    # Cloned connections are temporarily saved in here to help identify those
+    # strange connections which consist only of two smtpd results.
+    $self->{mails_per_smtpd}  = {};
 
     # Skip inserting results into the db, because it quadrouples the run time.
     $self->{skip_inserting_results}      = 1;
@@ -255,7 +258,7 @@ sub parse_line {
     }
 
     # Last ditch: complain to the user
-    print qq{$self->{current_logfile}: $.: $line->{program}: $text\n};
+    $self->my_warn(qq{unparsed line: $line->{program}: $text\n});
 }
 
 # A line we want to ignore
@@ -378,7 +381,19 @@ sub CLONE {
     my ($self, $rule, $line, $matches) = @_;
     my $connection = $self->get_connection_by_pid($line);
     my $clone = dclone($connection);
+    # Dump anything after the first result (connect from . . ); they'll be 
+    # rejections and shouldn't be part of the new result.
+    $clone->{results} = [ $clone->{results}->[0] ];
+    # Similarly reset the list of programs which have touched the connection.
+    $clone->{programs} = { q{postfix/smtpd} => 1 };
     $self->save($clone, $line, $rule, $matches);
+
+    # Save the clone so that we can detect those weird mails that don't have a
+    # post-smtpd entry.
+    if (not exists $self->{mails_per_smtpd}->{$line->{pid}}) {
+        $self->{mails_per_smtpd}->{$line->{pid}} = [];
+    }
+    push @{$self->{mails_per_smtpd}->{$line->{pid}}}, $clone;
     return $self->{ACTION_SUCCESS};
 }
 
@@ -778,14 +793,46 @@ sub disconnection {
     }
 
     my $connection = $self->{connections}->{$line->{pid}};
+    # There should NEVER be a queueid.
+    if (exists $connection->{queueid}) {
+        $self->my_warn(qq{disconnection: PANIC: found queueid: \n},
+            dump_connection($connection));
+        return;
+    }
+
     # This is quite common - it happens every time we reject at SMTP time.
-    if (not exists $connection->{queueid} and exists $connection->{results}) {
+    if (exists $connection->{results}) {
         $connection->{connection}->{end} = $line->{timestamp};
         $self->fixup_connection($connection);
         $self->commit_connection($connection);
     }
 
+    # Try to clear out those mails which only have two smtpd entries, so they
+    # don't hang around, taking up memory uselessly and causing queueid clashes
+    # occasionally.
+    if (exists $self->{mails_per_smtpd}->{$line->{pid}}) {
+        foreach my $mail (@{$self->{mails_per_smtpd}->{$line->{pid}}}) {
+            if (not exists $mail->{programs}->{q{postfix/cleanup}}
+                    and $mail->{programs}->{q{postfix/smtpd}} == 2 ) {
+                #$self->my_warn(qq{missing cleanup: \n},
+                #    dump_connection($mail));
+                if ($mail == $self->{queueids}->{$mail->{queueid}}) {
+                    delete $self->{queueids}->{$mail->{queueid}};
+                } else {
+                    $self->my_warn(qq{missing cleanup, but connection }
+                        . qq{found by queueid differs:\n},
+                        qq{found in mails_per_smtpd:\n},
+                        dump_connection($mail),
+                        qq{found in queueids:\n},
+                        dump_connection($self->{queueids}->{$mail->{queueid}}),
+                    );
+                }
+            }
+        }
+    }
+
     delete $self->{connections}->{$line->{pid}};
+    delete $self->{mails_per_smtpd}->{$line->{pid}};
 }
 
 sub get_mock_object {
