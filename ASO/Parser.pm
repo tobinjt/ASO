@@ -712,6 +712,19 @@ sub filter_regex {
 
     # I'm deliberately allowing a trailing .
     my $hostname_re = qr/(?:unknown|(?:[-_a-zA-Z0-9.]+))/;
+    my $ipv6_chunk  = qr/(?:[0-9A-Fa-f]{1,4})/;
+    my $ipv6_re = qr/(?:
+ (?>(?:${ipv6_chunk}:){7}${ipv6_chunk})             # Full address
+|(?>(?:${ipv6_chunk}:){1,6}(?::${ipv6_chunk}){1,6}) # Elided address, missing
+                                                    # the middle but having both
+                                                    # ends (e.g. 2001::1)
+|(?>:(?::${ipv6_chunk}){1,7})                       # Elided address missing the
+                                                    # start of the address (e.g.
+                                                    # ::1)
+|(?:${ipv6_chunk}:){1,7}:                           # Elided address missing the
+                                                    # end of the address (e.g.
+                                                    # 2001::)
+)/;
 
     $regex =~ s/__SENDER__      /__EMAIL__/gx;
     $regex =~ s/__RECIPIENT__   /__EMAIL__/gx;
@@ -721,12 +734,14 @@ sub filter_regex {
 #   This doesn't work, as it matches valid addresses, not real world addresses.
 #   $regex =~ s/__EMAIL__       /$RE{Email}{Address}/gx;
 #   The empty alternative below is to allow for <> as the sender address
-#   We also allow up to 7 @ signs in the address . . . I have seen that many :(
-    $regex =~ s/__EMAIL__       /(?:|[^@]+(?:\@(?:__HOSTNAME__|\\[__IP__\\])){0,7})/gx;
+#   I've seen so many weird addresses now that I think the only characters I
+#   won't see are <>, so I'm not bothering with trying to be more specific.
+    $regex =~ s/__EMAIL__       /[^<>]*/gx;
     # This doesn't match, for varous reason - I think numeric subnets are one.
     #$regex =~ s/__HOSTNAME__    /$RE{net}{domain}{-nospace}/gx;
     $regex =~ s/__HOSTNAME__    /$hostname_re/gx;
-    $regex =~ s/__IP__          /$RE{net}{IPv4}/gx;
+#    $regex =~ s/__IP__          /(?:::ffff:)?$RE{net}{IPv4}|$ipv6_re/gx;
+    $regex =~ s/__IP__          /(?:::ffff:)?$RE{net}{IPv4}/gx;
     $regex =~ s/__SMTP_CODE__   /\\d{3}/gx;
     # 3-9 is a guess.
     $regex =~ s/__QUEUEID__     /(?:NOQUEUE|[\\dA-F]{3,9})/gx;

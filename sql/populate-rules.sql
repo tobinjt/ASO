@@ -290,6 +290,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- <31.pool80-103-5.dynamic.uni2.es[80.103.5.31]>: Client host rejected: Greylisted, see http://isg.ee.ethz.ch/tools/postgrey/help/dsg.cs.tcd.ie.html; from=<iqxrgomtl@purinmail.com> to=<skenny@dsg.cs.tcd.ie> proto=SMTP helo=<31.pool80-103-5.dynamic.uni2.es>
 -- <mail.saraholding.com.sa[212.12.166.254]>: Client host rejected: Greylisted, see http://isg.ee.ethz.ch/tools/postgrey/help/cs.tcd.ie.html; from=<lpty@[212.12.166.226]> to=<colin.little@cs.tcd.ie> proto=ESMTP helo=<mail.saraholding.com.sa>
+-- <flow.helderhosting.nl[82.94.236.142]>: Client host rejected: Greylisted, see http://isg.ee.ethz.ch/tools/postgrey/help/cs.tcd.ie.html; from=<www-data@info+spam@helderhosting.nl> to=<siobhan.clarke@cs.tcd.ie> proto=SMTP helo=<flow.helderhosting.nl>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Greylisted', 'Client greylisted; see http://www.greylisting.org/ for more details',
         'postfix/smtpd',
@@ -307,6 +308,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('Sender MX in loopback address space', 'The MX for sender domain is in loopback address space, so cannot be contacted',
         'postfix/smtpd',
         '^<(__SENDER__)>: Sender address rejected: Address uses MX in loopback address space \(127.0.0.0/8\); from=<\1> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 2, sender = 1',
+        'helo = 3',
+        'SAVE_BY_PID',
+        0,
+        'REJECTED',
+        'check_sender_mx_access'
+);
+
+-- <root@inet.microlins.com.br>: Sender address rejected: Address uses MX in private address space (172.16.0.0/12); from=<root@inet.microlins.com.br> to=<stephen.farrell@cs.tcd.ie> proto=ESMTP helo=<inet.microlins.com.br>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+    VALUES('Sender MX in private address space (172.16.0.0/12)', 'The MX for sender domain is in private address space (172.16.0.0/12), so cannot be contacted',
+        'postfix/smtpd',
+        '^<(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(172.16.0.0/12\); from=<\1> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 2, sender = 1',
         'helo = 3',
         'SAVE_BY_PID',
@@ -633,6 +647,30 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0,
         'REJECTED',
         'reject_unauth_pipelining'
+);
+
+-- NOQUEUE: reject: MAIL from cagraidsvr06.cs.tcd.ie[134.226.53.22]: 552 Message size exceeds fixed limit; proto=ESMTP helo=<cagraidsvr06.cs.tcd.ie>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Rejected mail too large', 'The client tried to send a mail but it is too big to be accepted.',
+        'postfix/smtpd',
+        '^NOQUEUE: reject: MAIL from (__HOSTNAME__)\[(__IP__)\]: (__SMTP_CODE__) Message size exceeds fixed limit; proto=ESMTP helo=<(__HELO__)>$',
+        '',
+        'client_hostname = 1, client_ip = 2, helo = 3',
+        'SAVE_BY_PID',
+        0,
+        'REJECTED'
+);
+
+-- <info@tiecs.ie>: Sender address rejected: Stop flooding our users with mail.; from=<info@tiecs.ie> to=<tobinjt@cs.tcd.ie> proto=SMTP helo=<wilde.cs.tcd.ie>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Stop flooding users with mail', 'A client was flooding users with unwanted mail',
+        'postfix/smtpd',
+        '^<(__SENDER__)>: Sender address rejected: Stop flooding our users with mail.; from=<\1> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'sender = 1, recipient = 2',
+        'helo = 3',
+        'SAVE_BY_PID',
+        0,
+        'REJECTED'
 );
 
 -- }}}
@@ -1522,6 +1560,30 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'MAIL_PICKED_FOR_DELIVERY',
         '1',
         'INFO'
+);
+
+-- libsldap: Status: 7  Mesg: Session error no available conn.
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Solaris LDAP fails once more', 'Solaris LDAP is very unstable under load, failing randomly',
+        'postfix/cleanup',
+        '^libsldap: Status: 7  Mesg: Session error no available conn.$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+-- libsldap: Status: 2  Mesg: Unable to load configuration '/var/ldap/ldap_client_file' ('').
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Solaris LDAP fails, again', 'Solaris LDAP is very unstable under load',
+        'postfix/cleanup',
+        '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file. \(..\).$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
 );
 
 -- }}}
