@@ -736,7 +736,9 @@ sub filter_regex {
 #   The empty alternative below is to allow for <> as the sender address
 #   I've seen so many weird addresses now that I think the only characters I
 #   won't see are <>, so I'm not bothering with trying to be more specific.
-    $regex =~ s/__EMAIL__       /[^<>]*/gx;
+#   Right, I do see < in addresses, so I'm just going to try minimally-matching
+#   on anything except >.  Argh.
+    $regex =~ s/__EMAIL__       /[^>]*?/gx;
     # This doesn't match, for varous reason - I think numeric subnets are one.
     #$regex =~ s/__HOSTNAME__    /$RE{net}{domain}{-nospace}/gx;
     $regex =~ s/__HOSTNAME__    /$hostname_re/gx;

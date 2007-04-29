@@ -55,8 +55,9 @@ my %cols = (
         },
         connection_cols     => 1,
     },
+    # Believe it or not, sometimes the helo changes.  I wonder if a policy
+    # server would be good for this?
     helo                => {
-        nochange            => 1,
         connection_cols     => 1,
     },
     queueid             => {

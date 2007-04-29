@@ -723,7 +723,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): from=<(__SENDER__)>, status=expired, returned to sender$',
         'sender = 1',
         '',
-        'smtp_code = 550',
+        'smtp_code = 554',
         'SAVE_BY_QUEUEID',
         1,
         'EXPIRED'
@@ -859,7 +859,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=bounced \(Host or domain name not found. Name service error for name=(__HOSTNAME__) type=(?:MX|A): Host not found\)',
         'recipient = 2',
         'server_hostname = 3',
-        'smtp_code = 550',
+        'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
         'SAVE_BY_QUEUEID',
         1,
@@ -867,13 +867,14 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- B028035EB: to=<Iain@fibernetix.com>, relay=none, delay=282964, status=deferred (Host or domain name not found. Name service error for name=fibernetix.com type=MX: Host not found, try again)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Recipient MX not found (try again)', 'No MX server for the recipient was found (try again, temporary failure)',
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=deferred \((?:Host or domain name not found. )?Name service error for name=(__HOSTNAME__) type=(?:A|MX): Host not found, try again\)',
         'recipient = 2',
         'server_hostname = 3',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
+        'smtp_code = 554',
+        'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
         'SAVE_BY_QUEUEID',
         1,
         'INFO'
@@ -1080,8 +1081,8 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=bounced \(mail for (__HOSTNAME__) loops back to myself\)$',
         'recipient = 2, data = 3',
         '',
-        'smtp_code = 550',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
+        'smtp_code = 554',
+        'client_hostname = localhost, client_ip = 127.0.0.1, server_hostname = localhost, server_ip = 127.0.0.1',
         'SAVE_BY_QUEUEID',
         1,
         'BOUNCED'
@@ -1121,7 +1122,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\], delay=\d+, status=bounced \((message size \d+ exceeds size limit \d+ of server) \3\[\4\]\)$',
         'recipient = 2, data = 5',
         'server_hostname = 3, server_ip = 4',
-        'smtp_code = 550',
+        'smtp_code = 552',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_BY_QUEUEID',
         1,
@@ -1256,7 +1257,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, delay=\d+, status=bounced \(((?:Host or domain name not found. )?Name service error for name=__HOSTNAME__ type=(?:A|MX): (?:Malformed name server reply|Host found but no data record of requested type))\)$',
         'recipient = 2, data = 3',
         '',
-        'smtp_code = 550',
+        'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_BY_QUEUEID',
         1,
@@ -1330,7 +1331,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=bounced \(mail forwarding loop for \2\)$',
         'recipient = 2',
         '',
-        'smtp_code = 550',
+        'smtp_code = 554',
         'SAVE_BY_QUEUEID',
         1,
         'BOUNCED'
@@ -1426,14 +1427,16 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'INFO'
 );
 
+-- This sometimes results when a local delivery fails and this bounce is generated; in that case the {client,server}_{ip,hostname} will be empty, so we supply them.  If they're not required they'll be discarded.
 -- D1E494386: to=<scss-staff-bounces+bcollin=cs.tcd.ie@cs.tcd.ie>, relay=local, delay=0, status=bounced (Command died with status 8: "/mail/mailman-2.1.6/mail/mailman bounces scss-staff". Command output: Failure to find group name mailman.  Try adding this group to your system, or re-run configure, providing an existing group name with the command line option --with-mail-gid. )
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Local delivery (pipe to command) failed', 'The command that the mail was piped into failed for some reason',
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, delay=\d+, status=bounced \((Command died with status \d+: .* Command output: .* )\)$',
         'recipient = 2, data = 3',
         '',
         'smtp_code = 550',
+        'server_hostname = localhost, server_ip = 127.0.0.1, client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_BY_QUEUEID',
         1,
         'BOUNCED'
@@ -1511,12 +1514,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- POSTSUPER RULES {{{1
 
 -- 5A01B444E: removed
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action)
     VALUES('Mail deleted using postsuper', 'The mail administrator used postsuper to delete mail from the queue',
         'postfix/postsuper',
         '^(__QUEUEID__): removed$',
         '',
         '',
+        'smtp_code = 554',
         'COMMIT',
         1,
         'DELETED'
