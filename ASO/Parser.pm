@@ -748,6 +748,10 @@ sub filter_regex {
     # 3-9 is a guess.
     $regex =~ s/__QUEUEID__     /(?:NOQUEUE|[\\dA-F]{3,9})/gx;
     $regex =~ s/__COMMAND__     /(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gx;
+    $regex =~ s/__DELAYS__      /delays=(?:[\\d.]+\/){3}[\\d.]+, /gx;
+    $regex =~ s/__DELAY__       /delay=\\d+(?:\\.\\d+)?, /gx;
+    $regex =~ s/__DSN__         /dsn=\\d\\.\\d\\.\\d, /gx;
+    $regex =~ s/__CONN_USE__    /conn_use=\d+, /gx;
 #   $regex =~ s/____/$RE{}{}/gx;
 
     return $regex;
