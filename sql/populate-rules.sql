@@ -870,10 +870,11 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- 7ABDF43FD: to=<olderro@myccccd.net>, relay=none, delay=0, status=bounced (Host or domain name not found. Name service error for name=mailcruiser.campuscruiser.com type=A: Host not found)
 -- 90F0E3E19: to=<matthew@sammon.info>, orig_to=<matthew.sammon@cs.tcd.ie>, relay=none, delay=0, status=bounced (Host or domain name not found. Name service error for name=mail.hosting365.ie type=A: Host not found)
+-- C350F38DB: to=<sfee@tcd.cs.tcd.ie>, orig_to=<sfee@tcd>, relay=none, delay=0.39, delays=0.38/0/0/0, dsn=5.4.4, status=bounced (Host or domain name not found. Name service error for name=tcd.cs.tcd.ie type=AAAA: Host not found)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Recipient MX not found', 'No MX server for the recipient was found',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced \(Host or domain name not found. Name service error for name=(__HOSTNAME__) type=(?:MX|A): Host not found\)',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced \(Host or domain name not found. Name service error for name=(__HOSTNAME__) type=(?:MX|A|AAAA): Host not found\)$',
         'recipient = 2',
         'server_hostname = 3',
         'smtp_code = 554',
@@ -887,7 +888,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Recipient MX not found (try again)', 'No MX server for the recipient was found (try again, temporary failure)',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:Host or domain name not found. )?Name service error for name=(__HOSTNAME__) type=(?:A|MX): Host not found, try again\)',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:Host or domain name not found. )?Name service error for name=(__HOSTNAME__) type=(?:A|AAAA|MX): Host not found, try again\)',
         'recipient = 2',
         'server_hostname = 3',
         'smtp_code = 554',
@@ -1277,7 +1278,7 @@ VALUES('Lost connection after data', 'Lost connection after end-of-data - messag
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Malformed DNS reply, or no data', 'The DNS reply was malformed, or the requested record was not found',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced \(((?:Host or domain name not found. )?Name service error for name=__HOSTNAME__ type=(?:A|MX): (?:Malformed name server reply|Host found but no data record of requested type))\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced \(((?:Host or domain name not found. )?Name service error for name=__HOSTNAME__ type=(?:A|AAAA|MX): (?:Malformed name server reply|Host found but no data record of requested type))\)$',
         'recipient = 2, data = 3',
         '',
         'smtp_code = 554',
