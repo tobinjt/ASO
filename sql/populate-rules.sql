@@ -85,6 +85,17 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- SMTPD Other lines we want to ignore {{{2
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Fatal error', 'A fatal error; nothing can be done about it now',
+        'postfix/smtpd',
+        '^fatal: ',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Warning', 'Warnings of some sort',
         'postfix/smtpd',
         '^warning: ',
@@ -121,6 +132,17 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('Bloody Solaris LDAP 2', 'Solaris LDAP cannot connect or something',
         'postfix/smtpd',
         '^libsldap: Status: 7  Mesg: Session error no available conn.$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Bloody Solaris LDAP 3', 'Solaris LDAP cannot bind or connect or something',
+        'postfix/smtpd',
+        '^libsldap: Status: 91  Mesg: openConnection: simple bind failed - Can.t connect to the LDAP server$',
         '',
         '',
         'IGNORE',
@@ -1151,10 +1173,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- 5499D44A3: conversation with drip.STJAMES.IE[194.106.141.85] timed out while performing the initial protocol handshake
 -- 8103838B8: conversation with d.mx.mail.yahoo.com[216.39.53.2] timed out while receiving the initial server greeting
+-- 04AE038CA: conversation with rose.man.poznan.pl[150.254.173.3] timed out while performing the EHLO handshake
+-- 9769838B2: lost connection with spamtrap.netsource.ie[212.17.32.57] while performing the EHLO handshake
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
     VALUES('Conversation timed out while handshaking', 'The initial handshake timed out',
         'postfix/smtp',
-        '^(__QUEUEID__): conversation with (__HOSTNAME__)\[(__IP__)\] timed out while (?:performing the initial protocol handshake|receiving the initial server greeting)$',
+        '^(__QUEUEID__): (?:lost connection with|conversation with) (__HOSTNAME__)\[(__IP__)\] (?:timed out )?while (?:performing the (?:initial protocol|EHLO|HELO) handshake|receiving the initial server greeting)$',
         '',
         'server_hostname = 2, server_ip = 3',
         'client_hostname = localhost, client_ip = 127.0.0.1',
@@ -1180,10 +1204,11 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- 820A94385: to=<Romanu6jMassey@photoeye.com>, relay=relay1.edgewebhosting.net[69.63.128.201], delay=1132, status=deferred (lost connection with relay1.edgewebhosting.net[69.63.128.201] while performing the initial protocol handshake)
 -- E49EC438A: to=<DanR@Burton.com>, relay=mail.Burton.com[204.52.244.205], delay=3, status=deferred (lost connection with mail.Burton.com[204.52.244.205] while performing the initial protocol handshake)
 -- 1E64D38CB: to=<wewontpay@btconnect.com>, relay=ibmr.btconnect.com[213.123.20.92]:25, delay=1.5, delays=0.08/0/1.4/0, dsn=4.4.2, status=deferred (lost connection with ibmr.btconnect.com[213.123.20.92] while receiving the initial server greeting)
+-- 172BD36E3: to=<bgiven@mason.gmu.edu>, relay=mx-h.gmu.edu[129.174.0.99]:25, delay=0.67, delays=0.27/0.07/0.33/0, dsn=4.4.2, status=deferred (lost connection with mx-h.gmu.edu[129.174.0.99] while performing the HELO handshake)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
     VALUES('Initial handshake timed out', 'The initial handshake did not complete within the timeout',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:lost connection with|conversation with) \3\[\4\] (?:(?:timed out )?while performing the initial protocol handshake|while receiving the initial server greeting)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__HOSTNAME__)\[(__IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:lost connection with|conversation with) \3\[\4\] (?:(?:timed out )?while performing the (?:initial protocol|HELO|EHLO) handshake|while receiving the initial server greeting)\)$',
         'recipient= 2',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
@@ -1286,6 +1311,17 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'SAVE_BY_QUEUEID',
         1,
         'BOUNCED'
+);
+
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Bloody Solaris LDAP 4', 'Solaris LDAP cannot bind or connect or anything',
+        'postfix/smtp',
+        '^libsldap: Status: 91  Mesg: openConnection: simple bind failed - Can.t connect to the LDAP server$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
 );
 
 -- }}}
@@ -1586,6 +1622,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORED'
 );
 
+-- fatal: invalid directory name: 2F03B38A4
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Postsuper invalid directory message', 'Postsuper complaining about an invalid directory name',
+        'postfix/postsuper',
+        '^fatal: invalid directory name: .*$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
 -- }}}
 
 -- CLEANUP RULES {{{1
@@ -1619,6 +1667,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('Solaris LDAP fails, again', 'Solaris LDAP is very unstable under load',
         'postfix/cleanup',
         '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file. \(..\).$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+-- warning: 9701438A4: read timeout on cleanup socket
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Something went wrong reading mail', 'Cleanup did not get the full mail',
+        'postfix/cleanup',
+        '^warning: __QUEUEID__: read timeout on cleanup socket$',
         '',
         '',
         'IGNORE',

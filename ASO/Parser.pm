@@ -738,7 +738,9 @@ sub filter_regex {
 #   won't see are <>, so I'm not bothering with trying to be more specific.
 #   Right, I do see < in addresses, so I'm just going to try minimally-matching
 #   on anything except >.  Argh.
-    $regex =~ s/__EMAIL__       /[^>]*?/gx;
+#   Wibble: from=<<>@inprima.locaweb.com.br>
+#   Just match anything as an address.
+    $regex =~ s/__EMAIL__       /.*?/gx;
     # This doesn't match, for varous reason - I think numeric subnets are one.
     #$regex =~ s/__HOSTNAME__    /$RE{net}{domain}{-nospace}/gx;
     $regex =~ s/__HOSTNAME__    /$hostname_re/gx;

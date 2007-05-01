@@ -13,16 +13,16 @@ copy.working:
 	cp -p warnings warnings.working 
 	cp -p rejects  rejects.working 
 
-test: test.01
+test: test.20070428
 
 test-some:
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( < logs-some                       ) > rejects.some 2> warnings.some'; wc rejects.some warnings.some; date ) 2>&1 ) | tee -a results
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( < logs-some             ) > rejects.some 2> warnings.some'; wc rejects.some warnings.some; date ) 2>&1 ) | tee -a results
 
 test-all:
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( ls -r ../../../../logs/mail.log.* ) > rejects.all  2> warnings.all';  wc rejects.all  warnings.all;  date ) 2>&1 ) | tee -a results
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser ../../../../logs/mail.log-*   > rejects.all  2> warnings.all';  wc rejects.all  warnings.all;  date ) 2>&1 ) | tee -a results
 
-test.%: ../../../../logs/mail.log.%
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser "$<"                          			 > rejects      2> warnings';      wc rejects      warnings;      date ) 2>&1 ) | tee -a results
+test.%: ../../../../logs/mail.log-%
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser "$<"                          > rejects      2> warnings';      wc rejects      warnings;      date ) 2>&1 ) | tee -a results
 
 db:
 	( cd ../sql/; perl setup-database create-tables-sqlite3.sql populate-rules.sql )
