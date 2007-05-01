@@ -72,7 +72,6 @@ sub run_sql {
         # ignoring any others there may be, so you need to separate them into
         # paragraphs.
         $DB->do($sql);
-        $DB->commit();
     };
     if ($@) {
         warn qq{Failed to run SQL: $ARGV: $line_number:\n},
@@ -82,5 +81,10 @@ sub run_sql {
     }
 }
 
+if ($failures) {
+    $DB->rollback();
+} else {
+    $DB->commit();
+}
 $DB->disconnect ();
 exit $failures;
