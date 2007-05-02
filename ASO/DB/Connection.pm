@@ -59,6 +59,7 @@ my %cols = (
     # server would be good for this?
     helo                => {
         connection_cols     => 1,
+        silent_overwrite    => undef,
     },
     queueid             => {
     },

@@ -765,7 +765,8 @@ sub make_connection_by_queueid {
     my ($self, $line, $queueid) = @_;
     if (exists $self->{queueids}->{$queueid}) {
         $self->my_warn(qq{make_connection_by_queueid: $queueid already exists},
-            dump_line($line)
+            dump_line($line),
+            dump_connection($self->{queueids}->{$queueid}),
         );
         return $self->{queueids}->{$queueid};
     }
