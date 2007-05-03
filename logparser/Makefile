@@ -7,22 +7,22 @@ SHELL=bash
 all: test summary
 
 diff:
-	diff -u warnings.working warnings; diff -u rejects.working  rejects
+	diff -u warnings-working warnings; diff -u state-working state
 
 copy.working:
-	cp -p warnings warnings.working 
-	cp -p rejects  rejects.working 
+	cp -p warnings warnings-working 
+	cp -p state    state-working 
 
 test: test.20070428
 
 test-some:
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( < logs-some             ) > rejects.some 2> warnings.some'; wc rejects.some warnings.some; date ) 2>&1 ) | tee -a results
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( < logs-some             ) > state-some 2> warnings-some'; wc state-some warnings-some; date ) 2>&1 ) | tee -a results
 
 test-all:
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser ../../../../logs/mail.log-*   > rejects.all  2> warnings.all';  wc rejects.all  warnings.all;  date ) 2>&1 ) | tee -a results
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser ../../../../logs/mail.log-*   > state-all  2> warnings-all';  wc state-all  warnings-all;  date ) 2>&1 ) | tee -a results
 
 test.%: ../../../../logs/mail.log-%
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser "$<"                          > rejects      2> warnings';      wc rejects      warnings;      date ) 2>&1 ) | tee -a results
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser "$<"                          > state      2> warnings';      wc state      warnings;      date ) 2>&1 ) | tee -a results
 
 db:
 	( cd ../sql/; perl setup-database create-tables-sqlite3.sql populate-rules.sql )
@@ -108,13 +108,14 @@ profile.GraphVizProf:
 	dot -Tpng -o profile.png profile.dot
 
 summary:
-	( echo "warning summary: ";     grep ^logparser warnings     | cut -d ' ' -f 4- | sort | uniq -c | sort -n ) | tee -a results
-	( echo -n "rejects: ";     grep -c ^.queueids rejects     ) | tee -a results
+	make WARNINGS=warnings STATE=state summarize
 
 summary-all:
-	( echo "warning.all summary: "; grep ^logparser warnings.all | cut -d ' ' -f 4- | sort | uniq -c | sort -n ) | tee -a results
-	( echo -n "rejects.all: "; grep -c ^.queueids rejects.all ) | tee -a results
+	make WARNINGS=warnings-all STATE=state-all summarize
 
 summary-some:
-	( echo "warning.some summary: "; grep ^logparser warnings.some | cut -d ' ' -f 4- | sort | uniq -c | sort -n ) | tee -a results
-	( echo -n "rejects.some: "; grep -c ^.queueids rejects.some ) | tee -a results
+	make WARNINGS=warnings-some STATE=state-some summarize
+
+summarize:
+	( echo "${WARNINGS} summary: "; grep ^logparser "${WARNINGS}" | grep -v 'Starting to read' | cut -d ' ' -f 4- | sort | uniq -c | sort -n ) | tee -a results
+	( echo -n "${STATE}: "; grep -c ^.queueids "${STATE}" ) | tee -a results
