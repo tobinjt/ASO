@@ -88,6 +88,7 @@ sub init_globals {
         MAIL_PICKED_FOR_DELIVERY    => 1,
         PICKUP                      => 1,
         CLONE                       => 1,
+        TIMEOUT                     => 1,
     };
 
 
@@ -370,8 +371,8 @@ sub PICKUP {
     my ($self, $rule, $line, $matches) = @_;
     my $queueid = $self->get_queueid($line, $rule, $matches);
     my $connection = $self->make_connection_by_queueid($line, $queueid);
-    $self->save($connection, $line, $rule, $matches);
     delete $connection->{faked};
+    $self->save($connection, $line, $rule, $matches);
     return $self->{ACTION_SUCCESS};
 }
 
@@ -394,6 +395,24 @@ sub CLONE {
         $self->{mails_per_smtpd}->{$line->{pid}} = [];
     }
     push @{$self->{mails_per_smtpd}->{$line->{pid}}}, $clone;
+    return $self->{ACTION_SUCCESS};
+}
+
+# The connection timed out so we need to discard the last mail accepted on this
+# connection.
+sub TIMEOUT {
+    my ($self, $rule, $line, $matches) = @_;
+    my $connection = $self->get_connection_by_pid($line);
+    $self->save($connection, $line, $rule, $matches);
+
+    my $mails = $self->{mails_per_smtpd}->{$line->{pid}};
+    if (not defined $mails) {
+        # This happens very often, I think it might be due to ESMTP pipelining.
+        return $self->{ACTION_SUCCESS};
+    }
+
+    delete $self->{queueids}->{$mails->[-1]->{queueid}};
+    delete $mails->[-1];
     return $self->{ACTION_SUCCESS};
 }
 
@@ -584,7 +603,7 @@ sub load_rules {
         };
 
         if (not exists $self->{actions}->{$rule_hash->{action}}) {
-            $self->my_die(qq{load_rules: unknown action $rule_hash->{action}},
+            $self->my_die(qq{load_rules: unknown action $rule_hash->{action}: },
                 dump_rule_from_db($rule));
         }
 
@@ -752,6 +771,9 @@ sub filter_regex {
     # 3-9 is a guess.
     $regex =~ s/__QUEUEID__     /(?:NOQUEUE|[\\dA-F]{3,9})/gx;
     $regex =~ s/__COMMAND__     /(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gx;
+    # DATA is deliberately excluded here because there are more specific rules
+    # for DATA.
+    $regex =~ s/__SHORT_CMD__   /(?:CONNECT|HELO|EHLO|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN)/gx;
     $regex =~ s/__DELAYS__      /delays=(?:[\\d.]+\/){3}[\\d.]+, /gx;
     $regex =~ s/__DELAY__       /delay=\\d+(?:\\.\\d+)?, /gx;
     $regex =~ s/__DSN__         /\\d\\.\\d\\.\\d/gx;
@@ -764,7 +786,7 @@ sub filter_regex {
 sub make_connection_by_queueid {
     my ($self, $line, $queueid) = @_;
     if (exists $self->{queueids}->{$queueid}) {
-        $self->my_warn(qq{make_connection_by_queueid: $queueid already exists},
+        $self->my_warn(qq{make_connection_by_queueid: $queueid exists\n},
             dump_line($line),
             dump_connection($self->{queueids}->{$queueid}),
         );
@@ -827,11 +849,14 @@ sub disconnection {
     }
 
     # This is quite common - it happens every time we reject at SMTP time.
-    if (exists $connection->{results}) {
-        $connection->{connection}->{end} = $line->{timestamp};
-        $self->fixup_connection($connection);
-        $self->commit_connection($connection);
+    if (not exists $connection->{results}) {
+        return;
     }
+
+    # Commit the connection.
+    $connection->{connection}->{end} = $line->{timestamp};
+    $self->fixup_connection($connection);
+    $self->commit_connection($connection);
 
     # Try to clear out those mails which only have two smtpd entries, so they
     # don't hang around, taking up memory uselessly and causing queueid clashes

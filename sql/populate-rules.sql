@@ -34,12 +34,42 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- }}}
 
+-- SMTPD ERROR RULES {{{1
+-- These cause the mail to be discarded.
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, priority, postfix_action)
+    VALUES('Timeout after DATA command from client', 'Timeout reading data from the client, mail will be discarded',
+        'postfix/smtpd',
+        '^timeout after DATA from (__HOSTNAME__)\[(__IP__)\]$',
+        '',
+        'client_hostname = 1, client_ip = 2',
+        'sender = unknown, recipient = unknown, smtp_code = unknown',
+        'TIMEOUT',
+        0,
+        5,
+        'DISCARDED'
+);
+
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, priority, postfix_action)
+    VALUES('Lost connection after DATA command from client', 'Lost connection reading data from the client, mail will be discarded',
+        'postfix/smtpd',
+        '^lost connection after DATA from (__HOSTNAME__)\[(__IP__)\]$',
+        '',
+        'client_hostname = 1, client_ip = 2',
+        'sender = unknown, recipient = unknown, smtp_code = unknown',
+        'TIMEOUT',
+        0,
+        5,
+        'DISCARDED'
+);
+
+-- }}}
+
 -- SMTPD IGNORE RULES {{{1
--- SMTPD These will always be followed by a disconnect line, as matched above {{{2
+-- These will always be followed by a disconnect line, as matched above
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('lost connection', 'Client disconnected uncleanly',
         'postfix/smtpd',
-        '^lost connection after \w+ from __HOSTNAME__\[__IP__\]$',
+        '^lost connection after __SHORT_CMD__ from __HOSTNAME__\[__IP__\]$',
         '',
         '',
         'IGNORE',
@@ -48,9 +78,9 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('timeout', 'Timeout sending reply',
+    VALUES('Timeout reading reply', 'Timeout reading reply from client',
         'postfix/smtpd',
-        '^timeout after (?:\w+|END-OF-MESSAGE) from __HOSTNAME__\[__IP__\]$',
+        '^timeout after __SHORT_CMD__ from __HOSTNAME__\[__IP__\]$',
         '',
         '',
         'IGNORE',
@@ -81,9 +111,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORED'
 );
 
--- }}}
-
--- SMTPD Other lines we want to ignore {{{2
+-- Other lines we want to ignore
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Fatal error', 'A fatal error; nothing can be done about it now',
         'postfix/smtpd',
@@ -149,8 +177,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0,
         'IGNORED'
 );
-
--- }}}
 
 -- }}}
 
@@ -687,12 +713,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- <DATA>: Data command rejected: Multi-recipient bounce; from=<> proto=SMTP helo=<mail71.messagelabs.com>
 -- <DATA>: Data command rejected: Multi-recipient bounce; from=<> proto=ESMTP helo=<euphrates.qatar.net.qa>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action, restriction_name)
     VALUES('Multi-recipient bounce rejected', 'Any mail from <> should be a bounce, therefore if there is more than one recipient it can be rejected (supposedly it had more than one sender)',
         'postfix/smtpd',
         '^<DATA>: Data command rejected: Multi-recipient bounce; from=<()> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 1',
         'helo = 2',
+        'recipient = unknown',
         'SAVE_BY_PID',
         0,
         'REJECTED',
@@ -1784,6 +1811,22 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         0,
         'IGNORED'
 );
+
+-- }}}
+
+-- BOUNCE RULES {{{1
+
+-- 382CD36E3: sender non-delivery notification: 4419C38A0
+-- INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+--     VALUES('Dummy bounce rule', 'Dumy bounce rule to ensure all bounce messages are reported as unparsed',
+--         'postfix/bounce',
+--         '^a{12345}$',
+--         '',
+--         '',
+--         'IGNORE',
+--         0,
+--         'IGNORED'
+-- );
 
 -- }}}
 
