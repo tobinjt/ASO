@@ -63,6 +63,14 @@ sub init_globals {
     # Cloned connections are temporarily saved in here to help identify those
     # strange connections which consist only of two smtpd results.
     $self->{mails_per_smtpd}  = {};
+    # When a connection with a sending client times out during the DATA phase,
+    # Postfix will have allocated a queueid for the mail.  We need to discard
+    # that mail, which is done in the TIMEOUT action.  Unfortunately, in maybe
+    # 20% of cases, the cleanup line is logged after the timeout and
+    # disconnection, leading to faked mails in the state table.  I'm going to
+    # try to track those queueids where the timeout happens before cleanup logs,
+    # and then discard the next cleanup line for that queueid.
+    $self->{timeout_queueids} = {};
 
     # Skip inserting results into the db, because it quadrouples the run time.
     $self->{skip_inserting_results}      = 1;
@@ -89,6 +97,7 @@ sub init_globals {
         PICKUP                      => 1,
         CLONE                       => 1,
         TIMEOUT                     => 1,
+        MAIL_TOO_LARGE              => 1,
     };
 
 
@@ -355,6 +364,28 @@ sub MAIL_PICKED_FOR_DELIVERY {
     my ($self, $rule, $line, $matches) = @_;
     my $connection;
     my $queueid = $self->get_queueid($line, $rule, $matches);
+
+    if ($line->{program} eq q{postfix/cleanup}
+            and exists $self->{timeout_queueids}->{$queueid}) {
+        # This is a cleanup line for a connection which timed out during the
+        # DATA phase, but which wasn't seen before smtpd finished logging, i.e.
+        # the logging sequence was:
+        #   smtpd connect
+        #   smtpd queueid
+        #   smtpd timeout
+        #   smtpd disconnect
+        #   cleanup queueid
+        # We just ignore this line.
+        delete $self->{timeout_queueids}->{$queueid};
+        if (exists $self->{queueids}->{$queueid}) {
+            $self->my_warn(qq{MAIL_PICKED_FOR_DELIVERY: queueid found in }
+                . qq{both \%queueids and \%timeout_queueids: $queueid; }
+                . qq{ignoring \%timeout_queueids\n});
+        } else {
+            return $self->{ACTION_SUCCESS};
+        }
+    }
+
     # Sometimes I need to create connections here because there are
     # tracked connections where the child shows up before the parent
     # logs the tracking line; there's a similar requirement in track().
@@ -398,6 +429,13 @@ sub CLONE {
     return $self->{ACTION_SUCCESS};
 }
 
+# Client exceeded the maximum mail size, so we discard the last mail accepted.
+# This is exactly the same as TIMEOUT, so we just call it.
+sub MAIL_TOO_LARGE {
+    my ($self, $rule, $line, $matches) = @_;
+    return $self->TIMEOUT($rule, $line, $matches);
+}
+
 # The connection timed out so we need to discard the last mail accepted on this
 # connection.
 sub TIMEOUT {
@@ -407,11 +445,27 @@ sub TIMEOUT {
 
     my $mails = $self->{mails_per_smtpd}->{$line->{pid}};
     if (not defined $mails) {
-        # This happens very often, I think it might be due to ESMTP pipelining.
+        # This happens very often, I think it might be due to ESMTP pipelining,
+        # where the conversation looks like:
+        # client:                           server:
+        #   EHLO -->
+        #                                   <-- PIPELINING
+        #   MAIL FROM, RCPT TO, DATA -->
+        #                                   <-- RCPT TO/MAIL FROM rejected.
+        # connection lost
+        # Something to think about is what happens if the above sequence happens
+        # on the second mail sent?  I think I'll clobber the first mail in that
+        # case.  Bugger.
         return $self->{ACTION_SUCCESS};
     }
 
-    delete $self->{queueids}->{$mails->[-1]->{queueid}};
+    my $last_mail = $mails->[-1];
+    if (not exists $last_mail->{programs}->{q{postfix/cleanup}}) {
+        # We haven't seen a cleanup line yet; add this queueid to the list of
+        # timed out connections.
+        $self->{timeout_queueids}->{$last_mail->{queueid}} = $line->{timestamp};
+    }
+    delete $self->{queueids}->{$last_mail->{queueid}};
     delete $mails->[-1];
     return $self->{ACTION_SUCCESS};
 }
@@ -678,7 +732,6 @@ sub dump_rule_from_db {
 sub dump_state {
     my ($self) = @_;
     my $state = q{};
-    my %tracked;
 
     local $Data::Dumper::Sortkeys = 1;
     $state = <<'PREAMBLE';
@@ -690,6 +743,7 @@ sub reload_state {
 PREAMBLE
 
     foreach my $data_source (qw(queueids connections)) {
+        my %tracked;
         $state .= qq{## Starting dump of $data_source\n};
         $state .= qq{## } . localtime() . qq{\n};
         my $untracked = q{};

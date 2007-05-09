@@ -62,6 +62,20 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'DISCARDED'
 );
 
+-- warning: 03F6E38CA: queue file size limit exceeded
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, priority, postfix_action)
+    VALUES('Client exceeded the maximum mail size', 'Client exceeded the maximum mail size, mail will be discarded',
+        'postfix/smtpd',
+        '^warning: (__QUEUEID__): queue file size limit exceeded$',
+        '',
+        '',
+        'sender = unknown, recipient = unknown, smtp_code = unknown',
+        'MAIL_TOO_LARGE',
+        1,
+        5,
+        'DISCARDED'
+);
+
 -- }}}
 
 -- SMTPD IGNORE RULES {{{1
