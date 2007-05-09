@@ -377,13 +377,13 @@ sub MAIL_PICKED_FOR_DELIVERY {
         #   cleanup queueid
         # We just ignore this line.
         delete $self->{timeout_queueids}->{$queueid};
-        if (exists $self->{queueids}->{$queueid}) {
-            $self->my_warn(qq{MAIL_PICKED_FOR_DELIVERY: queueid found in }
-                . qq{both \%queueids and \%timeout_queueids: $queueid; }
-                . qq{ignoring \%timeout_queueids\n});
-        } else {
+        if (not exists $self->{queueids}->{$queueid}) {
             return $self->{ACTION_SUCCESS};
         }
+        # Sometimes there just isn't a cleanup line, dunno why.  Maybe it isn't
+        # cleanup which allocates queueids?  If we haven't seen a cleanup line
+        # before the queueid is reused (i.e. can be found in %queueids) just
+        # remove the entry in %timeout_queueids and continue as normal.
     }
 
     # Sometimes I need to create connections here because there are
@@ -426,6 +426,10 @@ sub CLONE {
         $self->{mails_per_smtpd}->{$line->{pid}} = [];
     }
     push @{$self->{mails_per_smtpd}->{$line->{pid}}}, $clone;
+
+    # Save the timestamp so that we can distinguish between accepted mails and
+    # non-accepted, pipelined mails during timeout handling (in TIMEOUT action).
+    $connection->{last_clone_timestamp} = $line->{timestamp};
     return $self->{ACTION_SUCCESS};
 }
 
@@ -459,11 +463,26 @@ sub TIMEOUT {
         return $self->{ACTION_SUCCESS};
     }
 
+    # Sometimes we see this sequence:
+    # 1 client successfully delivers mail.
+    # 2 client pipelines MAIL FROM, RCPT TO and DATA, but Postfix rejects for
+    #   some reason.
+    # 3 client disconnects uncleanly during DATA, TIMEOUT is called, and the
+    #   successfully sent mail is clobbered.
+    # Solution?  I _hope_ this will work: track the timesamp of the last CLONE,
+    # i.e. successfully delivered mail, and if there's a reject later than that
+    # then the timeout applies to an unsucessful mail, so don't delete anything,
+    # just save() and finish.  Whew.
+    if ($connection->{results}->[-1]->{line}->{timestamp}
+            > $connection->{last_clone_timestamp}) {
+        return $self->{ACTION_SUCCESS};
+    }
+
     my $last_mail = $mails->[-1];
     if (not exists $last_mail->{programs}->{q{postfix/cleanup}}) {
         # We haven't seen a cleanup line yet; add this queueid to the list of
         # timed out connections.
-        $self->{timeout_queueids}->{$last_mail->{queueid}} = $line->{timestamp};
+        $self->{timeout_queueids}->{$last_mail->{queueid}} = $last_mail;
     }
     delete $self->{queueids}->{$last_mail->{queueid}};
     delete $mails->[-1];
@@ -842,6 +861,7 @@ sub make_connection_by_queueid {
     if (exists $self->{queueids}->{$queueid}) {
         $self->my_warn(qq{make_connection_by_queueid: $queueid exists\n},
             dump_line($line),
+            qq{Existing queueid:\n},
             dump_connection($self->{queueids}->{$queueid}),
         );
         return $self->{queueids}->{$queueid};

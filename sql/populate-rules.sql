@@ -66,12 +66,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, priority, postfix_action)
     VALUES('Client exceeded the maximum mail size', 'Client exceeded the maximum mail size, mail will be discarded',
         'postfix/smtpd',
-        '^warning: (__QUEUEID__): queue file size limit exceeded$',
+        '^warning: __QUEUEID__: queue file size limit exceeded$',
         '',
         '',
         'sender = unknown, recipient = unknown, smtp_code = unknown',
         'MAIL_TOO_LARGE',
-        1,
+        0,
         5,
         'DISCARDED'
 );
