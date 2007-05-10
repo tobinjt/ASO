@@ -471,9 +471,10 @@ sub TIMEOUT {
     #   successfully sent mail is clobbered.
     # Solution?  I _hope_ this will work: track the timesamp of the last CLONE,
     # i.e. successfully delivered mail, and if there's a reject later than that
-    # then the timeout applies to an unsucessful mail, so don't delete anything,
-    # just save() and finish.  Whew.
-    if ($connection->{results}->[-1]->{line}->{timestamp}
+    # (skipping the timeout we just saved at the start of this subroutine) then
+    # the timeout applies to an unsucessful mail, so don't delete anything, just
+    # save() and finish.  Whew.
+    if ($connection->{results}->[-2]->{line}->{timestamp}
             > $connection->{last_clone_timestamp}) {
         return $self->{ACTION_SUCCESS};
     }
