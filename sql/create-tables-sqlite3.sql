@@ -93,5 +93,7 @@ CREATE TABLE results (
     -- for most results.
     message_id              text,
     -- A place to plop anything not already covered.
-    data                    text
+    data                    text,
+    -- The timestamp of the result
+    timestamp               integer
 );

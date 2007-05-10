@@ -390,7 +390,7 @@ sub MAIL_PICKED_FOR_DELIVERY {
         #   rather than the discarded mail.  Obviously this is vulnerable to
         #   race conditions, but I'm doing the best I can.
         my $discarded_mail = delete $self->{timeout_queueids}->{$queueid};
-        my $last_timestamp = $discarded_mail->{results}->[-1]->{line}->{timestamp};
+        my $last_timestamp = $discarded_mail->{results}->[-1]->{timestamp};
         if ($line->{timestamp} - $last_timestamp <= 5
                 and not exists $self->{queueids}->{$queueid}) {
             return $self->{ACTION_SUCCESS};
@@ -486,7 +486,7 @@ sub TIMEOUT {
     # (skipping the timeout we just saved at the start of this subroutine) then
     # the timeout applies to an unsucessful mail, so don't delete anything, just
     # save() and finish.  Whew.
-    if ($connection->{results}->[-2]->{line}->{timestamp}
+    if ($connection->{results}->[-2]->{timestamp}
             > $connection->{last_clone_timestamp}) {
         return $self->{ACTION_SUCCESS};
     }
@@ -904,10 +904,6 @@ sub make_connection {
         faked           => $line,
         start           => scalar localtime $line->{timestamp},
         programs        => {},
-        # TODO: fix this.
-        # We'll always start with client = localhost, because I can't figure 
-        # out which rule should set these initially without clobbering 
-        # something else.
         connection      => {
             start           => $line->{timestamp},
         },
@@ -1147,6 +1143,7 @@ sub save {
         rule_id         => $rule->{id},
         postfix_action  => $rule->{postfix_action},
         line            => $line,
+        timestamp       => $line->{timestamp},
         # Sneakily inline result_data here
         %{$rule->{result_data}},
     );
@@ -1299,6 +1296,7 @@ sub commit_connection {
             next RESULT;
         }
 
+        # TODO: strip stuff out of the hashes instead.
         my $result_in_db = $self->{dbix}->resultset(q{Result})->new_result({
                 connection_id   => $connection_id,
                 rule_id         => $result->{rule_id},
@@ -1308,6 +1306,7 @@ sub commit_connection {
                 sender          => $result->{sender},
                 recipient       => $result->{recipient},
                 data            => $result->{data},
+                timestamp       => $result->{timestamp},
             });
         $result_in_db->insert();
     }

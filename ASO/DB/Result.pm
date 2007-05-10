@@ -39,6 +39,9 @@ my %cols = (
     data            => {
         result_cols    => 1,
     },
+    timestamp       => {
+        required        => 1,
+    },
 );
 
 sub get_cols {
