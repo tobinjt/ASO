@@ -1077,6 +1077,7 @@ sub fixup_connection {
         }
     }
 
+    my %missing_result;
     # Check that we have everything we need; we can't pull any of this from the
     # parent, I think.  Maybe I can?  I don't need to, at least at this stage.
     RESULT:
@@ -1089,15 +1090,14 @@ sub fixup_connection {
                 if (exists $data{$rcol}) {
                     $result->{$rcol} = $data{$rcol};
                 } else {
-                    $self->my_warn(qq{fixup_connection: missing result col: $rcol\n},
-                        dump_connection($connection),
-                    );
+                    $missing_result{$rcol}++;
                     $failure++;
                 }
             }
         }
     }
 
+    my %missing_connection;
     foreach my $ccol (keys %{$self->{required_connection_cols}}) {
         # NOTE: I'm assuming that anything we're going to require from the
         # parent connection has already been saved there; if not I'll need to
@@ -1108,11 +1108,24 @@ sub fixup_connection {
             $connection->{connection}->{$ccol} = $parent->{connection}->{$ccol};
         }
         if (not exists $connection->{connection}->{$ccol}) {
-            $self->my_warn(qq{fixup_connection: missing connection col: $ccol\n},
-                dump_connection($connection),
-            );
+            $missing_connection{$ccol}++;
             $failure++;
         }
+    }
+
+    my $error_message = q{};
+    if (keys %missing_result) {
+        $error_message .= qq{fixup_connection: missing result col(s): }
+            . join(qq{, }, sort keys %missing_result)
+            . qq{\n};
+    }
+    if (keys %missing_connection) {
+        $error_message .= qq{fixup_connection: missing connection col(s): }
+            . join(qq{, }, sort keys %missing_connection)
+            . qq{\n};
+    }
+    if ($error_message ne q{}) {
+        $self->my_warn($error_message, dump_connection($connection));
     }
 
     if ($failure) {
