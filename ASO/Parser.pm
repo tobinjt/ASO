@@ -367,7 +367,7 @@ sub MAIL_PICKED_FOR_DELIVERY {
 
     if ($line->{program} eq q{postfix/cleanup}
             and exists $self->{timeout_queueids}->{$queueid}) {
-        # This is a cleanup line for a connection which timed out during the
+        # This MAY be a cleanup line for a connection which timed out during the
         # DATA phase, but which wasn't seen before smtpd finished logging, i.e.
         # the logging sequence was:
         #   smtpd connect
@@ -375,15 +375,27 @@ sub MAIL_PICKED_FOR_DELIVERY {
         #   smtpd timeout
         #   smtpd disconnect
         #   cleanup queueid
-        # We just ignore this line.
-        delete $self->{timeout_queueids}->{$queueid};
-        if (not exists $self->{queueids}->{$queueid}) {
+        # If it is for a discarded mail we just ignore this line, otherwise we
+        # continue on as normal because sometimes there isn't a cleanup line,
+        # dunno why.  Maybe it isn't cleanup which allocates queueids?  If we
+        # haven't seen a cleanup line before the queueid is reused (i.e. can be
+        # found in %queueids) just remove the entry in %timeout_queueids and
+        # continue as normal.
+
+        # First check: the cleanup line should be logged pretty soon after the
+        #   rest of the lines - I reckon it should be within 5 seconds, in
+        #   general it appears within a few lines in the log.
+        # Second check: the queueid shouldn't exist in %queueids: if it does it
+        #   means the queueid is being reused so this line is for the new mail,
+        #   rather than the discarded mail.  Obviously this is vulnerable to
+        #   race conditions, but I'm doing the best I can.
+        my $discarded_mail = delete $self->{timeout_queueids}->{$queueid};
+        my $last_timestamp = $discarded_mail->{results}->[-1]->{line}->{timestamp};
+        if ($line->{timestamp} - $last_timestamp <= 5
+                and not exists $self->{queueids}->{$queueid}) {
             return $self->{ACTION_SUCCESS};
         }
-        # Sometimes there just isn't a cleanup line, dunno why.  Maybe it isn't
-        # cleanup which allocates queueids?  If we haven't seen a cleanup line
-        # before the queueid is reused (i.e. can be found in %queueids) just
-        # remove the entry in %timeout_queueids and continue as normal.
+        # Otherwise we contine onwards as normal.
     }
 
     # Sometimes I need to create connections here because there are
