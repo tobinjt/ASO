@@ -414,7 +414,25 @@ sub MAIL_PICKED_FOR_DELIVERY {
 sub PICKUP {
     my ($self, $rule, $line, $matches) = @_;
     my $queueid = $self->get_queueid($line, $rule, $matches);
-    my $connection = $self->make_connection_by_queueid($line, $queueid);
+    # Sometimes the pickup line will be logged after the cleanup line :(
+    # Try to handle that here.
+    my $connection;
+    if (exists $self->{queueids}->{$queueid}) {
+        $connection = $self->{queueids}->{$queueid};
+        # We'll assume the log lines are out of order if:
+        # 1 There's only a 5 second or less difference in timestamps
+        # 2 The only program seen so far is postfix/cleanup
+        my $programs_seen = join q{}, sort keys %{$connection->{programs}};
+        if ($line->{timestamp} - $connection->{connection}->{start} > 5
+                or $programs_seen ne q{postfix/cleanup}) {
+            # It doesn't meet the criteria, so don't use the existing
+            # connection.  Let make_connection_by_queueid() do the logging.
+            $connection = undef;
+        }
+    }
+    if (not defined $connection) {
+        $connection = $self->make_connection_by_queueid($line, $queueid);
+    }
     delete $connection->{faked};
     $self->save($connection, $line, $rule, $matches);
     return $self->{ACTION_SUCCESS};
@@ -514,9 +532,7 @@ sub delete_by_queueid {
         return;
     }
     if (not exists $connection->{fixuped}) {
-        $self->my_warn(qq{delete_by_queueid: non-fixuped connection: \n},
-            dump_connection($connection)
-        );
+        $self->my_warn(qq{delete_by_queueid: non-fixuped connection: \n});
         delete $self->{queueids}->{$connection->{queueid}};
         return;
     }
@@ -637,7 +653,7 @@ sub get_connection_by_queueid {
     my ($self, $line, $queueid, $dont_fake, @extra_messages) = @_;
     if (not exists $self->{queueids}->{$queueid}) {
         $self->my_warn(@extra_messages,
-            qq{get_connection_by_queueid: no connection for: },
+            qq{get_connection_by_queueid: no connection for: $queueid\n},
             dump_line($line)
         );
         if ($dont_fake) {
@@ -955,7 +971,7 @@ sub disconnection {
                     delete $self->{queueids}->{$mail->{queueid}};
                 } else {
                     $self->my_warn(qq{missing cleanup, but connection }
-                        . qq{found by queueid differs:\n},
+                        . qq{found by queueid $mail->{queueid} differs:\n},
                         qq{found in mails_per_smtpd:\n},
                         dump_connection($mail),
                         qq{found in queueids:\n},
@@ -1201,7 +1217,7 @@ sub save {
     if (exists $connection->{queueid}
             and exists $self->{queueids}->{$connection->{queueid}}
             and $connection ne $self->{queueids}->{$connection->{queueid}}) {
-        $self->my_warn(qq{save: queueid clash:\n},
+        $self->my_warn(qq{save: queueid clash: $connection->{queueid}\n},
             qq{old:\n},
             dump_connection($self->{queueids}->{$connection->{queueid}}),
             qq{new:\n},
@@ -1271,13 +1287,11 @@ sub commit_connection {
         return;
     }
     if (not exists $connection->{fixuped}) {
-        $self->my_warn(qq{commit_connection: non-fixuped connection: \n},
-            dump_connection($connection)
-        );
+        $self->my_warn(qq{commit_connection: non-fixuped connection: \n});
         return;
     }
     if (exists $connection->{committed}) {
-        $self->my_warn(qq{commit_connection: previously committed connection: \n},
+        $self->my_warn(qq{commit_connection: previously committed: \n},
             dump_connection($connection)
         );
         return;
