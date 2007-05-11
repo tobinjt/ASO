@@ -383,15 +383,16 @@ sub MAIL_PICKED_FOR_DELIVERY {
         # continue as normal.
 
         # First check: the cleanup line should be logged pretty soon after the
-        #   rest of the lines - I reckon it should be within 5 seconds, in
-        #   general it appears within a few lines in the log.
+        #   rest of the lines, in general it appears within a few lines in the
+        #   log.  Timeouts happen after 5 minutes, so we'll require the cleanup
+        #   line to be seen within 6 minutes.
         # Second check: the queueid shouldn't exist in %queueids: if it does it
         #   means the queueid is being reused so this line is for the new mail,
         #   rather than the discarded mail.  Obviously this is vulnerable to
         #   race conditions, but I'm doing the best I can.
         my $discarded_mail = delete $self->{timeout_queueids}->{$queueid};
         my $last_timestamp = $discarded_mail->{results}->[-1]->{timestamp};
-        if ($line->{timestamp} - $last_timestamp <= 5
+        if ($line->{timestamp} - $last_timestamp <= (6 * 60)
                 and not exists $self->{queueids}->{$queueid}) {
             return $self->{ACTION_SUCCESS};
         }
