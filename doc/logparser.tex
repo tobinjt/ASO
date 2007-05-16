@@ -1016,7 +1016,7 @@ in which they tend to occur in practice.
 
 \end{description}
 
-\subsection{XXX}
+\subsection{Additional complications}
 
 \subsubsection{Identifying bounce notifications}
 
@@ -1028,17 +1028,16 @@ for a mail which lacks an obvious source.  There are similarities to the
 problem of child mails discussed in section
 \ref{tracking-re-injected-mail}, but unlike the solution described therein
 bounce notifications do not eventually have a log line which identifies
-their source.  The solution is that heuristics must be used to identify
-them, and those heuristics are:
+their source.  Heuristics must be used to identify bounce notifications,
+and those heuristics are:
 
 \begin{enumerate}
 
-    \item The sender address will be <>.
+    \item The sender address will be $<>$.
 
-    \item Neither \texttt{postfix/smtpd} nor \texttt{postfix/pickup} will
-        have logged any messages associated with the mail, viz it was
-        generated internally by Postfix, not accepted via SMTP or submitted
-        locally by sendmail.
+    \item Neither smtpd nor pickup will have logged any messages associated
+        with the mail, indicating it was generated internally by Postfix,
+        not accepted via SMTP or submitted locally by sendmail.
 
     \item The mail will not have been tagged as a tracked mail (see section
         \ref{tracking-re-injected-mail}).
@@ -1070,7 +1069,7 @@ occur the following conditions would have to be met:
 
     \item The mail must have been generated internally by Postfix.
 
-    \item The sender address must be <>.
+    \item The sender address must be $<>$.
 
     \item The message-id must have the correct format and match the queueid
         of the mail.  Whist it is possible that a mail sent from elsewhere
@@ -1090,13 +1089,149 @@ correctly.  XXX FIND OUT IF DSNS FIT THE PATTERN.
 
 \label{aborted-delivery-attempts}
 
+Some mail clients appear to send the following sequence of commands during
+the SMTP session:
+
+\begin{verbatim}
+    EHLO client.hostname
+    MAIL FROM: <sender@address>
+    RCPT TO: <recipient@address>
+    RSET
+    MAIL FROM: <sender@address>
+    RCPT TO: <recipient@address>
+    DATA
+\end{verbatim}
+
+The client aborts the first delivery attempt after the first recipient is
+accepted, then makes a second delivery attempt which it continues with
+until the delivery is complete. XXX VERIFY THIS AND DETERMINE WHAT CLIENTS
+EXHIBIT THIS BEHAVIOUR XXX
+
+Once again Postfix does not log a message making the client's behaviour
+clear, so once again heuristics are required to identify the when this
+behaviour occurs.  In this case a list of all mails accepted during a
+connection are saved in the connection state, and the accepted mails
+examined when the disconnection line is parsed and the disconnection action
+executed.  Each mail is checked for the following characteristics:
+
+\begin{itemize}
+
+    \item Is the mail missing its cleanup log message?  Every mail which
+        passes through Postfix will have a cleanup line; lack of a cleanup
+        line is a sure sign the mail didn't make it too far.
+
+    \item Were there exactly two smtpd log lines for the mail?  There
+        should be a connection line and a mail accepted line.
+
+\end{itemize}
+
+If both checks are successful then the mail is assumed to be one of the
+offending bogus mails and is discarded.  There will be no further entries
+logged for such mails, so without identifying and discarding them they
+accumulate in the state table and will cause clashes if the queueid is
+reused.
+
 \subsubsection{Timeouts during DATA phase}
 
 \label{timeouts-during-data-phase}
 
-\subsubsection{Out of order log entries}
+The DATA phase of the SMTP conversation is where the headers and body of the
+mail are transferred.  Sometimes there is a timeout or the connection is
+lost\footnote{For brevity's sake timeout will be used throughout this
+section, but everything applies equally to lost connections.} during the
+DATA phase; when this occurs Postfix will discard the mail and the parser
+needs to discard the data associated with that mail.  It seems more
+intuitive to save the data to the database, but if a timeout occurs there
+won't yet have been any data gathered for the mail, so there is none
+available to save; the timeout is saved with the connection data instead.
 
-\label{out-of-order-log-entries}
+To deal properly with timeouts the parsing algorithm needs to do the
+following in the timeout action:
+
+\begin{enumerate}
+
+    \item Record the timeout and associated data in the connection's
+        results.
+
+    \item If no mails have been accepted yet nothing needs to be done; the
+        timeout action ends.  The timeout action is dependant on the clone
+        action keeping a list of all mails accepted on each connection.
+
+    \item Because of ESMTP pipelining the client can send MAIL FROM, RCPT
+        TO and DATA commands in one packet, instead of sending each command
+        individually and waiting for the reply before sending subsequent
+        commands.  If pipelining is used and Postfix rejects the sender
+        address or any of the recipient addresses there is no way for the
+        client to tell which command was rejected, nor does there appear to
+        be a way for the SMTP conversation to recover, so clients
+        disconnect uncleanly.
+
+        A timeout may thus apply either to an accepted mail, or a rejected
+        mail.  To distinguish between the two cases the algorithm compares
+        the timestamp of the last accepted mail against the timestamp of
+        the last line logged by smtpd for that connection.  If the smtpd
+        timestamp is later there was a rejection between the accepted mail
+        and the timeout, therefore the timeout applies to a rejected mail;
+        the timeout has already been recorded so the timeout action
+        finishes.  If the mail acceptance timestamp is greater then the timeout
+        applies to the just-accepted mail.
+
+    \item The mail needs to be discarded, but there is yet another
+        complication: sometimes the cleanup line is logged after the
+        timeout line.  If the cleanup line has already been seen the mail
+        can be discarded (both from global state and the connection's list
+        of accepted mails) and the timeout action finishes.
+        
+        In the case where the cleanup line is still pending the algorithm
+        updates a global cache of queueids, adding the queueid and the
+        timestamp from the timeout line.  When the next cleanup line is
+        parsed for that queueid the cache will be checked, and will be
+        deemed part of the discarded mail and ignored if it meets the
+        following requirements:
+
+        \begin{itemize}
+
+            \item The queueid must not have been reused yet, i.e. there
+                isn't an entry in the state tables for the queueid.
+
+            \item The timestamp of the cleanup line must be within six
+                minutes of the mail acceptance timestamp.  Timeouts happen
+                after five minutes, so six gives a one minute leeway.
+
+        \end{itemize}
+
+        The next cleanup line must meet the criteria above for it to be
+        discarded because not every connection where a timeout occurs will
+        have a cleanup line logged for it; if the algorithm blindly
+        discarded the next cleanup line it would in some cases be mistaken.
+        Whether or not the line is discarded the queueid will be removed
+        from the cache of timeout queueids.
+
+\end{enumerate}
+
+\subsubsection{Pickup logging after cleanup}
+
+\label{pickup-logging-after-cleanup}
+
+Occasionally the pickup line logged when mail is submitted locally via
+sendmail appears later in the logfile than the cleanup line for that mail.
+This seems to occur during periods of particularly heavy load, so is most
+likely due to process scheduling vagaries.  Normally if the queueid given
+in the pickup line exists a warning is generated by the pickup action, but
+if the following conditions are met it is assumed that the lines are out of
+order:
+
+\begin{itemize}
+
+    \item The only program which logged anything for the mail is cleanup.
+
+    \item There is less than a five second difference in the timestamps of
+        the cleanup and pickup lines.
+
+\end{itemize}
+
+As always with heuristics there may be circumstances in which these
+heuristics incorrectly match, but none have been identified so far.
 
 \section{Parsing coverage}
 
