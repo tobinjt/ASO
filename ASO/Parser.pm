@@ -4,6 +4,45 @@
 
 package ASO::Parser;
 
+=head1 NAME
+
+ASO::Parser - Parse Postfix log messages and populate an SQL database with
+data gathered.
+
+=head1 VERSION
+
+This documentation refers to ASO::Parser version $Id$
+
+=head1 SYNOPSIS
+
+    use ASO::Parser;
+    my $parser = ASO::Parser->new({
+            data_source => q{dbi:SQLite:dbname=../sql/db.sq3},
+            sort_rules  => q{normal},
+            discard_compiled_regex  => 0,
+        });
+
+    # XXX IMPROVE THIS
+    $parser->load_state($state);
+    $parser->parse($logfile);
+    $parser->update_check_order();
+    $parser->dump_state();
+
+=head1 DESCRIPTION
+
+ASO::Parser parses Postfix 2.2.x and 2.3.x log messages, populating an SQL
+database with the data extracted from the logs.
+
+XXX ADD A WHOLE LOT MORE HERE.
+
+=head1 SUBROUTINES/METHODS 
+
+Most subroutines are for internal use only, and thus are not documented here.
+See the ACTIONS section also.
+
+=cut
+
+
 use strict;
 use warnings;
 $| = 1;
@@ -18,16 +57,66 @@ use Regexp::Common qw(Email::Address net);
 use Storable qw(dclone);
 use List::Util qw(shuffle);
 
-# new takes a hash reference of options.
+=over 4
+
+=item new(\%options)
+
+New creates an ASO::Parser object with the specified options.  There only 
+required option is data_source; the rest are optional options.
+
+=over 8
+
+=item data_source
+
+The SQL database to use: rules will be loaded from it and results saved to it.
+If opening the database fails die will be called with an apropriate error
+message.  There is no default value; one must be specified.
+
+=item sort_rules
+
+How to sort the rules returned from the database: normal (most effecient,
+default), shuffle, or reverse (least effecient).  Useful for checking new rules;
+you should obtain the same results regardless of the order the rules are tried
+in; if not you have overlapping rules and need to rationalise your ruleset or
+change the priority of one or more rules.
+
+=item discard_copiled_regex
+
+For effeciency the regex in each rule is compiled once and saved.  If you're
+doing something extremely complicated, or want to drasticaly slow down
+execution, set this option to true and the regexs will be recompiled each time
+they're used.  Defaults to false.
+
+=item skip_inserting_results
+
+Inserting results into the database quadrouples the run time of the program,
+because of the disk IO (this is based on using SQLite on Windows, other
+databases and/or OSs may give different results).  For testing it can be very
+helpful to disable insertion; everything else happens as normal.
+
+=back
+
+=back
+
+=cut
+
 sub new {
     my ($package, $options) = @_;
     my %defaults = (
         sort_rules              => q{normal},
         discard_compiled_regex  => 0,
+        # Skip inserting results into the db, because it quadrouples run time.
+        skip_inserting_results => 0,
     );
 
     if (not exists $options->{data_source}) {
         croak qq{${package}->new: you must provide a data_source\n};
+    }
+
+    foreach my $option (keys %$options) {
+        if (not exists $defaults{$option} and $option ne q{data_source}) {
+            croak qq{$package::new(): unknown option $option\n};
+        }
     }
 
     my $self = {
@@ -45,6 +134,22 @@ sub new {
     return $self;
 }
 
+=begin internals
+
+=over 4
+
+=item $self->init_globals()
+
+init_globals() sets up various data structures in $self which are used by the
+remainder of the module.  It's called automatically by new(), and is separate
+from new() to ease subclassing.
+
+=back
+
+=end internals
+
+=cut
+
 sub init_globals {
     my ($self) = @_;
 
@@ -53,6 +158,8 @@ sub init_globals {
     $self->{current_logfile}  = q{INITIALISATION};
     $.                        = 0;
 
+    # Used to validate queueids in get_queueid() and in maybe_remove_faked() to
+    # check if a message-id contains a queueid.
     $self->{queueid_regex}    = $self->filter_regex(q{__QUEUEID__});
     $self->{queueid_regex}    = qr/$self->{queueid_regex}/;
 
@@ -62,6 +169,7 @@ sub init_globals {
     $self->{queueids}         = {};
     # Cloned connections are temporarily saved in here to help identify those
     # strange connections which consist only of two smtpd results.
+    # XXX HANG THOSE MAILS OFF $CONNECTION INSTEAD.
     $self->{mails_per_smtpd}  = {};
     # When a connection with a sending client times out during the DATA phase,
     # Postfix will have allocated a queueid for the mail.  We need to discard
@@ -72,8 +180,6 @@ sub init_globals {
     # and then discard the next cleanup line for that queueid.
     $self->{timeout_queueids} = {};
 
-    # Skip inserting results into the db, because it quadrouples the run time.
-    $self->{skip_inserting_results}      = 1;
     # Keep track of the number of inserts uncommitted.
     $self->{num_connections_uncommitted} = 0;
 
@@ -84,6 +190,7 @@ sub init_globals {
     $self->{ACTION_REPARSE} = 2;
 
     # Actions available to rules.
+    # XXX ADD SUBS TO ADD/REMOVE THESE
     $self->{actions} = {
         IGNORE                      => 1,
         CONNECT                     => 1,
@@ -108,7 +215,8 @@ sub init_globals {
     $self->{required_result_cols}       = $mock_result->required_columns();
     $self->{nochange_result_cols}       = $mock_result->nochange_columns();
 
-    # Used in save().
+    # Used in update_hash(), via save(), when deciding whether to overwrite an
+    # existing value or discard a new value.
     $self->{c_cols_silent_overwrite}    =
         $mock_connection->silent_overwrite_columns();
     $self->{c_cols_silent_discard}      =
@@ -130,13 +238,26 @@ sub init_globals {
     $self->{rules_by_program} = \%rules_by_program;
 }
 
-# The main loop: most of it is really in parse_line(), to make profiling easier.
+=over 4
+
+=item $parser->parse($logfile)
+
+Parses the logfile, ignoring any lines logged by programs the ruleset doesn't
+contain rules for.  Lines which aren't parsed will be warned about; warnings may
+also be generated for a myriad of other reasons, see DIAGNOSTICS for more
+information.  Data gathered from the logs will be inserted into the database
+(depending on the value of skip_inserting_results).
+
+=back
+
+=cut
+
 sub parse {
     my ($self, $logfile) = @_;
     $self->{current_logfile} = $logfile;
-    my $syslog = Parse::Syslog->new($logfile, year => 2006);
+    my $syslog = Parse::Syslog->new($logfile);
     if (not $syslog) {
-        croak qq{Failed creating syslog parser for $logfile: $@\n};
+        croak qq{parse: failed creating syslog parser for $logfile: $@\n};
     }
 
     LINE:
@@ -157,15 +278,29 @@ sub parse {
     }
 }
 
-# Update the rule order in the database so that more frequently hit rules will
-# be tried earlier on the next run.
+=over 4
+
+=item $parser->update_check_order()
+
+Update the rule order in the database so that more frequently hit rules will be
+tried earlier on the next run.  The order rules are tried in does not change
+during the lifetime of an ASO::Parser object, but the next object created will
+hopefully have a more effecient ordering of rules.  The optimal rule ordering
+is dependant on the contents of the logfile currently being parsed, so this
+measure may not be 100% accurate.
+
+=back
+
+=cut
+
 sub update_check_order {
     my ($self) = @_;
 
+    # XXX Hang the original rule off the generated rule, or merge the rules
+    # extracted from the db with the generated rules.
     my (%id_map) = map { ($_->{id}, $_) } @{$self->{rules}};
     foreach my $rule ($self->{dbix}->resultset(q{Rule})->search()) {
-        # Sometimes a rule won't have been hit; just use the next value
-        # in the sequence.
+        # Sometimes a rule won't have been hit; the value will be set to zero.
         my $id = $rule->id();
         if (not exists $id_map{$id}) {
             $self->my_warn(qq{update_check_order: Missing rule:},
@@ -177,20 +312,38 @@ sub update_check_order {
     }
 }
 
-# This is how we extract the matched fields from the regex in the rule:
-# result_cols and connection_cols specify fields to go in the result and
-# connection table respectively.  The format is:
-#   hostname = 1; helo = 2; sender = 4;
-# i.e. semi-colon seperated assignment statements, with the column name on the
-# left and the match from the regex ($1, $2 etc) on the right hand side (no $).
-# This is also used to parse result_data and connection_data, hence the relaxed
-# regex (.* instead of \d+).
+=begin internals
+
+See result_cols in ASO::DB::Rule for a description.
+
+=over 4
+
+=item $self->parse_result_cols($spec, $rule, $number_required, $column_names)
+
+Parses an assignment list for result_cols, result_data, connection_cols or
+connection_data.  Example list:
+  hostname = 1; helo = 2, sender = 4
+  client_ip = ::1; client_hostname = localhost, helo = unknown;
+
+Either semi-colons or commas can separate assignments.  The variable on the left
+hand side must be a key in %$column_names.  This is also used to parse
+result_data and connection_data, hence the relaxed regex (.* instead of \d+); if
+$number_required is true the right hand side is later required to match \d+.
+There is no way to put a comma or semi-colon in the string.  Returns a hash
+reference containing variable => value.
+
+=back
+
+=end internals
+
+=cut
+
 sub parse_result_cols {
     my ($self, $spec, $rule, $number_required, $column_names) = @_;
 
     my $assignments = {};
     ASSIGNMENT:
-    foreach my $assign (split /\s*,\s*/, $spec) {
+    foreach my $assign (split /\s*[,;]\s*/, $spec) {
         if (not length $assign) {
             $self->my_warn(qq{parse_result_cols: empty assignment found in: \n},
                 dump_rule_from_db($rule));
@@ -217,10 +370,22 @@ sub parse_result_cols {
     return $assignments;
 }
 
+=begin internals
 
-# parse_line() tries each regex against the line until it finds a match, then
-# performs the associated action.  That's about it, really - the devil is in the
-# details.  This should be rewritten as a proper dispatch system.
+=over 4
+
+=item $self->parse_line($line)
+
+Try each regex against the line until a match is found, then perform the
+associated action.  If no match is found spew a warning.  $line is not a string,
+it's the returned by Parse::Syslog.
+
+=back
+
+=end internals
+
+=cut
+
 sub parse_line {
     my ($self, $line) = @_;
     # Parse::Syslog handles "last line repeated n times" by returning the 
@@ -271,13 +436,45 @@ sub parse_line {
     $self->my_warn(qq{unparsed line: $line->{program}: $text\n});
 }
 
-# A line we want to ignore
+=head1 ACTIONS
+
+When a rule successfully matches a line the action specified in the rule will be
+performed; these are the subroutines implementing the actions.  All actions are
+called in the same way:
+
+  $self->ACTION($rule, $line, \@matches);
+
+Most actions have more documentation, but it's only of interest to developers
+digging into the internals.
+
+=over  4
+
+=item IGNORE
+
+IGNORE just returns successfully; it is used when a line needs to be parsed for
+completeness but doesn't either provide any useful data or require anything to
+be done.
+
+=back
+
+=cut
+
 sub IGNORE {
     my ($self, $rule, $line, $matches) = @_;
     return $self->{ACTION_SUCCESS};
 }
 
-# Someone has connected to us
+=over  4
+
+=item CONNECT
+
+Handle a remote client connecting: create a new state table entry (indexed by
+smtpd pid) and save both the client hostname and IP address.
+
+=back
+
+=cut
+
 sub CONNECT {
     my ($self, $rule, $line, $matches) = @_;
     my $connection = $self->make_connection_by_pid($line);
@@ -287,14 +484,50 @@ sub CONNECT {
     return $self->{ACTION_SUCCESS};
 }
 
-# Someone has disconnected
+=over  4
+
+=item DISCONNECT
+
+Deal with the remote client disconnecting: enter the connection in the database,
+perform any required cleanup, and delete the connection from the state tables.
+
+=begin internals
+
+Currently the main cleanup requirement is to delete any CLONE()d connections
+which only have two smtpd entries so they don't hang around in the state tables
+causing queueid clashes.  It appears from the logs that the remote client sends
+MAIL FROM, RCPT TO, RSET and then starts over; this leaves a state table entry
+which will never have any more log entries and wouldn't be disposed of in any
+other way.  There are two problems resulting from this: memory is used, albeit
+only a small amount, and more importantly when the parser has processed enough
+log lines queueids sart being reused and these entries cause queueid clashes.
+
+=end internals
+
+=back
+
+=cut
+
+# XXX MERGE disconnection() IN HERE.
 sub DISCONNECT {
     my ($self, $rule, $line, $matches) = @_;
     $self->disconnection($line);
     return $self->{ACTION_SUCCESS};
 }
 
-# We want to save some information
+=over  4
+
+=item SAVE_BY_PID
+
+Use the pid from $line to find the correct connection and call $self->save()
+with the appropriate arguments - see save() in SUBROUTINES for more details.  If
+the connection doesn't exist a connection marked faked will be created and a
+warning issued.
+
+=back
+
+=cut
+
 sub SAVE_BY_PID {
     my ($self, $rule, $line, $matches) = @_;
     my $connection = $self->get_connection_by_pid($line);
@@ -302,7 +535,19 @@ sub SAVE_BY_PID {
     return $self->{ACTION_SUCCESS};
 }
 
-# We want to save some information
+=over  4
+
+=item SAVE_BY_QUEUEID
+
+Use the queueid from $rule and @matches to find the correct connection and call
+$self->save() with the appropriate arguments - see save() in SUBROUTINES for
+more details.  If the connection doesn't exist a connection marked faked will be
+created and a warning issued.
+
+=back
+
+=cut
+
 sub SAVE_BY_QUEUEID {
     my ($self, $rule, $line, $matches) = @_;
     my $queueid = $self->get_queueid($line, $rule, $matches);
@@ -311,7 +556,55 @@ sub SAVE_BY_QUEUEID {
     return $self->{ACTION_SUCCESS};
 }
 
-# We want to create db entries with the information we've saved.
+=over  4
+
+=item COMMIT
+
+Enter the data into the database.  Entry may be postponed if the mail is a
+child waiting to be tracked.
+
+=begin internals
+
+Find the correct connection using the queueid from $rule and @matches, then:
+
+=over 8
+
+=item *
+
+Save the data from the rule in the connection.
+
+=item *
+
+Determine if the connection is a bounce message and remove the faked flag if it
+is.
+
+=item *
+
+Postpone commitment if the connection is still marked faked: the connection is
+either a child still waiting to be tracked (see TRACK later) or hasn't been
+properly dealt with by the parser so shouldn't be entered in the database
+anyway.
+
+=item *
+
+Fixup the connection - see fixup_connection() for details.
+
+=item *
+
+Enter the connection in the database.
+
+=item *
+
+Delete the connection from the state tables.
+
+=back
+
+=end internals
+
+=back
+
+=cut
+
 sub COMMIT {
     my ($self, $rule, $line, $matches) = @_;
     my $queueid = $self->get_queueid($line, $rule, $matches);
@@ -336,8 +629,23 @@ sub COMMIT {
     return $self->{ACTION_SUCCESS};
 }
 
-# We need to track a mail across queueids, typically when mail
-# goes through amavisd-new.
+=over  4
+
+=item TRACK
+
+Track a mail when it is forwarded to another mail server; this happens when a
+local address is aliased to a remote address.  TRACK will be called when dealing
+with the parent mail, and will create the child mail if necessary.  TRACK checks
+if the child has already been tracked, either with this parent or with another
+parent, and issues appropriate warnings in either case.  Tracking children is
+discussed extensively in the paper written about this parser; details about
+obtaining the paper are given in the SEE ALSO section.
+
+=back
+
+=cut
+
+# MERGE track() IN HERE.
 sub TRACK {
     my ($self, $rule, $line, $matches) = @_;
     my $queueid = $self->get_queueid($line, $rule, $matches);
@@ -347,10 +655,26 @@ sub TRACK {
     return $self->{ACTION_SUCCESS};
 }
 
-# We match the start of every restriction line with the same regex,
-# to make restriction rules easier to write.
-# NOTE: we now try the remainder of the rules too, we don't move
-# on to the next line.
+=over  4
+
+=item RESTRICTION_START
+
+XXX REPLACE __RESTRICTION_START__ IN filter_regex(), CHANGE ALL THE REJECTION
+XXX PATTERNS, AND SEE WHAT EFFECT THERE IS ON RUNTIME.  EVEN IF THE RUNTIME DOES
+XXX INCREASES SIGNIFICANTLY, IT WOULD CLEANLY SOLVE THE QUEUEID/NOQUEUEID ISSUE
+XXX AND SIMPLIFY THE WHOLE THING.
+
+The start of every smtpd rejection message conforms to a pattern.  A single rule
+can match that pattern, and this action strips off the beginning of the line,
+then causes the rules to be tried against the remainder of the line, simplifying
+the other rules matching rejections.  The stadard beginning could have been
+matched by substituting __RESTRICTION_START__ with the appropriate pattern, but
+that would have added, possibly significantly, to the 
+
+=back
+
+=cut
+
 sub RESTRICTION_START {
     my ($self, $rule, $line, $matches) = @_;
     my $text = $line->{text};
@@ -359,6 +683,43 @@ sub RESTRICTION_START {
     $self->save($connection, $line, $rule, $matches);
     return ($self->{ACTION_REPARSE}, $text);
 }
+
+=over  4
+
+=item MAIL_PICKED_FOR_DELIVERY
+
+This action represents Postfix picking a mail from the queue to deliver.  This
+action is used for both pickup and cleanup due to out of order log lines.
+
+=begin internals
+
+There are some complications:
+
+=over 8
+
+=item *
+
+Sometimes the state table entry needs to be created by this action, because the
+mail is the result of forwarding or a bounce notification.
+
+=item *
+
+Sometimes cleanup lines need to be discarded, as they're a remnant of mails
+discarded due to timeouts.  The cleanup line must have been logged within six
+minutes of the mail being accepted, and the queueid must not be in the global
+state tables yet - if it is then the queueid has been reused and this cleanup
+line isn't for the discarded mail, so must be kept.
+
+=back
+
+This action handles the above complications and saves the data extracted from
+the line.
+
+=end internals
+
+=back
+
+=cut
 
 sub MAIL_PICKED_FOR_DELIVERY {
     my ($self, $rule, $line, $matches) = @_;
@@ -411,6 +772,21 @@ sub MAIL_PICKED_FOR_DELIVERY {
     return $self->{ACTION_SUCCESS};
 }
 
+=over  4
+
+=item PICKUP
+
+Pickup is the service which deals with mail submitted locally via
+/usr/sbin/sendmail.  This action creates a new state table entry and saves data
+to it, unless out of order logging has caused the cleanup line to be logged
+first.  Lines are assumed to be out of order if the only program seen thus far
+is cleanup and there is less than five seconds difference between the timestamps
+of the two lines.
+
+=back
+
+=cut
+
 sub PICKUP {
     my ($self, $rule, $line, $matches) = @_;
     my $queueid = $self->get_queueid($line, $rule, $matches);
@@ -438,8 +814,32 @@ sub PICKUP {
     return $self->{ACTION_SUCCESS};
 }
 
-# Create a deep copy of the connection and save it by queueid so that
-# subsequent mails sent on this connection don't clobber each other.
+=over  4
+
+=item CLONE
+
+Multiple mails may be accepted on a single connection, so each time a mail is
+accepted the connection's state table entry must be cloned; if the original data
+structure was used the second and subsequent mails would corrupt the data
+structure.
+
+=begin internals
+
+The cloned data structure must have rejections prior to the mail's
+acceptance cleared from it's results, otherwise rejections would be entered
+twice in the database.  The cloned data structure will be added to the global
+state tables but will also be added to the connection's list of accepted mails;
+this is to enable detection of mails where the client gave the RSET commmand
+after recipients were accepted - see the description in DISCONNECT.  The
+last_clone_timestamp is also updated to enable timeout handling to determine
+whether the timeout applies to an accepted mail or not.
+
+=end internals
+
+=back
+
+=cut
+
 sub CLONE {
     my ($self, $rule, $line, $matches) = @_;
     my $connection = $self->get_connection_by_pid($line);
@@ -464,12 +864,63 @@ sub CLONE {
     return $self->{ACTION_SUCCESS};
 }
 
-# Client exceeded the maximum mail size, so we discard the last mail accepted.
-# This is exactly the same as TIMEOUT, so we just call it.
+=over  4
+
+=item MAIL_TOO_LARGE
+
+Handle mails being discarded because the client tried to send a larger message
+than the local server accepts.  See TIMEOUT for further discussion; the two are
+handled in exactly the same way.
+
+=back
+
+=cut
+
 sub MAIL_TOO_LARGE {
     my ($self, $rule, $line, $matches) = @_;
     return $self->TIMEOUT($rule, $line, $matches);
 }
+
+=over  4
+
+=item TIMEOUT
+
+The connection timed out so the mail currently being transferred must be
+discarded.  The mail may have been accepted, in which case there's a data
+structure to dispose of, or it may not in which case there's none.  The gory
+details can be found in the internals documentation.
+
+=begin internals
+
+Timeout without an accepted mail happens very often, I think it might be due to
+ESMTP pipelining where the conversation looks like:
+
+  client:                         server:
+  EHLO -->
+                                  <-- PIPELINING
+  MAIL FROM, RCPT TO, DATA -->
+                                  <-- RCPT TO/MAIL FROM rejected.
+  connection lost
+
+There may or may not have been a mail accepted and fully trasnferred before the
+timeout.
+
+How to distinguish between a timeout affecting the last mail accepted versus a
+timeout affecting a rejected mail?  This _seems_ to work: track the timesamp of
+the last CLONE, i.e. accepted mail, and if there's a reject later than that
+(skipping the timeout just saved at the start of this subroutine) then the
+timeout applies to an unsucessful mail: don't delete anything, just save() and
+finish.  Whew.
+
+There's also the problem of stray cleanup lines being logged after the timeout
+line.  This is dealt with by saving the queueid and discarded data structure in
+a global state table which is checked in MAIL_PICKED_FOR_DELIVERY.
+
+=end internals
+
+=back
+
+=cut
 
 # The connection timed out so we need to discard the last mail accepted on this
 # connection.
@@ -480,31 +931,12 @@ sub TIMEOUT {
 
     my $mails = $self->{mails_per_smtpd}->{$line->{pid}};
     if (not defined $mails) {
-        # This happens very often, I think it might be due to ESMTP pipelining,
-        # where the conversation looks like:
-        # client:                           server:
-        #   EHLO -->
-        #                                   <-- PIPELINING
-        #   MAIL FROM, RCPT TO, DATA -->
-        #                                   <-- RCPT TO/MAIL FROM rejected.
-        # connection lost
-        # Something to think about is what happens if the above sequence happens
-        # on the second mail sent?  I think I'll clobber the first mail in that
-        # case.  Bugger.
+        # Nothing has been acccepted, so there's nothing to do.
         return $self->{ACTION_SUCCESS};
     }
 
-    # Sometimes we see this sequence:
-    # 1 client successfully delivers mail.
-    # 2 client pipelines MAIL FROM, RCPT TO and DATA, but Postfix rejects for
-    #   some reason.
-    # 3 client disconnects uncleanly during DATA, TIMEOUT is called, and the
-    #   successfully sent mail is clobbered.
-    # Solution?  I _hope_ this will work: track the timesamp of the last CLONE,
-    # i.e. successfully delivered mail, and if there's a reject later than that
-    # (skipping the timeout we just saved at the start of this subroutine) then
-    # the timeout applies to an unsucessful mail, so don't delete anything, just
-    # save() and finish.  Whew.
+    # Check the timestamps to see whether there's been a rejection since the
+    # previous acceptance.
     if ($connection->{results}->[-2]->{timestamp}
             > $connection->{last_clone_timestamp}) {
         return $self->{ACTION_SUCCESS};
@@ -532,7 +964,7 @@ sub delete_by_queueid {
         return;
     }
     if (not exists $connection->{fixuped}) {
-        $self->my_warn(qq{delete_by_queueid: non-fixuped connection: \n});
+        $self->my_warn(qq{delete_by_queueid: non-fixuped connection\n});
         delete $self->{queueids}->{$connection->{queueid}};
         return;
     }
@@ -776,8 +1208,22 @@ sub dump_rule_from_db {
     return Data::Dumper->Dump([\%columns], [q{rule}]);
 }
 
+=over 4
+
+=item $self->dump_state();
+
+Returns a string which can be eval'd to restore the state tables.
+To avoid overwriting existing data structures the string contains a subroutine
+named reload_state() which returns the state tables when executed.
+
+=back
+
+=cut
+
 # I used to use Data::Dumper on the entire hash, but it's horrendously slow once
-# the number of connections remaining grows, so . . . 
+# the number of connections remaining grows, so I now iterate over the elements,
+# dumping anything untracked individually and creating a new hash for tracked
+# connections because they're interlinked and need to be dumped all at once.
 sub dump_state {
     my ($self) = @_;
     my $state = q{};
@@ -829,10 +1275,32 @@ POSTAMBLE
     return $state;
 }
 
+=over 4
+
+=item $self->filter_regex($regex)
+
+Substitutes vertain keywords in the regex with regex snippets, e.g.
+__SMTP_CODE__ is replaced with \d{3}.  Every regex loaded from the database will
+be processed by filter_regex(), allowing each regex to be largely
+self-documenting, be far simpler than it would otherwise have been, and allowing
+bugs in the regex components to be fixed in one place only.
+
+The full list of keywords which are expanded is:
+
+__SENDER__, __RECIPIENT__, __MESSAGE_ID__, __HELO__, __EMAIL__, __HOSTNAME__,
+__IP__, __IPv4__, __IPv6__, __SMTP_CODE__, __QUEUEID__, __COMMAND__,
+__SHORT_CMD__, __DELAYS__, __DELAY__, __DSN__ and __CONN_USE__.
+
+The names should be reasonably self-explanatory.
+
+=back
+
+=cut
+
 sub filter_regex {
     my ($self, $regex) = @_;
 
-    # I'm deliberately allowing a trailing .
+    # I'm deliberately allowing a trailing . in $hostname_re.
     my $hostname_re = qr/(?:unknown|(?:[-_a-zA-Z0-9.]+))/;
     my $ipv6_chunk  = qr/(?:[0-9A-Fa-f]{1,4})/;
     my $ipv6_re = qr/(?:
@@ -850,18 +1318,16 @@ sub filter_regex {
 
     $regex =~ s/__SENDER__      /__EMAIL__/gx;
     $regex =~ s/__RECIPIENT__   /__EMAIL__/gx;
-    $regex =~ s/__MESSAGE_ID__  /.*/gx;
-    # We see some pretty screwey hostnames in HELO commands.
-    $regex =~ s/__HELO__        /__HOSTNAME__|(?:\\[)__IP__(?:\\])|(.*?)/gx;
+    # message-ids initially look like email addresses, but really they can be
+    # absolutely anything; just like email addresses in fact.
+    $regex =~ s/__MESSAGE_ID__  /.*?/gx;
+    # We see some pretty screwey hostnames in HELO commands; in fact just match
+    # any damn thing, the hostnames are particularly weird when Postfix rejects
+    # them.
+    $regex =~ s/__HELO__        /.*?/gx;
 #   This doesn't work, as it matches valid addresses, not real world addresses.
 #   $regex =~ s/__EMAIL__       /$RE{Email}{Address}/gx;
-#   The empty alternative below is to allow for <> as the sender address
-#   I've seen so many weird addresses now that I think the only characters I
-#   won't see are <>, so I'm not bothering with trying to be more specific.
-#   Right, I do see < in addresses, so I'm just going to try minimally-matching
-#   on anything except >.  Argh.
-#   Wibble: from=<<>@inprima.locaweb.com.br>
-#   Just match anything as an address.
+#   Wibble: from=<<>@inprima.locaweb.com.br>; just match anything as an address.
     $regex =~ s/__EMAIL__       /.*?/gx;
     # This doesn't match, for varous reason - I think numeric subnets are one.
     #$regex =~ s/__HOSTNAME__    /$RE{net}{domain}{-nospace}/gx;
@@ -869,7 +1335,6 @@ sub filter_regex {
     $regex =~ s/__IP__          /(?:__IPv4__|__IPv6__)/gx;
     $regex =~ s/__IPv4__        /(?:::ffff:)?$RE{net}{IPv4}/gx;
     $regex =~ s/__IPv6__        /$ipv6_re/gx;
-#    $regex =~ s/__IP__          /(?:::ffff:)?$RE{net}{IPv4}/gx;
     $regex =~ s/__SMTP_CODE__   /\\d{3}/gx;
     # 3-9 is a guess.
     $regex =~ s/__QUEUEID__     /(?:NOQUEUE|[\\dA-F]{3,9})/gx;
@@ -948,6 +1413,9 @@ sub disconnection {
         return;
     }
 
+    # XXX IS THIS RIGHT????  SURELY IF WE REJECT WE'LL HAVE SOME RESULTS???
+    # LOG WHEN THIS HAPPENS, DUMPING THE CONNECTION.  THE VERY ACT OF CONNECTING
+    # SHOULD HAVE CREATED RESULTS.
     # This is quite common - it happens every time we reject at SMTP time.
     if (not exists $connection->{results}) {
         return;
@@ -1287,7 +1755,7 @@ sub commit_connection {
         return;
     }
     if (not exists $connection->{fixuped}) {
-        $self->my_warn(qq{commit_connection: non-fixuped connection: \n});
+        $self->my_warn(qq{commit_connection: non-fixuped connection\n});
         return;
     }
     if (exists $connection->{committed}) {
@@ -1381,6 +1849,20 @@ sub maybe_remove_faked {
     }
 }
 
+=over 4
+
+=item $self->my_warn($first_line, @further_lines)
+
+Wrapper around warn which prepends the current filename and line number to
+$first_line.  If @further_lines isn't empty it will be wrapped with {{{ and }}};
+these are the default markers vim uses for folding blocks of text, so long error
+messages (e.g. where a connection is dumped in the error message) can be folded,
+making navigating through error output easier.
+
+=back
+
+=cut
+
 sub my_warn {
     my ($self, $first_line, @rest) = @_;
     my $prefix = qq{$0: $self->{current_logfile}: $.: };
@@ -1398,9 +1880,93 @@ sub my_warn {
     }
 }
 
+=over 4
+
+=item $self->my_die(@messages)
+
+Quick wrapper around die which prepends the filename and line number to the
+error messages.
+
+=back
+
+=cut
+
 sub my_die {
     my ($self) = shift @_;
     die qq{$0: $self->{current_logfile}: $.: }, @_;
 }
+
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the module can generate
+(even the ones that will "never happen"), with a full explanation of each 
+problem, one or more likely causes, and any suggested remedies.
+(See also  QUOTE \" " INCLUDETEXT "13_ErrorHandling" "XREF83683_Documenting_Errors_"\! Documenting Errors QUOTE \" " QUOTE " in Chapter "  in Chapter  INCLUDETEXT "13_ErrorHandling" "XREF40477__"\! 13.)
+
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the module,
+including the names and locations of any configuration files, and the
+meaning of any environment variables or properties that can be set. These
+descriptions must also include details of any configuration language used.
+(also see  QUOTE \" " INCLUDETEXT "19_Miscellanea" "XREF40334_Configuration_Files_"\! Configuration Files QUOTE \" " QUOTE " in Chapter "  in Chapter  INCLUDETEXT "19_Miscellanea" "XREF55683__"\! 19.)
+
+
+=head1 DEPENDENCIES
+
+Standard modules shipped with Perl: IO::File, Carp, Data::Dumper,
+Regexp::Common, Storable, List::Util.
+
+Modules packaged with ASO::Parser: ASO::DB.
+
+External modules: Parse::Syslog, Regexp::Common::Email::Address, DBIx::Class
+(which has many dependencies), DBI, DBD::whatever.
+
+=head1 INCOMPATIBILITIES
+
+None known thus far.
+
+=head1 BUGS AND LIMITATIONS
+
+A list of known problems with the module, together with some indication
+whether they are likely to be fixed in an upcoming release.
+
+Also a list of restrictions on the features the module does provide: 
+data types that cannot be handled, performance issues and the circumstances
+in which they may arise, practical limitations on the size of data sets, 
+special cases that are not (yet) handled, etc.
+
+The initial template usually just has:
+
+There are no known bugs in this module. 
+Please report problems to <Maintainer name(s)>  (<contact address>)
+Patches are welcome.
+
+=head1 SEE ALSO
+
+XXX ADD INSTRUCTIONS FOR GETTING PAPER
+
+=head1 AUTHOR
+
+John Tobin <tobinjt@cs.tcd.ie>
+
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2006-2007 John Tobin <tobinjt@cs.tcd.ie>.  All rights reserved.
+
+Followed by whatever licence you wish to release it under. 
+For Perl code that is often just:
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See L<perlartistic>.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+
+=cut
 
 1;
