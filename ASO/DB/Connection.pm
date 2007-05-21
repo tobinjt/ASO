@@ -207,7 +207,7 @@ sub connection_cols_columns {
 =item $self->silent_overwrite_columns()
 
 Returns a hash reference giving the columns which can be silently overridden and
-the values they can be overidden by.  Used in update_hash() when saving
+the values they can be overridden by.  Used in update_hash() when saving
 connection_cols and connection_data.
 
 =back

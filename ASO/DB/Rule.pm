@@ -64,9 +64,9 @@ The name of the rule.
 
 =item description
 
-Something must have occured to cause Postfix to log each line (e.g. a remote
-client connecting causes a connection line to be logged).  The desctiption
-field is generally used to describe the action causing the log lines this rule
+Something must have occurred to cause Postfix to log each line (e.g. a remote
+client connecting causes a connection line to be logged).  The description field
+is generally used to describe the action causing the log lines this rule
 matches.
 
 =item restriction_name
@@ -84,28 +84,28 @@ line, or worse, might match unintentionally.
 =item regex
 
 The regex to apply to log lines.  Several keywords will be expanded in the regex
-(see filter_regex() in ASO::Parser for the full list); this allows regexs to be
-compact, easy to read, less prone to typos (some of the regex components are
+(see filter_regex() in ASO::Parser for the full list); this allows each regex to
+be compact, easy to read, less prone to typos (some of the regex components are
 pretty hairy), and far easier to fix when a problem in one of the components is
-discovered.  For effeciency each regex is compiled when the rule is loaded,
+discovered.  For efficiency each regex is compiled when the rule is loaded,
 rather than recompiling it each time (XXX% slower).
 
 =item result_cols
 
-This is how matched fields from the regex are extracted and saved.
+This is how matched fields from the regex are extracted and saved.  The columns
 result_cols and connection_cols specify fields to go in the result and
 connection table respectively.  The format is:
 
   hostname = 1; helo = 2, sender = 4;
 
-i.e. semi-colon/comma seperated assignment statements, with the column name on
-the left and the match from the regex ($1, $2 etc) on the right hand side (no
+I.e. semi-colon/comma separated assignment statements, with the column name on
+the left and the match from the regex ($1, $2 etc.) on the right hand side (no
 $).  The list of accepted variable names can be found in ASO::DB::Result or
 ASO::DB::Connection as appropriate.
 
 Similarly result_data and connection_data specify data to go in the result and
 connection table respectively.  The format is: client_ip = ::1; client_hostname
-= localhost, helo = unknown; i.e. semi-colon/comma seperated assignment
+= localhost, helo = unknown; i.e. semi-colon/comma separated assignment
 statements, with the column name on the left and the data to be saved on the
 right.  There is no escape mechanism, so neither commas nor semi-colons can be
 used in the data.  The list of accepted variable names can be found in
