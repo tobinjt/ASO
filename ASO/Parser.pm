@@ -508,10 +508,62 @@ log lines queueids sart being reused and these entries cause queueid clashes.
 
 =cut
 
-# XXX MERGE disconnection() IN HERE.
 sub DISCONNECT {
     my ($self, $rule, $line, $matches) = @_;
-    $self->disconnection($line);
+
+    # NOTE: We deliberately don't use $self->get_connection_by_pid() here
+    # because we don't want a new connection returned, we need more control.
+    if (not exists $self->{connections}->{$line->{pid}}) {
+        $self->my_warn(qq{disconnection: no connection found for pid }
+            . qq{$line->{pid} - perhaps the connect line is in a }
+            . qq{previous log file?\n},
+            dump_line($line));
+        # Does this make sense?  At the moment yes, there aren't any other rules
+        # which will deal with these lines anyway.
+        return $self->{ACTION_SUCCESS};
+    }
+
+    my $connection = $self->{connections}->{$line->{pid}};
+    # There should NEVER be a queueid.
+    if (exists $connection->{queueid}) {
+        $self->my_warn(qq{disconnection: PANIC: found queueid: \n},
+            dump_connection($connection));
+        # Similarly there's no point in failing here.
+        return $self->{ACTION_SUCCESS};
+    }
+
+    # Commit the connection.
+    $connection->{connection}->{end} = $line->{timestamp};
+    $self->fixup_connection($connection);
+    $self->commit_connection($connection);
+
+    # Try to clear out those mails which only have two smtpd entries, so they
+    # don't hang around, taking up memory uselessly and causing queueid clashes
+    # occasionally.
+    if (exists $self->{mails_per_smtpd}->{$line->{pid}}) {
+        foreach my $mail (@{$self->{mails_per_smtpd}->{$line->{pid}}}) {
+            if (not exists $mail->{programs}->{q{postfix/cleanup}}
+                    and $mail->{programs}->{q{postfix/smtpd}} == 2 ) {
+                #$self->my_warn(qq{missing cleanup: \n},
+                #    dump_connection($mail));
+                if ($mail == $self->{queueids}->{$mail->{queueid}}) {
+                    delete $self->{queueids}->{$mail->{queueid}};
+                } else {
+                    $self->my_warn(qq{missing cleanup, but connection }
+                        . qq{found by queueid $mail->{queueid} differs:\n},
+                        qq{found in mails_per_smtpd:\n},
+                        dump_connection($mail),
+                        qq{found in queueids:\n},
+                        dump_connection($self->{queueids}->{$mail->{queueid}}),
+                    );
+                }
+            }
+        }
+    }
+
+    delete $self->{connections}->{$line->{pid}};
+    delete $self->{mails_per_smtpd}->{$line->{pid}};
+
     return $self->{ACTION_SUCCESS};
 }
 
@@ -645,13 +697,49 @@ obtaining the paper are given in the SEE ALSO section.
 
 =cut
 
-# MERGE track() IN HERE.
 sub TRACK {
     my ($self, $rule, $line, $matches) = @_;
-    my $queueid = $self->get_queueid($line, $rule, $matches);
-    my $connection = $self->get_connection_by_queueid($line, $queueid);
-    $self->save($connection, $line, $rule, $matches);
-    $self->track($line, $rule, $matches);
+
+    my $queueid         = $self->get_queueid($line, $rule, $matches);
+    my $parent          = $self->get_connection_by_queueid($line, $queueid);
+    $self->save($parent, $line, $rule, $matches);
+
+    my $child_queueid   = $parent->{results}->[-1]->{child};
+    if (not exists $parent->{children}) {
+        $parent->{children} = {};
+    }
+    if (exists $parent->{children}->{$child_queueid}) {
+        $self->my_warn(qq{track: tracking $child_queueid for a second time:\n});
+    }
+
+    my $child;
+    if (exists $self->{queueids}->{$child_queueid}) {
+        $child = $self->{queueids}->{$child_queueid};
+    } else {
+        $child = $self->make_connection_by_queueid($line, $child_queueid);
+    }
+    # Clear the faked flag; we should never have committed a connection before
+    # tracking now.
+    delete $child->{faked};
+    $parent->{children}->{$child_queueid} = $child;
+
+    # Mark both connections as tracked.
+    $parent->{tracked} = 1;
+    $child->{tracked}  = 1;
+
+    if (exists $child->{parent}
+        and $child->{parent} ne $parent) {
+        $self->my_warn(qq{Trying to track for a second time!\n},
+            qq{\tnew parent     => $queueid\n},
+            qq{\tchild          => $child\n},
+            qq{\told parent     => $child->{parent}\n},
+            qq{\t$line->{program}: $line->{text}\n},
+        );
+    }
+
+    $child->{parent}            = $parent;
+    $child->{parent_queueid}    = $parent->{queueid};
+
     return $self->{ACTION_SUCCESS};
 }
 
@@ -1392,68 +1480,6 @@ sub make_connection {
     };
 }
 
-sub disconnection {
-    my ($self, $line) = @_;
-
-    # NOTE: We deliberately don't use $self->get_connection_by_pid() here
-    # because we don't want a new connection returned, we need more control.
-    if (not exists $self->{connections}->{$line->{pid}}) {
-        $self->my_warn(qq{disconnection: no connection found for pid }
-            . qq{$line->{pid} - perhaps the connect line is in a }
-            . qq{previous log file?\n},
-            dump_line($line));
-        return;
-    }
-
-    my $connection = $self->{connections}->{$line->{pid}};
-    # There should NEVER be a queueid.
-    if (exists $connection->{queueid}) {
-        $self->my_warn(qq{disconnection: PANIC: found queueid: \n},
-            dump_connection($connection));
-        return;
-    }
-
-    # XXX IS THIS RIGHT????  SURELY IF WE REJECT WE'LL HAVE SOME RESULTS???
-    # LOG WHEN THIS HAPPENS, DUMPING THE CONNECTION.  THE VERY ACT OF CONNECTING
-    # SHOULD HAVE CREATED RESULTS.
-    # This is quite common - it happens every time we reject at SMTP time.
-    if (not exists $connection->{results}) {
-        return;
-    }
-
-    # Commit the connection.
-    $connection->{connection}->{end} = $line->{timestamp};
-    $self->fixup_connection($connection);
-    $self->commit_connection($connection);
-
-    # Try to clear out those mails which only have two smtpd entries, so they
-    # don't hang around, taking up memory uselessly and causing queueid clashes
-    # occasionally.
-    if (exists $self->{mails_per_smtpd}->{$line->{pid}}) {
-        foreach my $mail (@{$self->{mails_per_smtpd}->{$line->{pid}}}) {
-            if (not exists $mail->{programs}->{q{postfix/cleanup}}
-                    and $mail->{programs}->{q{postfix/smtpd}} == 2 ) {
-                #$self->my_warn(qq{missing cleanup: \n},
-                #    dump_connection($mail));
-                if ($mail == $self->{queueids}->{$mail->{queueid}}) {
-                    delete $self->{queueids}->{$mail->{queueid}};
-                } else {
-                    $self->my_warn(qq{missing cleanup, but connection }
-                        . qq{found by queueid $mail->{queueid} differs:\n},
-                        qq{found in mails_per_smtpd:\n},
-                        dump_connection($mail),
-                        qq{found in queueids:\n},
-                        dump_connection($self->{queueids}->{$mail->{queueid}}),
-                    );
-                }
-            }
-        }
-    }
-
-    delete $self->{connections}->{$line->{pid}};
-    delete $self->{mails_per_smtpd}->{$line->{pid}};
-}
-
 sub get_mock_object {
     my ($self, $table) = @_;
     return $self->{dbix}->resultset($table)->new_result({});
@@ -1698,49 +1724,6 @@ sub save {
             and not exists $self->{queueids}->{$connection->{queueid}}) {
         $self->{queueids}->{$connection->{queueid}} = $connection;
     }
-}
-
-sub track {
-    my ($self, $line, $rule, $matches) = @_;
-
-    my $queueid         = $self->get_queueid($line, $rule, $matches);
-    my $parent          = $self->get_connection_by_queueid($line, $queueid);
-
-    my $child_queueid   = $parent->{results}->[-1]->{child};
-    if (not exists $parent->{children}) {
-        $parent->{children} = {};
-    }
-    if (exists $parent->{children}->{$child_queueid}) {
-        $self->my_warn(qq{track: tracking $child_queueid for a second time:\n});
-    }
-
-    my $child;
-    if (exists $self->{queueids}->{$child_queueid}) {
-        $child = $self->{queueids}->{$child_queueid};
-    } else {
-        $child = $self->make_connection_by_queueid($line, $child_queueid);
-    }
-    # Clear the faked flag; we should never have committed a connection before
-    # tracking now.
-    delete $child->{faked};
-    $parent->{children}->{$child_queueid} = $child;
-
-    # Mark both connections as tracked.
-    $parent->{tracked} = 1;
-    $child->{tracked}  = 1;
-
-    if (exists $child->{parent}
-        and $child->{parent} ne $parent) {
-        $self->my_warn(qq{Trying to track for a second time!\n},
-            qq{\tnew parent     => $queueid\n},
-            qq{\tchild          => $child\n},
-            qq{\told parent     => $child->{parent}\n},
-            qq{\t$line->{program}: $line->{text}\n},
-        );
-    }
-
-    $child->{parent}            = $parent;
-    $child->{parent_queueid}    = $parent->{queueid};
 }
 
 # We commit unfaked, fixuped connections, regardless of parent/children -
