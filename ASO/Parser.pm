@@ -199,7 +199,7 @@ sub init_globals {
         SAVE_BY_QUEUEID             => 1,
         COMMIT                      => 1,
         TRACK                       => 1,
-        RESTRICTION_START           => 1,
+        REJECTION                   => 1,
         MAIL_PICKED_FOR_DELIVERY    => 1,
         PICKUP                      => 1,
         CLONE                       => 1,
@@ -763,13 +763,17 @@ that would have added, possibly significantly, to the
 
 =cut
 
-sub RESTRICTION_START {
+sub REJECTION {
     my ($self, $rule, $line, $matches) = @_;
-    my $text = $line->{text};
-    $text =~ s/$rule->{regex}//;
-    my $connection = $self->get_connection_by_pid($line);
+    my $connection;
+    my $queueid = $self->get_queueid($line, $rule, $matches);
+    if ($queueid ne q{NOQUEUE}) {
+        $connection = $self->get_connection_by_queueid($line, $queueid);
+    } else {
+        $connection = $self->get_connection_by_pid($line);
+    }
     $self->save($connection, $line, $rule, $matches);
-    return ($self->{ACTION_REPARSE}, $text);
+    return $self->{ACTION_SUCCESS};
 }
 
 =over  4
@@ -1199,6 +1203,22 @@ sub load_rules {
     my ($self) = @_;
     my @results;
 
+    # __RESTRICTION_START__ captures; we need to add to result_cols and
+    # connection_cols whenever it's used.
+    my $extra_rejection_cols = {
+        connection_cols => $self->parse_result_cols(
+            q{client_hostname = 2, client_ip = 3},
+            undef, $self->{NUMBER_REQUIRED},
+            $self->{connection_cols_names},
+        ),
+        result_cols     => $self->parse_result_cols(
+            q{smtp_code = 4},
+            undef, $self->{NUMBER_REQUIRED},
+            $self->{result_cols_names},
+        ),
+    };
+
+
     foreach my $rule ($self->{dbix}->resultset(q{Rule})->search()) {
         my $rule_hash = {
             id               => $rule->id(),
@@ -1210,6 +1230,7 @@ sub load_rules {
             action           => $rule->action(),
             program          => $rule->program(),
             queueid          => $rule->queueid(),
+            regex_orig       => $rule->regex(),
             result_cols      => $self->parse_result_cols($rule->result_cols(),
                                     $rule, $self->{NUMBER_REQUIRED},
                                     $self->{result_cols_names}),
@@ -1225,6 +1246,16 @@ sub load_rules {
             count            => 0,
         };
 
+        if ($rule_hash->{action} eq q{REJECTION}) {
+            foreach my $cols (qw(connection_cols result_cols)) {
+                # Add the extra captures, but allow them to be overridden.
+                $rule_hash->{$cols} = {
+                    %{$extra_rejection_cols->{$cols}},
+                    %{$rule_hash->{$cols}},
+                };
+            }
+        }
+
         if (not exists $self->{actions}->{$rule_hash->{action}}) {
             $self->my_die(qq{load_rules: unknown action $rule_hash->{action}: },
                 dump_rule_from_db($rule));
@@ -1232,16 +1263,19 @@ sub load_rules {
 
         # Compile the regex for efficiency, otherwise it'll be recompiled every
         # time it's used.
-        my $regex = $self->filter_regex($rule->regex());
+        my $filtered_regex = $self->filter_regex($rule_hash->{regex_orig});
         eval {
-            $rule_hash->{regex} = qr/$regex/;
+            $rule_hash->{regex} = qr/$filtered_regex/;
         };
         if ($@) {
-            croak qq{$0: failed to compile regex $regex: $@\n} .
-                dump_rule_from_db($rule);
+            $self->my_die(qq{$0: failed to compile regex }
+                    . qq{$filtered_regex: $@\n},
+                dump_rule_from_db($rule),
+                dump_rule($rule_hash),
+            );
         }
         if ($self->{discard_compiled_regex}) {
-            $rule_hash->{regex} = $regex;
+            $rule_hash->{regex} = $filtered_regex;
         }
 
         push @results, $rule_hash;
@@ -1376,8 +1410,8 @@ bugs in the regex components to be fixed in one place only.
 The full list of keywords which are expanded is:
 
 __SENDER__, __RECIPIENT__, __MESSAGE_ID__, __HELO__, __EMAIL__, __HOSTNAME__,
-__IP__, __IPv4__, __IPv6__, __SMTP_CODE__, __QUEUEID__, __COMMAND__,
-__SHORT_CMD__, __DELAYS__, __DELAY__, __DSN__ and __CONN_USE__.
+__IP__, __IPv4__, __IPv6__, __SMTP_CODE__, __RESTRICTION_START__, __QUEUEID__,
+__COMMAND__, __SHORT_CMD__, __DELAYS__, __DELAY__, __DSN__ and __CONN_USE__.
 
 The names should be reasonably self-explanatory.
 
@@ -1404,36 +1438,37 @@ sub filter_regex {
                                                     # 2001::)
 )/x;
 
-    $regex =~ s/__SENDER__      /__EMAIL__/gx;
-    $regex =~ s/__RECIPIENT__   /__EMAIL__/gx;
+    $regex =~ s/__SENDER__              /__EMAIL__/gx;
+    $regex =~ s/__RECIPIENT__           /__EMAIL__/gx;
+    $regex =~ s/__RESTRICTION_START__   /(__QUEUEID__): reject(?:_warning)?: (?:RCPT|DATA) from (?>(__HOSTNAME__)\\[)(?>(__IP__)\\]): (__SMTP_CODE__)(?: __DSN__)?/gx;
     # message-ids initially look like email addresses, but really they can be
     # absolutely anything; just like email addresses in fact.
-    $regex =~ s/__MESSAGE_ID__  /.*?/gx;
+    $regex =~ s/__MESSAGE_ID__          /.*?/gx;
     # We see some pretty screwey hostnames in HELO commands; in fact just match
     # any damn thing, the hostnames are particularly weird when Postfix rejects
     # them.
-    $regex =~ s/__HELO__        /.*?/gx;
+    $regex =~ s/__HELO__                /.*?/gx;
 #   This doesn't work, as it matches valid addresses, not real world addresses.
-#   $regex =~ s/__EMAIL__       /$RE{Email}{Address}/gx;
+#   $regex =~ s/__EMAIL__               /$RE{Email}{Address}/gx;
 #   Wibble: from=<<>@inprima.locaweb.com.br>; just match anything as an address.
-    $regex =~ s/__EMAIL__       /.*?/gx;
+    $regex =~ s/__EMAIL__               /.*?/gx;
     # This doesn't match, for varous reason - I think numeric subnets are one.
-    #$regex =~ s/__HOSTNAME__    /$RE{net}{domain}{-nospace}/gx;
-    $regex =~ s/__HOSTNAME__    /$hostname_re/gx;
-    $regex =~ s/__IP__          /(?:__IPv4__|__IPv6__)/gx;
-    $regex =~ s/__IPv4__        /(?:::ffff:)?$RE{net}{IPv4}/gx;
-    $regex =~ s/__IPv6__        /$ipv6_re/gx;
-    $regex =~ s/__SMTP_CODE__   /\\d{3}/gx;
+    #$regex =~ s/__HOSTNAME__           /$RE{net}{domain}{-nospace}/gx;
+    $regex =~ s/__HOSTNAME__            /$hostname_re/gx;
+    $regex =~ s/__IP__                  /(?:__IPv4__|__IPv6__)/gx;
+    $regex =~ s/__IPv4__                /(?:::ffff:)?$RE{net}{IPv4}/gx;
+    $regex =~ s/__IPv6__                /$ipv6_re/gx;
+    $regex =~ s/__SMTP_CODE__           /\\d{3}/gx;
     # 3-9 is a guess.
-    $regex =~ s/__QUEUEID__     /(?:NOQUEUE|[\\dA-F]{3,9})/gx;
-    $regex =~ s/__COMMAND__     /(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gx;
+    $regex =~ s/__QUEUEID__             /(?:NOQUEUE|[\\dA-F]{3,9})/gx;
+    $regex =~ s/__COMMAND__             /(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gx;
     # DATA is deliberately excluded here because there are more specific rules
     # for DATA.
-    $regex =~ s/__SHORT_CMD__   /(?:CONNECT|HELO|EHLO|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN)/gx;
-    $regex =~ s/__DELAYS__      /delays=(?:[\\d.]+\/){3}[\\d.]+, /gx;
-    $regex =~ s/__DELAY__       /delay=\\d+(?:\\.\\d+)?, /gx;
-    $regex =~ s/__DSN__         /\\d\\.\\d\\.\\d/gx;
-    $regex =~ s/__CONN_USE__    /conn_use=\\d+, /gx;
+    $regex =~ s/__SHORT_CMD__           /(?:CONNECT|HELO|EHLO|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN)/gx;
+    $regex =~ s/__DELAYS__              /delays=(?:[\\d.]+\/){3}[\\d.]+, /gx;
+    $regex =~ s/__DELAY__               /delay=\\d+(?:\\.\\d+)?, /gx;
+    $regex =~ s/__DSN__                 /\\d\\.\\d\\.\\d/gx;
+    $regex =~ s/__CONN_USE__            /conn_use=\\d+, /gx;
 #   $regex =~ s/____/$RE{}{}/gx;
 
     return $regex;
@@ -1653,12 +1688,14 @@ sub save {
 
     if ($rule->{queueid}) {
         my $queueid = $matches->[$rule->{queueid}];
-        if (exists $connection->{queueid}
-                and $connection->{queueid} ne $queueid) {
-            $self->my_warn(qq{queueid change: was $connection->{queueid}; }
-                . qq{now $queueid\n});
+        if ($queueid ne q{NOQUEUE}) {
+            if (exists $connection->{queueid}
+                    and $connection->{queueid} ne $queueid) {
+                $self->my_warn(qq{queueid change: was $connection->{queueid}; }
+                    . qq{now $queueid\n});
+            }
+            $connection->{queueid} = $queueid;
         }
-        $connection->{queueid} = $queueid;
     }
 
     # Save the new result in $connection.
@@ -1721,6 +1758,7 @@ sub save {
     # Ensure we save the connection by queueid; this allows us to tie the whole
     # lot together.
     if (exists $connection->{queueid}
+            and $connection->{queueid} ne q{NOQUEUE}
             and not exists $self->{queueids}->{$connection->{queueid}}) {
         $self->{queueids}->{$connection->{queueid}} = $connection;
     }
