@@ -434,15 +434,19 @@ Each rule defines the following:
 
     \item [name] A short name for the rule.
 
-    \item [description] A longer, more detailed description of the rule.
-
-    \item [program] The program (smtp, smtpd, qmgr, etc.) whose log lines
-        the rule applies to.  This avoids needlessly trying rules which
-        won't match the line, or worse, might match unintentionally.
+    \item [description] Something must have occurred to cause Postfix to
+        log each line (e.g. a remote client connecting causes a connection
+        line to be logged).  The description field is generally used to
+        describe the action causing the log lines this rule matches.
 
     \item [restriction\_name] The restriction which caused the mail to be
         rejected.  Only applicable to rules which have a result of
         \texttt{rejected}, other rules will have an empty string.
+
+    \item [program] The program (postfix/smtp, postfix/smtpd, postfix/qmgr,
+        etc.) whose log lines the rule applies to.  This avoids needlessly
+        trying rules which won't match the line, or worse, might match
+        unintentionally.
 
     \item [regex] The regular expression\footnote{See
         http://en.wikipedia.org/wiki/Regular\_expression for more
@@ -980,39 +984,92 @@ after the parent mail.
 
 \label{actions-in-detail}
 
-XXX USE THE SAME DOCUMENTATION HERE AS IN Parser.pm
-
-This list contains all the actions available in the algorithm, in the order
-in which they tend to occur in practice.
+This list contains all the actions available in the algorithm.  Each action
+is passed the same arguments: 
 
 \begin{description}
 
-    \item [ignore] Do nothing with this line, merely parse it so that
-        unparsed lines can be reported.
+    \item [\$line] The log line, with the standard syslog(3) fields parsed,
+        removed and made available.
+        
+    \item [\$rule] The matching rule
+        
+    \item [@matches] The fields in the line captured by \$rule's regex.
 
-    \item [connect] Handle a connection from a remote client.  Complains if
-        a connection already exists for this client
+\end{description}
 
-    \item [restriction\_start] 
+\begin{description}
 
-    \item [save\_by\_pid] 
+    \item [IGNORE] IGNORE just returns successfully; it is used when a line
+        needs to be parsed for completeness but doesn't either provide any
+        useful data or require anything to be done.
 
-    \item [clone] 
+    \item [CONNECT] Handle a remote client connecting: create a new state
+        table entry (indexed by smtpd pid) and save both the client
+        hostname and IP address.
 
-    \item [disconnect] 
+    \item [DISCONNECT] Deal with the remote client disconnecting: enter the
+        connection in the database, perform any required cleanup, and
+        delete the connection from the state tables.
 
-    \item [save\_by\_queueid] 
+    \item [SAVE\_BY\_PID] Use the pid from \$line to find the correct
+        connection and call \$self->save() with the appropriate arguments -
+        see save() in SUBROUTINES for more details. If the connection
+        doesn't exist a connection marked faked will be created and a
+        warning issued.
 
-    \item [qmgr\_chooses\_mail] 
-        however qmgr selects every mail for delivery, so most of the time
-        this action merely falls through to saving the information from the
-        log line (action: save\_by\_queueid; flowchart:~10).
+    \item [SAVE\_BY\_QUEUEID] Use the queueid from \$rule and @matches to
+        find the correct connection and call \$self->save() with the
+        appropriate arguments - see save() in SUBROUTINES for more details.
+        If the connection doesn't exist a connection marked faked will be
+        created and a warning issued.
 
-    \item [track] 
+    \item [COMMIT] Enter the data into the database. Entry may be postponed
+        if the mail is a child waiting to be tracked.
 
-    \item [commit] 
+    \item [TRACK] Track a mail when it is forwarded to another mail server;
+        this happens when a local address is aliased to a remote address.
+        TRACK will be called when dealing with the parent mail, and will
+        create the child mail if necessary. TRACK checks if the child has
+        already been tracked, either with this parent or with another
+        parent, and issues appropriate warnings in either case. Tracking
+        children is discussed extensively in the paper written about this
+        parser; details about obtaining the paper are given in the SEE ALSO
+        section.
 
-    \item [pickup] 
+    \item [REJECTION] Deal with postfix rejecting an SMTP command from the
+        remote client: log the rejection with the accepted mail if there is
+        one, otherwise log it with the connection.
+
+    \item [MAIL\_PICKED\_FOR\_DELIVERY] This action represents Postfix
+        picking a mail from the queue to deliver. This action is used for
+        both pickup and cleanup due to out of order log lines.
+
+    \item [PICKUP] Pickup is the service which deals with mail submitted
+        locally via /usr/sbin/sendmail. This action creates a new state
+        table entry and saves data to it, unless out of order logging has
+        caused the cleanup line to be logged first. Lines are assumed to be
+        out of order if the only program seen thus far is cleanup and there
+        is less than five seconds difference between the timestamps of the
+        two lines.
+
+    \item [CLONE] Multiple mails may be accepted on a single connection, so
+        each time a mail is accepted the connection's state table entry
+        must be cloned; if the original data structure was used the second
+        and subsequent mails would corrupt the data structure.
+
+    \item [MAIL\_TOO\_LARGE] When the client tries to send a larger message
+        than the local server accepts the mail will be discarded.  See
+        TIMEOUT for further discussion; the two are handled in exactly the
+        same way.
+
+    \item [TIMEOUT] The connection timed out so the mail currently being
+        transferred must be discarded. The mail may have been accepted, in
+        which case there's a data structure to dispose of, or it may not in
+        which case there's none. The gory details can be found in the
+        internals documentation.
+
+
 
 \end{description}
 
@@ -1130,6 +1187,34 @@ offending bogus mails and is discarded.  There will be no further entries
 logged for such mails, so without identifying and discarding them they
 accumulate in the state table and will cause clashes if the queueid is
 reused.
+
+\subsubsection{Further aborted delivery attempts}
+
+Some mail clients disconnect abruptly if a second or subsequent recipient
+is rejected; they may also disconnect after other errors, but such
+disconnections are already being handled.  Sadly Postfix doesn't log a
+message saying the mail has been discarded, as should be expected by now.
+The checks to identify this happening are:
+
+\begin{itemize}
+
+    \item Is the mail missing its cleanup log message?  Every mail which
+        passes through Postfix will have a cleanup line; lack of a cleanup
+        line is a sure sign the mail didn't make it too far.
+
+    \item Were there three or more smtpd log lines for the mail?  There
+        should be a connection line and a mail accepted line, followed by
+        one or more rejection lines.
+
+    \item Is the last smtpd log line a rejection line?
+
+\end{itemize}
+
+These checks are made during the DISCONNECT action: if all checks are
+successful then the mail is assumed to have been discarded when the client
+disconnected.  There will be no further entries logged for such mails, so
+without identifying and discarding them they accumulate in the state table
+and will cause clashes if the queueid is reused.
 
 \subsubsection{Timeouts during DATA phase}
 
