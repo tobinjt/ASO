@@ -7,7 +7,7 @@ SHELL=bash
 all: test summary
 
 diff:
-	diff -u warnings-working warnings; diff -u state-working state
+	diff -u warnings-working warnings; diff -I ^# -u state-working state
 
 copy.working:
 	cp -p warnings warnings-working 
@@ -15,14 +15,18 @@ copy.working:
 
 test: test.20070428
 
-test-some:
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( < logs-some             ) > state-some 2> warnings-some'; wc state-some warnings-some; date ) 2>&1 ) | tee -a results
+test-list: db
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser ${LOG-LIST}                 > state-list 2> warnings-list'; wc state-list warnings-list; date ) 2>&1 ) | tee -a results
 
-test-all:
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser ../../../../logs/mail.log-*   > state-all  2> warnings-all';  wc state-all  warnings-all;  date ) 2>&1 ) | tee -a results
+test-some: db
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( < logs-some           ) > state-some 2> warnings-some'; wc state-some warnings-some; date ) 2>&1 ) | tee -a results
+
+test-all: db
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser ../../../../logs/mail.log-* > state-all  2> warnings-all';  wc state-all  warnings-all;  date ) 2>&1 ) | tee -a results
 
 test.%: ../../../../logs/mail.log-%
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser "$<"                          > state      2> warnings';      wc state      warnings;      date ) 2>&1 ) | tee -a results
+	make -s db
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser "$<"                        > state      2> warnings';      wc state      warnings;      date ) 2>&1 ) | tee -a results
 
 db:
 	( cd ../sql/; perl setup-database create-tables-sqlite3.sql populate-rules.sql )
@@ -112,6 +116,9 @@ summary:
 
 summary-all:
 	make WARNINGS=warnings-all STATE=state-all summarize
+
+summary-list:
+	make WARNINGS=warnings-list STATE=state-list summarize
 
 summary-some:
 	make WARNINGS=warnings-some STATE=state-some summarize

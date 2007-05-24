@@ -543,10 +543,9 @@ sub DISCONNECT {
     if (exists $self->{mails_per_smtpd}->{$line->{pid}}) {
         foreach my $mail (@{$self->{mails_per_smtpd}->{$line->{pid}}}) {
             if (not exists $mail->{programs}->{q{postfix/cleanup}}
-                    and $mail->{programs}->{q{postfix/smtpd}} == 2 ) {
-                #$self->my_warn(qq{missing cleanup: \n},
-                #    dump_connection($mail));
-                if ($mail == $self->{queueids}->{$mail->{queueid}}) {
+                    and $mail->{programs}->{q{postfix/smtpd}} == 2
+                    and exists $self->{queueids}->{$mail->{queueid}}) {
+                if ($mail eq $self->{queueids}->{$mail->{queueid}}) {
                     delete $self->{queueids}->{$mail->{queueid}};
                 } else {
                     $self->my_warn(qq{missing cleanup, but connection }
@@ -557,6 +556,17 @@ sub DISCONNECT {
                         dump_connection($self->{queueids}->{$mail->{queueid}}),
                     );
                 }
+            }
+            # Now try committing mails where the client disconnected after a
+            # rejection.
+            if (not exists $mail->{programs}->{q{postfix/cleanup}}
+                    and $mail->{programs}->{q{postfix/smtpd}} > 2
+                    and $mail->{results}->[-1]->{postfix_action} eq q{REJECTED}
+                    and exists $self->{queueids}->{$mail->{queueid}}) {
+                $mail->{connection}->{end} = $line->{timestamp};
+                $self->fixup_connection($mail);
+                $self->commit_connection($mail);
+                delete $self->{queueids}->{$mail->{queueid}};
             }
         }
     }
@@ -745,19 +755,11 @@ sub TRACK {
 
 =over  4
 
-=item RESTRICTION_START
+=item REJECTION
 
-XXX REPLACE __RESTRICTION_START__ IN filter_regex(), CHANGE ALL THE REJECTION
-XXX PATTERNS, AND SEE WHAT EFFECT THERE IS ON RUNTIME.  EVEN IF THE RUNTIME DOES
-XXX INCREASES SIGNIFICANTLY, IT WOULD CLEANLY SOLVE THE QUEUEID/NOQUEUEID ISSUE
-XXX AND SIMPLIFY THE WHOLE THING.
-
-The start of every smtpd rejection message conforms to a pattern.  A single rule
-can match that pattern, and this action strips off the beginning of the line,
-then causes the rules to be tried against the remainder of the line, simplifying
-the other rules matching rejections.  The stadard beginning could have been
-matched by substituting __RESTRICTION_START__ with the appropriate pattern, but
-that would have added, possibly significantly, to the 
+Deal with postfix rejecting an SMTP command from the remote client: log the
+rejection with the accepted mail if there is one, otherwise log it with the
+connection.
 
 =back
 
@@ -1029,8 +1031,9 @@ sub TIMEOUT {
 
     # Check the timestamps to see whether there's been a rejection since the
     # previous acceptance.
-    if ($connection->{results}->[-2]->{timestamp}
-            > $connection->{last_clone_timestamp}) {
+    if (scalar @{$connection->{results}} >= 2
+            and $connection->{results}->[-2]->{timestamp}
+                > $connection->{last_clone_timestamp}) {
         return $self->{ACTION_SUCCESS};
     }
 
@@ -1268,8 +1271,9 @@ sub load_rules {
             $rule_hash->{regex} = qr/$filtered_regex/;
         };
         if ($@) {
-            $self->my_die(qq{$0: failed to compile regex }
-                    . qq{$filtered_regex: $@\n},
+            $self->my_die(qq{$0: failed to compile regex:\n\n},
+                $filtered_regex,
+                qq{\n\nbecause: $@\n\n},
                 dump_rule_from_db($rule),
                 dump_rule($rule_hash),
             );

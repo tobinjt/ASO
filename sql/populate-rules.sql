@@ -756,14 +756,15 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'reject_unauth_pipelining'
 );
 
+-- NOTE: this rejection doesn't start with __RESTRICTION_START__.
 -- NOQUEUE: reject: MAIL from cagraidsvr06.cs.tcd.ie[134.226.53.22]: 552 Message size exceeds fixed limit; proto=ESMTP helo=<cagraidsvr06.cs.tcd.ie>
 -- NOQUEUE: reject: MAIL from cagraidsvr06.cs.tcd.ie[134.226.53.22]: 552 5.3.4 Message size exceeds fixed limit; proto=ESMTP helo=<cagraidsvr06.cs.tcd.ie>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action, restriction_name)
     VALUES('Rejected mail too large', 'The client tried to send a mail but it is too big to be accepted.',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ NOQUEUE: reject: MAIL from (__HOSTNAME__)\[(__IP__)\]: (__SMTP_CODE__) (?:__DSN__ )?Message size exceeds fixed limit; proto=ESMTP helo=<(__HELO__)>$',
-        'smtp_code = 7',
-        'client_hostname = 5, client_ip = 6, helo = 7',
+        '^(NOQUEUE): reject: MAIL from (__HOSTNAME__)\[(__IP__)\]: (__SMTP_CODE__) (?:__DSN__ )?Message size exceeds fixed limit; proto=ESMTP helo=<(__HELO__)>$',
+        'smtp_code = 4',
+        'client_hostname = 2, client_ip = 3, helo = 5',
         'sender = unknown, recipient = unknown',
         'REJECTION',
         1,
@@ -784,13 +785,14 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'check_sender_access'
 );
 
+-- NOTE: this rejection doesn't start with __RESTRICTION_START__.
 -- NOQUEUE: reject: CONNECT from localhost[::1]: 554 5.7.1 <localhost[::1]>: Client host rejected: Access denied; proto=SMTP
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action, restriction_name)
     VALUES('Client host rejected for some reason', 'The client was rejected but no reason was specified',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ NOQUEUE: reject: CONNECT from (__HOSTNAME__)\[(__IP__)\]: (__SMTP_CODE__) (?:__DSN__ )?<\5\[\6\]>: Client host rejected: Access denied; proto=E?SMTP$',
-        'smtp_code = 7',
-        'client_hostname = 5, client_ip = 6',
+        '^(NOQUEUE): reject: CONNECT from (__HOSTNAME__)\[(__IP__)\]: (__SMTP_CODE__) (?:__DSN__ )?<\2\[\3\]>: Client host rejected: Access denied; proto=E?SMTP$',
+        'smtp_code = 4',
+        'client_hostname = 2, client_ip = 3',
         'sender = unknown, recipient = unknown',
         'REJECTION',
         1,
