@@ -11,6 +11,9 @@ use ASO::DB;
 use ASO::Parser;
 use Carp;
 
+binmode STDOUT;
+binmode STDERR;
+
 sub timewarn {
     warn qq{$0: }, scalar localtime, q{: }, @_;
 }

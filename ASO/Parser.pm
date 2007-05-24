@@ -51,7 +51,7 @@ use lib q{..};
 use ASO::DB;
 use Parse::Syslog;
 use IO::File;
-use Carp;
+use Carp qw(cluck croak);
 use Data::Dumper;
 use Regexp::Common qw(Email::Address net);
 use Storable qw(dclone);
@@ -158,8 +158,8 @@ sub init_globals {
     $self->{current_logfile}  = q{INITIALISATION};
     $.                        = 0;
 
-    # Used to validate queueids in get_queueid() and in maybe_remove_faked() to
-    # check if a message-id contains a queueid.
+    # Used to validate queueids in get_queueid_from_matches() and in
+    # maybe_remove_faked() to check if a message-id contains a queueid.
     $self->{queueid_regex}    = $self->filter_regex(q{__QUEUEID__});
     $self->{queueid_regex}    = qr/$self->{queueid_regex}/;
 
@@ -477,8 +477,7 @@ smtpd pid) and save both the client hostname and IP address.
 
 sub CONNECT {
     my ($self, $rule, $line, $matches) = @_;
-    my $connection = $self->make_connection_by_pid($line);
-    delete $connection->{faked};
+    my $connection = $self->make_connection_by_pid($line->{pid});
     # We also want to save the hostname/ip info
     $self->save($connection, $line, $rule, $matches);
     return $self->{ACTION_SUCCESS};
@@ -511,9 +510,7 @@ log lines queueids sart being reused and these entries cause queueid clashes.
 sub DISCONNECT {
     my ($self, $rule, $line, $matches) = @_;
 
-    # NOTE: We deliberately don't use $self->get_connection_by_pid() here
-    # because we don't want a new connection returned, we need more control.
-    if (not exists $self->{connections}->{$line->{pid}}) {
+    if (not $self->pid_exists($line->{pid})) {
         $self->my_warn(qq{disconnection: no connection found for pid }
             . qq{$line->{pid} - perhaps the connect line is in a }
             . qq{previous log file?\n},
@@ -523,7 +520,7 @@ sub DISCONNECT {
         return $self->{ACTION_SUCCESS};
     }
 
-    my $connection = $self->{connections}->{$line->{pid}};
+    my $connection = $self->get_connection_by_pid($line->{pid});
     # There should NEVER be a queueid.
     if (exists $connection->{queueid}) {
         $self->my_warn(qq{disconnection: PANIC: found queueid: \n},
@@ -536,44 +533,49 @@ sub DISCONNECT {
     $connection->{connection}->{end} = $line->{timestamp};
     $self->fixup_connection($connection);
     $self->commit_connection($connection);
+    $self->delete_connection_by_pid($line->{pid});
+
+    if (not exists $self->{mails_per_smtpd}->{$line->{pid}}) {
+        return $self->{ACTION_SUCCESS};
+    }
 
     # Try to clear out those mails which only have two smtpd entries, so they
     # don't hang around, taking up memory uselessly and causing queueid clashes
     # occasionally.
-    if (exists $self->{mails_per_smtpd}->{$line->{pid}}) {
-        foreach my $mail (@{$self->{mails_per_smtpd}->{$line->{pid}}}) {
-            if (not exists $mail->{programs}->{q{postfix/cleanup}}
-                    and $mail->{programs}->{q{postfix/smtpd}} == 2
-                    and exists $self->{queueids}->{$mail->{queueid}}) {
-                if ($mail eq $self->{queueids}->{$mail->{queueid}}) {
-                    delete $self->{queueids}->{$mail->{queueid}};
-                } else {
-                    $self->my_warn(qq{missing cleanup, but connection }
-                        . qq{found by queueid $mail->{queueid} differs:\n},
-                        qq{found in mails_per_smtpd:\n},
-                        dump_connection($mail),
-                        qq{found in queueids:\n},
-                        dump_connection($self->{queueids}->{$mail->{queueid}}),
-                    );
-                }
+    foreach my $mail (@{$self->{mails_per_smtpd}->{$line->{pid}}}) {
+        if (not exists $mail->{programs}->{q{postfix/cleanup}}
+                and $mail->{programs}->{q{postfix/smtpd}} == 2
+                and $self->queueid_exists($mail->{queueid})
+                ) {
+            my $mail_by_queueid = $self->get_connection_by_queueid(
+                    $mail->{queueid});
+            if ($mail eq $mail_by_queueid) {
+                $self->delete_connection_by_queueid($mail->{queueid});
+            } else {
+                $self->my_warn(qq{missing cleanup, but connection }
+                    . qq{found by queueid $mail->{queueid} differs:\n},
+                    qq{found in mails_per_smtpd:\n},
+                    dump_connection($mail),
+                    qq{found in queueids:\n},
+                    dump_connection($mail_by_queueid),
+                );
             }
-            # Now try committing mails where the client disconnected after a
-            # rejection.
-            if (not exists $mail->{programs}->{q{postfix/cleanup}}
-                    and $mail->{programs}->{q{postfix/smtpd}} > 2
-                    and $mail->{results}->[-1]->{postfix_action} eq q{REJECTED}
-                    and exists $self->{queueids}->{$mail->{queueid}}) {
-                $mail->{connection}->{end} = $line->{timestamp};
-                $self->fixup_connection($mail);
-                $self->commit_connection($mail);
-                delete $self->{queueids}->{$mail->{queueid}};
-            }
+        }
+        # Now try committing mails where the client disconnected after a
+        # rejection.
+        if (not exists $mail->{programs}->{q{postfix/cleanup}}
+                and $mail->{programs}->{q{postfix/smtpd}} > 2
+                and $mail->{results}->[-1]->{postfix_action} eq q{REJECTED}
+                and $self->queueid_exists($mail->{queueid})
+                ) {
+            $mail->{connection}->{end} = $line->{timestamp};
+            $self->fixup_connection($mail);
+            $self->commit_connection($mail);
+            $self->delete_connection_by_queueid($mail->{queueid});
         }
     }
 
-    delete $self->{connections}->{$line->{pid}};
     delete $self->{mails_per_smtpd}->{$line->{pid}};
-
     return $self->{ACTION_SUCCESS};
 }
 
@@ -592,7 +594,7 @@ warning issued.
 
 sub SAVE_BY_PID {
     my ($self, $rule, $line, $matches) = @_;
-    my $connection = $self->get_connection_by_pid($line);
+    my $connection = $self->get_connection_by_pid($line->{pid});
     $self->save($connection, $line, $rule, $matches);
     return $self->{ACTION_SUCCESS};
 }
@@ -612,8 +614,8 @@ created and a warning issued.
 
 sub SAVE_BY_QUEUEID {
     my ($self, $rule, $line, $matches) = @_;
-    my $queueid = $self->get_queueid($line, $rule, $matches);
-    my $connection = $self->get_connection_by_queueid($line, $queueid);
+    my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
+    my $connection = $self->get_connection_by_queueid($queueid);
     $self->save($connection, $line, $rule, $matches);
     return $self->{ACTION_SUCCESS};
 }
@@ -669,8 +671,8 @@ Delete the connection from the state tables.
 
 sub COMMIT {
     my ($self, $rule, $line, $matches) = @_;
-    my $queueid = $self->get_queueid($line, $rule, $matches);
-    my $connection = $self->get_connection_by_queueid($line, $queueid);
+    my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
+    my $connection = $self->get_connection_by_queueid($queueid);
 
     $self->save($connection, $line, $rule, $matches);
     $connection->{connection}->{end} = $line->{timestamp};
@@ -686,8 +688,18 @@ sub COMMIT {
     }
     $self->fixup_connection($connection);
     $self->commit_connection($connection);
-    $self->delete_by_queueid($connection, $line, $rule);
 
+    # Let the parent know we're being deleted
+    if (exists $connection->{parent}) {
+        $self->delete_child_from_parent($connection, $line, $rule);
+    }
+
+    # Try to commit any children we can.
+    if (exists $connection->{children}) {
+        $self->maybe_commit_children($connection, $line, $rule);
+    }
+
+    $self->delete_connection_by_queueid($queueid);
     return $self->{ACTION_SUCCESS};
 }
 
@@ -710,11 +722,11 @@ obtaining the paper are given in the SEE ALSO section.
 sub TRACK {
     my ($self, $rule, $line, $matches) = @_;
 
-    my $queueid         = $self->get_queueid($line, $rule, $matches);
-    my $parent          = $self->get_connection_by_queueid($line, $queueid);
+    my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
+    my $parent  = $self->get_connection_by_queueid($queueid);
     $self->save($parent, $line, $rule, $matches);
 
-    my $child_queueid   = $parent->{results}->[-1]->{child};
+    my $child_queueid = $parent->{results}->[-1]->{child};
     if (not exists $parent->{children}) {
         $parent->{children} = {};
     }
@@ -722,14 +734,7 @@ sub TRACK {
         $self->my_warn(qq{track: tracking $child_queueid for a second time:\n});
     }
 
-    my $child;
-    if (exists $self->{queueids}->{$child_queueid}) {
-        $child = $self->{queueids}->{$child_queueid};
-    } else {
-        $child = $self->make_connection_by_queueid($line, $child_queueid);
-    }
-    # Clear the faked flag; we should never have committed a connection before
-    # tracking now.
+    my $child = $self->get_or_make_connection_by_queueid($child_queueid);
     delete $child->{faked};
     $parent->{children}->{$child_queueid} = $child;
 
@@ -746,9 +751,7 @@ sub TRACK {
             qq{\t$line->{program}: $line->{text}\n},
         );
     }
-
     $child->{parent}            = $parent;
-    $child->{parent_queueid}    = $parent->{queueid};
 
     return $self->{ACTION_SUCCESS};
 }
@@ -768,11 +771,11 @@ connection.
 sub REJECTION {
     my ($self, $rule, $line, $matches) = @_;
     my $connection;
-    my $queueid = $self->get_queueid($line, $rule, $matches);
+    my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
     if ($queueid ne q{NOQUEUE}) {
-        $connection = $self->get_connection_by_queueid($line, $queueid);
+        $connection = $self->get_connection_by_queueid($queueid);
     } else {
-        $connection = $self->get_connection_by_pid($line);
+        $connection = $self->get_connection_by_pid($line->{pid});
     }
     $self->save($connection, $line, $rule, $matches);
     return $self->{ACTION_SUCCESS};
@@ -817,8 +820,7 @@ the line.
 
 sub MAIL_PICKED_FOR_DELIVERY {
     my ($self, $rule, $line, $matches) = @_;
-    my $connection;
-    my $queueid = $self->get_queueid($line, $rule, $matches);
+    my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
 
     if ($line->{program} eq q{postfix/cleanup}
             and exists $self->{timeout_queueids}->{$queueid}) {
@@ -857,11 +859,9 @@ sub MAIL_PICKED_FOR_DELIVERY {
     # Sometimes I need to create connections here because there are
     # tracked connections where the child shows up before the parent
     # logs the tracking line; there's a similar requirement in track().
-    if (not exists $self->{queueids}->{$queueid}) {
-        $connection = $self->make_connection_by_queueid($line, $queueid);
-    } else {
-        $connection = $self->get_connection_by_queueid($line, $queueid);
-    }
+    my $connection = $self->get_or_make_connection_by_queueid($queueid,
+        faked => $line
+    );
     $self->save($connection, $line, $rule, $matches);
     return $self->{ACTION_SUCCESS};
 }
@@ -883,12 +883,12 @@ of the two lines.
 
 sub PICKUP {
     my ($self, $rule, $line, $matches) = @_;
-    my $queueid = $self->get_queueid($line, $rule, $matches);
+    my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
     # Sometimes the pickup line will be logged after the cleanup line :(
     # Try to handle that here.
     my $connection;
-    if (exists $self->{queueids}->{$queueid}) {
-        $connection = $self->{queueids}->{$queueid};
+    if ($self->queueid_exists($queueid)) {
+        $connection = $self->get_connection_by_queueid($queueid);
         # We'll assume the log lines are out of order if:
         # 1 There's only a 5 second or less difference in timestamps
         # 2 The only program seen so far is postfix/cleanup
@@ -901,9 +901,8 @@ sub PICKUP {
         }
     }
     if (not defined $connection) {
-        $connection = $self->make_connection_by_queueid($line, $queueid);
+        $connection = $self->make_connection_by_queueid($queueid);
     }
-    delete $connection->{faked};
     $self->save($connection, $line, $rule, $matches);
     return $self->{ACTION_SUCCESS};
 }
@@ -936,7 +935,7 @@ whether the timeout applies to an accepted mail or not.
 
 sub CLONE {
     my ($self, $rule, $line, $matches) = @_;
-    my $connection = $self->get_connection_by_pid($line);
+    my $connection = $self->get_connection_by_pid($line->{pid});
     my $clone = dclone($connection);
     # Dump anything after the first result (connect from . . ); they'll be 
     # rejections and shouldn't be part of the new result.
@@ -1020,7 +1019,7 @@ a global state table which is checked in MAIL_PICKED_FOR_DELIVERY.
 # connection.
 sub TIMEOUT {
     my ($self, $rule, $line, $matches) = @_;
-    my $connection = $self->get_connection_by_pid($line);
+    my $connection = $self->get_connection_by_pid($line->{pid});
     $self->save($connection, $line, $rule, $matches);
 
     my $mails = $self->{mails_per_smtpd}->{$line->{pid}};
@@ -1043,45 +1042,9 @@ sub TIMEOUT {
         # timed out connections.
         $self->{timeout_queueids}->{$last_mail->{queueid}} = $last_mail;
     }
-    delete $self->{queueids}->{$last_mail->{queueid}};
+    $self->delete_connection_by_queueid($last_mail->{queueid});
     delete $mails->[-1];
     return $self->{ACTION_SUCCESS};
-}
-
-sub delete_by_queueid {
-    my ($self, $connection, $line, $rule) = @_;
-
-    if (exists $connection->{faked}) {
-        $self->my_warn(qq{delete_by_queueid: faked connection: \n},
-            dump_connection($connection)
-        );
-        delete $self->{queueids}->{$connection->{queueid}};
-        return;
-    }
-    if (not exists $connection->{fixuped}) {
-        $self->my_warn(qq{delete_by_queueid: non-fixuped connection\n});
-        delete $self->{queueids}->{$connection->{queueid}};
-        return;
-    }
-    if (not exists $connection->{committed}) {
-        $self->my_warn(qq{delete_by_queueid: uncommitted connection: \n},
-            dump_connection($connection)
-        );
-        delete $self->{queueids}->{$connection->{queueid}};
-        return;
-    }
-
-    # Let the parent know we're being deleted
-    if (exists $connection->{parent}) {
-        $self->delete_child_from_parent($connection, $line, $rule);
-    }
-
-    # Try to commit any children we can.
-    if (exists $connection->{children}) {
-        $self->maybe_commit_children($connection, $line, $rule);
-    }
-
-    delete $self->{queueids}->{$connection->{queueid}};
 }
 
 sub maybe_commit_children {
@@ -1089,7 +1052,7 @@ sub maybe_commit_children {
 
     # We check for this in delete_child_from_parent(), so that we don't trample
     # over ourselves in the sequence
-    # maybe_commit_children() -> delete_by_queueid() -> delete_child_from_parent()
+    # maybe_commit_children() -> delete_child_from_parent()
     $parent->{committing_children} = 1;
 
     CHILD:
@@ -1102,7 +1065,7 @@ sub maybe_commit_children {
             # the check in the COMMIT action.
             $self->fixup_connection($child);
             $self->commit_connection($child);
-            $self->delete_by_queueid($child, $line, $rule);
+            $self->delete_connection_by_queueid($child->{queueid});
             # This is safe: see perldoc -f each for the guarantee.
             delete $parent->{children}->{$child_queueid};
         }
@@ -1131,7 +1094,7 @@ sub delete_child_from_parent {
         return;
     }
 
-    # maybe_commit_children() -> delete_by_queueid() -> delete_child_from_parent()
+    # maybe_commit_children() -> delete_child_from_parent()
     # We don't want to trample over maybe_commit_children().
     if (exists $parent->{committing_children}) {
         return;
@@ -1149,57 +1112,6 @@ sub delete_child_from_parent {
     }
 
     delete $parent->{children}->{$child_queueid};
-}
-
-sub get_queueid {
-    my ($self, $line, $rule, $matches) = @_;
-
-    if (not $rule->{queueid}) {
-        $self->my_die(qq{get_queueid: no queueid defined by: } . dump_rule($rule));
-    }
-    my $queueid     = $matches->[$rule->{queueid}];
-    if (not defined $queueid or not $queueid) {
-        $self->my_die(qq{get_queueid: no queueid found in: },
-            dump_line($line),
-            qq{using: },
-            dump_rule($rule)
-        );
-    }
-    if ($queueid !~ m/^$self->{queueid_regex}$/o) {
-        $self->my_die(qq{get_queueid: queueid $queueid doesn't match __QUEUEID__;\n},
-            dump_line($line),
-            qq{using: },
-            dump_rule($rule)
-        );
-    }
-
-    return $queueid;
-}
-
-sub get_connection_by_queueid {
-    my ($self, $line, $queueid, $dont_fake, @extra_messages) = @_;
-    if (not exists $self->{queueids}->{$queueid}) {
-        $self->my_warn(@extra_messages,
-            qq{get_connection_by_queueid: no connection for: $queueid\n},
-            dump_line($line)
-        );
-        if ($dont_fake) {
-            return;
-        }
-        return $self->make_connection_by_queueid($line, $queueid);
-    }
-    return $self->{queueids}->{$queueid};
-}
-
-sub get_connection_by_pid {
-    my ($self, $line) = @_;
-    if (not exists $self->{connections}->{$line->{pid}}) {
-        $self->my_warn(qq{get_connection_by_pid: no connection for: },
-            dump_line($line)
-        );
-        return $self->make_connection_by_pid($line);
-    }
-    return $self->{connections}->{$line->{pid}};
 }
 
 sub load_rules {
@@ -1478,47 +1390,6 @@ sub filter_regex {
     return $regex;
 }
 
-sub make_connection_by_queueid {
-    my ($self, $line, $queueid) = @_;
-    if (exists $self->{queueids}->{$queueid}) {
-        $self->my_warn(qq{make_connection_by_queueid: $queueid exists\n},
-            dump_line($line),
-            qq{Existing queueid:\n},
-            dump_connection($self->{queueids}->{$queueid}),
-        );
-        return $self->{queueids}->{$queueid};
-    }
-
-    # NOTE: We don't clear the faked flag here, that's up to the caller.
-    my $connection = $self->make_connection($line);
-    $connection->{queueid} = $queueid;
-    $self->{queueids}->{$queueid} = $connection;
-    return $connection;
-}
-
-sub make_connection_by_pid {
-    my ($self, $line) = @_;
-    # NOTE: We don't clear the faked flag here, that's up to the caller.
-    my $connection = $self->make_connection($line);
-    $self->{connections}->{$line->{pid}} = $connection;
-    return $connection;
-}
-
-sub make_connection {
-    my ($self, $line) = @_;
-
-    return {
-        logfile         => $self->{current_logfile},
-        line_number     => $.,
-        faked           => $line,
-        start           => scalar localtime $line->{timestamp},
-        programs        => {},
-        connection      => {
-            start           => $line->{timestamp},
-        },
-    };
-}
-
 sub get_mock_object {
     my ($self, $table) = @_;
     return $self->{dbix}->resultset($table)->new_result({});
@@ -1527,8 +1398,8 @@ sub get_mock_object {
 # Update the values in a hash, complaining if we change existing values, unless
 # the existing (key, value) is found in silent_overwrite.
 sub update_hash {
-    my ($self, $hash, $silent_overwrite, $updates, $silent_discard, $rule, $line,
-        $connection, $name) = @_;
+    my ($self, $hash, $silent_overwrite, $updates, $silent_discard, $rule,
+        $line, $connection, $name) = @_;
     my $conflicts = 0;
     my $template = <<'TEMPLATE';
 __NAME__: new value for __KEY__ (__NEW_VALUE__) differs from existing value (__ORIG_VALUE__)
@@ -1618,7 +1489,8 @@ sub fixup_connection {
             if (exists $self->{nochange_result_cols}->{$key}
                     and exists $data{$key}
                     and $data{$key} ne $result->{$key}) {
-                $self->my_warn(qq{fixup_connection: Different values for $key: \n}
+                $self->my_warn(qq{fixup_connection: }
+                    . qq{Different values for $key: \n}
                     . qq{\told: $data{$key}\n}
                     . qq{\tnew: $result->{$key}\n}
                 );
@@ -1712,9 +1584,6 @@ sub save {
         # Sneakily inline result_data here
         %{$rule->{result_data}},
     );
-    if (not exists $connection->{results}) {
-        $connection->{results} = [];
-    }
     push @{$connection->{results}}, \%result;
 
     # We do use $self->update_hash() for result_cols, just in case a rule has
@@ -1734,6 +1603,12 @@ sub save {
         $self->{c_cols_silent_overwrite},
         $rule->{connection_data}, $self->{c_cols_silent_discard},
         $rule, $line, $connection, q{save: connection_data});
+    if (not exists $connection->{start}) {
+        $connection->{start} = localtime $line->{timestamp};
+    }
+    if (not exists $connection->{connection}->{start}) {
+        $connection->{connection}->{start} = $line->{timestamp};
+    }
 
 
     # CONNECTION_COLS
@@ -1750,26 +1625,26 @@ sub save {
 
     # Check for a queueid change.
     if (exists $connection->{queueid}
-            and exists $self->{queueids}->{$connection->{queueid}}
-            and $connection ne $self->{queueids}->{$connection->{queueid}}) {
-        $self->my_warn(qq{save: queueid clash: $connection->{queueid}\n},
-            qq{old:\n},
-            dump_connection($self->{queueids}->{$connection->{queueid}}),
-            qq{new:\n},
-            dump_connection($connection),
-        );
+            and $self->queueid_exists($connection->{queueid})) {
+        my $other_con = $self->get_connection_by_queueid(
+                $connection->{queueid});
+        if ($connection ne $other_con) {
+            $self->my_warn(qq{save: queueid clash: $connection->{queueid}\n},
+                qq{old:\n},
+                dump_connection($other_con),
+                qq{new:\n},
+                dump_connection($connection),
+            );
+        }
     }
     # Ensure we save the connection by queueid; this allows us to tie the whole
     # lot together.
     if (exists $connection->{queueid}
-            and $connection->{queueid} ne q{NOQUEUE}
-            and not exists $self->{queueids}->{$connection->{queueid}}) {
-        $self->{queueids}->{$connection->{queueid}} = $connection;
+            and $connection->{queueid} ne q{NOQUEUE}) {
+        $self->save_connection_by_queueid($connection, $connection->{queueid});
     }
 }
 
-# We commit unfaked, fixuped connections, regardless of parent/children -
-# commit_connection() has nothing to do with that stuff.
 sub commit_connection {
     my ($self, $connection) = @_;
 
@@ -1899,9 +1774,9 @@ sub my_warn {
             $newline = qq{\n};
             $first_line =~ s/\n$//;
         }
-        warn $prefix, $first_line, q( {{{), $newline, @rest, qq(}}}\n);
+        warn($prefix, $first_line, q( {{{), $newline, @rest, qq(}}}\n));
     } else {
-        warn $prefix, $first_line;
+        warn($prefix, $first_line);
     }
 }
 
@@ -1919,6 +1794,148 @@ error messages.
 sub my_die {
     my ($self) = shift @_;
     die qq{$0: $self->{current_logfile}: $.: }, @_;
+}
+
+# Accessing mails/connections by queueid.
+
+sub queueid_exists {
+    my ($self, $queueid) = @_;
+    return exists $self->{queueids}->{$queueid};
+}
+
+sub get_connection_by_queueid {
+    my ($self, $queueid) = @_;
+    if ($self->queueid_exists($queueid)) {
+        return $self->{queueids}->{$queueid};
+    }
+
+    $self->my_warn(qq{get_connection_by_queueid: no connection for $queueid\n});
+    return $self->make_connection_by_queueid($queueid, faked => 1);
+}
+
+sub make_connection_by_queueid {
+    my ($self, $queueid, %attributes) = @_;
+
+    if ($self->queueid_exists($queueid)) {
+        $self->my_warn(qq{make_connection_by_queueid: $queueid exists\n},
+            dump_connection($self->get_connection_by_queueid($queueid)));
+    }
+    my $connection = $self->make_connection(queueid => $queueid, %attributes);
+    $self->{queueids}->{$queueid} = $connection;
+    return $connection;
+}
+
+sub get_or_make_connection_by_queueid {
+    my ($self, $queueid, %attributes) = @_;
+
+    if ($self->queueid_exists($queueid)) {
+        return $self->get_connection_by_queueid($queueid);
+    } else {
+        return $self->make_connection_by_queueid($queueid, %attributes);
+    }
+}
+
+sub delete_connection_by_queueid {
+    my ($self, $queueid) = @_;
+
+    if (not $self->queueid_exists($queueid)) {
+        $self->my_warn(qq{delete_connection_by_queueid: $queueid }
+            . q{doesn't exist\n});
+    }
+    delete $self->{queueids}->{$queueid};
+}
+
+sub get_queueid_from_matches {
+    my ($self, $line, $rule, $matches) = @_;
+
+    if (not $rule->{queueid}) {
+        $self->my_die(qq{get_queueid_from_matches: no queueid extracted by:\n},
+            dump_rule($rule));
+    }
+    my $queueid     = $matches->[$rule->{queueid}];
+    if (not defined $queueid or not $queueid) {
+        $self->my_die(qq{get_queueid_from_matches: blank/undefined queueid\n},
+            dump_line($line),
+            qq{using: },
+            dump_rule($rule)
+        );
+    }
+    if ($queueid !~ m/^$self->{queueid_regex}$/o) {
+        $self->my_die(qq{get_queueid_from_matches: $queueid !~ __QUEUEID__;\n},
+            dump_line($line),
+            qq{using: },
+            dump_rule($rule)
+        );
+    }
+
+    return $queueid;
+}
+
+sub save_connection_by_queueid {
+    my ($self, $connection, $queueid) = @_;
+
+    $self->{queueids}->{$queueid} = $connection;
+}
+
+# Accessing mails/connections by pid
+
+sub pid_exists {
+    my ($self, $pid) = @_;
+    return exists $self->{connections}->{$pid};
+}
+
+sub get_connection_by_pid {
+    my ($self, $pid) = @_;
+    if ($self->pid_exists($pid)) {
+        return $self->{connections}->{$pid};
+    }
+
+    $self->my_warn(qq{get_connection_by_pid: no connection for $pid\n});
+    return $self->make_connection_by_pid($pid, faked => 1);
+}
+
+sub make_connection_by_pid {
+    my ($self, $pid, %attributes) = @_;
+
+    if ($self->pid_exists($pid)) {
+        $self->my_warn(qq{make_connection_by_pid: $pid exists\n},
+            dump_connection($self->get_connection_by_pid($pid)));
+    }
+    my $connection = $self->make_connection(pid => $pid, %attributes);
+    $self->{connections}->{$pid} = $connection;
+    return $connection;
+}
+
+sub get_or_make_connection_by_pid {
+    my ($self, $pid, %attributes) = @_;
+
+    if ($self->pid_exists($pid)) {
+        return $self->get_connection_by_pid($pid);
+    } else {
+        return $self->make_connection_by_pid($pid, %attributes);
+    }
+}
+
+sub delete_connection_by_pid {
+    my ($self, $pid) = @_;
+
+    if (not $self->pid_exists($pid)) {
+        $self->my_warn(qq{delete_connection_by_pid: $pid doesn't exist\n});
+    }
+    delete $self->{connections}->{$pid};
+}
+
+sub make_connection {
+    my ($self, %attributes) = @_;
+
+    return {
+        logfile         => $self->{current_logfile},
+        line_number     => $.,
+        programs        => {},
+        connection      => {},
+        results         => [],
+        %attributes,
+    };
 }
 
 
