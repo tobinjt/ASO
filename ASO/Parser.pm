@@ -53,8 +53,7 @@ use Parse::Syslog;
 use IO::File;
 use Carp qw(cluck croak);
 use Data::Dumper;
-use Regexp::Common qw(Email::Address net);
-use Storable qw(dclone);
+use Regexp::Common qw(net);
 use List::Util qw(shuffle);
 
 =over 4
@@ -167,10 +166,6 @@ sub init_globals {
     # sendmail/postgrop, and then moves into %queueids if it gets a queueid.
     $self->{connections}      = {};
     $self->{queueids}         = {};
-    # Cloned connections are temporarily saved in here to help identify those
-    # strange connections which consist only of two smtpd results.
-    # XXX HANG THOSE MAILS OFF $CONNECTION INSTEAD.
-    $self->{mails_per_smtpd}  = {};
     # When a connection with a sending client times out during the DATA phase,
     # Postfix will have allocated a queueid for the mail.  We need to discard
     # that mail, which is done in the TIMEOUT action.  Unfortunately, in maybe
@@ -209,24 +204,21 @@ sub init_globals {
 
 
     # Used in fixup_connection() to verify data.
-    my $mock_result         = $self->get_mock_object(q{Result});
-    my $mock_connection     = $self->get_mock_object(q{Connection});
-    $self->{required_connection_cols}   = $mock_connection->required_columns();
-    $self->{required_result_cols}       = $mock_result->required_columns();
-    $self->{nochange_result_cols}       = $mock_result->nochange_columns();
+    my $mock_result = $self->{dbix}->resultset(q{Result})->new_result({});
+    my $mock_conn   = $self->{dbix}->resultset(q{Connection})->new_result({});
+    $self->{required_connection_cols} = $mock_conn->required_columns();
+    $self->{required_result_cols}     = $mock_result->required_columns();
+    $self->{nochange_result_cols}     = $mock_result->nochange_columns();
 
     # Used in update_hash(), via save(), when deciding whether to overwrite an
     # existing value or discard a new value.
-    $self->{c_cols_silent_overwrite}    =
-        $mock_connection->silent_overwrite_columns();
-    $self->{c_cols_silent_discard}      =
-        $mock_connection->silent_discard_columns();
+    $self->{c_cols_silent_overwrite}  = $mock_conn->silent_overwrite_columns();
+    $self->{c_cols_silent_discard}    = $mock_conn->silent_discard_columns();
 
     # Used in parse_result_cols().
-    $self->{NUMBER_REQUIRED} = 1;
-    $self->{result_cols_names}          = $mock_result->result_cols_columns();
-    $self->{connection_cols_names}
-        = $mock_connection->connection_cols_columns();
+    $self->{NUMBER_REQUIRED}          = 1;
+    $self->{result_cols_names}        = $mock_result->result_cols_columns();
+    $self->{connection_cols_names}    = $mock_conn->connection_cols_columns();
     # XXX: Hack!  Figure out how to do this properly.
     $self->{result_cols_names}->{child} = 1;
     # Load the rules, and collate them by program, so that later we'll only try
@@ -535,14 +527,14 @@ sub DISCONNECT {
     $self->commit_connection($connection);
     $self->delete_connection_by_pid($line->{pid});
 
-    if (not exists $self->{mails_per_smtpd}->{$line->{pid}}) {
+    if (not exists $connection->{cloned_mails}) {
         return $self->{ACTION_SUCCESS};
     }
 
     # Try to clear out those mails which only have two smtpd entries, so they
     # don't hang around, taking up memory uselessly and causing queueid clashes
     # occasionally.
-    foreach my $mail (@{$self->{mails_per_smtpd}->{$line->{pid}}}) {
+    foreach my $mail (@{$connection->{cloned_mails}}) {
         if (not exists $mail->{programs}->{q{postfix/cleanup}}
                 and $mail->{programs}->{q{postfix/smtpd}} == 2
                 and $self->queueid_exists($mail->{queueid})
@@ -554,7 +546,7 @@ sub DISCONNECT {
             } else {
                 $self->my_warn(qq{missing cleanup, but connection }
                     . qq{found by queueid $mail->{queueid} differs:\n},
-                    qq{found in mails_per_smtpd:\n},
+                    qq{found in cloned_mails:\n},
                     dump_connection($mail),
                     qq{found in queueids:\n},
                     dump_connection($mail_by_queueid),
@@ -575,7 +567,9 @@ sub DISCONNECT {
         }
     }
 
-    delete $self->{mails_per_smtpd}->{$line->{pid}};
+    # Ensure we don't have any circular data structures; it's unlikely to
+    # happen, but just in case . . .
+    delete $connection->{cloned_mails};
     return $self->{ACTION_SUCCESS};
 }
 
@@ -936,20 +930,27 @@ whether the timeout applies to an accepted mail or not.
 sub CLONE {
     my ($self, $rule, $line, $matches) = @_;
     my $connection = $self->get_connection_by_pid($line->{pid});
-    my $clone = dclone($connection);
-    # Dump anything after the first result (connect from . . ); they'll be 
-    # rejections and shouldn't be part of the new result.
-    $clone->{results} = [ $clone->{results}->[0] ];
-    # Similarly reset the list of programs which have touched the connection.
-    $clone->{programs} = { q{postfix/smtpd} => 1 };
+    my $clone_queueid = $self->get_queueid_from_matches($line, $rule, $matches);
+    # dclone() no longer scales because of cloned_mails, so manually construct a
+    # copy.
+    my $clone = $self->make_connection_by_queueid($clone_queueid,
+        start       => scalar localtime $line->{timestamp},
+        # Dump anything after the first result (connect from . . ); they'll be 
+        # rejections and shouldn't be part of the new result.
+        results     => [ $connection->{results}->[0] ],
+        # Similarly reset the list of programs which have touched the
+        # connection.
+        programs    => { q{postfix/smtpd} => 1 },
+        connection  => { %{$connection->{connection}} },
+    );
     $self->save($clone, $line, $rule, $matches);
 
     # Save the clone so that we can detect those weird mails that don't have a
     # post-smtpd entry.
-    if (not exists $self->{mails_per_smtpd}->{$line->{pid}}) {
-        $self->{mails_per_smtpd}->{$line->{pid}} = [];
+    if (not exists $connection->{cloned_mails}) {
+        $connection->{cloned_mails} = [];
     }
-    push @{$self->{mails_per_smtpd}->{$line->{pid}}}, $clone;
+    push @{$connection->{cloned_mails}}, $clone;
 
     # Save the timestamp so that we can distinguish between accepted mails and
     # non-accepted, pipelined mails during timeout handling (in TIMEOUT action).
@@ -1022,8 +1023,7 @@ sub TIMEOUT {
     my $connection = $self->get_connection_by_pid($line->{pid});
     $self->save($connection, $line, $rule, $matches);
 
-    my $mails = $self->{mails_per_smtpd}->{$line->{pid}};
-    if (not defined $mails) {
+    if (not exists $connection->{cloned_mails}) {
         # Nothing has been acccepted, so there's nothing to do.
         return $self->{ACTION_SUCCESS};
     }
@@ -1036,14 +1036,14 @@ sub TIMEOUT {
         return $self->{ACTION_SUCCESS};
     }
 
-    my $last_mail = $mails->[-1];
+    my $last_mail = $connection->{cloned_mails}->[-1];
     if (not exists $last_mail->{programs}->{q{postfix/cleanup}}) {
         # We haven't seen a cleanup line yet; add this queueid to the list of
         # timed out connections.
         $self->{timeout_queueids}->{$last_mail->{queueid}} = $last_mail;
     }
     $self->delete_connection_by_queueid($last_mail->{queueid});
-    delete $mails->[-1];
+    delete $connection->{cloned_mails}->[-1];
     return $self->{ACTION_SUCCESS};
 }
 
@@ -1388,11 +1388,6 @@ sub filter_regex {
 #   $regex =~ s/____/$RE{}{}/gx;
 
     return $regex;
-}
-
-sub get_mock_object {
-    my ($self, $table) = @_;
-    return $self->{dbix}->resultset($table)->new_result({});
 }
 
 # Update the values in a hash, complaining if we change existing values, unless
@@ -1765,7 +1760,7 @@ making navigating through error output easier.
 
 sub my_warn {
     my ($self, $first_line, @rest) = @_;
-    my $prefix = qq{$0: $self->{current_logfile}: $.: };
+    my $prefix = qq{$0: } . localtime() . qq{ $self->{current_logfile}: $.: };
 
     if (@rest) {
         # Make it easy to fold warnings
