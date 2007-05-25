@@ -690,7 +690,7 @@ sub COMMIT {
 
     # Try to commit any children we can.
     if (exists $connection->{children}) {
-        $self->maybe_commit_children($connection, $line, $rule);
+        $self->maybe_commit_children($connection);
     }
 
     $self->delete_connection_by_queueid($queueid);
@@ -1047,8 +1047,25 @@ sub TIMEOUT {
     return $self->{ACTION_SUCCESS};
 }
 
+=over 4
+
+=item $self->maybe_commit_children($parent)
+
+This should be called after commit_connection() for any connection which has
+children.  Children which reached COMMIT() before their parent reahced TRACK()
+won't have been entered in the database; instead they will have been marked as
+commit_ready and their database entry postponed.  maybe_commit_children() will
+loop over all children and call both fixup_connection() and commit_connection()
+on those marked commit_ready; those children will also be removed from the state
+tables.  Children not marked commit_ready will be deferred and will reach
+COMMIT() when their last log entry is parsed.
+
+=back
+
+=cut
+
 sub maybe_commit_children {
-    my ($self, $parent, $line, $rule) = @_;
+    my ($self, $parent) = @_;
 
     # We check for this in delete_child_from_parent(), so that we don't trample
     # over ourselves in the sequence
@@ -1460,6 +1477,37 @@ TEMPLATE
     return $conflicts;
 }
 
+=over 4
+
+=item $self->fixup_connection($connection)
+
+Clean up the data in $connection before entering it in the database:
+
+=over 8
+
+=item *
+
+Ensure all results have all the required attributes, by propogating attributes
+between results if necessary.
+
+=item *
+
+Ensure that constant attributes don't change between results.
+
+=item *
+
+If any attributes are missing from the connection, copy them from the parent
+connection if one exists.
+
+=back
+
+=back
+
+Warnings will be logged if any result or connection attributes are missing, or
+if constant attributes change between results.
+
+=cut
+
 sub fixup_connection {
     my ($self, $connection)         = @_;
     my $results                     = $connection->{results};
@@ -1552,22 +1600,27 @@ sub fixup_connection {
     }
 }
 
+=over 4
+
+=item $self->save($connection, $line, $rule, \@matches)
+
+Save data extracted from $line, using $rule and \@matches, to $connection.
+$connection->{connection} will be updated according to connection_data and
+connection_cols - see update_hash() for full discussion.  The start time will be
+saved if it is unset.  A new result will be created, containing the attributes
+from result_data and result_cols plus the rule_id, postfix_action and timestamp.
+If the rule matches a queueid (and the result is not NOQUEUE), the queueid will
+be saved as $connection->{queueid}; if the queueid changes a warning will be
+logged.
+
+=back
+
+=cut
+
 sub save {
     my ($self, $connection, $line, $rule, $matches) = @_;
 
     $connection->{programs}->{$line->{program}}++;
-
-    if ($rule->{queueid}) {
-        my $queueid = $matches->[$rule->{queueid}];
-        if ($queueid ne q{NOQUEUE}) {
-            if (exists $connection->{queueid}
-                    and $connection->{queueid} ne $queueid) {
-                $self->my_warn(qq{queueid change: was $connection->{queueid}; }
-                    . qq{now $queueid\n});
-            }
-            $connection->{queueid} = $queueid;
-        }
-    }
 
     # Save the new result in $connection.
     # RESULT_DATA
@@ -1618,6 +1671,19 @@ sub save {
         q{save: connection_cols});
 
 
+    # queueid saving.
+    if ($rule->{queueid}) {
+        my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
+        if ($queueid ne q{NOQUEUE}) {
+            if (exists $connection->{queueid}
+                    and $connection->{queueid} ne $queueid) {
+                $self->my_warn(qq{queueid change: was $connection->{queueid}; }
+                    . qq{now $queueid\n});
+            }
+            $connection->{queueid} = $queueid;
+        }
+    }
+
     # Check for a queueid change.
     if (exists $connection->{queueid}
             and $self->queueid_exists($connection->{queueid})) {
@@ -1632,13 +1698,34 @@ sub save {
             );
         }
     }
+
     # Ensure we save the connection by queueid; this allows us to tie the whole
     # lot together.
-    if (exists $connection->{queueid}
-            and $connection->{queueid} ne q{NOQUEUE}) {
+    if (exists $connection->{queueid}) {
         $self->save_connection_by_queueid($connection, $connection->{queueid});
     }
 }
+
+=over 4
+
+=item $self->commit_connection($commit_connection)
+
+Enter the data from the connection into the database (unless
+skip_inserting_results was specified).  If the connection is faked, hasn't
+successfully completed fixup_connection(), or has already been commmitted an
+appropriate error message wll be logged and commit_connection() will abort.  If
+skip_inserting_results was specified commit_connection() will finish at this
+point.  A new row will be entered in the connections table, and a new row in the
+results table for each result where postfix_action is not INFO.
+
+Database insertions are wrapped in transactions, and each transaction is
+committed once there have been 1000 rows added to the connections table.  This
+greatly speeds up execution as the database doesn't have to write to disk and
+wait for the kernel to sync the disc until the transaction is committed.
+
+=back
+
+=cut
 
 sub commit_connection {
     my ($self, $connection) = @_;
@@ -1707,6 +1794,55 @@ sub commit_connection {
         $self->{num_connections_uncommitted} = 0;
     }
 }
+
+=over 4
+
+=item $self->maybe_remove_faked($connection)
+
+Faked connections won't be processed by either fixup_connection() (generally
+there are attributes missing) or commit_connection() (faked connections should
+not be entered in the database).  Sometimes the faked flag is unwarranted, e.g.
+bounce notifications in Postfix 2.2.x will be marked as faked becausd their
+origin is unclear.  maybe_remove_faked() should be called before
+fixup_connection() or commit_connection() to identify mails which are
+incorrectly marked as faked; it will remove the faked flag so the mail can be
+entered in the database.
+
+Currently bounce notifications are identified by passing the following checks:
+
+=over 8
+
+=item *
+
+Neither smtpd nor pickup has logged any messages for this mail, i.e. the mail
+was generated internally by Postfix rather than accepted from outside.
+
+=item *
+
+The mail is not marked as tracked; the faked flag will be removed by TRACK() in
+that case, and the mail should not be processed any further before then.
+
+=item *
+
+The sender address is <>.
+
+=item *
+
+The message-id matches the pattern /^<\d{14}\.(__QUEUEID__)\@/; the 14 digits
+are the date in the format YYYYMMDDhhmmss.
+
+=item *
+
+The queueid matched by the regex above equals the queueid of the mail; this
+ensures that the message is not an internally generated forwarded mail.
+
+=back
+
+The faked flag will be removed if all checks are successful.
+
+=back
+
+=cut
 
 sub maybe_remove_faked {
     my ($self, $connection) = @_;
