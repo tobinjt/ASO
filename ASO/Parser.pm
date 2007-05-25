@@ -1798,10 +1798,31 @@ sub my_die {
 
 # Accessing mails/connections by queueid.
 
+=over 4
+
+=item $self->queueid_exists($queueid)
+
+CHecks whether $queueid exists in the state table.
+
+=back
+
+=cut
+
 sub queueid_exists {
     my ($self, $queueid) = @_;
     return exists $self->{queueids}->{$queueid};
 }
+
+=over 4
+
+=item $self->get_connection_by_queueid($queueid)
+
+Returns the connection for $queueid in the state tables, or creates a
+connection marked faked and logs a warning if one doesn't exist.
+
+=back
+
+=cut
 
 sub get_connection_by_queueid {
     my ($self, $queueid) = @_;
@@ -1812,6 +1833,18 @@ sub get_connection_by_queueid {
     $self->my_warn(qq{get_connection_by_queueid: no connection for $queueid\n});
     return $self->make_connection_by_queueid($queueid, faked => 1);
 }
+
+=over 4
+
+=item $self->make_connection_by_queueid($queueid, %attributes)
+
+Creates and returns a new connection, saving it into the state table under
+$queueid,  %attributes will be used to initialise the new connection; there are
+no restrictions on what can be present in %attributes.
+
+=back
+
+=cut
 
 sub make_connection_by_queueid {
     my ($self, $queueid, %attributes) = @_;
@@ -1825,6 +1858,19 @@ sub make_connection_by_queueid {
     return $connection;
 }
 
+=over 4
+
+=item $self->get_or_make_connection_by_queueid($queueid, %attributes)
+
+If there's already a connection for $queueid it will be returned.  If not a new
+connection will be created, initialised with %attributes (no checks are
+performed on %attributes), saved in the state tables under $queueid and
+returned.
+
+=back
+
+=cut
+
 sub get_or_make_connection_by_queueid {
     my ($self, $queueid, %attributes) = @_;
 
@@ -1835,6 +1881,18 @@ sub get_or_make_connection_by_queueid {
     }
 }
 
+=over 4
+
+=item $self->delete_connection_by_queueid($queueid)
+
+Delete the connection saved under $queueid from the state tables.  The
+connection won't be changed in any way, and will still be accessable through
+other references.
+
+=back
+
+=cut
+
 sub delete_connection_by_queueid {
     my ($self, $queueid) = @_;
 
@@ -1844,6 +1902,17 @@ sub delete_connection_by_queueid {
     }
     delete $self->{queueids}->{$queueid};
 }
+
+=over 4
+
+=item $self->get_queueid_from_matches($line, $rule, \@matches)
+
+Returns the queueid from $line, using $rule and \@matches.  Logs a warning if
+there's anything wrong with the queueid, or it's not found.
+
+=back
+
+=cut
 
 sub get_queueid_from_matches {
     my ($self, $line, $rule, $matches) = @_;
@@ -1871,6 +1940,18 @@ sub get_queueid_from_matches {
     return $queueid;
 }
 
+=over 4
+
+=item $self->save_connection_by_queueid($connection, $queueid)
+
+Saves $connection into the state tables under $queueid.  Doesn't complain or
+check anything; will happily clobber an existing connection - it's up to the
+caller to check that with $self->queueid_exists($queueid).
+
+=back
+
+=cut
+
 sub save_connection_by_queueid {
     my ($self, $connection, $queueid) = @_;
 
@@ -1879,10 +1960,31 @@ sub save_connection_by_queueid {
 
 # Accessing mails/connections by pid
 
+=over 4
+
+=item $self->pid_exists($pid)
+
+CHecks whether a connection is found for $pid in the state tables.
+
+=back
+
+=cut
+
 sub pid_exists {
     my ($self, $pid) = @_;
     return exists $self->{connections}->{$pid};
 }
+
+=over 4
+
+=item $self->get_connection_by_pid($pid)
+
+Returns the connection for $pid in the state tables, or creates a
+connection marked faked and logs a warning if one doesn't exist.
+
+=back
+
+=cut
 
 sub get_connection_by_pid {
     my ($self, $pid) = @_;
@@ -1893,6 +1995,18 @@ sub get_connection_by_pid {
     $self->my_warn(qq{get_connection_by_pid: no connection for $pid\n});
     return $self->make_connection_by_pid($pid, faked => 1);
 }
+
+=over 4
+
+=item $self->make_connection_by_pid($pid, %attributes)
+
+Creates and returns a new connection, saving it into the state table under
+$queueid,  %attributes will be used to initialise the new connection; there are
+no restrictions on what can be present in %attributes.
+
+=back
+
+=cut
 
 sub make_connection_by_pid {
     my ($self, $pid, %attributes) = @_;
@@ -1906,6 +2020,18 @@ sub make_connection_by_pid {
     return $connection;
 }
 
+=over 4
+
+=item $self->get_or_make_connection_by_pid($pid, %attributes)
+
+If there's already a connection for $pid it will be returned.  If not a new
+connection will be created, initialised with %attributes (no checks are
+performed on %attributes), saved in the state tables under $pid and returned.
+
+=back
+
+=cut
+
 sub get_or_make_connection_by_pid {
     my ($self, $pid, %attributes) = @_;
 
@@ -1916,6 +2042,18 @@ sub get_or_make_connection_by_pid {
     }
 }
 
+=over 4
+
+=item $self->delete_connection_by_pid($pid)
+
+Delete the connection saved under $pid from the state tables.  The connection
+won't be changed in any way, and will still be accessable through other
+references.
+
+=back
+
+=cut
+
 sub delete_connection_by_pid {
     my ($self, $pid) = @_;
 
@@ -1924,6 +2062,18 @@ sub delete_connection_by_pid {
     }
     delete $self->{connections}->{$pid};
 }
+
+=over 4
+
+=item $self->make_connection(%attributes)
+
+Creates a new connection initialised with the logfile and line number, required
+data structures, and the contents of %attributes.  No checks are performed on
+%attributes, so it can overwrite the default initialisation.
+
+=back
+
+=cut
 
 sub make_connection {
     my ($self, %attributes) = @_;
