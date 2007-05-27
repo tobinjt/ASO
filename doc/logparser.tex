@@ -47,8 +47,8 @@ THAT THEY'RE MORE OR LESS EQUIVALENT
 
 Most mail server administrators will have performed some basic processing
 of Postfix logs at one time or another, whether it was to debug a problem,
-explain to a user why their mail is being rejected, or to check whether
-their new anti-spam measures are working.  The more adventurous will have
+explain to a user why their mail is being rejected, or check whether their
+new anti-spam measures are working.  The more adventurous will have
 generated statistics to show how many hits each of their anti-spam measures
 has gotten in the last week, and possibly even generated some graphs to
 clearly illustrate the point to management or complaining
@@ -59,14 +59,14 @@ per-connection or per-queueid rather than processing lines independently.
 One of the barriers to this type of processing is the unstructured nature
 of Postfix logs, where each logging line was added on an ad hoc basis as a
 requirement was discovered or new functionality was added.  Further
-complication arises as a result of the facility to have rejection messages
-defined by the administrator; every Real-time Black List returns a
-different explanatory message; policy servers may have different messages
-depending on the characteristics of the connection; there are many ways in
-which the log lines may differ.  This paper documents the difficult process
-of parsing Postfix logs, presenting a program which parses logs and places
-the resulting data into a database.  The gathered data can then be used to
-optimise current anti-spam measures, provide a baseline to test new
+complication because the list of rejection messages is not fixed: new
+messages can be added by the administrator; every Real-time Black List
+returns a different explanatory message; policy servers may have different
+messages depending on the characteristics of the connection; there are many
+ways in which the log lines may differ.  This paper documents the difficult
+process of parsing Postfix logs, presenting a program which parses logs and
+places the resulting data into a database.  The gathered data can then be
+used to optimise current anti-spam measures, provide a baseline to test new
 anti-spam measures against, or to produce statistics showing how effective
 those measures are.  There are numerous other uses for such data: improving
 server performance by identifying troublesome destinations and
@@ -75,11 +75,11 @@ identifying high volume uses (e.g.\ customer newsletters) and restricting
 those uses to off-peak times; as a base for billing customers on a shared
 server; etc.
 
-Section~\ref{background} provides background information about: the
-motivation for this project; the Postfix Mail Transport Agent; a short
-overview of the parser; the assumptions inherent in the design of the
-algorithm and program; using a database schema as an API\@; and a
-comparison against other Postfix log parsers.
+Section~\ref{background} provides background information about the
+following: the motivation for this project; the Postfix Mail Transport
+Agent; a short overview of the parser; the assumptions inherent in the
+design of the algorithm and program; using a database schema as an API\@;
+and a comparison against other Postfix log parsers.
 
 Section~\ref{rules} discusses the parsing rules in detail, explaining their
 structure, giving an example rule and sample data it matches successfully
@@ -96,8 +96,8 @@ and/or the algorithm, then suggests some ways of dealing with the
 limitations, with the goal of improving parsing and reproducing the journey
 a mail takes through the internals of Postfix.
 
-Section~\ref{conclusion} describes the results of the project to date.  XXX
-IMPROVE THIS\@.
+Section~\ref{conclusion} describes the results of the project to date and
+contains the paper's conclusion.
 
 Section~\ref{references} catalogues resources used in developing the
 algorithm, writing the program and preparing this paper.  
@@ -134,12 +134,7 @@ SELECT name, description, restriction_name, rule_order
 \end{verbatim}
 
 If the database supports sub-selects percentages can be
-obtained:\footnote{This works for SQLite3, where || is the concatenation
-operator.  If the database containing the data does not support
-this syntax, simply remove ``|| '\%\''' from the query; the results will be
-the same, just slightly less visually pleasing.}
-
-XXX STOP THIS FROM BEING SPLIT ACROSS PAGES IF POSSIBLE
+obtained:
 
 \begin{verbatim}
 SELECT name, description, restriction_name, rule_order,
@@ -154,7 +149,14 @@ SELECT name, description, restriction_name, rule_order,
     ORDER BY rule_order DESC;
 \end{verbatim}
 
-Another example is determining which restrictions are not effective:
+SQL note: $||$ is the concatenation operator in SQLite3; if the database
+containing the extracted data does not support this syntax, then simply
+remove `` $||$ '$\%$'\hspace{1ex}'' from the query --- the results will be
+the same, just slightly less visually pleasing.
+
+Another example is determining which restrictions are not effective: this
+example shows which rules had less than 100 hits on the last log file
+parsed.
 
 \begin{verbatim}
 SELECT name, description, restriction_name, rule_order,
@@ -187,9 +189,9 @@ interact with the data in several ways:
 \begin{enumerate}
 
     \item Libraries exist for the majority of programming languages
-        allowing access to databases, whereas if this program was written
+        allowing access to databases, whereas if this parser was written
         as a library a new interface layer would need to be written for
-        every programming language used with the API\@.
+        every programming language using API\@.
 
     \item Databases provide complex querying and sorting functionality to
         the user without requiring large amounts of programming.  All
@@ -235,16 +237,17 @@ CREATE TRIGGER ON INSERT INTO results
 \subsection{Postfix background}
 
 Postfix is a highly configurable, high performance, secure and scalable
-Mail Transport Agent.  It features extensive anti-spam restrictions,
-allowing a mail administrator to deploy those restrictions which they judge
-suitable for their needs, rather than a fixed set chosen by Postfix's
-author.  These restrictions can be selectively applied, combined and
-bypassed on a per-client, per-recipient or per-sender basis, allowing
-varying levels of defense and or permissiveness.  Postfix leverages simple
-lookup tables to support arbitrarily complicated user-defined sequences of
-restrictions and exceptions, with policy servers as the ultimate in
-flexibility.  Administrators can also supply their own rejection messages
-to make it clear to senders why exactly their mail was rejected.
+Mail Transport Agent.  It features extensive optional anti-spam
+restrictions, allowing an administrator to deploy those restrictions which
+they judge suitable for their site's needs, rather than a fixed set chosen
+by Postfix's author.  These restrictions can be selectively applied,
+combined and bypassed on a per-client, per-recipient or per-sender basis,
+allowing varying levels of defense and/or permissiveness.  Postfix
+leverages simple lookup tables to support arbitrarily complicated
+user-defined sequences of restrictions and exceptions, with policy
+servers\footnote{Policy servers will be explained shortly.} as the ultimate
+in flexibility.  Administrators can also supply their own rejection
+messages to make it clear to senders why exactly their mail was rejected.
 Unfortunately this flexibility has a cost: complexity in the logs
 generated.  While it is easy to use \texttt{grep(1)} to determine the fate
 of an individual email, following the journey an email takes through
@@ -254,51 +257,49 @@ time requires 90\% of the code.\footnote{These numbers don't have a solid
 scientific basis, they're based on gut feeling from writing and debugging
 the software.}
 
-A policy server is an external program that accepts state information from
-Postfix for each SMTP command not rejected by an earlier restriction; the
-policy server can utilise that state information to implement whatever
-logic is required.  E.g.\ some users can be restricted to sending mail on
-the third Tuesday after pay day only --- this example may actually be
-useful in a payroll system to prevent spam or (worse) phishing mails with
-faked sender addresses.  More commonly encountered scenarios are:
+\subsubsection{Policy servers}
+
+A policy server \cite{policy-servers} is an external program that accepts
+state information from Postfix for each SMTP command not rejected by an
+earlier restriction; the policy server can utilise that state information
+to implement whatever logic is required.  E.g.\ some users can be
+restricted to sending mail on the third Tuesday after pay day only --- this
+example may actually be useful in a payroll system to prevent spam or
+(worse) phishing mails with faked sender addresses.  More commonly
+encountered scenarios are:
 
 \begin{itemize}
 
-    \item Checking Sender Policy Framework records.  SPF records specify
-        which mail servers are allowed to send mail claiming to be from a
-        particular domain.  The intention is to reduce faked sender
-        addresses, which will in turn reduce spam, backscatter and
-        joe-jobs; however there has been a lot of resistance to the
-        proposal because it breaks or vastly complicates some features of
-        SMTP.  For more details see \url{http://www.openspf.org/} or
-        \url{http://en.wikipedia.org/wiki/Sender_Policy_Framework} XXX ADD
-        REFERENCES FOR SPAM BACKSCATTER AND JOE-JOBS TO THE APPENDIX.
+    \item Checking Sender Policy Framework records \cite{openspf},
+        \cite{wikipedia-spf}.  SPF records specify which mail servers are
+        allowed to send mail claiming to be from a particular domain.  The
+        intention is to reduce spam from faked sender addresses,
+        backscatter \cite{postfix-backscatter} and joe-jobs
+        \cite{wikipedia-joe-job}; however there
+        has been a lot of resistance to the proposal because it breaks or
+        vastly complicates some features of SMTP.
 
-    \item Greylisting, a technique that temporarily rejects mail where the
-        triple of (sender, recipient, remote IP address) is unknown; the
-        assumption is that it's uneconomical for a spammer to retry, but
-        that a legitimate mail server must retry.  Sadly spammers are using
-        increasingly complex and well written programs to distribute spam,
-        frequently using an ISP provided SMTP server from a compromised
-        machine on its network, so greylisting is slowly becoming less
-        useful, but it does block a large percentage of spam mail at the
-        moment.  See \url{http://www.greylisting.org/} for full details.
+    \item Greylisting \cite{greylisting}, a technique that temporarily
+        rejects mail where the triple of (sender, recipient, remote IP
+        address) is unknown; the assumption is that it's uneconomical for a
+        spammer to retry, but that a legitimate mail server must retry.
+        Sadly spammers are using increasingly complex and well written
+        programs to distribute spam, frequently using an ISP provided SMTP
+        server from a compromised machine on its network.  Greylisting is
+        slowly becoming less useful, but it does block a large percentage
+        of spam mail at the moment.
 
-    \item Using a scoring system such as Policyd-weight where 
-        tests accumulate points against the sending system --- if the
-        eventual score is too high the mail is rejected.
-        \url{http://www.policyd-weight.org/} 
+    \item Using a scoring system such as Policyd-weight
+        \cite{policyd-weight} where tests accumulate points against the
+        sending system --- if the eventual score is too high the mail is
+        rejected.
         
-    \item Policyd performs the following: \textit{Greylisting,
-        Sender-(envelope, SASL or host / ip)-based throttling (on messages
-        and/or volume per defined time unit), Recipient rate limiting,
-        Spamtrap monitoring / blacklisting, HELO auto blacklisting and HELO
-        randomization preventation.\/}  \url{http://policyd.sourceforge.net}
+    \item Rate limiting or throttling on a per-sender, per-client or
+        per-recipient basis as performed by Policyd \cite{policyd}.
 
 \end{itemize}
 
-Example attributes taken from \newline
-\url{http://www.postfix.org/SMTPD_POLICY_README.html}:
+Example attributes taken from \cite{policy-servers}:
 
 \begin{tabular}[]{ll}
 
@@ -330,9 +331,8 @@ action.  Rules are solely concerned with identifying a line and extracting
 data from it, whereas the algorithm's task is to follow the journey each
 mail takes through Postfix, piecing the data together into a coherent
 whole, saving it in a useful and consistent form, and performing
-housekeeping duties.
-
-XXX REFER TO THE GRAMMAR COMPARISON SECTION ONCE ITS WRITTEN.
+housekeeping duties.  Readers familiar with context-free grammars may find
+Section \ref{comparison against context-free grammars} helpful.
 
 \subsection{Assumptions}
 
@@ -386,8 +386,6 @@ separate program, to be developed later.  The parsing algorithm and program
 described here are designed to enable much more detailed log analysis by
 providing a stable platform for subsequent programs to develop upon.
 
-XXX DO I NEED TO SAY MORE??
-
 
 \section{Adaptable parsing: user defined rules}
 
@@ -422,7 +420,10 @@ parser:
 
 \end{itemize}
 
-XXX COMPARE AND CONTRAST WITH CONTEXT FREE GRAMMARS, OTHER GRAMMARS.
+
+\subsection{Comparison against context-free grammars}
+
+\label{comparison against context-free grammars}
 
 XXX DESCRIBE IT IN LEFT: RIGHT PRODUCTION TERMS, IF POSSIBLE.
 
@@ -534,10 +535,6 @@ Each rule defines the following:
                 the parser must be parsed properly; any unparsed line is
                 considered an error.
 
-            \item [save\_by\_pid] Use the pid from the log line to lookup a
-                connection, then save the data from the log line in the
-                connection data structure thus found.
-
             \item [commit] The mail is finished with, enter it in the
                 database, and remove the mail from memory.
 
@@ -614,7 +611,8 @@ NOQUEUE: reject: RCPT from example.com[10.1.1.1]:
 XXX CARL SUGGESTS EXPANDING ON THIS SOME MORE, BUT I DON'T KNOW HOW\@.
 PERHAPS WHEN THE ALGORITHM IS PROPERLY EXPLAINED IT'LL BE EASIER\@?  MAKE
 REFERENCES TO THE ALGORITHM, EXPLAIN MORE CLEARLY HOW THE FIELDS ARE USED,
-HOW THE RULE MATCHES, AND SO ON\@.
+HOW THE RULE MATCHES, AND SO ON\@.  SAVE\_BY\_PID IS GONE NOW, USE A
+DIFFERENT EXAMPLE.
 
 % Don't reformat this!
 \begin{tabular}[]{ll}
@@ -1508,5 +1506,10 @@ always room for improvement.
 \subsection{SMTP references}
 
 XXX ADD RESOURCES/REFERENCES HERE AND THEN MAKE REFERENCES TO THEM FROM WITHIN THE PAPER
+
+
+% Bibliography.
+\bibliographystyle{logparser-bibliography-style}
+\bibliography{logparser-bibliography}
 
 \end{document}
