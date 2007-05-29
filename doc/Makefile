@@ -22,7 +22,8 @@ logparser.dvi: logparser.tex
 # the logparser.dvi: logparser.tex rule, though whether that's reliable or not I
 # dunno.
 logparser.dvi: logparser-flow-chart.ps logparser-bibliography.bib
-logparser.dvi: plot-cached-discarded.ps plot-cached-discarded-factor.ps plot-normal-shuffle-reverse.ps
+logparser.dvi: plot-cached-discarded.ps plot-cached-discarded-factor.ps
+logparser.dvi: plot-normal-shuffle-reverse.ps plot-normal-shuffle-reverse-factor.ps
 
 logparser-flow-chart.ps: logparser-flow-chart.dot
 	dot -o "$@" -Tps -x "$<"
@@ -30,12 +31,16 @@ logparser-flow-chart.ps: logparser-flow-chart.dot
 plot-cached-discarded.ps: stats-cached.txt stats-discarded.txt
 plot-cached-discarded-factor.ps: stats-cached-discarded-factor.txt
 plot-normal-shuffle-reverse.ps: stats-normal.txt stats-shuffle.txt stats-reverse.txt
+plot-normal-shuffle-reverse-factor.ps: stats-normal-shuffle-reverse-factor.txt
 
 plot-%.ps: plot-%.gpi
 	gnuplot "$<"
 
 stats-cached-discarded-factor.txt: stats-cached.txt stats-discarded.txt
-	paste -d ' ' stats-cached.txt stats-discarded.txt | awk '$$1 != "#" {print ($$9 * 100 / $$3) - 100 }' > "$@"
+	paste -d ' ' $^ | awk '$$1 != "#" {print ($$9 * 100 / $$3) - 100 }' > "$@"
+
+stats-normal-shuffle-reverse-factor.txt: stats-normal.txt stats-shuffle.txt stats-reverse.txt
+	paste -d ' ' $^ | awk '$$1 != "#" {print (($$9 * 100 / $$3) - 100), " ", (($$15 * 100 / $$3) - 100) }' > "$@"
 
 clean:
 	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg

@@ -1,0 +1,16 @@
+
+set xlabel "Log file"
+set ylabel "Percentage increase of shuffled over normal and reversed over normal"
+set grid
+
+set terminal postscript monochrome eps size 5.1,3.3
+set output "plot-normal-shuffle-reverse-factor.ps"
+# Don't continue the scales to the next round number; stop at the topmost point.
+set autoscale xfixmax
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
+
+plot "stats-normal-shuffle-reverse-factor.txt" using 1 with lines \
+        title "Shuffle vs normal", \
+    "stats-normal-shuffle-reverse-factor.txt" using 2 with lines \
+        title "Reverse vs normal"

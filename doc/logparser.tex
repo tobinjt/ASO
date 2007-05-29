@@ -475,8 +475,10 @@ Each rule defines the following:
         without caching the regex; also shown on the graph are the file
         sizes and number of lines in each file.  Graph \ref{normal regex vs
         disarded regex factor} shows the percentage execution time increase
-        when not caching each regex.  Logging to the database was disabled
-        for the test runs.
+        when not caching each regex.  Each log file was parsed 10 times,
+        the first run discarded and the remaining 9 runs averaged.  Logging
+        to the database was disabled for the test runs.
+        
 
     \item [result\_cols, connection\_cols] Specifies how the fields in the
         log line will be extracted.  The format is: \newline
@@ -538,39 +540,22 @@ Each rule defines the following:
         successfully matches.  At the start of each run the program sorts
         the rules in descending rule\_order, and at the end of the run
         updates every rule's rule\_order.  Assuming that the distribution
-        of log lines is reasonably consistent, rules matching more commonly
-        occurring log lines will be tried before rules matching less
-        commonly occurring log lines, lowering the program's execution
-        time.
-\ref{normal vs shuffled vs reversed ordering}
-
-        Averaged over 10 test runs:
-
-        \begin{description} 
-
-            \item [Ascending order (best):] run time was 56.684 seconds,
-                standard deviation was 0.29 seconds.
-
-            \item [Descending order (worst):] run time was 64.037
-                seconds (12.97\% slower), standard deviation was 0.16
-                seconds.
-
-            \item [Shuffled order:] run time was 57.19 seconds
-                (0.89\% slower), standard deviation was 0.95 seconds.
-
-        \end{description}
-
-        XXX RERUN OVER MORE LOG FILES
-
-        XXX RERUN AGAIN ONCE POSTFIX 2.3 RULES HAVE BEEN ADDED TO SEE WHAT
-        THE DIFFERENCE IS.  THERE ARE 110 POSTFIX 2.2 RULES AS OF
-        2007/04/18
-
-        Logging to the database was disabled for the test runs.
+        of log lines is reasonably consistent between log files, rules
+        matching more commonly occurring log lines will be tried before
+        rules matching less commonly occurring log lines, lowering the
+        program's execution time.  Graph \ref{normal vs shuffled vs
+        reversed ordering} plots the execution time over 93 log files for
+        normal, shuffle and reverse ordering.  Graph \ref{normal vs
+        shuffled vs reversed ordering factor} shows the percentage
+        execution time increase for shuffled and reversed over normal.
+        Each log file was parsed 10 times, the first run discarded and the
+        remaining 9 runs averaged.  Logging to the database was disabled
+        for the test runs.
 
         It is hoped that this will prove to have greater effectiveness as
-        the number of rules grows; currently the effect is negligible,
-        particularly in comparison to compiling each regex once.
+        the number of rules grows; currently the effect is negligible
+        in comparison to caching each compiled regex, but it still provides
+        approximately a 10\% performance increase.
 
     \item [priority] This is the user-configurable companion to
         rule\_order: rules with a higher priority will be tried first,
@@ -1512,6 +1497,11 @@ XXX ADD RESOURCES/REFERENCES HERE AND THEN MAKE REFERENCES TO THEM FROM WITHIN T
 \subsection{Regex: percentage execution time increase}
 \label{normal regex vs disarded regex factor}
 \includegraphics{plot-cached-discarded-factor.ps}
+
+
+\subsection{Percentage increase of shuffled over normal and reversed over normal}
+\label{normal vs shuffled vs reversed ordering factor}
+\includegraphics{plot-normal-shuffle-reverse-factor.ps}
 
 
 \subsection{Normal vs shuffled vs reversed ordering}
