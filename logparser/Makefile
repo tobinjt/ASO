@@ -6,12 +6,19 @@ SHELL=bash
 
 all: test summary
 
+diff-some:
+	diff -u warnings-some-working warnings-some; diff -I ^# -u state-some-working state-some
+
+copy.working-some:
+	cp -p warnings-some warnings-some-working
+	cp -p state-some    state-some-working
+
 diff:
 	diff -u warnings-working warnings; diff -I ^# -u state-working state
 
 copy.working:
-	cp -p warnings warnings-working 
-	cp -p state    state-working 
+	cp -p warnings warnings-working
+	cp -p state    state-working
 
 test: test.20070428
 

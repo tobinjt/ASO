@@ -190,7 +190,6 @@ sub init_globals {
         IGNORE                      => 1,
         CONNECT                     => 1,
         DISCONNECT                  => 1,
-        SAVE_BY_PID                 => 1,
         SAVE_BY_QUEUEID             => 1,
         COMMIT                      => 1,
         TRACK                       => 1,
@@ -570,26 +569,6 @@ sub DISCONNECT {
     # Ensure we don't have any circular data structures; it's unlikely to
     # happen, but just in case . . .
     delete $connection->{cloned_mails};
-    return $self->{ACTION_SUCCESS};
-}
-
-=over  4
-
-=item SAVE_BY_PID
-
-Use the pid from $line to find the correct connection and call $self->save()
-with the appropriate arguments - see save() in SUBROUTINES for more details.  If
-the connection doesn't exist a connection marked faked will be created and a
-warning issued.
-
-=back
-
-=cut
-
-sub SAVE_BY_PID {
-    my ($self, $rule, $line, $matches) = @_;
-    my $connection = $self->get_connection_by_pid($line->{pid});
-    $self->save($connection, $line, $rule, $matches);
     return $self->{ACTION_SUCCESS};
 }
 
@@ -1334,7 +1313,7 @@ POSTAMBLE
 
 =item $self->filter_regex($regex)
 
-Substitutes vertain keywords in the regex with regex snippets, e.g.
+Substitutes certain keywords in the regex with regex snippets, e.g.
 __SMTP_CODE__ is replaced with \d{3}.  Every regex loaded from the database will
 be processed by filter_regex(), allowing each regex to be largely
 self-documenting, be far simpler than it would otherwise have been, and allowing
