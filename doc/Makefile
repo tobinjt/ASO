@@ -21,25 +21,21 @@ logparser.dvi: logparser.tex
 # changes.  There are no commands specified, make seems to run the commands from
 # the logparser.dvi: logparser.tex rule, though whether that's reliable or not I
 # dunno.
-logparser.dvi: logparser-flow-chart.ps 
-logparser.dvi: logparser-bibliography.bib
-logparser.dvi: plot-time.ps
-logparser.dvi: plot-factor.ps
+logparser.dvi: logparser-flow-chart.ps logparser-bibliography.bib
+logparser.dvi: plot-cached-discarded.ps plot-cached-discarded-factor.ps plot-normal-shuffle-reverse.ps
 
 logparser-flow-chart.ps: logparser-flow-chart.dot
 	dot -o "$@" -Tps -x "$<"
 
-plot-time.ps: stats-normal.txt stats-normal-regex.txt
-plot-time.ps: plot-time.gpi
+plot-cached-discarded.ps: stats-cached.txt stats-discarded.txt
+plot-cached-discarded-factor.ps: stats-cached-discarded-factor.txt
+plot-normal-shuffle-reverse.ps: stats-normal.txt stats-shuffle.txt stats-reverse.txt
+
+plot-%.ps: plot-%.gpi
 	gnuplot "$<"
 
-plot-factor.ps: plot-factor.gpi
-	gnuplot "$<"
-
-plot-factor.ps: stats-factor.txt
-
-stats-factor.txt: stats-normal.txt stats-normal-regex.txt
-	paste -d ' ' stats-normal.txt stats-normal-regex.txt | awk '$$1 != "#" {print ($$9 * 100 / $$3) - 100 }' > "$@"
+stats-cached-discarded-factor.txt: stats-cached.txt stats-discarded.txt
+	paste -d ' ' stats-cached.txt stats-discarded.txt | awk '$$1 != "#" {print ($$9 * 100 / $$3) - 100 }' > "$@"
 
 clean:
 	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg

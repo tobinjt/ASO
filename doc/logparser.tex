@@ -480,7 +480,7 @@ Each rule defines the following:
 
     \item [result\_cols, connection\_cols] Specifies how the fields in the
         log line will be extracted.  The format is: \newline
-        \texttt{client\_hostname = 1; recipient = 2, sender = 4;} \newline
+        \texttt{smtp\_code = 1; recipient = 2, sender = 4;} \newline
         i.e.\ semi-colon or comma separated assignment statements, with the
         variable name on the left and the matching field from the regex on
         the right hand side.  The list of acceptable variable names is:
@@ -542,6 +542,7 @@ Each rule defines the following:
         occurring log lines will be tried before rules matching less
         commonly occurring log lines, lowering the program's execution
         time.
+\ref{normal vs shuffled vs reversed ordering}
 
         Averaged over 10 test runs:
 
@@ -1505,11 +1506,16 @@ XXX ADD RESOURCES/REFERENCES HERE AND THEN MAKE REFERENCES TO THEM FROM WITHIN T
 
 \subsection{Regex: cached vs compiled every time}
 \label{normal regex vs discard regex}
-\includegraphics{plot-time.ps}
+\includegraphics{plot-cached-discarded.ps}
 
 
 \subsection{Regex: percentage execution time increase}
 \label{normal regex vs disarded regex factor}
-\includegraphics{plot-factor.ps}
+\includegraphics{plot-cached-discarded-factor.ps}
+
+
+\subsection{Normal vs shuffled vs reversed ordering}
+\label{normal vs shuffled vs reversed ordering}
+\includegraphics{plot-normal-shuffle-reverse.ps}
 
 \end{document}
