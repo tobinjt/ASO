@@ -23,12 +23,26 @@ logparser.dvi: logparser.tex
 # dunno.
 logparser.dvi: logparser-flow-chart.ps 
 logparser.dvi: logparser-bibliography.bib
+logparser.dvi: plot-time.ps
+logparser.dvi: plot-factor.ps
 
 logparser-flow-chart.ps: logparser-flow-chart.dot
 	dot -o "$@" -Tps -x "$<"
 
+plot-time.ps: stats-normal.txt stats-normal-regex.txt
+plot-time.ps: plot-time.gpi
+	gnuplot "$<"
+
+plot-factor.ps: plot-factor.gpi
+	gnuplot "$<"
+
+plot-factor.ps: stats-factor.txt
+
+stats-factor.txt: stats-normal.txt stats-normal-regex.txt
+	paste -d ' ' stats-normal.txt stats-normal-regex.txt | awk '$$1 != "#" {print ($$9 * 100 / $$3) - 100 }' > "$@"
+
 clean:
-	rm -f *.dvi *.ps *.aux *.toc *.log
+	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg
 
 check:
 	chktex logparser.tex

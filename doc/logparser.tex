@@ -407,10 +407,8 @@ parser:
 \begin{itemize}
 
     \item The first matching rule wins: no further rules are tried against
-        that line,\footnote{With one exception, details are provided later
-        in Section~\ref{actions-in-detail}.} but there is a facility for
-        the specifying the order of the rules so that more specific rules
-        can be tried first.
+        that line, but there is a facility for specifying the order of
+        rules so that more specific rules can be tried first.
 
     \item Rules are completely self-contained and can be understood in
         isolation, without reference to any other rules.
@@ -454,41 +452,31 @@ Each rule defines the following:
         information about regular expressions in general.} to match the log
         line against.  The regex will first have several keywords expanded:
         this simplifies reading and writing rules, avoids needless
-        repetition of complex regex components, and allows the components
-        to be corrected and/or improved in one location.
+        repetition of complex regex components, allows the components
+        to be corrected and/or improved in one location, and makes each
+        regex largely self-documenting.
         
-        The following keywords are expanded:
-        
-        \texttt{\_\_SENDER\_\_, \_\_RECIPIENT\_\_, \_\_HELO\_\_,
-        \_\_HOSTNAME\_\_, \_\_IP\_\_, \newline\_\_SMTP\_CODE\_\_,
-        \_\_QUEUEID\_\_ and \_\_COMMAND\_\_.}
+        The following keywords are expanded (full explanations can be found
+        in the source code):
 
-        \_\_COMMAND\_\_ is an SMTP command, e.g. MAIL FROM\@; hopefully the
-        others are reasonably self explanatory.
+        \_\_SENDER\_\_, \_\_RECIPIENT\_\_, \_\_MESSAGE\_ID\_\_,
+        \_\_HELO\_\_, \newline \_\_EMAIL\_\_, \_\_HOSTNAME\_\_, \_\_IP\_\_,
+        \_\_IPv4\_\_, \_\_IPv6\_\_, \newline \_\_SMTP\_CODE\_\_,
+        \_\_RESTRICTION\_START\_\_, \_\_QUEUEID\_\_, \newline
+        \_\_COMMAND\_\_, \_\_SHORT\_CMD\_\_, \_\_DELAYS\_\_, \_\_DELAY\_\_,
+        \_\_DSN\_\_ and \_\_CONN\_USE\_\_.
+
 
         For efficiency the keywords are expanded and every rule's regex is
         compiled before attempting to parse the log file --- otherwise each
-        regex would be recompiled each time it was used, resulting in an
-        468.95\% slowdown.
-
-        Averaged over 10 test runs:
-
-        \begin{description} 
-
-            \item [Compiled once and saved:] run time was 55.47 seconds,
-                standard deviation was 0.247 seconds.
-
-            \item [Compiled every time and discarded:] run time was 260.14
-                seconds (4 minutes, 20.14 seconds) (468.95\% slower),
-                standard deviation was 0.96 seconds.
-
-        \end{description}
-
-        Logging to the database was disabled for the test runs.
-
-        XXX RERUN OVER MORE LOG FILES
-
-        XXX DO I NEED TO SAY ANYTHING MORE ABOUT THIS??
+        regex would be recompiled each time it was used, resulting in a
+        large, data dependent slowdown.  Graph \ref{normal regex vs discard
+        regex} shows execution times gathered over 93 log files, with and
+        without caching the regex; also shown on the graph are the file
+        sizes and number of lines in each file.  Graph \ref{normal regex vs
+        disarded regex factor} shows the percentage execution time increase
+        when not caching each regex.  Logging to the database was disabled
+        for the test runs.
 
     \item [result\_cols, connection\_cols] Specifies how the fields in the
         log line will be extracted.  The format is: \newline
@@ -1395,10 +1383,11 @@ always room for improvement.
 
 \section{Conclusion}
 
+\label{conclusion}
+
+
 \appendix
 
-
-\label{conclusion}
 
 \section{References}
 
@@ -1511,5 +1500,16 @@ XXX ADD RESOURCES/REFERENCES HERE AND THEN MAKE REFERENCES TO THEM FROM WITHIN T
 % Bibliography.
 \bibliographystyle{logparser-bibliography-style}
 \bibliography{logparser-bibliography}
+
+\section{Graphs}
+
+\subsection{Regex: cached vs compiled every time}
+\label{normal regex vs discard regex}
+\includegraphics{plot-time.ps}
+
+
+\subsection{Regex: percentage execution time increase}
+\label{normal regex vs disarded regex factor}
+\includegraphics{plot-factor.ps}
 
 \end{document}
