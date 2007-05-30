@@ -2,7 +2,7 @@ set xlabel "Log file"
 set grid
 
 set terminal postscript monochrome eps size 5.1,7.3
-set output "plot-cached-discarded.ps"
+set output "plot-normal-filesize-numlines.ps"
 # Don't continue the scales to the next round number; stop at the topmost point.
 set autoscale yfixmax
 set autoscale xfixmax
@@ -10,4 +10,8 @@ set autoscale xfixmax
 set key top left Left reverse
 
 plot "stats-normal.txt" using 3 with lines title "Compiled once", \
-    "stats-normal-regex.txt" using 3 with lines title "Compiled every time"
+    "file-sizes.txt" using :($2 / 1000) with lines \
+        title "File size / 10, in MB", \
+    "wc.txt" using :($2 / 10000) with lines \
+        title "Lines per file / 10000"
+

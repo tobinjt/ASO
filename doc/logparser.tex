@@ -555,11 +555,11 @@ Each rule defines the following:
         It is hoped that this will prove to have greater effectiveness as
         the number of rules grows; currently the effect is negligible
         in comparison to caching each compiled regex, but it still provides
-        approximately a 10\% performance increase.
+        approximately a 7\% -- 10\% performance increase.
 
     \item [priority] This is the user-configurable companion to
         rule\_order: rules with a higher priority will be tried first,
-        overriding rule\_order, allowing more specific rules to take
+        overriding rule\_order.  This allows more specific rules to take
         precedence over more general rules.
 
 \end{description}
@@ -582,34 +582,55 @@ NOQUEUE: reject: RCPT from example.com[10.1.1.1]:
   helo=<smtp.bar.baz>
 \end{verbatim}
 
-XXX CARL SUGGESTS EXPANDING ON THIS SOME MORE, BUT I DON'T KNOW HOW\@.
-PERHAPS WHEN THE ALGORITHM IS PROPERLY EXPLAINED IT'LL BE EASIER\@?  MAKE
-REFERENCES TO THE ALGORITHM, EXPLAIN MORE CLEARLY HOW THE FIELDS ARE USED,
-HOW THE RULE MATCHES, AND SO ON\@.  SAVE\_BY\_PID IS GONE NOW, USE A
-DIFFERENT EXAMPLE.
-
 % Don't reformat this!
 \begin{tabular}[]{ll}
 
+\textbf{Field}      & \textbf{Value}                                    \\
 name                & Unknown sender domain                             \\
 description         & We do not accept mail from unknown domains        \\
-program             & postfix/smtpd                                     \\
 restriction\_name   & reject\_unknown\_sender\_domain                   \\
-regex               & \verb!^<(__SENDER__)>: Sender address rejected: ! \\
-                    & \verb!  Domain not found; from=<\1> !             \\
-                    & \verb!  to=<(__RECIPIENT__)> proto=E?SMTP !       \\
-                    & \verb!  helo=<(__HELO__)>$!                       \\
-result\_cols        & recipient = 2; sender = 1                         \\
-connection\_cols    & helo = 3                                          \\
+postfix\_action     & REJECTED                                          \\
+program             & postfix/smtpd                                     \\
+regex               & \verb!^__RESTRICTION_START__ <(__SENDER__)>: !    \\
+                    & \verb!Sender address rejected: Domain not found;! \\
+                    & \verb!from=<\5> to=<(__RECIPIENT__)> !            \\
+                    & \verb!proto=E?SMTP helo=<(__HELO__)>$!            \\
+result\_cols        & recipient = 6; sender = 5                         \\
+connection\_cols    & helo = 7                                          \\
 result\_data        &                                                   \\
 connection\_data    &                                                   \\
-postfix\_action     & REJECTED                                          \\
-action              & SAVE\_BY\_PID                                     \\
-queueid             & 0                                                 \\
+action              & REJECTION                                         \\
+queueid             & 1                                                 \\
 rule\_order         & 0                                                 \\
 priority            & 0                                                 \\
 
 \end{tabular}
+
+The various fields are used as follows;
+
+\begin{description}
+
+    \item [name, description, restriction\_name and postfix\_action:] are
+        not \newline used by the algorithm, they serve to document the rule.
+
+    \item [program and regex:] If the program equals the program which
+        logged the line the regex will be matched against the line; if
+        successful the action will be called, if not the next rule will be
+        tried.
+
+    \item [action:] will be called if the regex matches successfully (see
+        Section \ref{actions-in-detail} for full details).
+
+    \item [result\_cols, connection\_cols, result\_data and
+        connection\_data:] are \newline used by the action to extract and
+        save data matched by the regex.
+
+    \item [queueid:] is used the extract the queueid matched by the regex,
+        so that mails can be found by queueid and actions performed on the
+        mail.
+
+\end{description}
+
 
 
 \section{Parsing algorithm}
@@ -742,10 +763,9 @@ Unfortunately it's not that easy.
         entered by the parent mail once it has been identified.  Quite
         apart from identifying mail injected in an unknown fashion, or bugs
         in the parser, unknown origin mails need to be marked as such
-        because they lack some data present in the parent mail, and must
+        because they lack some data present in the parent mail; they must
         copy that data from their parent before being entered in the
-        database.  XXX EITHER REMOVE THE LAST LINE OR EXPAND ON IT SOME
-        MORE\@.  FIGURE OUT WHY MORE DATA ISN'T REQUIRED\@.
+        database.
 
         The algorithm requirements are discussed in
         section~\ref{tracking-re-injected-mail}.
@@ -772,18 +792,17 @@ the possibility of handling each mail in isolation; the parser must be
 capable of handling multiple mails in parallel, each potentially at a
 different stage in its journey, without any interference between mails ---
 except in the minority of cases where intra-mail interference is required.
-I felt that the best way to implement this was to maintain state
-information for every unfinished mail and manipulate the appropriate mail
-correctly for each log line encountered.  The parser thus requires both a
-method of mapping log lines to the correct mail and a method of specifying
-the action the log line represents.  The former is achieved by using the
-pid of the smtpd to identify the correct mail during the initial phase,
-then switching to the queueid once the mail has been accepted.  The latter
-uses the action field of the rule which matched the log line, executing the
-code in the function named by the action.  From a high level viewpoint this
-design shares significant similarity with how an editor maintains state for
-multiple files and performs the actions the user initiates on the correct
-file.
+The best way to implement this is to maintain state information for every
+unfinished mail and manipulate the appropriate mail correctly for each log
+line encountered.  The parser thus requires both a method of mapping log
+lines to the correct mail and a method of specifying the action the log
+line represents.  The former is achieved by using the smtpd process id to
+identify the correct mail during the initial phase, then switching to the
+queueid once the mail has been accepted.  The latter uses the action field
+of the rule which matched the log line, executing the code in the function
+named by the action.  From a high level viewpoint this design shares
+significant similarity with how an editor maintains state for multiple
+files and performs the actions the user initiates on the correct file.
 
 Section~\ref{actions-in-detail} explains the actions in substantive detail;
 this section will omit such detail because it would clutter and confuse the
@@ -1112,7 +1131,7 @@ The most likely cause of mis-identification is if a mail generated
 internally by Postfix is identified as a bounce notification when it is a
 different type of message; arguably this is a benefit rather than a
 drawback, as future mails generated internally by Postfix will be handled
-correctly.  XXX FIND OUT IF DSNS FIT THE PATTERN.
+correctly.
 
 \subsubsection{Aborted delivery attempts}
 
@@ -1482,12 +1501,24 @@ always room for improvement.
 
 XXX ADD RESOURCES/REFERENCES HERE AND THEN MAKE REFERENCES TO THEM FROM WITHIN THE PAPER
 
+XXX CHANGE REFERENCES TO BIBLIOGRAPHY??  MERGE PREVIOUS SECTIONS??  PUT
+BIBLIOGRAPHY IN ITS OWN SECTION??
 
 % Bibliography.
 \bibliographystyle{logparser-bibliography-style}
 \bibliography{logparser-bibliography}
 
 \section{Graphs}
+
+\subsection{execution time vs file size vs number lines}
+\label{execution time vs file size vs number lines}
+\includegraphics{plot-normal-filesize-numlines.ps}
+
+
+\subsection{execution time vs file size vs number lines factor}
+\label{execution time vs file size vs number lines factor}
+\includegraphics{plot-normal-filesize-numlines-factor.ps}
+
 
 \subsection{Regex: cached vs compiled every time}
 \label{normal regex vs discard regex}

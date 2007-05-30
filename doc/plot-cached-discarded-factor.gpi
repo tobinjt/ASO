@@ -1,4 +1,3 @@
-
 set xlabel "Log file"
 set ylabel "Percentage increase of compiled once over compiled and discarded"
 set grid

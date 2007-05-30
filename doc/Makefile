@@ -24,6 +24,7 @@ logparser.dvi: logparser.tex
 logparser.dvi: logparser-flow-chart.ps logparser-bibliography.bib
 logparser.dvi: plot-cached-discarded.ps plot-cached-discarded-factor.ps
 logparser.dvi: plot-normal-shuffle-reverse.ps plot-normal-shuffle-reverse-factor.ps
+logparser.dvi: plot-normal-filesize-numlines-factor.ps plot-normal-filesize-numlines.ps
 
 logparser-flow-chart.ps: logparser-flow-chart.dot
 	dot -o "$@" -Tps -x "$<"
@@ -32,9 +33,17 @@ plot-cached-discarded.ps: stats-cached.txt stats-discarded.txt
 plot-cached-discarded-factor.ps: stats-cached-discarded-factor.txt
 plot-normal-shuffle-reverse.ps: stats-normal.txt stats-shuffle.txt stats-reverse.txt
 plot-normal-shuffle-reverse-factor.ps: stats-normal-shuffle-reverse-factor.txt
+plot-normal-filesize-numlines-factor.ps: stats-normal-filesize-numlines-factor.txt
+plot-normal-filesize-numlines.ps: stats-normal.txt file-sizes.txt wc.txt
 
 plot-%.ps: plot-%.gpi
 	gnuplot "$<"
+
+stats-normal-stripped.txt: stats-normal.txt
+	sed -e '/^#/d' "$<" > "$@"
+
+stats-normal-filesize-numlines-factor.txt: stats-normal-stripped.txt wc.txt file-sizes.txt
+	paste -d ' ' $^ | awk 'BEGIN { print "# line-count file-size"; }; $$1 != "#" {print (($$3 * 10 * 1000 / $$8)), " ", (($$3 * 1000 * 1000 / $$11)) }' > "$@"
 
 stats-cached-discarded-factor.txt: stats-cached.txt stats-discarded.txt
 	paste -d ' ' $^ | awk '$$1 != "#" {print ($$9 * 100 / $$3) - 100 }' > "$@"
