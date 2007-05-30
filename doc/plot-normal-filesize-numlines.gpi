@@ -10,8 +10,8 @@ set autoscale xfixmax
 set key top left Left reverse
 
 plot "stats-normal.txt" using 3 with lines title "Compiled once", \
-    "file-sizes.txt" using :($2 / 1000) with lines \
-        title "File size / 10, in MB", \
+    "file-sizes.txt" using :($2 / 1000 / 1000) with lines \
+        title "File size in MB", \
     "wc.txt" using :($2 / 10000) with lines \
         title "Lines per file / 10000"
 

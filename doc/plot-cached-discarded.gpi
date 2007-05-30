@@ -10,4 +10,4 @@ set autoscale xfixmax
 set key top left Left reverse
 
 plot "stats-normal.txt" using 3 with lines title "Compiled once", \
-    "stats-normal-regex.txt" using 3 with lines title "Compiled every time"
+    "stats-discarded.txt" using 3 with lines title "Compiled every time"
