@@ -6,15 +6,15 @@ logparser.ps: logparser.dvi
 logparser.dvi: logparser.tex
 	# Run latex to handle \cite: latex will add \cite references to
 	# logparser.aux.
-	latex -interaction=nonstopmode "$<"           || rm -f "$@"
+	latex -interaction=nonstopmode "$<"           || (rm -f "$@"; false)
 	# Run bibtex to extract the right entries from logparser-bibliography.bib
 	# into logparser-bibliography.bbl
-	bibtex $$( echo "$<" | sed -e 's/.tex$$//' )  || rm -f "$@"
+	bibtex $$( echo "$<" | sed -e 's/.tex$$//' )  || (rm -f "$@"; false)
 	# Run latex again to pull in logparser-bibliography.bbl.
-	latex -interaction=nonstopmode "$<"           || rm -f "$@"
+	latex -interaction=nonstopmode "$<"           || (rm -f "$@"; false)
 	# Run latex for a third time to fix up references from logparser.tex to
 	# logparser-bibliography.bbl.
-	latex -interaction=nonstopmode "$<"           || rm -f "$@"
+	latex -interaction=nonstopmode "$<"           || (rm -f "$@"; false)
 	# Finally done.
 
 # This will cause logparser.dvi to be remade when logparser-flow-chart.ps
