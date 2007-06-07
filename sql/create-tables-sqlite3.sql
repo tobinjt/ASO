@@ -53,12 +53,11 @@ CREATE TABLE connections (
     -- The IP address of the client
     client_ip               text    NOT NULL,
     -- The hostname of the client
-    -- TODO use NULL if it's not known
-    client_hostname         text,
+    client_hostname         text    NOT NULL,
     -- The IP address of the server
     server_ip               text    NOT NULL,
     -- The hostname of the server
-    server_hostname         text,
+    server_hostname         text    NOT NULL,
     -- The name used in the HELO command
     -- TODO: how do I deal with clients who RSET and HELO again?
     -- TODO: I can't get the HELO for successful mails.
@@ -77,8 +76,6 @@ CREATE TABLE results (
     connection_id           integer NOT NULL,
     -- Reference to rules->id
     rule_id                 integer NOT NULL,
-    -- Accept/defer/reject whatever
-    result                  text    NOT NULL,
     -- True if it was a warning, false if it took effect
     warning                 integer NOT NULL DEFAULT 0,
     -- The SMTP code sent to the client
