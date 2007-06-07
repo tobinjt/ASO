@@ -35,11 +35,14 @@ test.%: ../../../../logs/mail.log-%
 	make -s db
 	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser "$<"                        > state      2> warnings';      wc state      warnings;      date ) 2>&1 ) | tee -a results
 
-db:
-	( cd ../sql/; perl setup-database create-tables-sqlite3.sql populate-rules.sql )
+../sql/create-tables-sqlite3-generated.sql: ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm
+	(cd ../sql && perl make_schema > "$@")
+
+db: ../sql/create-tables-sqlite3-generated.sql
+	( cd ../sql/ && perl setup-database create-tables-sqlite3-generated.sql populate-rules.sql )
 
 db-clean:
-	( cd ../sql/; perl setup-database cleanup.sql )
+	( cd ../sql/ && perl setup-database cleanup.sql )
 
 # A full profile run on one logfile takes upwards of an hour, blocking any
 # development during that time.  Create a copy of the directories required and
@@ -132,5 +135,7 @@ summary-some:
 	make WARNINGS=warnings-some STATE=state-some summarize
 
 summarize:
-	( echo "${WARNINGS} summary: "; grep ^logparser "${WARNINGS}" | grep -v 'Starting to read' | cut -d ' ' -f 4- | sort | uniq -c | sort -n ) | tee -a results
+	# Delete any lines not matching ^logparser; delete any lines not having 7
+	# colons; substitute the first seven colon-delimited fields with nothing.
+	( echo "${WARNINGS} summary: "; sed -e '/^logparser/!d; /^\([^:]\+:\)\{7\}/!d; s/^\([^:]\+:\)\{7\} \?//' "${WARNINGS}" | sort | uniq -c | sort -n ) | tee -a results
 	( echo -n "${STATE}: "; grep -c ^.queueids "${STATE}" ) | tee -a results

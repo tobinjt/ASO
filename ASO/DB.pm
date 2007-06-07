@@ -86,7 +86,7 @@ use warnings;
 package ASO::DB;
 use base qw(DBIx::Class::Schema);
 
-my @classes = qw(
+our @classes = qw(
     Connection
     Result
     Rule

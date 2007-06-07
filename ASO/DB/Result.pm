@@ -102,37 +102,64 @@ use base qw{DBIx::Class};
 use base qw{ASO::DB::Base};
 
 my %cols = (
+    # Reference to connections->id
     connection_id   => {
+        sql             => q{NOT NULL},
+        type            => q{integer},
     },
+    # Reference to rules->id
     rule_id         => {
         required        => 1,
+        sql             => q{NOT NULL},
+        type            => q{integer},
     },
-    postfix_action  => {
-        required        => 1,
-    },
+    # True if it was a warning, false if it took effect
     warning         => {
+        sql             => q{NOT NULL DEFAULT 0},
+        type            => q{integer},
     },
+    # The SMTP code sent to the client
     smtp_code       => {
         required        => 1,
-        result_cols    => 1,
+        result_cols     => 1,
+        sql             => q{NOT NULL},
+        type            => q{text},
     },
+    # The MAIL FROM: <address>; may be <>, so can be null.
     # sender changes if the connection is reused.
     sender          => {
         required        => 1,
-        result_cols    => 1,
+        result_cols     => 1,
+        sql             => q{},
+        type            => q{text},
     },
+    # The recipient; checks after DATA won't have a recipient, so allow it to
+    # be null.
     recipient       => {
         required        => 1,
-        result_cols    => 1,
+        result_cols     => 1,
+        sql             => q{},
+        type            => q{text},
     },
+    # The message-id.  Useful when trying to figure whether the mail is a
+    # bounce or not, I dunno if it's of any great use otherwise.  Will be NULL
+    # for most results.
     message_id      => {
         result_cols    => 1,
+        sql             => q{},
+        type            => q{text},
     },
+    # A place to plop anything not already covered.
     data            => {
         result_cols    => 1,
+        sql             => q{},
+        type            => q{text},
     },
+    # The timestamp of the result
     timestamp       => {
         required        => 1,
+        sql             => q{},
+        type            => q{integer},
     },
 );
 
@@ -173,8 +200,23 @@ sub result_cols_columns {
     return $self->col_grep(q{result_cols});
 }
 
+=over 4
+
+=item $self->table_name()
+
+Returns the name of the table in the database, "connections" in this case.
+
+=back
+
+=cut
+
+sub table_name {
+    my ($self) = @_;
+    return q{results};
+}
+
 __PACKAGE__->load_components(qw(PK::Auto Core));
-__PACKAGE__->table(q{results});
+__PACKAGE__->table(table_name());
 __PACKAGE__->add_columns(
     keys %cols
 );

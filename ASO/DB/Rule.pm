@@ -177,34 +177,85 @@ rules to take precedence over more general rules.
 
 my %cols = (
     id                  => {
+        sql                 => q{NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE},
+        type                => q{integer},
     },
     name                => {
+        sql                 => q{NOT NULL UNIQUE},
+        type                => q{text},
     },
     description         => {
+        sql                 => q{NOT NULL},
+        type                => q{text},
     },
+    # The program the rule applies to: smtpd, qmgr, etc.
     program             => {
+        sql                 => q{NOT NULL},
+        type                => q{text},
     },
+    # A regex to parse the line.
     regex               => {
+        sql                 => q{NOT NULL},
+        type                => q{text},
     },
+    # This is how we extract the matched fields from the regex: 
+    # result_cols and connection_cols specify fields to go in the result and
+    # connection table respectively; the format is:
+    # hostname = 1; helo = 2; sender = 4;
+    # i.e. semi-colon seperated assignment statements, with the column name on
+    # the left and the match from the regex ($1, $2 etc) on the right hand side
+    # (without $).
     result_cols         => {
+        sql                 => q{NOT NULL},
+        type                => q{text},
     },
     connection_cols     => {
+        sql                 => q{NOT NULL},
+        type                => q{text},
     },
+    # The action to take: IGNORE, CONNECT, DISCONNECT . . .
     action              => {
+        sql                 => q{NOT NULL},
+        type                => q{text},
     },
+    # The regex above should give the queueid; this give the index of the match
+    # e.g. $1, $5, whatever.  smtpd rules won't need this, as restriction_start
+    # handles it for them.
     queueid             => {
+        sql                 => q{NOT NULL},
+        type                => q{integer},
     },
+    # The order to apply the rules in: lowest first; this is automatically
+    # updates after every run of the program.
     rule_order          => {
+        sql                 => q{NOT NULL DEFAULT 0},
+        type                => q{integer},
     },
+    # This is the user-configurable part of the rule ordering; it supercedes
+    # rule_order, and won't be changed by the program.  Higher goes first.
     priority            => {
+        sql                 => q{NOT NULL DEFAULT 0},
+        type                => q{integer},
     },
+    # Specifies one of IGNORED, INFO, BOUNCED, EXPIRED, SENT, ACCEPTED or
+    # REJECTED, giving the action Postfix performed to generate the log line.
     postfix_action      => {
+        sql                 => q{NOT NULL},
+        type                => q{text},
     },
+    # additional data to be saved; same format as result_cols, for now.
     result_data         => {
+        sql                 => q{NOT NULL DEFAULT ''},
+        type                => q{text},
     },
     connection_data     => {
+        sql                 => q{NOT NULL DEFAULT ''},
+        type                => q{text},
     },
+    # The name of the restriction which caused the rejection.
     restriction_name    => {
+        sql                 => q{NOT NULL DEFAULT ''},
+        type                => q{text},
     },
 );
 
@@ -232,8 +283,23 @@ sub get_cols {
 # Sneakily call get_cols() to improve coverage.  Silly, I know.
 get_cols();
 
+=over 4
+
+=item $self->table_name()
+
+Returns the name of the table in the database, "rules" in this case.
+
+=back
+
+=cut
+
+sub table_name {
+    my ($self) = @_;
+    return q{rules};
+}
+
 __PACKAGE__->load_components(qw(PK::Auto Core));
-__PACKAGE__->table(q{rules});
+__PACKAGE__->table(table_name());
 __PACKAGE__->add_columns(
     keys %cols
 );

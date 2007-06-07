@@ -759,7 +759,7 @@ sub REJECTION {
 =item MAIL_PICKED_FOR_DELIVERY
 
 This action represents Postfix picking a mail from the queue to deliver.  This
-action is used for both pickup and cleanup due to out of order log lines.
+action is used for both qmgr and cleanup due to out of order log lines.
 
 =begin internals
 
@@ -1325,6 +1325,8 @@ __SENDER__, __RECIPIENT__, __MESSAGE_ID__, __HELO__, __EMAIL__, __HOSTNAME__,
 __IP__, __IPv4__, __IPv6__, __SMTP_CODE__, __RESTRICTION_START__, __QUEUEID__,
 __COMMAND__, __SHORT_CMD__, __DELAYS__, __DELAY__, __DSN__ and __CONN_USE__.
 
+XXX TODO: document the matched fields in __RESTRICTION_START__
+
 The names should be reasonably self-explanatory.
 
 =back
@@ -1757,7 +1759,6 @@ sub commit_connection {
         my $result_in_db = $self->{dbix}->resultset(q{Result})->new_result({
                 connection_id   => $connection_id,
                 rule_id         => $result->{rule_id},
-                postfix_action  => $result->{postfix_action},
                 #warning         => $result->{warning},
                 smtp_code       => $result->{smtp_code},
                 sender          => $result->{sender},
@@ -1875,7 +1876,8 @@ making navigating through error output easier.
 
 sub my_warn {
     my ($self, $first_line, @rest) = @_;
-    my $prefix = qq{$0: } . localtime() . qq{ $self->{current_logfile}: $.: };
+    my $timestamp = localtime;
+    my $prefix = qq{$0: $timestamp: $self->{current_logfile}: $.: };
 
     if (@rest) {
         # Make it easy to fold warnings

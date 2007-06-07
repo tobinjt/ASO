@@ -1,0 +1,34 @@
+#!/usr/bin/env perl
+
+# Create the database schema from the information in the ORM modules, to stop
+# differences creeping in between the two.
+# $Id$
+
+use strict;
+use warnings;
+
+use lib q{..};
+use ASO::DB;
+
+foreach my $orm (@ASO::DB::classes) {
+    my $dummy = bless {}, qq{ASO::DB::$orm};
+    my $table_name = $dummy->table_name();
+    print <<"SQL";
+DROP TABLE IF EXISTS $table_name;
+
+CREATE TABLE $table_name (
+SQL
+    my %cols = $dummy->get_cols();
+    my @cols;
+    foreach my $col (sort keys %cols) {
+        my $sql = $cols{$col}->{sql};
+        my $type = $cols{$col}->{type};
+        my $spec = qq{    $col $type};
+        if ($sql ne q{}) {
+            $spec .= qq{ $sql};
+        }
+        push @cols, $spec;
+    }
+    print join qq{,\n}, @cols;
+    print qq{\n);\n\n\n};
+}

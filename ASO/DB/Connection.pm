@@ -107,7 +107,12 @@ for details): server_ip, server_hostname, client_ip, client_hostname, helo.
 
 my %cols = (
     id                  => {
+        sql                 => q{NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE},
+        type                => q{integer},
     },
+    # Sometimes we're the client (we're sending mail), sometimes we're the
+    # server (we're receiving mail).
+    # The IP address of the server
     server_ip           => {
         required            => 1,
         nochange            => 1,
@@ -117,7 +122,10 @@ my %cols = (
             q{::1}              => 1,
         },
         connection_cols     => 1,
+        sql                 => q{NOT NULL},
+        type                => q{text},
     },
+    # The hostname of the server
     server_hostname     => {
         required            => 1,
         nochange            => 1,
@@ -126,7 +134,10 @@ my %cols = (
             q{localhost}        => 1,
         },
         connection_cols     => 1,
+        sql                 => q{NOT NULL},
+        type                => q{text},
     },
+    # The IP address of the client
     client_ip           => {
         required            => 1,
         nochange            => 1,
@@ -139,7 +150,10 @@ my %cols = (
             q{::1}              => 1,
         },
         connection_cols     => 1,
+        sql                 => q{NOT NULL},
+        type                => q{text},
     },
+    # The hostname of the client
     client_hostname     => {
         required            => 1,
         nochange            => 1,
@@ -150,18 +164,33 @@ my %cols = (
             q{localhost}        => 1,
         },
         connection_cols     => 1,
+        sql                 => q{NOT NULL},
+        type                => q{text},
     },
+    # The name used in the HELO command
+    # TODO: how do I deal with clients who RSET and HELO again?
+    # TODO: I can't get the HELO for successful mails.
     # Believe it or not, sometimes the helo changes.  I wonder if a policy
     # server would be good for this?
     helo                => {
         connection_cols     => 1,
         silent_overwrite    => undef,
+        sql                 => q{},
+        type                => q{text},
     },
+    # The queueid of the mail
     queueid             => {
+        sql                 => q{NOT NULL DEFAULT 'NOQUEUE'},
+        type                => q{text},
     },
+    # Unix timestamp giving the start and end of the connection
     start               => {
+        sql                 => q{NOT NULL},
+        type                => q{integer},
     },
     end                 => {
+        sql                 => q{NOT NULL},
+        type                => q{integer},
     },
 );
 
@@ -236,8 +265,23 @@ sub silent_discard_columns {
     return $self->col_grep(q{silent_discard});
 }
 
+=over 4
+
+=item $self->table_name()
+
+Returns the name of the table in the database, "connections" in this case.
+
+=back
+
+=cut
+
+sub table_name {
+    my ($self) = @_;
+    return q{connections};
+}
+
 __PACKAGE__->load_components(qw(PK::Auto Core));
-__PACKAGE__->table(q{connections});
+__PACKAGE__->table(table_name());
 __PACKAGE__->add_columns(
     keys %cols
 );
