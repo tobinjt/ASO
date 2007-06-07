@@ -54,10 +54,10 @@ profile:
 profile2:
 	echo "profiling started"; date
 	echo "This will take over an hour - 70 minutes or so last time."
-	for profile in Profile DProf SmallProf Cover; do \
-		make "profile.$$profile"; 				\
-		mv "warnings" "warnings.$$profile";		\
-		mv "rejects" "rejects.$$profile";		\
+	for profile in Profile DProf SmallProf Cover; do    \
+		make "profile.$$profile";                       \
+		mv "warnings" "warnings.$$profile";             \
+		mv "state" "state.$$profile";                   \
 	done
 	echo "profiling ended"; date
 
@@ -101,6 +101,7 @@ cover: profile.Cover
 
 profile.Cover:
 	# DeveL::Cover; generates coverage reports.
+	perl cover -delete
 	PERL5OPT=-d:Cover make test
 	perl cover
 
