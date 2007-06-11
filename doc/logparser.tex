@@ -1,15 +1,24 @@
 % $Id$
 \documentclass[a4paper,12pt,draft]{article}
 
-% Better typesetting of URLs.
-\usepackage{url}
 % Include images
 \usepackage[final]{graphicx}
 % Change how nested enumerate environments are labelled.
 \renewcommand{\labelenumii}{\roman{enumii}:}
 \renewcommand{\refname}{Bibliography}
+% Add the bibliography into the table of contents.
 \usepackage[section,numbib,nottoc]{tocbibind}
-
+% When creating a PDF make the table of contents into links to the pages
+% (without horrible red borders) and include bookmarks.
+\usepackage{hyperref}
+\hypersetup{%
+    pdftitle    = {Parsing Postfix log files},
+    pdfauthor   = {John Tobin},
+    final,
+    pdfborder   = {0 0 0},
+    breaklinks,
+}
+    
 \begin{document}
 
 \title{Parsing Postfix log files}
@@ -37,6 +46,8 @@ XXX WHAT IS THE CONCLUSION???  FIRST THING IS TO COMPARE TO OTHER PARSERS
 REVIEWED
 
 XXX LOOK AT citeseer.com AND scholar.google.com FOR RELATED PAPERS
+
+XXX LOTS MORE REFERENCES
 
 \newpage
 \tableofcontents
@@ -252,7 +263,109 @@ CREATE TRIGGER ON INSERT INTO results
 \subsection{Database schema}
 \label{database schema}
 
-XXX WRITE THIS
+The database schema can be conceptually divided in two: the rules which are
+used to parse log files, and the data saved from the parsing of log files.
+Rules have the fields required to parse the log lines, extract data to be
+saved, and cause the correct action to be executed; they also have several
+fields which aid the user in understanding what each rule parses.  The
+rules are described in detail in section~\ref{rules} and the fields in
+particular in section~\ref{rule attributes}, and that discussion won't be
+repeated here.  The data saved from parsing the logs is divided into two
+tables: connections and results.
+
+\subsubsection{Connections table}
+
+Every connection and/or mail will have a single entry in the connections
+table containing the following fields:
+
+\begin{description}
+
+    \item [id] This field uniquely identifies the row.
+
+    \item [server\_ip] The IP address (IPv4 or IPv6) of the server: the
+        local server when receiving mail, the remote server when sending
+        mail.
+
+    \item [server\_hostname] The hostname of the server, it will be
+        \textit{unknown} if the IP address could not be resolved to a
+        hostname via DNS.
+
+    \item [client\_ip] The client IP address (IPv4 or IPv6): the remote
+        server when receiving mail, the local server when sending mail.
+
+    \item [client\_hostname] The hostname of the client, it will be
+        \textit{unknown} if the IP address could not be resolved to a
+        hostname via DNS.
+
+    \item [helo] The hostname used in the HELO command.  The HELO
+        occasionally changes during a connection, presumably because spam
+        or virus senders think it's a good idea.  By default Postfix only
+        logs this when it rejects an SMTP command, but it is trivial to log
+        this for every connection:
+
+        \texttt{smtpd\_helo\_restrictions = \newline
+        \hspace*{2em} check\_helo\_access regexp:/etc/postfix/log\_helo.regex}
+
+        Where \texttt{/etc/postfix/log\_helo.regex} contains:
+
+        \texttt{/./ WARN Logging HELO for diagnostic purposes}
+
+    \item [queueid] The queueid of the mail, or \textit{NOQUEUE} if a mail
+        wasn't accepted.
+
+    \item [start] The timestamp of the first log line, in seconds since the
+        epoch.
+
+    \item [end] The timestamp of the last log line, in seconds since the
+        epoch.
+
+\end{description}
+
+\subsubsection{Results table}
+
+Every log line corresponding to Postfix performing an action other than
+INFO will have an entry in the results table, e.g. rejecting an SMTP
+command, delivering a mail, or bouncing a mail.  Any log line where the
+Postfix action is INFO is not interesting in and of itself, but provides
+additional information which will be saved with other results.
+
+\begin{description}
+
+    \item [connection\_id] A reference to the entry in the connections
+        table this results entry belongs to.
+
+    \item [rule\_id] A reference to the entry in the rules table which
+        matched the log line and created this result.
+
+    \item [warning] Postfix can log a warning instead of rejecting an SMTP
+        command - a facility that is quite useful for testing new
+        restrictions.  This field will be 1 if the log line parsed was a
+        warning rather than a real rejection, or 0 for a real rejection or
+        any other result.
+
+    \item [smtp\_code] The SMTP code extracted from the log line.  In
+        general an SMTP code is only present for a rejection or final
+        delivery; results missing an SMTP code will duplicate the SMTP code
+        of other results.  Some final delivery log lines don't contain an
+        SMTP code: in those cases the code is faked based on the success or
+        failure represented by the log line.
+
+    \item [sender] The sender's email address.  This can change during one
+        single connection, when the connection is reused to send multiple
+        mails.
+
+    \item [recipient] The recipient address.
+
+    \item [message\_id] The message-id of the accepted mail, or NULL if no
+        mail was accepted.
+
+    \item [data] A field available for anything not covered by other
+        fields, e.g. the rejection message from an RBL.
+
+    \item [timestamp] The time the line was logged, in seconds since the
+        epoch.
+
+\end{description}
 
 \subsection{SMTP background}
 \label{smtp background}
@@ -300,11 +413,11 @@ encountered scenarios are:
 
 \begin{itemize}
 
-    \item Checking Sender Policy Framework
-        records~\cite{openspf},~\cite{wikipedia-spf}.  SPF records specify
-        which mail servers are allowed to send mail claiming to be from a
-        particular domain.  The intention is to reduce spam from faked
-        sender addresses, backscatter~\cite{postfix-backscatter} and
+    \item Checking Sender Policy Framework records~\cite{openspf,
+        wikipedia-spf}.  SPF records specify which mail servers are allowed
+        to send mail claiming to be from a particular domain.  The
+        intention is to reduce spam from faked sender addresses,
+        backscatter~\cite{postfix-backscatter} and
         joe-jobs~\cite{wikipedia-joe-job}; however there has been a lot of
         resistance to the proposal because it breaks or vastly complicates
         some features of SMTP\@.
@@ -466,6 +579,8 @@ parser:
 XXX DESCRIBE IT IN LEFT\@: RIGHT PRODUCTION TERMS, IF POSSIBLE\@.
 
 \subsection{Rule attributes}
+
+\label{rule attributes}
 
 Each rule defines the following:
 
@@ -1453,7 +1568,7 @@ XXX THIS NEEDS TO BE EXPANDED
     \item [pflogsumm.pl] \textit{pflogsumm.pl is designed to provide an
         over-view of postfix activity, with just enough detail to give the
         administrator a ``heads up'' for potential trouble spots.\/}
-        \url{http://jimsun.linxnet.com/postfix_contrib.html}
+        \newline \url{http://jimsun.linxnet.com/postfix_contrib.html}
 
     \item [Sawmill Universal Log File Analysis and Reporting] is a
         general purpose commercial product which parses 687 log file
@@ -1558,8 +1673,7 @@ XXX ADD RESOURCES/REFERENCES HERE AND THEN MAKE REFERENCES TO THEM FROM WITHIN T
 \includegraphics{plot-normal-filesize-numlines.ps}
 
 
-\subsection{Ratio of file size to execution time and number of lines to
-execution time}
+\subsection{Ratio of file size and number of lines to execution time}
 \label{execution time vs file size vs number lines factor}
 \includegraphics{plot-normal-filesize-numlines-factor.ps}
 
@@ -1578,8 +1692,7 @@ execution time}
 \label{normal vs shuffled vs reversed ordering}
 \includegraphics{plot-normal-shuffle-reverse.ps}
 
-\subsection{Percentage increase of shuffled over normal and reversed over
-normal}
+\subsection{Percentage increase of shuffled and reversed over normal}
 \label{normal vs shuffled vs reversed ordering factor}
 \includegraphics{plot-normal-shuffle-reverse-factor.ps}
 
