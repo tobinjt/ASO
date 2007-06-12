@@ -398,7 +398,45 @@ the software.}
 
 \subsubsection{Mixing and matching Postfix restrictions}
 
-XXX TO BE WRITTEN
+Postfix restrictions are documented fully in~\cite{smtpd_access_readme,
+smtpd_per_user_control, policy-servers}, the following is a brief overview.
+
+Postfix uses several restriction lists (each containing zero or more
+restrictions) to decide the fate of an SMTP command, one list for each
+stage of the SMTP conversation: client connection, HELO command, MAIL FROM
+command, RCPT TO command (possibly multiple times), DATA command, and end
+of data.  By default restriction lists will not be evaluated until the
+first RCPT TO command is received, because some clients don't deal with
+earlier rejections properly; a side benefit of this delay is that Postfix
+has more information available when logging the rejection.\footnote{The
+\texttt{smtpd\_delay\_reject} parameter controls this behaviour.}  Postfix
+uses simple lookup tables as the deciding factor for some restrictions,
+e.g. \texttt{check\_client\_access~\nolinebreak
+cidr:/etc/postfix/client\_access}\footnote{\texttt{cidr} is the type of the
+lookup table.} will check whether the IP address of the connected client
+matches the left hand side of each line in the file and will return the
+right hand side of the first matching line.  Other restrictions determine
+their result in different ways, e.g. \texttt{reject\_rbl\_client
+some.rbl.com} checks whether the IP address of the client is present in the
+listed RBL.
+
+Each restriction is evaluated to produce a result of \textit{reject\/},
+\textit{permit\/}, \textit{dunno\/} or the name of another restriction to
+be evaluated.\footnote{Other results are possible, for full details
+see~\cite{smtpd_access_readme, smtpd_per_user_control, policy-servers}.}
+The meaning of \textit{permit\/} and \textit{reject\/} is fairly obvious;
+\textit{dunno\/} means to stop evaluating the current restriction and
+continue with the next restriction in the list, allowing more specific
+cases to be handled differently from more general cases.  When the result
+is another restriction Postfix will evaluate the new restriction, allowing
+restrictions to be chosen based on the client IP address, HELO hostname,
+sending address, recipient address, etc.  The administrator can define new
+restrictions as a list of existing restrictions, allowing arbitrarily long
+and complex sequences of lookups and restrictions.
+
+This description is necessarily brief, for further details
+see~\cite{smtpd_access_readme, smtpd_per_user_control, policy-servers}.
+
 
 \subsubsection{Policy servers}
 
