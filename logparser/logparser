@@ -29,6 +29,7 @@ if (not @logs) {
 
 # Save the startup times seperately, when profiling with Devel::Profile.
 devel_profile_startup();
+set_SmallProf_packages();
 
 my $parser = ASO::Parser->new({
         data_source => q{dbi:SQLite:dbname=../sql/db.sq3},
@@ -72,6 +73,19 @@ sub devel_profile_startup {
         }
         rename $filename, qq{$filename.startup}
             or warn qq{$0: failed renaming $filename: $!\n};
+    }
+}
+
+sub set_SmallProf_packages {
+    if (exists $INC{q{Devel/SmallProf.pm}}) {
+        %DB::packages = (
+            q{main}                 => 1,
+            q{ASO::DB}              => 1,
+            q{ASO::DB::Connection}  => 1,
+            q{ASO::DB::Result}      => 1,
+            q{ASO::DB::Rule}        => 1,
+            q{ASO::Parser}          => 1,
+        );
     }
 }
 

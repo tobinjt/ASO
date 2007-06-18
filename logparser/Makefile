@@ -22,17 +22,16 @@ copy.working:
 
 test: test.20070428
 
-test-list: db
+test-list:
 	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser ${LOG-LIST}                 > state-list 2> warnings-list'; wc state-list warnings-list; date ) 2>&1 ) | tee -a results
 
-test-some: db
+test-some:
 	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( < logs-some           ) > state-some 2> warnings-some'; wc state-some warnings-some; date ) 2>&1 ) | tee -a results
 
-test-all: db
+test-all:
 	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser ../../../../logs/mail.log-* > state-all  2> warnings-all';  wc state-all  warnings-all;  date ) 2>&1 ) | tee -a results
 
 test.%: ../../../../logs/mail.log-%
-	make -s db
 	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser "$<"                        > state      2> warnings';      wc state      warnings;      date ) 2>&1 ) | tee -a results
 
 ../sql/create-tables-sqlite3-generated.sql: ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm
@@ -104,7 +103,7 @@ cover: profile.Cover
 
 profile.Cover:
 	# DeveL::Cover; generates coverage reports.
-	perl cover -delete
+	if [ -d cover_db ] ; then perl cover -delete; fi
 	PERL5OPT=-d:Cover make test
 	perl cover
 
