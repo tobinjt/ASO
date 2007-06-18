@@ -1,7 +1,7 @@
 set xlabel "Log file"
 set grid
 
-set terminal postscript monochrome eps size 5.1,7.3
+set terminal postscript monochrome eps size 5.1,7.4
 set output "plot-normal-filesize-numlines.ps"
 # Don't continue the scales to the next round number; stop at the topmost point.
 set autoscale yfixmax
@@ -9,7 +9,7 @@ set autoscale xfixmax
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
 
-plot "stats-normal.txt" using 3 with lines title "Compiled once", \
+plot "stats-normal.txt" using 3 with lines title "Execution time in seconds", \
     "file-sizes.txt" using :($2 / 1000 / 1000) with lines \
         title "File size in MB", \
     "wc.txt" using :($2 / 10000) with lines \

@@ -55,7 +55,7 @@ stats-normal-shuffle-reverse-factor.txt: stats-normal.txt stats-shuffle.txt stat
 	paste -d ' ' $^ | awk '$$1 != "#" {print (($$9 * 100 / $$3) - 100), " ", (($$15 * 100 / $$3) - 100) }' > "$@"
 
 clean:
-	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf
+	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out
 
 check:
 	chktex logparser.tex
