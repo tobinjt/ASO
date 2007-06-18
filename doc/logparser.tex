@@ -45,14 +45,14 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 XXX WHAT IS THE CONCLUSION???  FIRST THING IS TO COMPARE TO OTHER PARSERS
 REVIEWED
 
-XXX LOOK AT citeseer.com AND scholar.google.com FOR RELATED PAPERS.  REVIEW
-EACH PAPER, WRITING AN ABSTRACT FOR IT: WHAT'S THE SAME, WHAT'S DIFFERENT,
-PERFORMANCE AND \newline COMPLETENESS COMPARISON.  FROM THIS I'LL GET AN
-OVERALL PICTURE, AND I CAN WORK REFERENCES TO THE PAPERS INTO THIS PAPER,
-PLUS MAYBE A PRIOR ART SECTION.
+XXX LOOK AT citeseer.com AND scholar.google.com FOR RELATED PAPERS\@.
+REVIEW EACH PAPER, WRITING AN ABSTRACT FOR IT\@: WHAT'S THE SAME, WHAT'S
+DIFFERENT, PERFORMANCE AND \newline COMPLETENESS COMPARISON\@.  FROM THIS
+I'LL GET AN OVERALL PICTURE, AND I CAN WORK REFERENCES TO THE PAPERS INTO
+THIS PAPER, PLUS MAYBE A PRIOR ART SECTION\@.
 
-XXX TURN OFF RESTRICTIONS FOR ME AND SEE HOW WELL SPAMASSASSIN DEALS
-WITH THE RESULTING MAILS; FALSE POSITIVES, FALSE NEGATIVES, ETC.
+XXX TURN OFF RESTRICTIONS FOR ME AND SEE HOW WELL SPAMASSASSIN DEALS WITH
+THE RESULTING MAILS\@; FALSE POSITIVES, FALSE NEGATIVES, ETC\@.
 
 XXX LOTS MORE REFERENCES
 
@@ -294,15 +294,15 @@ table containing the following fields:
         mail.
 
     \item [server\_hostname] The hostname of the server, it will be
-        \textit{unknown} if the IP address could not be resolved to a
-        hostname via DNS.
+        \textit{unknown\/} if the IP address could not be resolved to a
+        hostname via DNS\@.
 
     \item [client\_ip] The client IP address (IPv4 or IPv6): the remote
         server when receiving mail, the local server when sending mail.
 
     \item [client\_hostname] The hostname of the client, it will be
-        \textit{unknown} if the IP address could not be resolved to a
-        hostname via DNS.
+        \textit{unknown\/} if the IP address could not be resolved to a
+        hostname via DNS\@.
 
     \item [helo] The hostname used in the HELO command.  The HELO
         occasionally changes during a connection, presumably because spam
@@ -317,8 +317,8 @@ table containing the following fields:
 
         \texttt{/./ WARN Logging HELO for diagnostic purposes}
 
-    \item [queueid] The queueid of the mail, or \textit{NOQUEUE} if a mail
-        wasn't accepted.
+    \item [queueid] The queueid of the mail, or \textit{NOQUEUE\/} if a
+        mail wasn't accepted.
 
     \item [start] The timestamp of the first log line, in seconds since the
         epoch.
@@ -331,7 +331,7 @@ table containing the following fields:
 \subsubsection{Results table}
 
 Every log line corresponding to Postfix performing an action other than
-INFO will have an entry in the results table, e.g. rejecting an SMTP
+INFO will have an entry in the results table, e.g.\ rejecting an SMTP
 command, delivering a mail, or bouncing a mail.  Any log line where the
 Postfix action is INFO is not interesting in and of itself, but provides
 additional information which will be saved with other results.
@@ -345,7 +345,7 @@ additional information which will be saved with other results.
         matched the log line and created this result.
 
     \item [warning] Postfix can log a warning instead of rejecting an SMTP
-        command - a facility that is quite useful for testing new
+        command --- a facility that is quite useful for testing new
         restrictions.  This field will be 1 if the log line parsed was a
         warning rather than a real rejection, or 0 for a real rejection or
         any other result.
@@ -367,7 +367,7 @@ additional information which will be saved with other results.
         mail was accepted.
 
     \item [data] A field available for anything not covered by other
-        fields, e.g. the rejection message from an RBL.
+        fields, e.g.\ the rejection message from an RBL\@.
 
     \item [timestamp] The time the line was logged, in seconds since the
         epoch.
@@ -449,18 +449,17 @@ earlier rejections properly; a side benefit of this delay is that Postfix
 has more information available when logging the rejection.\footnote{The
 \texttt{smtpd\_delay\_reject} parameter controls this behaviour.}  Postfix
 uses simple lookup tables as the deciding factor for some restrictions,
-e.g. \texttt{check\_client\_access~\nolinebreak
-cidr:/etc/postfix/client\_access}\footnote{\texttt{cidr} is the type of the
-lookup table.} will check whether the IP address of the connected client
-matches the left hand side of each line in the file and will return the
-right hand side of the first matching line.  Other restrictions determine
-their result in different ways, e.g. \texttt{reject\_rbl\_client
-some.rbl.com} checks whether the IP address of the client is present in the
-listed RBL.
+e.g.\ \texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
+\footnote{\texttt{cidr} is the type of the lookup table.} will check
+whether the IP address of the connected client matches the left hand side
+of each line in the file and will return the right hand side of the first
+matching line.  Other restrictions determine their result in different
+ways, e.g. \texttt{reject\_rbl\_client some.rbl.com} checks whether the IP
+address of the client is present in the listed RBL\@.
 
-Each restriction is evaluated to produce a result of \textit{reject\/},
-\textit{permit\/}, \textit{dunno\/} or the name of another restriction to
-be evaluated.\footnote{Other results are possible, for full details
+Each restriction is evaluated to produce a result of \textit{reject},
+\textit{permit}, \textit{dunno\/} or the name of another restriction to be
+evaluated.\footnote{Other results are possible, for full details
 see~\cite{smtpd_access_readme, smtpd_per_user_control, policy-servers}.}
 The meaning of \textit{permit\/} and \textit{reject\/} is fairly obvious;
 \textit{dunno\/} means to stop evaluating the current restriction and
@@ -865,10 +864,10 @@ size: does it scale linearly, polynomially, or exponentially?
 Graph~\ref{execution time vs file size vs number lines} shows the execution
 time in seconds, file size in MB and tens of thousands of lines per log
 file.  All three lines run roughly parallel, giving a visual impression
-that the algorithm scales linearly with input size.  This is borne(XXX) out
-by graph~\ref{execution time vs file size vs number lines factor}, which
-plots the ratio of file size in MB vs execution time in seconds and number
-of lines
+that the algorithm scales linearly with input size.  This is borne out by
+graph~\ref{execution time vs file size vs number lines factor}, which plots
+the ratio of file size in MB vs execution time in seconds and number of
+lines
 
 Graph~\ref{normal regex vs discard regex} shows execution times gathered
 over 93 log files, with and without caching the regex; also shown on the
@@ -1746,11 +1745,11 @@ XXX THIS NEEDS TO BE EXPANDED
         of recipients, bytes transferred and delay.  \newline
         \url{http://www.itefix.no/phpws/index.php}
 
-    \item [Log Mail Analyser] \cite{log-mail-analyser} attempts to
+    \item [Log Mail Analyser]~\cite{log-mail-analyser} attempts to
         correlate Postfix log lines by queueid and produce both a CSV file
         and either a Berkeley DB or MySQL database.  It aims to save
         \textit{date and hour, DNS name and IP address host, mail server IP
-        address, sender, receiver and e-mail status (sent, rejected)\/}, so
+        address, sender, receiver and e-mail status (sent, rejected)}, so
         its data extraction is reasonably complete.  The parsing is
         hard-coded into the program; extending it requires familiarity with
         a substantial portion of the code.  Producing a CSV file appears to
@@ -1759,12 +1758,12 @@ XXX THIS NEEDS TO BE EXPANDED
         utilities already available.  Supporting Berkeley DB is also
         limiting, requiring an understanding of the (partially documented)
         database structure and writing a program to extract the required
-        data - it appears to be the least useful of the three output
+        data --- it appears to be the least useful of the three output
         formats, though the authors of LMA did provide some queries:
-        IP-STORY, FROM-STORY, DAILY-EMAIL and DAILY-REJECT.  Unfortunately
-        when the author tested LMA it didn't work properly and after
-        exploring the code for some time the author reluctantly gave up.
-
+        IP-STORY, FROM-STORY, DAILY-EMAIL and DAILY-REJECT\@.
+        Unfortunately when the author tested LMA it didn't work properly
+        and after exploring the code for some time the author reluctantly
+        gave up.
 
 \end{description}
 
