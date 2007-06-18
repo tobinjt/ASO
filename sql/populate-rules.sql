@@ -376,7 +376,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__HOSTNAME__)\[(__IP__)\]>: Client host rejected: Greylisted, see (http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 9, data = 7, sender = 8',
-        'helo = 7, client_hostname = 5, client_ip= 6',
+        'helo = 10, client_hostname = 5, client_ip= 6',
         'REJECTION',
         1,
         'REJECTED',
@@ -1307,6 +1307,8 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- 8103838B8: conversation with d.mx.mail.yahoo.com[216.39.53.2] timed out while receiving the initial server greeting
 -- 04AE038CA: conversation with rose.man.poznan.pl[150.254.173.3] timed out while performing the EHLO handshake
 -- 9769838B2: lost connection with spamtrap.netsource.ie[212.17.32.57] while performing the EHLO handshake
+-- C8B0C437E: lost connection with mx3.mail.yahoo.com[67.28.113.10] while performing the initial protocol handshake
+-- 5E67F38A1: lost connection with e33.co.us.ibm.com[32.97.110.151] while receiving the initial server greeting
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
     VALUES('Conversation timed out while handshaking', 'The initial handshake timed out',
         'postfix/smtp',
@@ -1396,20 +1398,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): host (__HOSTNAME__)\[(__IP__)\] refused to talk to me: ((__SMTP_CODE__).*)$',
         'data = 4, smtp_code = 5',
         'server_hostname= 2, server_ip = 3',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
-        1,
-        'INFO'
-);
-
--- C8B0C437E: lost connection with mx3.mail.yahoo.com[67.28.113.10] while performing the initial protocol handshake
--- 5E67F38A1: lost connection with e33.co.us.ibm.com[32.97.110.151] while receiving the initial server greeting
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
-    VALUES('Lost connection during initial handshake', 'The connection was lost during the initial handshake, before the greeting',
-        'postfix/smtp',
-        '^(__QUEUEID__): lost connection with (__HOSTNAME__)\[(__IP__)\] while (?:performing the initial protocol handshake|receiving the initial server greeting$)',
-        '',
-        'server_hostname = 2, server_ip = 3',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_BY_QUEUEID',
         1,

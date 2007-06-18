@@ -530,10 +530,12 @@ sub DISCONNECT {
         return $self->{ACTION_SUCCESS};
     }
 
-    # Try to clear out those mails which only have two smtpd entries, so they
-    # don't hang around, taking up memory uselessly and causing queueid clashes
-    # occasionally.
+    # Cleanup the mails accepted over this connection.
+    CLONED_MAIL:
     foreach my $mail (@{$connection->{cloned_mails}}) {
+        # Try to clear out those mails which only have two smtpd entries, so
+        # they don't hang around, taking up memory uselessly and causing queueid
+        # clashes occasionally.
         if (not exists $mail->{programs}->{q{postfix/cleanup}}
                 and $mail->{programs}->{q{postfix/smtpd}} == 2
                 and $self->queueid_exists($mail->{queueid})
@@ -551,6 +553,7 @@ sub DISCONNECT {
                     dump_connection($mail_by_queueid),
                 );
             }
+            next CLONED_MAIL;
         }
         # Now try committing mails where the client disconnected after a
         # rejection.
@@ -563,6 +566,7 @@ sub DISCONNECT {
             $self->fixup_connection($mail);
             $self->commit_connection($mail);
             $self->delete_connection_by_queueid($mail->{queueid});
+            next CLONED_MAIL;
         }
     }
 
