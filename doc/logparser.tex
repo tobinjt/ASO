@@ -770,6 +770,47 @@ Each rule defines the following:
 \end{description}
 
 
+\subsection{Overlapping rules}
+
+The parser does not try to detect overlapping rules;\footnote{It may be
+possible to parse each rule's regex, generate an NFA, and compare all NFAs
+to determine if any overlap.  The author has not attempted to do this: such
+a project would probably qualify for a PhD, and may involve solving the
+Halting Problem and circumventing the Church-Turing Thesis.} that
+responsibility is left to the author of the rules.  Unintentionally
+overlapping rules lead to inconsistent parsing and data extraction because
+the order in which rules are tried against each line determines which rule
+matches.  Overlapping rules are frequently a requirement, allowing a more
+specific rule to match some lines and a more general rule to match the
+remainder, e.g. separating smtp delivery to a filtering proxy from smtp
+delivery to the rest of the world.  The algorithm provides a facility for
+handling overlapping rules: the priority field in each rule (defaults to
+zero).  Rules are tried in order of priority, highest first, overriding the
+rule\_order field maintained by the parser.  Negative priorities may also
+be useful for catchall rules.
+
+Detecting overlapping rules is difficult, but the following may be helpful:
+
+\begin{itemize}
+
+    \item Sort the regexs and visually inspect the list, e.g. with SQL
+        similar to: \textbf{select regex from rules order by regex;}
+
+    \item Compare the results of parsing using sorted, shuffled and
+        reversed rules.\footnote{See section~\ref{rule efficiency} for more
+        details of sorting the rules.}  Parse a number of log files using
+        normal sorting, dump a textual representation of the connections
+        and results tables, and delete everything from those tables.
+        Repeat with shuffled and reversed sorting.  If there are no
+        overlapping rules the tables from each run will be identical;
+        differences indicate overlapping rules, and the rule\_ids which
+        differ determine which rules overlap.  Unfortunately this method
+        cannot prove the absence of overlapping rules; it can detect
+        overlapping rules --- but only if there are log lines which match
+        more than one rule.
+
+\end{itemize}
+
 \subsection{Example rule}
 
 This example rule matches the message logged by Postfix when it rejects
