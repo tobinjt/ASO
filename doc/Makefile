@@ -64,3 +64,6 @@ check:
 
 logparser-2up.ps: logparser.ps
 	psnup -2 logparser.ps logparser-2up.ps
+
+xpdf: logparser.pdf
+	xpdf "$<" &

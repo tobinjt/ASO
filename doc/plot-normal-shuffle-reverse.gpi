@@ -1,13 +1,14 @@
 set xlabel "Log file"
+set ylabel "Execution time of normal, shuffled and reversed ordering"
 set grid
 
-set terminal postscript monochrome eps size 5.1,7.3
+set terminal postscript monochrome eps size 5.4,7.8
 set output "plot-normal-shuffle-reverse.ps"
 # Don't continue the scales to the next round number; stop at the topmost point.
 set autoscale yfixmax
 set autoscale xfixmax
 set autoscale yfixmin
-set logscale y
+#set logscale y
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
 
