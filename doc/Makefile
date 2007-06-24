@@ -28,6 +28,8 @@ logparser.dvi: logparser-flow-chart.ps logparser-bibliography.bib
 logparser.dvi: plot-cached-discarded.ps plot-cached-discarded-factor.ps
 logparser.dvi: plot-normal-shuffle-reverse.ps plot-normal-shuffle-reverse-factor.ps
 logparser.dvi: plot-normal-filesize-numlines-factor.ps plot-normal-filesize-numlines.ps
+logparser.dvi: plot-log22-distribution-by-program.ps plot-log22-distribution-by-rule.ps
+logparser.dvi: plot-log22-rule-count-by-program.ps
 
 logparser-flow-chart.ps: logparser-flow-chart.dot
 	dot -o "$@" -Tps -x "$<"
@@ -38,6 +40,9 @@ plot-normal-shuffle-reverse.ps: stats-normal.txt stats-shuffle.txt stats-reverse
 plot-normal-shuffle-reverse-factor.ps: stats-normal-shuffle-reverse-factor.txt
 plot-normal-filesize-numlines-factor.ps: stats-normal-filesize-numlines-factor.txt
 plot-normal-filesize-numlines.ps: stats-normal.txt file-sizes.txt wc.txt
+plot-log22-distribution-by-program.ps: stats-log22-distribution-by-program.txt
+plot-log22-distribution-by-rule.ps: stats-log22-distribution-by-rule.txt
+plot-log22-rule-count-by-program.ps: stats-log22-rule-count-by-program.txt
 
 plot-%.ps: plot-%.gpi
 	gnuplot "$<"
@@ -53,6 +58,17 @@ stats-cached-discarded-factor.txt: stats-cached.txt stats-discarded.txt
 
 stats-normal-shuffle-reverse-factor.txt: stats-normal.txt stats-shuffle.txt stats-reverse.txt
 	paste -d ' ' $^ | awk '$$1 != "#" {print (($$9 * 100 / $$3) - 100), " ", (($$15 * 100 / $$3) - 100) }' > "$@"
+
+stats-log22-distribution-by-program.txt:
+	sqlite3 -separator ' ' ../sql/db.sq3 "select sum(rule_order), program from rules where rule_order > 0 group by program order by sum(rule_order);" | nl > "$@"
+
+stats-log22-distribution-by-rule.txt:
+	sqlite3 -separator ' ' ../sql/db.sq3 "select rule_order, program from rules where rule_order > 100 order by rule_order;" | nl > "$@"
+
+stats-log22-rule-count-by-program.txt:
+	sqlite3 -separator ' ' ../sql/db.sq3 "select sum(rule_order), count(*), program from rules group by program;" | awk '$$1 > 0 { print }' | nl > "$@"
+
+foo: stats-log22-distribution-by-program.txt stats-log22-distribution-by-rule.txt
 
 clean:
 	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out

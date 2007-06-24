@@ -1,0 +1,12 @@
+set xlabel "Rule"
+set ylabel "Number of matching rules"
+set grid ytics
+
+set terminal postscript monochrome eps size 5.4,3.3
+set output "plot-log22-distribution-by-rule.ps"
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
+
+set noxtics
+set xrange [0:33]
+plot "stats-log22-distribution-by-rule.txt" using 1:2 title "Number of matching rules"

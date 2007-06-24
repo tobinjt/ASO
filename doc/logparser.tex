@@ -14,9 +14,9 @@
 \hypersetup{%
     pdftitle    = {Parsing Postfix log files},
     pdfauthor   = {John Tobin},
-    final,
+    final       = true,
     pdfborder   = {0 0 0},
-    breaklinks,
+    breaklinks  = true,
 }
     
 \begin{document}
@@ -45,16 +45,14 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 XXX WHAT IS THE CONCLUSION???  FIRST THING IS TO COMPARE TO OTHER PARSERS
 REVIEWED
 
-XXX LOOK AT citeseer.com AND scholar.google.com FOR RELATED PAPERS\@.
-REVIEW EACH PAPER, WRITING AN ABSTRACT FOR IT\@: WHAT'S THE SAME, WHAT'S
-DIFFERENT, PERFORMANCE AND \newline COMPLETENESS COMPARISON\@.  FROM THIS
-I'LL GET AN OVERALL PICTURE, AND I CAN WORK REFERENCES TO THE PAPERS INTO
-THIS PAPER, PLUS MAYBE A PRIOR ART SECTION\@.
+XXX MAYBE A PRIOR ART SECTION\@?
 
 XXX TURN OFF RESTRICTIONS FOR ME AND SEE HOW WELL SPAMASSASSIN DEALS WITH
 THE RESULTING MAILS\@; FALSE POSITIVES, FALSE NEGATIVES, ETC\@.
 
 XXX LOTS MORE REFERENCES
+
+XXX MAYBE ADD A SECTION ABOUT OPTIMISATION OF THE DATABASE\@.
 
 \newpage
 \tableofcontents
@@ -760,7 +758,7 @@ Each rule defines the following:
         matching more commonly occurring log lines will be tried before
         rules matching less commonly occurring log lines, lowering the
         program's execution time.  Rule efficiency concerns are discussed
-        in section~\ref{rule efficiency}.
+        in section~\ref{rule ordering for efficiency}.
 
     \item [priority] This is the user-configurable companion to
         rule\_order: rules will be tried in order of priority, overriding
@@ -883,54 +881,115 @@ fields in result\_cols and connection\_cols start at 5.
         
 \subsection{Rule efficiency}
 
+XXX WRITE ABOUT DATABASE OPTIMISATION??
+
 \label{rule efficiency}
 
-XXX WRITE ABOUT\@: DYNAMICS OF THE SYSTEM
-
-XXX PRIORITY, OVERLAPPING RULES, MORE SPECIFIC VS \newline MORE GENERAL
-
-XXX EXPLAIN THE DIPS IN THE GRAPHS WITH LARGE LOG FILES
-
-XXX MENTION THAT THE PROGRAM HAS LINER COMPLEXITY AND SCALES LINEARLY WITH
-THE LOG FILE SIZE
-
 Parsing efficiency is an obvious concern when the parser routinely needs to
-deal with 50 MB log files containing 300,000 log lines.  The graphs in
-section~\ref{graphs} illustrate the execution time for various
-configurations of the parser and should be referred to during the following
-discussion.
+deal with 50 MB log files containing 300,000 log lines (for a small mail
+server --- large scale mail servers would have much larger log files on a
+daily basis).  When generating the data for the graphs included in
+section~\ref{graphs}, 93 log files (totaling 10.08 GB, 60.72 million lines)
+were each parsed 10 times, the first run discarded and the remaining 9 runs
+averaged.  The first run is discarded for two reasons:
+
+\begin{enumerate}
+
+    \item The execution time will be higher because the log file must be
+        read from disk, whereas for subsequent runs the log file will be
+        cached in memory by the operating system.
+
+    \item The execution time will also be higher because the rule ordering
+        will be sub-optimal compared to subsequent runs.
+
+\end{enumerate}
+
+Saving results to the database was disabled for the test runs, as that
+dominates the run time of the program, and the tests are aimed at measuring
+the speed of the parser rather than the speed of the database.
+
+\subsubsection{Algorithmic complexity}
 
 An important property of a parser is how execution time scales with input
 size: does it scale linearly, polynomially, or exponentially?
 Graph~\ref{execution time vs file size vs number lines} shows the execution
 time in seconds, file size in MB and tens of thousands of lines per log
-file.  All three lines run roughly parallel, giving a visual impression
-that the algorithm scales linearly with input size.  This is borne out by
-graph~\ref{execution time vs file size vs number lines factor}, which plots
-the ratio of file size in MB vs execution time in seconds and number of
-lines
+file per log file.  All three lines run roughly in parallel, giving a
+visual impression that the algorithm scales linearly with input size.  This
+impression is borne out by graph~\ref{execution time vs file size vs number
+lines factor}, which plots the ratio of file size vs execution time and
+number of lines vs execution time.  As the reader can see, the ratios are
+quite tightly banded, showing that the algorithm scales linearly: the much
+larger log files between points 60 and 70 on the X axis in
+graph~\ref{execution time vs file size vs number lines} don't cause any
+abnormality in the corresponding points in graph~\ref{execution time vs
+file size vs number lines factor}.
 
-Graph~\ref{normal regex vs discard regex} shows execution times gathered
-over 93 log files, with and without caching the regex; also shown on the
-graph are the file sizes and number of lines in each file.
-Graph~\ref{normal regex vs disarded regex factor} shows the percentage
-execution time increase when not caching each regex.  Each log file was
-parsed 10 times, the first run discarded and the remaining 9 runs averaged.
-Logging to the database was disabled for the test runs.
-        
-        
-Graph~\ref{normal vs shuffled vs reversed ordering} plots the execution
-time over 93 log files for normal, shuffle and reverse ordering.
-Graph~\ref{normal vs shuffled vs reversed ordering factor} shows the
-percentage execution time increase for shuffled and reversed over normal.
-Each log file was parsed 10 times, the first run discarded and the
-remaining 9 runs averaged.  Logging to the database was disabled for the
-test runs.
 
-It is hoped that this will prove to have greater effectiveness as the
-number of rules grows; currently the effect is negligible in comparison to
-caching each compiled regex, but it still provides approximately a 7--10\%
-performance increase.
+\subsubsection{Rule ordering for efficiency}
+
+\label{rule ordering for efficiency}
+
+XXX DO A FULL RUN ONCE RULE\_ORDER ISN'T BEING TRASHED AND GRAPH RULE
+HITS\@.
+
+Rule ordering was briefly discussed in section~\ref{rule attributes} and
+it will be covered in greater detail in this section.  At the time of
+writing there are 131 different rules, some of which match much more
+frequently than others.  Assuming that the distribution of log lines is
+reasonably steady over time, program efficiency should benefit from trying
+more frequently matching rules before those which match less frequently.
+To test this hypothesis three full test runs were performed with different
+rule orderings:
+
+\begin{description}
+
+    \item [normal]  The most optimal order, according to the hypothesis:
+        rules which match most often will be tried first.
+
+    \item [shuffle] Random ordering --- the rules will be shuffled once
+        before use and will retain that ordering for the entirety of the
+        log file.  Note that the ordering will change every time the parser
+        is executed, so 10 different orderings will be generated for each
+        log file in the test run.  This is intended to represent an
+        unsorted rule set.
+
+    \item [reverse] Hypothetically the least optimal order: the most
+        frequently matching rules will be tried last.
+
+\end{description}
+
+
+The resulting execution times are plotted in graph~\ref{normal vs shuffled
+vs reversed ordering}, where the difference is not readily apparent, but
+graph~\ref{normal vs shuffled vs reversed ordering factor} shows the
+percentage increase of execution times:
+
+\begin{description}
+
+    \item [shuffled] 6--11\% increase; mean 8.34, standard deviation 2.44.
+
+    \item [reversed] 15--22\% increase; mean 17.97, standard deviation
+        2.94.
+
+\end{description}
+
+Overall this increases the parser's efficiency by 5.5--10\%; a modest but
+worthwhile increase.
+
+\subsubsection{Caching each regex}
+
+Graph~\ref{normal regex vs discard regex} shows execution times with and
+without caching the regex; also shown on the graph are the file sizes and
+number of lines in each file.  Caching the compiled regexs is obviously far
+more efficient; graph~\ref{normal regex vs disarded regex factor} shows the
+percentage execution time increase when not caching each regex is between
+350--570\% (mean 465.58\%, standard deviation 114.70\%).  Perl compiles the
+original regex into an internal representation, optimising the regex to
+improve the speed of matching, but this compilation and optimisation takes
+CPU time.  Perl automatically caches static regexs, but dynamic regexs need
+to be explicitly compiled and cached.
+
 
 \section{Parsing algorithm}
 
@@ -1810,9 +1869,6 @@ XXX THIS NEEDS TO BE EXPANDED
 
 
 \bibliographystyle{logparser-bibliography-style}
-
-XXX ADD RESOURCES/REFERENCES HERE AND THEN MAKE REFERENCES TO THEM FROM WITHIN THE PAPER
-
 \label{bibliography}
 \bibliography{logparser-bibliography}
 
@@ -1820,33 +1876,94 @@ XXX ADD RESOURCES/REFERENCES HERE AND THEN MAKE REFERENCES TO THEM FROM WITHIN T
 
 \label{graphs}
 
-\subsection{Execution time vs file size vs number of lines.}
+\subsection{Parser scalability}
+
+\subsubsection{Execution time vs file size vs number of lines.}
 \label{execution time vs file size vs number lines}
 \includegraphics{plot-normal-filesize-numlines.ps}
 
-
-\subsection{Ratio of file size and number of lines to execution time}
+\subsubsection{Ratio of file size and number of lines to execution time}
 \label{execution time vs file size vs number lines factor}
 \includegraphics{plot-normal-filesize-numlines-factor.ps}
 
 
-\subsection{Regex: cached vs discarded}
-\label{normal regex vs discard regex}
-\includegraphics{plot-cached-discarded.ps}
 
+\subsection{Rule ordering}
 
-\subsection{Regex: percentage execution time increase}
-\label{normal regex vs disarded regex factor}
-\includegraphics{plot-cached-discarded-factor.ps}
-
-
-\subsection{Normal vs shuffled vs reversed ordering}
+\subsubsection{Normal vs shuffled vs reversed ordering}
 \label{normal vs shuffled vs reversed ordering}
 \includegraphics{plot-normal-shuffle-reverse.ps}
 
-\subsection{Percentage increase of shuffled and reversed over normal}
+\subsubsection{Percentage increase of shuffled and reversed over normal}
 \label{normal vs shuffled vs reversed ordering factor}
 \includegraphics{plot-normal-shuffle-reverse-factor.ps}
+
+The worst-case performance of shuffled rules can be seen at log file 30,
+where it is equivalent to reversed rules.
+
+XXX THIS NEXT PARAGRAPH MIGHT NEED TO BE REWRITTEN\@.
+
+The dips at logfiles 22 and 62--68 correspond to peaks in log file size in
+graph~\ref{execution time vs file size vs number lines}.  The explanation
+took some time to arrive at, but turns out to be reasonably simple.
+Examining the database after parsing logfile 22 shows 64 rules matched
+during parsing, but the distribution of matching rules is extremely skewed,
+as shown in graph~\ref{log22 distribution by rule}.  Graph~\ref{rule
+distribution by program} shows rule distribution by program.  Comparing the
+number of log lines per program and rules per program shows that
+\textit{postfix/qmgr\/} has the highest number of log lines but has a low
+number of rules to try, so the average execution time for a
+\textit{postfix/qmgr\/} is quite low, reducing the overall average
+execution time per log line.
+
+XXX CREATE A GRAPH AVERAGE EXECUTION TIME PER LOG FILE\@.
+
+\subsubsection{Log 22 distribution by rule}
+\label{log22 distribution by rule}
+\includegraphics{plot-log22-distribution-by-rule.ps}
+
+The individual rules are not labelled on the x-axis because doing so makes
+the graph illegible.
+
+\subsubsection{Log 22 distribution by program}
+\label{log22 distribution by program}
+\includegraphics{plot-log22-distribution-by-program.ps}
+
+\subsubsection{Rule distribution by program}
+\label{rule distribution by program}
+\includegraphics{plot-log22-rule-count-by-program.ps}
+
+
+
+\subsection{Caching regexs}
+
+\subsubsection{Regex: cached vs discarded}
+\label{normal regex vs discard regex}
+\includegraphics{plot-cached-discarded.ps}
+
+\subsubsection{Regex: percentage execution time increase}
+\label{normal regex vs disarded regex factor}
+\includegraphics{plot-cached-discarded-factor.ps}
+
+Two large dips can be seen in graph~\ref{normal regex vs disarded regex
+factor} at log files 22 and 62--68, corresponding to the spikes in log file
+size in graph~\ref{execution time vs file size vs number lines}.  The
+anomaly at files 62--68 is caused by a combination of a mail loop and a
+delivery failure which resulted in a huge number of log lines, all of which
+were matched by a single rule.  Sorting the rules by the number of
+successful matches has the effect that this rule will be tried first, so
+the average number of regexs compiled per line drops sharply for those
+seven log files, resulting in a much lower increase in relative execution
+time, as detailed below.
+
+\begin{tabular}[]{lrr}
+                                    & Mean      & Standard Deviation    \\
+    All logs                        & 465.58\%  & 114.70\%              \\
+    All logs except 22 and 62--68   & 497.43\%  & 50.58\%               \\
+    Logs 22 and 62--68              & 127.16\%  & 21.28\%               \\
+
+\end{tabular}
+
 
 
 \end{document}
