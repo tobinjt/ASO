@@ -1,0 +1,6 @@
+     1	315564 5 postfix/cleanup
+     2	307118 16 postfix/local
+     3	147687 2 postfix/pickup
+     4	630916 6 postfix/qmgr
+     5	13359 35 postfix/smtp
+     6	191240 63 postfix/smtpd

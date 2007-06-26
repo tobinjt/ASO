@@ -1,5 +1,5 @@
 set xlabel "Rule"
-set ylabel "Number of matching rules"
+set ylabel "Number of lines"
 set grid ytics
 
 set terminal postscript monochrome eps size 5.4,3.3
@@ -9,4 +9,4 @@ set key top left Left reverse
 
 set noxtics
 set xrange [0:33]
-plot "stats-log22-distribution-by-rule.txt" using 1:2 title "Number of matching rules"
+plot "stats-log22-distribution-by-rule.txt" using 1:2 title "Number of lines"

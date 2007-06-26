@@ -50,10 +50,6 @@ XXX MAYBE A PRIOR ART SECTION\@?
 XXX TURN OFF RESTRICTIONS FOR ME AND SEE HOW WELL SPAMASSASSIN DEALS WITH
 THE RESULTING MAILS\@; FALSE POSITIVES, FALSE NEGATIVES, ETC\@.
 
-XXX LOTS MORE REFERENCES
-
-XXX MAYBE ADD A SECTION ABOUT OPTIMISATION OF THE DATABASE\@.
-
 \newpage
 \tableofcontents
 
@@ -780,7 +776,7 @@ overlapping rules lead to inconsistent parsing and data extraction because
 the order in which rules are tried against each line determines which rule
 matches.  Overlapping rules are frequently a requirement, allowing a more
 specific rule to match some lines and a more general rule to match the
-remainder, e.g. separating smtp delivery to a filtering proxy from smtp
+remainder, e.g.\ separating smtp delivery to a filtering proxy from smtp
 delivery to the rest of the world.  The algorithm provides a facility for
 handling overlapping rules: the priority field in each rule (defaults to
 zero).  Rules are tried in order of priority, highest first, overriding the
@@ -791,7 +787,7 @@ Detecting overlapping rules is difficult, but the following may be helpful:
 
 \begin{itemize}
 
-    \item Sort the regexs and visually inspect the list, e.g. with SQL
+    \item Sort the regexs and visually inspect the list, e.g.\ with SQL
         similar to: \textbf{select regex from rules order by regex;}
 
     \item Compare the results of parsing using sorted, shuffled and
@@ -880,8 +876,6 @@ fields in result\_cols and connection\_cols start at 5.
 
         
 \subsection{Rule efficiency}
-
-XXX WRITE ABOUT DATABASE OPTIMISATION??
 
 \label{rule efficiency}
 
@@ -1901,22 +1895,20 @@ XXX THIS NEEDS TO BE EXPANDED
 The worst-case performance of shuffled rules can be seen at log file 30,
 where it is equivalent to reversed rules.
 
-XXX THIS NEXT PARAGRAPH MIGHT NEED TO BE REWRITTEN\@.
-
 The dips at logfiles 22 and 62--68 correspond to peaks in log file size in
 graph~\ref{execution time vs file size vs number lines}.  The explanation
-took some time to arrive at, but turns out to be reasonably simple.
-Examining the database after parsing logfile 22 shows 64 rules matched
-during parsing, but the distribution of matching rules is extremely skewed,
-as shown in graph~\ref{log22 distribution by rule}.  Graph~\ref{rule
-distribution by program} shows rule distribution by program.  Comparing the
-number of log lines per program and rules per program shows that
-\textit{postfix/qmgr\/} has the highest number of log lines but has a low
-number of rules to try, so the average execution time for a
-\textit{postfix/qmgr\/} is quite low, reducing the overall average
-execution time per log line.
+for this took some time to arrive at, but it turns out to be reasonably
+simple.  Examining the database after parsing logfile~22 shows 64 rules
+matched during parsing, but the distribution of matching rules is extremely
+skewed, as shown in graph~\ref{log22 distribution by rule}.  Comparing the
+number of log lines per program versus rules per program in
+graph~\ref{log22 line and rule distribution by program} shows that
+\textit{postfix/qmgr\/} has the highest number of log lines; however it has
+a low number of rules, so the average parsing time for a
+\textit{postfix/qmgr\/} log line is quite low, reducing the overall average
+parsing time per log line.
 
-XXX CREATE A GRAPH AVERAGE EXECUTION TIME PER LOG FILE\@.
+XXX FIGURE OUT THE DIP AT LOG 34, mail.log-20070228
 
 \subsubsection{Log 22 distribution by rule}
 \label{log22 distribution by rule}
@@ -1925,13 +1917,10 @@ XXX CREATE A GRAPH AVERAGE EXECUTION TIME PER LOG FILE\@.
 The individual rules are not labelled on the x-axis because doing so makes
 the graph illegible.
 
-\subsubsection{Log 22 distribution by program}
-\label{log22 distribution by program}
-\includegraphics{plot-log22-distribution-by-program.ps}
+\subsubsection{Log 22 line and rule distribution by program}
+\label{log22 line and rule distribution by program}
+\includegraphics{plot-log22-distribution-versus-rule-count.ps}
 
-\subsubsection{Rule distribution by program}
-\label{rule distribution by program}
-\includegraphics{plot-log22-rule-count-by-program.ps}
 
 
 
