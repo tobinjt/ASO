@@ -938,7 +938,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('delivery suspended because the connection was lost', 'qmgr deferred delivery because the smtp connection was lost',
         'postfix/qmgr',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(delivery temporarily suspended: lost connection with (__HOSTNAME__)\[(__IP__)\] while receiving the initial server greeting\)$'
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(delivery temporarily suspended: lost connection with (__HOSTNAME__)\[(__IP__)\] while receiving the initial server greeting\)$',
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
         'SAVE_BY_QUEUEID',
