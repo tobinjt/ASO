@@ -1373,7 +1373,8 @@ sub filter_regex {
     # This doesn't match, for varous reason - I think numeric subnets are one.
     #$regex =~ s/__HOSTNAME__           /$RE{net}{domain}{-nospace}/gx;
     $regex =~ s/__HOSTNAME__            /$hostname_re/gx;
-    $regex =~ s/__IP__                  /(?:__IPv4__|__IPv6__)/gx;
+    # Believe it or not, sometimes the IP address is unknown.
+    $regex =~ s/__IP__                  /(?:__IPv4__|__IPv6__|unknown)/gx;
     $regex =~ s/__IPv4__                /(?:::ffff:)?$RE{net}{IPv4}/gx;
     $regex =~ s/__IPv6__                /$ipv6_re/gx;
     $regex =~ s/__SMTP_CODE__           /\\d{3}/gx;
@@ -1382,7 +1383,7 @@ sub filter_regex {
     $regex =~ s/__COMMAND__             /(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gx;
     # DATA is deliberately excluded here because there are more specific rules
     # for DATA.
-    $regex =~ s/__SHORT_CMD__           /(?:CONNECT|HELO|EHLO|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN)/gx;
+    $regex =~ s/__SHORT_CMD__           /(?:CONNECT|HELO|EHLO|AUTH|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN)/gx;
     $regex =~ s/__DELAYS__              /delays=(?:[\\d.]+\/){3}[\\d.]+, /gx;
     $regex =~ s/__DELAY__               /delay=\\d+(?:\\.\\d+)?, /gx;
     $regex =~ s/__DSN__                 /\\d\\.\\d\\.\\d/gx;

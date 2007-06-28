@@ -409,6 +409,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'check_sender_mx_access'
 );
 
+-- NOQUEUE: reject: RCPT from unknown[123.190.117.163]: 550 5.7.1 <cji1031@scourt.go.kr>: Recipient address rejected: Address uses MX in private address space (172.16.0.0/12); from=<qm73z1@paran.com> to=<cji1031@scourt.go.kr> proto=SMTP helo=<123.190.117.163>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+    VALUES('Recipient MX in private address space (172.16.0.0/12)', 'The MX for recipient domain is in private address space (172.16.0.0/12), so cannot be contacted',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(172.16.0.0/12\); from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 5, sender = 6',
+        'helo = 7',
+        'REJECTION',
+        1,
+        'REJECTED',
+        'check_recipient_mx_access'
+);
+
 -- <aaholi@web009.ahp01.lax.affinity.com>: Sender address rejected: Address uses MX in private address space (127.16.0.0/12); from=<aaholi@web009.ahp01.lax.affinity.com> to=<luzs@cs.tcd.ie> proto=ESMTP helo=<ams006.lax.affinity.com> 
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Sender MX in private address space (127.16.0.0/12)', 'The MX for sender domain is in private address space (127.16.0.0/12), so cannot be contacted',
@@ -839,6 +852,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'check_client_access'
 );
 
+-- <postmaster@cs.tcd.ie>: Sender address rejected: This address is not in use.; from=<postmaster@cs.tcd.ie> to=<caramisgo@yahoo.co.kr> proto=SMTP helo=<dvnpahxwg.com>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+    VALUES('Rejecting unused sender address', 'Rejecting an address we know is not used for sending mail',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: This address is not in use.; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'sender = 5, recipient = 6',
+        'helo = 7',
+        'REJECTION',
+        1,
+        'REJECTED',
+        'check_sender_access'
+);
+
 -- }}}
 
 -- SMTPD ACCEPT RULES {{{1
@@ -901,6 +927,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('delivery suspended because the connection was refused/timed out', 'qmgr deferred delivery because the smtp connection was refused/timed out',
         'postfix/qmgr',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(delivery temporarily suspended: connect to (__HOSTNAME__)\[(__IP__)\]: Connection (?:refused|timed out)\)$',
+        'recipient = 2',
+        'server_hostname = 3, server_ip = 4',
+        'SAVE_BY_QUEUEID',
+        1,
+        'INFO'
+);
+
+-- 0278038B0: to=<mary.davies@sihe.ac.uk>, relay=none, delay=0.09, delays=0.08/0.01/0/0, dsn=4.4.2, status=deferred (delivery temporarily suspended: lost connection with 127.0.0.1[127.0.0.1] while receiving the initial server greeting)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('delivery suspended because the connection was lost', 'qmgr deferred delivery because the smtp connection was lost',
+        'postfix/qmgr',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(delivery temporarily suspended: lost connection with (__HOSTNAME__)\[(__IP__)\] while receiving the initial server greeting\)$'
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
         'SAVE_BY_QUEUEID',
@@ -976,10 +1014,11 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- connect to wsatkins.co.uk[193.117.23.129]: Connection refused (port 25)
 -- connect to 127.0.0.1[127.0.0.1]: Connection refused (port 10024)
+-- connect to mail.3dns.tns-global.com[194.202.213.46]: Connection reset by peer (port 25)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
     VALUES('connect refused', 'postfix tried to connect to a remote smtp server, but the connection was refused',
         'postfix/smtp',
-        '^connect to (__HOSTNAME__)\[(__IP__)\]: Connection refused \(port \d+\)$',
+        '^connect to (__HOSTNAME__)\[(__IP__)\]: Connection (?:refused|reset by peer) \(port \d+\)$',
         '',
         'server_hostname = 1, server_ip = 2',
         'client_hostname = localhost, client_ip = 127.0.0.1',
@@ -1658,15 +1697,40 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORED'
 );
 
+-- libsldap: Status: 2  Mesg: Unable to load configuration '/var/ldap/ldap_client_file' ('').
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Solaris LDAP fails, oh yes it does', 'Solaris LDAP has failed, yet again',
+        'postfix/local',
+        '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file.*$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORE'
+);
+
+-- libsldap: Status: 7  Mesg: Session error no available conn.
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Solaris LDAP fails, fails, fails', 'Solaris LDAP has failed, yet again',
+        'postfix/local',
+        '^libsldap: Status: 7  Mesg: Session error no available conn.$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORE'
+);
+
 -- 1}}}
 
 -- PICKUP RULES {{{1
 
 -- 39DE44317: uid=8515 from=<kennyau>
+-- 0109D38EC: uid=0 from=<vee08-pc-request@cs.tcd.ie>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
     VALUES('Mail submitted with sendmail', 'Mail submitted locally on the machine via sendmail is being picked up',
         'postfix/pickup',
-        '^(__QUEUEID__): uid=\d+ from=<\w+>$',
+        '^(__QUEUEID__): uid=\d+ from=<__EMAIL__>$',
         '',
         '',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_hostname = localhost, server_ip = 127.0.0.1',
@@ -1679,13 +1743,14 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Solaris LDAP fails again', 'Solaris LDAP has failed, yet again',
         'postfix/pickup',
-        'libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file.*',
+        '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file.*$',
         '',
         '',
         'IGNORE',
         0,
         'IGNORE'
 );
+
 -- }}}
 
 -- POSTSUPER RULES {{{1
@@ -1796,6 +1861,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('Warning about messed-up addressing', 'Mail client fscked up the addressing',
         'postfix/cleanup',
         '^warning: stripping too many comments from address: .*$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+-- warning: cleanup socket: unexpected EOF in data, record type 78 length 76
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Warning about protocol error', 'Something messed up the protocol',
+        'postfix/cleanup',
+        '^warning: cleanup socket: unexpected EOF in data, record type \d+ length \d+$',
         '',
         '',
         'IGNORE',

@@ -136,5 +136,5 @@ summary-some:
 summarize:
 	# Delete any lines not matching ^logparser; delete any lines not having 7
 	# colons; substitute the first seven colon-delimited fields with nothing.
-	( echo "${WARNINGS} summary: "; sed -e '/^logparser/!d; /^\([^:]\+:\)\{7\}/!d; s/^\([^:]\+:\)\{7\} \?//' "${WARNINGS}" | sort | uniq -c | sort -n ) | tee -a results
+	( echo "${WARNINGS} summary: "; sed -e '/^logparser/!d; /^\([^:]\+:\)\{7\}/!d; s/^\([^:]\+:\)\{6\} \?//' "${WARNINGS}" | sort | uniq -c | sort -n ) | tee -a results
 	( echo -n "${STATE}: "; grep -c ^.queueids "${STATE}" ) | tee -a results
