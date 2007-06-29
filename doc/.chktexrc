@@ -1,1 +1,1 @@
-CmdLine { --nowarn 36 }
+CmdLine { --nowarn 35 --nowarn 36 }
