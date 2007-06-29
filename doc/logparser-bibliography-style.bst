@@ -363,7 +363,7 @@ FUNCTION {bibinfo.warn}
 FUNCTION {write.url}
 { url empty$
     { skip$ }
-    { "\newline\urlprefix\url{" url * "}" * write$ newline$ }
+    { "\newline\urlprefix\urlwrapfill{" url * "}" * write$ newline$ }
   if$
 }
 

@@ -25,6 +25,7 @@ all: logparser.pdf
 # the logparser.dvi: logparser.tex rule, though whether that's reliable or not I
 # dunno.
 logparser.dvi: logparser-flow-chart.ps logparser-bibliography.bib
+logparser.dvi: logparser-bibliography-style.bst
 logparser.dvi: plot-cached-discarded.ps plot-cached-discarded-factor.ps
 logparser.dvi: plot-normal-shuffle-reverse.ps plot-normal-shuffle-reverse-factor.ps
 logparser.dvi: plot-normal-filesize-numlines-factor.ps plot-normal-filesize-numlines.ps

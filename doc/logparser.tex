@@ -1,6 +1,12 @@
 % $Id$
 \documentclass[a4paper,12pt,draft]{article}
 
+% Useful stuff for math mode.
+\usepackage{amstext}
+% Wrapping of URLs.  This is used in the bibliography instead of \url{}.
+\usepackage{url}
+\DeclareUrlCommand\urlwrap{}
+\newcommand{\urlwrapfill}[1]{\urlwrap{#1}\hfill}
 % Include images
 \usepackage[final]{graphicx}
 % Change how nested enumerate environments are labelled.
@@ -9,7 +15,8 @@
 % Add the bibliography into the table of contents.
 \usepackage[section,numbib,nottoc]{tocbibind}
 % When creating a PDF make the table of contents into links to the pages
-% (without horrible red borders) and include bookmarks.
+% (without horrible red borders) and include bookmarks.  The title and
+% author don't work - I think either gnuplot or graphviz clobbers it.
 \usepackage{hyperref}
 \hypersetup{%
     pdftitle    = {Parsing Postfix log files},
@@ -448,7 +455,7 @@ e.g.\ \texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
 whether the IP address of the connected client matches the left hand side
 of each line in the file and will return the right hand side of the first
 matching line.  Other restrictions determine their result in different
-ways, e.g. \texttt{reject\_rbl\_client some.rbl.com} checks whether the IP
+ways, e.g.\ \texttt{reject\_rbl\_client some.rbl.com} checks whether the IP
 address of the client is present in the listed RBL\@.
 
 Each restriction is evaluated to produce a result of \textit{reject},
@@ -546,7 +553,7 @@ extracting data from it, whereas the algorithm's task is to follow the
 journey each mail takes through Postfix, piecing the data together into a
 coherent whole, saving it in a useful and consistent form, and performing
 housekeeping duties.  Readers familiar with context-free grammars may find
-Section~\ref{comparison against context-free grammars} helpful.
+section~\ref{comparison against context-free grammars} helpful.
 
 \subsection{Assumptions}
 
@@ -640,12 +647,13 @@ parser:
 
 \end{itemize}
 
-
-\subsection{Comparison against context-free grammars}
-
 \label{comparison against context-free grammars}
 
-XXX DESCRIBE IT IN LEFT\@: RIGHT PRODUCTION TERMS, IF POSSIBLE\@.
+In context-free grammar terms the parser rules could be described as:
+
+$\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
+\text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
+
 
 \subsection{Rule attributes}
 
@@ -753,8 +761,8 @@ Each rule defines the following:
         of log lines is reasonably consistent between log files, rules
         matching more commonly occurring log lines will be tried before
         rules matching less commonly occurring log lines, lowering the
-        program's execution time.  Rule efficiency concerns are discussed
-        in section~\ref{rule ordering for efficiency}.
+        program's execution time.  Rule ordering for efficiency is
+        discussed in section~\ref{rule ordering for efficiency}.
 
     \item [priority] This is the user-configurable companion to
         rule\_order: rules will be tried in order of priority, overriding
@@ -1396,9 +1404,25 @@ Each action is passed the same arguments:
         which case there's none. See
         section~\ref{timeouts-during-data-phase} for the gory details.
 
+    \item [POSTFIX\_RELOAD] When Postfix stops or reloads its configuration
+        it kills all smtpds,\footnote{Possibly other programs are killed
+        also, but the parser is only affected by and interested in smtpd.}
+        requiring any active connections to be committed and deleted from
+        the state tables.
+
+    \item [SMTPD\_KILLED] Sometimes Postfix needs to forcefully kill an
+        smtpd; the active connection for that smtpd must be committed and
+        deleted from the state tables.
+
+    \item [SMTPD\_DIED] Sometimes an smtpd dies or exits unsuccessfully;
+        the active connection for that smtpd must be committed and deleted
+        from the state tables.
+
 \end{description}
 
 \subsection{Additional complications}
+
+\label{additional complications}
 
 \subsubsection{Identifying bounce notifications}
 
@@ -1426,7 +1450,7 @@ notifications, and those heuristics are:
 
     \item The message-id has a specific format: \newline
         \texttt{YYYYMMDDhhmmss.queueid@server.hostname} \newline
-        e.g. \texttt{20070321125732.D168138A1@smtp.cs.tcd.ie}
+        e.g.\ \texttt{20070321125732.D168138A1@smtp.cs.tcd.ie}
 
     \item The queueid in the message-id must be the same as the queueid of
         the mail: this is what distinguishes bounce notifications generated
@@ -1653,9 +1677,45 @@ order:
 As always with heuristics there may be circumstances in which these
 heuristics incorrectly match, but none have been identified so far.
 
+\subsubsection{Smtpd stops logging}
+
+\label{smtpd stops logging}
+
+Occasionally an smtpd will just stop logging, without any explicit reason.
+After poring over logs for some time there are several reasons for this
+infrequent occurrence:
+
+\begin{enumerate}
+
+    \item Postfix is stopped or its configuration is reloaded.  When this
+        happens all smtpds exit, and all entries in the connections state
+        table must be committed and deleted from the state table.  The
+        queueid state table is untouched.
+
+    \item Postfix sometimes forcibly kills an smtpd, so the active
+        connection must be committed and deleted from the connections state
+        table.
+
+    \item Occasionally an smtpd will die or exit uncleanly, so the active
+        connection must be committed and deleted from the connections state
+        table.
+
+\end{enumerate}
+
+The above appear to cover all situations where an smtpd suddenly stops
+logging.
+
+
 \section{Parsing coverage}
 
-XXX THIS SECTION NEEDS TO BE WRITTEN
+The discussion of the parser's coverage of Postfix log files is separated
+into two parts: log lines covered and mails covered.  The first is
+important because the parser should handle all (relevant) log lines it's
+given; the second is equally important because the parser must properly
+deal with every mail if it is to be useful.  Improving the former is
+less intrusive, as it just requires new rules to be written; improving the
+latter is much more intrusive as it requires changes to the parser
+algorithm, and it can also be much harder to notice a deficiency.
 
 \label{parsing-coverage}
 
@@ -1663,13 +1723,79 @@ XXX THIS SECTION NEEDS TO BE WRITTEN
 
 \label{log-lines-covered}
 
-XXX WRITE THIS
+Parsing a log line is a three stage process:
+
+\begin{enumerate}
+
+    \item Check if there are any rules for the program which produced the
+        log line; if not then skip the line.  
+
+    \item Try each rule, ordered by priority and rule order (see
+        sections~\ref{rule attributes} and~\ref{rule ordering for
+        efficiency}), until a matching rule is found.
+
+    \item Execute the appropriate action.
+
+\end{enumerate}
+
+Full coverage of log lines requires the following:
+
+\begin{enumerate}
+
+    \item Each program of interest must have at least one rule or it's log
+        lines will be silently skipped; in the extreme case of zero rules
+        the parser would happily skip every log line.  There may be any
+        number of log lines from other programs intermingled in the log
+        file, and there are some Postfix programs which don't produce any
+        log lines of interest (currently \textit{postfix/anvil\/} and
+        \textit{postfix/scache\/}).
+
+    \item There must be a rule to match each different line produced by
+        each program; if a line is not successfully matched the parser will
+        issue a warning.  Rules should be as specific and tightly bound as
+        possible to ensure accurate parsing:\footnote{A rule which matches
+        zero or more of any character will successfully parse every log
+        line, but not in a meaningful way.} most log lines contain fixed
+        strings and have a rigid pattern, so this is not a problem.
+
+    \item The appropriate action to take --- this is discussed in
+        section~\ref{mails-covered}.
+
+\end{enumerate}
+
+Full coverage of log lines is both easy to achieve and hard to maintain.
+It is easy to achieve full coverage for a limited set of log files (at the
+time of writing the parser has 131 rules, fully parsing 93 contiguous log
+files from Postfix 2.2 and 2.3), and new rules are easy to add.
+Maintaining full coverage is hard because other servers have different
+restrictions with custom messages, RBLs change their messages over time,
+major releases of Postfix change warning messages (usually adding more
+information), etc.\ so over time the log lines drift and change.
+
+XXX GRAPH RULE HITS
 
 \subsection{Mails covered}
 
 \label{mails-covered}
 
 XXX WRITE THIS
+
+Coverage of mails is much more difficult to determine accurately.  The
+parser can dump its state tables in a human readable form; examining these
+tables with reference to the log files is the best way to detect mails
+which were not handled properly (all the complications discussed in
+section~\ref{additional complications} were detected in this way).  The
+parser issues warnings when it detects any errors, some of which may alert
+the user to a problem, e.g.\ when a queueid is reused before the previous
+mail is fully dealt with, when a queueid/pid is not found, or when there
+are problems tracking a child mail (see
+section~\ref{tracking-re-injected-mail}).  There should be few or no
+warnings (warnings about mail where some of the log lines are not in the
+logfile can be ignored), and the state table should only contain entries
+for mails which had yet to be delivered when the logfiles ended.
+
+At the time of writing the parser is being tested with 93 log files.  The
+state table contains entries for mails not yet delivered at the end of the 
 
 \section{Limitations and possible improvements}
 
