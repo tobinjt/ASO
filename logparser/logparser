@@ -35,7 +35,7 @@ my $parser = ASO::Parser->new({
         data_source => q{dbi:SQLite:dbname=../sql/db.sq3},
         sort_rules  => q{normal},
         discard_compiled_regex  => 0,
-        skip_inserting_results  => 0,
+        skip_inserting_results  => 1,
     });
 warn qq{vim: set foldmethod=marker :\n};
 # The main loop: most of it is really in parse_line(), to make profiling easier.
@@ -78,6 +78,8 @@ sub devel_profile_startup {
 
 sub set_SmallProf_packages {
     if (exists $INC{q{Devel/SmallProf.pm}}) {
+        # Silence warnings about it on;y being used once.
+        %DB::packages = ();
         %DB::packages = (
             q{main}                 => 1,
             q{ASO::DB}              => 1,
