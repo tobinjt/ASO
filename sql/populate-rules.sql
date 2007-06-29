@@ -1898,6 +1898,85 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- }}}
 
+-- -- MASTER RULES {{{1
+
+-- daemon started -- version 2.2.10, configuration /mail/postfix-2.2.10/etc
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Postfix started', 'Postfix master daemon started',
+        'postfix/master',
+        '^daemon started -- version \d+\.\d+\.\d+, configuration .*$',
+        '',
+        '',
+        'POSTFIX_RELOAD',
+        0,
+        'POSTFIX_RELOAD'
+);
+
+-- reload configuration /mail/postfix-2.2.10/etc
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Postfix reload', 'Postfix master daemon reloaded configuration',
+        'postfix/master',
+        '^reload configuration .*$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+-- terminating on signal 15
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Postfix stop', 'Postfix master daemon stopped',
+        'postfix/master',
+        '^terminating on signal 15$',
+        '',
+        '',
+        'POSTFIX_RELOAD',
+        0,
+        'POSTFIX_RELOAD'
+);
+
+-- warning: /mail/postfix/libexec/smtpd: bad command startup -- throttling
+-- warning: ignoring inet_protocols change
+-- warning: to change inet_protocols, stop and start Postfix
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Warning of some sort', 'Master logging a warning about something',
+        'postfix/master',
+        '^warning: .*$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+-- warning: process /mail/postfix/libexec/smtpd pid 17850 killed by signal 15
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, priority)
+    VALUES('Master daemon killed an smtpd', 'Master daemon had to kill an smtpd forcefully',
+        'postfix/master',
+        '^warning: process .*/libexec/smtpd pid \d+ killed by signal \d+$',
+        '',
+        '',
+        'SMTPD_KILLED',
+        0,
+        'IGNORED',
+        5
+);
+
+-- warning: process /mail/postfix/libexec/smtpd pid 13510 exit status 1
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('smtpd died', 'An smtpd died for some reason',
+        'postfix/master',
+        '^warning: process .*/libexec/smtpd pid \d+ exit status \d+$',
+        '',
+        '',
+        'SMTPD_DIED',
+        0,
+        'IGNORED'
+);
+
+-- }}}
+
 -- INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
 --     VALUES('', '',
 --         '',

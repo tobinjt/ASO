@@ -199,6 +199,9 @@ sub init_globals {
         CLONE                       => 1,
         TIMEOUT                     => 1,
         MAIL_TOO_LARGE              => 1,
+        POSTFIX_RELOAD              => 1,
+        SMTPD_DIED                  => 1,
+        SMTPD_KILLED                => 1,
     };
 
 
@@ -1028,6 +1031,124 @@ sub TIMEOUT {
     $self->delete_connection_by_queueid($last_mail->{queueid});
     delete $connection->{cloned_mails}->[-1];
     return $self->{ACTION_SUCCESS};
+}
+
+=over  4
+
+=item POSTFIX_RELOAD
+
+Postfix has been stopped, started or reloaded; all active smtpds will have been
+killed, so the parser needs to tidy up any outstanding connections.  Connections
+with only one smtpd entry will be discarded; other connections will be
+committed.
+
+=back
+
+=cut
+
+sub POSTFIX_RELOAD {
+    my ($self, $rule, $line, $matches) = @_;
+
+    foreach my $connection ($self->get_all_connections_by_pid()) {
+        $self->delete_dead_smtpd($connection);
+    }
+
+    return $self->{ACTION_SUCCESS};
+}
+
+=over  4
+
+=item SMTPD_DIED
+
+Sometimes an smtpd exits uncleanly; this cleans up the connection.
+
+=back
+
+=cut
+
+sub SMTPD_DIED {
+    my ($self, $rule, $line, $matches) = @_;
+
+    return $self->handle_dead_smtpd($line, q{SMTPD_DIED},
+        qr/pid (\d+) exit status/);
+}
+
+=over  4
+
+=item SMTPD_KILLED
+
+When Postfix is reloaded or stopped the master daemon sometimes forcibly kills
+an smtpd; this cleans up the connection.
+
+=back
+
+=cut
+
+sub SMTPD_KILLED {
+    my ($self, $rule, $line, $matches) = @_;
+
+    return $self->handle_dead_smtpd($line, q{SMTPD_KILLED},
+        qr/pid (\d+) killed by signal/);
+}
+
+=begin internals
+
+=over  4
+
+=item $self->handle_dead_smtpd($line, $action, $regex)
+
+Deals with an smtpd dying or being killed.  Matches $regex against $line->{text}
+and uses $1 as the pid.  Uses $action in error messages.  Calls
+delete_dead_smtpd() if the connection exists, returns silently otherwise.
+
+=back
+
+=end internals
+
+=cut
+
+sub handle_dead_smtpd {
+    my ($self, $line, $action, $regex) = @_;
+
+    if ($line->{text} !~ m/$regex/) {
+        $self->my_warn(qq{$action: bad line: $line->{text}\n});
+        return $self->{ACTION_FAILURE};
+    }
+
+    my $pid = $1;
+    if (not $self->pid_exists($pid)) {
+        return $self->{ACTION_SUCCESS};
+    }
+    my $connection = $self->get_connection_by_pid($pid);
+    $self->delete_dead_smtpd($connection);
+
+    return $self->{ACTION_SUCCESS};
+}
+
+=over  4
+
+=item $self->delete_dead_smtpd($connection, $action)
+
+If there's only one
+smtpd log line the connection will be discarded, otherwise it will be committed.
+
+=back
+
+=cut
+
+sub delete_dead_smtpd {
+    my ($self, $connection) = @_;
+
+    if ($connection->{programs}->{q{postfix/smtpd}} == 1) {
+        # Only the connect line, delete it.
+        $self->delete_connection_by_pid($connection->{pid});
+    } else {
+        # Hopefully this will work, I'll refine it later if it doesn't.
+        $self->fixup_connection($connection);
+        $self->commit_connection($connection);
+        $self->delete_connection_by_pid($connection->{pid});
+    }
+
 }
 
 =over 4
@@ -2111,6 +2232,21 @@ sub get_connection_by_pid {
 
     $self->my_warn(qq{get_connection_by_pid: no connection for $pid\n});
     return $self->make_connection_by_pid($pid, faked => 1);
+}
+
+=over 4
+
+=item $self->get_all_connections_by_pid()
+
+Returns all connections saved by pid in the state tables.
+
+=back
+
+=cut
+
+sub get_all_connections_by_pid {
+    my ($self) = @_;
+    return values %{$self->{connections}};
 }
 
 =over 4
