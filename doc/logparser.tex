@@ -1418,6 +1418,13 @@ Each action is passed the same arguments:
         the active connection for that smtpd must be committed and deleted
         from the state tables.
 
+    \item [SMTPD\_WATCHDOG] Smtpds have a watchdog timer to deal with
+        unusual situations --- after five hours the timer will expire and
+        the smtpd will exit.  This occurs very infrequently, as there are
+        many other timeouts which should occur in the intervening hours:
+        DNS timeouts, timeouts reading data, etc.  The active connection
+        for that smtpd must be committed and deleted from the state tables.
+
 \end{description}
 
 \subsection{Additional complications}
@@ -1778,23 +1785,54 @@ XXX GRAPH RULE HITS
 
 \label{mails-covered}
 
+Coverage of mails is much more difficult to determine accurately than
+coverage of lines.  The parser can dump its state tables in a human
+readable form; examining these tables with reference to the log files is
+the best way to detect mails which were not handled properly (all the
+complications discussed in section~\ref{additional complications} were
+diagnosed and sometimes detected in this way).  The parser issues warnings
+when it detects any errors, some of which may alert the user to a problem,
+e.g.\ when a queueid is reused before the previous mail is fully dealt
+with, when a queueid or pid is not found,\footnote{There will often be a
+few warnings about missing queueids or pids in the first few hundred or
+thousand log lines because the earlier log lines are in the previous log
+file; loading the saved state from the previous log file will solve this
+problem} or when there are problems tracking a child mail (see
+section~\ref{tracking-re-injected-mail}).  There should be few or no
+warnings, and the state table should only contain entries for mails which
+had yet to be delivered when the logfiles ended.
+
+At the time of writing the parser is being tested with 93 log files.  There
+are 25 warnings produced, but because the parser errs on the side of
+producing more warnings rather than fewer those 25 warnings represent only
+8 problems:
+
+\begin{itemize}
+
+    \item 3 connections (5 warnings) started before the first log file, so
+        their initial log entries are missing.
+
+    \item 5 mails (20 warnings) have out of order log entries, leading to
+        warnings about missing data and queueids.  The two log files where
+        the out of order log lines occur are more than an order of
+        magnitude larger than normal, due to the extremely large volume of
+        mail handled by the server on those days; process scheduling
+        vagaries and the undefined order of messages sent to syslog(8) may
+        explain why the lines were out of order.
+
+\end{itemize}
+
+The first of these problems cannot be dealt with; although out of order log
+lines (the second problem) are dealt with in other circumstances (see
+sections~\ref{tracking-re-injected-mail}, \ref{discarding-cleanup-lines}
+and \ref{pickup-logging-after-cleanup}), dealing with these lines would
+introduce a large amount of complication (deferred warnings, deferred
+committal, ambiguity) for a problem which occurs only four times in
+60721709 log lines.
+
 XXX WRITE THIS
 
-Coverage of mails is much more difficult to determine accurately.  The
-parser can dump its state tables in a human readable form; examining these
-tables with reference to the log files is the best way to detect mails
-which were not handled properly (all the complications discussed in
-section~\ref{additional complications} were detected in this way).  The
-parser issues warnings when it detects any errors, some of which may alert
-the user to a problem, e.g.\ when a queueid is reused before the previous
-mail is fully dealt with, when a queueid/pid is not found, or when there
-are problems tracking a child mail (see
-section~\ref{tracking-re-injected-mail}).  There should be few or no
-warnings (warnings about mail where some of the log lines are not in the
-logfile can be ignored), and the state table should only contain entries
-for mails which had yet to be delivered when the logfiles ended.
-
-At the time of writing the parser is being tested with 93 log files.  The
+The
 state table contains entries for mails not yet delivered at the end of the 
 
 \section{Limitations and possible improvements}
@@ -1812,11 +1850,6 @@ always room for improvement.
         with the new log lines.  Similarly new RBLs, new policy servers and
         new administrator defined rejection messages require new rules.
 
-    \item The program doesn't cope with mails which span log files:
-        currently they are reported as unfinished mails at the end of the
-        first run and are complained about when encountered during the next
-        run because they don't have a source.
-
     \item It appears that the hostname used in the HELO command is not
         logged if the mail is accepted.\footnote{Tested with Postfix 2.2.10
         and 2.3.7; this may possibly have changed in Postfix 2.4.}  It
@@ -1831,6 +1864,8 @@ always room for improvement.
         distinction given the data Postfix logs, though it might be
         possible to write a policy server to provide additional
         logging.
+
+        XXX EXPAND ON THIS
 
     \item The program will not detect parsing the same log file twice,
         resulting in the database containing duplicate entries.
@@ -1848,13 +1883,6 @@ always room for improvement.
         dependant on the machine the program is running on.
 
     \item Write the policy servers referred to in the limitations above.
-
-    \item Save state at the end of each run; load it at the start of the
-        next run.  This should allow the program to cope with mails
-        spanning log files.  This might also require purging old mails once
-        they've been in the state tables for too long, though the presence
-        of very old mails indicates a bug in either the implementation or
-        the specification.
 
 \end{itemize}
 
