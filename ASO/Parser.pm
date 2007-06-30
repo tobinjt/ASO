@@ -208,6 +208,7 @@ sub init_globals {
         POSTFIX_RELOAD              => 1,
         SMTPD_DIED                  => 1,
         SMTPD_KILLED                => 1,
+        SMTPD_WATCHDOG              => 1,
     };
 
 
@@ -1099,6 +1100,25 @@ sub SMTPD_KILLED {
         qr/pid (\d+) killed by signal/);
 }
 
+=over  4
+
+=item SMTPD_WATCHDOG
+
+Occasionally the watchdog timer in an smtpd runs out, and the smtpd exits.  This
+cleans up the connection.
+
+=back
+
+=cut
+
+sub SMTPD_WATCHDOG {
+    my ($self, $rule, $line, $matches) = @_;
+
+    my $connection = $self->get_connection_by_pid($line->{pid});
+    $self->delete_dead_smtpd($connection);
+    return $self->{ACTION_SUCCESS};
+}
+
 =begin internals
 
 =over  4
@@ -1135,7 +1155,7 @@ sub handle_dead_smtpd {
 
 =over  4
 
-=item $self->delete_dead_smtpd($connection, $action)
+=item $self->delete_dead_smtpd($connection)
 
 If there's only one
 smtpd log line the connection will be discarded, otherwise it will be committed.

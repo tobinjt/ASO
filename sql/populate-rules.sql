@@ -127,17 +127,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- Other lines we want to ignore
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Fatal error', 'A fatal error; nothing can be done about it now',
-        'postfix/smtpd',
-        '^fatal: ',
-        '',
-        '',
-        'IGNORE',
-        0,
-        'IGNORED'
-);
-
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Warning', 'Warnings of some sort',
         'postfix/smtpd',
         '^warning: ',
@@ -188,6 +177,22 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         '',
         'IGNORE',
+        0,
+        'IGNORED'
+);
+
+-- }}}
+
+-- SMTPD FATAL RULES {{{1
+
+-- fatal: watchdog timeout
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Watchdog timeout', 'Watchdog timed out; kill the active connection.',
+        'postfix/smtpd',
+        '^fatal: watchdog timeout$',
+        '',
+        '',
+        'SMTPD_WATCHDOG',
         0,
         'IGNORED'
 );
