@@ -10,13 +10,14 @@ use lib q{..};
 use ASO::DB;
 use ASO::Parser;
 use Carp;
+use Getopt::Long;
+use Pod::Usage;
+use File::Temp qw(tempfile);
 
 binmode STDOUT;
 binmode STDERR;
 
-sub timewarn {
-    warn qq{$0: }, scalar localtime, q{: }, @_;
-}
+my ($Options, $parser_options) = get_options();
 
 # Ensure that we don't try to read from a terminal.
 my @logs = @ARGV;
@@ -31,14 +32,12 @@ if (not @logs) {
 devel_profile_startup();
 set_SmallProf_packages();
 
-my $parser = ASO::Parser->new({
-        data_source => q{dbi:SQLite:dbname=../sql/db.sq3},
-        sort_rules  => q{normal},
-        discard_compiled_regex  => 0,
-        skip_inserting_results  => 1,
-    });
 warn qq{vim: set foldmethod=marker :\n};
-# The main loop: most of it is really in parse_line(), to make profiling easier.
+my $parser = ASO::Parser->new($parser_options);
+if ($Options->{q{in-statefile}}) {
+    $parser->load_state($Options->{q{in-statefile}});
+}
+
 foreach my $logfile (@logs) {
     timewarn(qq{Starting to read $logfile\n});
     $parser->parse($logfile);
@@ -47,14 +46,10 @@ foreach my $logfile (@logs) {
 timewarn(qq{Updating rule_order\n});
 $parser->update_check_order();
 
-# Dump any remaining connections so we can tell when there are uncommitted
-# mails; a lot of the time it's because someone is over quota, or a remote site
-# is experiencing difficulties, but somethimes it's because we're not handling
-# a sequence of events properly.
-# In future we'll also use this to reload state from the previous run, to handle
-# mails which cross logfile boundaries.
 timewarn(qq{begin dumping state\n});
-print $parser->dump_state();
+my $statefile = IO::File->new(q{>} . $Options->{q{out-statefile}})
+    or die qq{Failed to open $Options->{q{out-statefile}}: $!\n};
+print $statefile $parser->dump_state();
 timewarn(qq{finished dumping state\n});
 
 # Some profiling modules dump their data to stdout, but we want to redirect
@@ -96,4 +91,62 @@ sub redirect_stdout {
         close STDOUT;
         open STDOUT, qq{> $ENV{REDIRECT_STDOUT}};
     }
+}
+
+sub get_options {
+    my %parser_options = (
+        q{data_source=s}            => q{dbi:SQLite:dbname=../sql/db.sq3},
+        q{sort_rules=s}             => q{normal},
+        q{discard_compiled_regex}   => 0,
+        q{skip_inserting_results}   => 1,
+    );
+    my %opts = (
+        q{in-statefile|i=s}         => undef,
+        q{out-statefile|o=s}        => q{state},
+        q{help|h}                   => 0,
+        q{version|v}                => 0,
+        %parser_options,
+    );
+
+    my @switches    = keys %opts;
+    %opts           = getopt_to_key(%opts);
+    %parser_options = getopt_to_key(%parser_options);
+
+    Getopt::Long::Configure qw(no_getopt_compat permute bundling);
+    Getopt::Long::GetOptions(\%opts, @switches) or pod2usage(2);
+
+    if ($opts{help}) {
+        pod2usage(
+            -verbose    => 1,
+            -exitval    => 0,
+        );
+    }
+    if ($opts{version}) {
+        my $version = q{$Id$};
+        print qq{$0 version $version\n};
+        exit 0;
+    }
+
+    map { $parser_options{$_} = $opts{$_}; } keys %parser_options;
+
+    return (\%opts, \%parser_options);
+}
+
+# Convert keys from Getopt::Long option specifiers to option names.
+sub getopt_to_key {
+    my (%opts) = @_;
+    my %names;
+
+    map {
+        my ($key, $value) = ($_, $opts{$_});
+        $key =~ s/\|.*//;
+        $key =~ s/=.*//;
+        $names{$key} = $value;
+    } keys %opts;
+
+    %names;
+}
+
+sub timewarn {
+    warn qq{$0: }, scalar localtime, q{: }, @_;
 }

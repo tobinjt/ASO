@@ -22,11 +22,12 @@ This documentation refers to ASO::Parser version $Id$
             discard_compiled_regex  => 0,
         });
 
-    # XXX IMPROVE THIS
-    $parser->load_state($state);
+    $parser->load_state($statefile);
     $parser->parse($logfile);
+
     $parser->update_check_order();
-    $parser->dump_state();
+    my $statefile = IO::File->new($statefile);
+    print $statefile $parser->dump_state();
 
 =head1 DESCRIPTION
 
@@ -114,7 +115,7 @@ sub new {
 
     foreach my $option (keys %$options) {
         if (not exists $defaults{$option} and $option ne q{data_source}) {
-            croak qq{$package::new(): unknown option $option\n};
+            croak qq{${package}::new(): unknown option $option\n};
         }
     }
 
@@ -1390,6 +1391,7 @@ sub dump_state {
     local $Data::Dumper::Sortkeys = 1;
     $state = <<'PREAMBLE';
 ## vim: set foldmethod=marker :
+no warnings q{redefine};
 sub reload_state {
     my %queueids;
     my %connections;
@@ -1429,10 +1431,75 @@ PREAMBLE
     return (\%queueids, \%connections);
 }
 
+use warnings q{redefine};
+
 1;
 POSTAMBLE
     return $state;
 }
+
+=over 4
+
+=item $self->load_state($file)
+
+Eval the code in $file and then run the resulting subroutine reload_state() to
+reload state tables.
+
+=back
+
+=cut
+
+sub load_state {
+    my ($self, $file) = @_;
+
+    $@ = $! = 0;
+    my $result = do $file;
+    if (not defined $result) {
+        if ($@) {
+            $self->my_warn(qq{Error while reloading state from "$file": $@\n});
+        } elsif ($!) {
+            $self->my_warn(qq{Error while reloading state from "$file": $!\n});
+        }
+        $self->my_die(qq{Error while reloading state from "$file", exiting.\n});
+    }
+
+    if (not $self->can(q{reload_state})) {
+        $self->my_die(qq{reload_state() not defined by $file\n});
+    }
+
+    eval {
+        ($self->{connections}, $self->{queueids}) = $self->reload_state();
+    };
+    if ($@) {
+        $self->my_die(qq{Fatal: error running reload_state(): $@\n});
+    } else {
+        $self->my_warn(qq{Loaded state from $file\n});
+    }
+}
+
+=begin internals
+
+=over 4
+
+=item $self->reload_state()
+
+The subroutine does not exist within the module; it must be defined in the file
+passed as an argument to load_state().  When run it should return hash
+references representing the saved state tables.  dump_state() returns a
+subroutine which does exactly this, so in general the calling sequence will be:
+
+  # First parser
+  my $state = $parser->dump_state();
+  print $state_file $state;
+
+  # Second parser
+  $parser->load_state($state_file);
+
+=back
+
+=end internals
+
+=cut
 
 =over 4
 
@@ -2012,9 +2079,9 @@ sub my_warn {
             $newline = qq{\n};
             $first_line =~ s/\n$//;
         }
-        warn($prefix, $first_line, q( {{{), $newline, @rest, qq(}}}\n));
+        warn $prefix, $first_line, q( {{{), $newline, @rest, qq(}}}\n);
     } else {
-        warn($prefix, $first_line);
+        warn $prefix, $first_line;
     }
 }
 
@@ -2031,7 +2098,9 @@ error messages.
 
 sub my_die {
     my ($self) = shift @_;
-    die qq{$0: $self->{current_logfile}: $.: }, @_;
+    my $timestamp = localtime;
+    my $prefix = qq{$0: $timestamp: $self->{current_logfile}: $.: };
+    die $prefix, @_;
 }
 
 # Accessing mails/connections by queueid.
