@@ -163,6 +163,8 @@ sub init_globals {
     $self->{queueid_regex}    = $self->filter_regex(q{__QUEUEID__});
     $self->{queueid_regex}    = qr/$self->{queueid_regex}/;
 
+    # The data to dump in dump_state()
+    $self->{data_to_dump} = [qw(queueids connections timeout_queueids)];
     # All mail starts off in %connections, unless submitted locally by
     # sendmail/postgrop, and then moves into %queueids if it gets a queueid.
     $self->{connections}      = {};
@@ -1422,7 +1424,7 @@ sub reload_state {
 
 PREAMBLE
 
-    foreach my $data_source (qw(queueids connections timeout_queueids)) {
+    foreach my $data_source (@{$self->{data_to_dump}}) {
         my %tracked;
         $state .= qq{## Starting dump of $data_source\n};
         $state .= qq{## } . localtime() . qq{\n};
@@ -1450,9 +1452,12 @@ PREAMBLE
         $state .= $untracked;
     }
 
-    $state .= <<'POSTAMBLE';
+    my $results = join q{, },
+        map { qq{q($_) => \\\%$_} }
+            @{$self->{data_to_dump}};
+    $state .= <<"POSTAMBLE";
 
-    return (\%queueids, \%connections);
+    return ($results);
 }
 
 use warnings q{redefine};
@@ -1492,7 +1497,10 @@ sub load_state {
     }
 
     eval {
-        ($self->{connections}, $self->{queueids}) = $self->reload_state();
+        my %data = $self->reload_state();
+        foreach my $data_source (@{$self->{data_to_dump}}) {
+            $self->{$data_source} = $data{$data_source};
+        }
     };
     if ($@) {
         $self->my_die(qq{Fatal: error running reload_state(): $@\n});
@@ -1547,7 +1555,8 @@ sub prune_timeout_queueids {
     # This is dependant on the time difference used in MAIL_PICKED_FOR_DELIVERY.
     foreach my $queueid (keys %{$self->{timeout_queueids}}) {
         my $connection = $self->{timeout_queueids}->{$queueid};
-        if ($connection->{timestamp} < ($self->{last_timestamp} - (7 * 60))) {
+        if ($connection->{results}->[-1]->{timestamp}
+                < ($self->{last_timestamp} - (7 * 60))) {
             delete $self->{timeout_queueids}->{$queueid};
         }
     }
