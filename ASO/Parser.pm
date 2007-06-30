@@ -175,6 +175,9 @@ sub init_globals {
     # try to track those queueids where the timeout happens before cleanup logs,
     # and then discard the next cleanup line for that queueid.
     $self->{timeout_queueids} = {};
+    # The timestamp of the last log line parsed.  Used for cleaning out
+    # $self->{timeout_queueids}, and possibly other uses in future.
+    $self->{last_timestamp}   = 0;
 
     # Keep track of the number of inserts uncommitted.
     $self->{num_connections_uncommitted} = 0;
@@ -257,6 +260,7 @@ sub parse {
 
     LINE:
     while (my $line = $syslog->next()) {
+        $self->{last_timestamp} = $line->{timestamp};
         if (not exists $self->{rules_by_program}->{$line->{program}}) {
             # It's not from a program we're interested in, skip it.
             next LINE;
@@ -823,7 +827,8 @@ sub MAIL_PICKED_FOR_DELIVERY {
         # First check: the cleanup line should be logged pretty soon after the
         #   rest of the lines, in general it appears within a few lines in the
         #   log.  Timeouts happen after 5 minutes, so we'll require the cleanup
-        #   line to be seen within 6 minutes.
+        #   line to be seen within 6 minutes (NOTE: if this is changed
+        #   prune_timeout_queueids() needs to change too).
         # Second check: the queueid shouldn't exist in %queueids: if it does it
         #   means the queueid is being reused so this line is for the new mail,
         #   rather than the discarded mail.  Obviously this is vulnerable to
@@ -1405,6 +1410,8 @@ sub dump_state {
     my ($self) = @_;
     my $state = q{};
 
+    $self->prune_timeout_queueids();
+
     local $Data::Dumper::Sortkeys = 1;
     $state = <<'PREAMBLE';
 ## vim: set foldmethod=marker :
@@ -1415,7 +1422,7 @@ sub reload_state {
 
 PREAMBLE
 
-    foreach my $data_source (qw(queueids connections)) {
+    foreach my $data_source (qw(queueids connections timeout_queueids)) {
         my %tracked;
         $state .= qq{## Starting dump of $data_source\n};
         $state .= qq{## } . localtime() . qq{\n};
@@ -1517,6 +1524,34 @@ subroutine which does exactly this, so in general the calling sequence will be:
 =end internals
 
 =cut
+
+=begin internals
+
+=over 4
+
+=item $self->prune_timeout_queueids()
+
+Remove any connection in $self->{timeout_queueids} older than 7 minutes before
+the timestamp of the last log line parsed, so they don't accumulate forever,
+Called from dump_state() before dumping.
+
+=back
+
+=end internals
+
+=cut
+
+sub prune_timeout_queueids {
+    my ($self) = @_;
+
+    # This is dependant on the time difference used in MAIL_PICKED_FOR_DELIVERY.
+    foreach my $queueid (keys %{$self->{timeout_queueids}}) {
+        my $connection = $self->{timeout_queueids}->{$queueid};
+        if ($connection->{timestamp} < ($self->{last_timestamp} - (7 * 60))) {
+            delete $self->{timeout_queueids}->{$queueid};
+        }
+    }
+}
 
 =over 4
 
