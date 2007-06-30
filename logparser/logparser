@@ -41,16 +41,13 @@ if ($Options->{q{in-statefile}}) {
 foreach my $logfile (@logs) {
     timewarn(qq{Starting to read $logfile\n});
     $parser->parse($logfile);
+    my $statefile = IO::File->new(q{>} . $Options->{q{out-statefile}})
+        or die qq{Failed to open $Options->{q{out-statefile}}: $!\n};
+    print $statefile $parser->dump_state();
 }
 
 timewarn(qq{Updating rule_order\n});
 $parser->update_check_order();
-
-timewarn(qq{begin dumping state\n});
-my $statefile = IO::File->new(q{>} . $Options->{q{out-statefile}})
-    or die qq{Failed to open $Options->{q{out-statefile}}: $!\n};
-print $statefile $parser->dump_state();
-timewarn(qq{finished dumping state\n});
 
 # Some profiling modules dump their data to stdout, but we want to redirect
 # that.  If the correct environment variable is set stdout will be redirected

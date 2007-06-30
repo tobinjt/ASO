@@ -1,7 +1,5 @@
 # $Id$
 
-# Use bash so we get a nice time, rather than GNU time, which has horrible
-# output.
 SHELL=bash
 
 all: test summary
@@ -22,26 +20,24 @@ copy.working:
 
 test: test.20070428
 
-test-list:
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser ${LOG-LIST}                 > state-list 2> warnings-list'; wc state-list warnings-list; date ) 2>&1 ) | tee -a results
-
 test-some:
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser $$( < logs-some           ) > state-some 2> warnings-some'; wc state-some warnings-some; date ) 2>&1 ) | tee -a results
-
-test-all:
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser ../../../../logs/mail.log-* > state-all  2> warnings-all';  wc state-all  warnings-all;  date ) 2>&1 ) | tee -a results
+	# We need to double escape the $, otherwise the submake will clobber it.
+	make INPUT='$$$$( < logs-some )'  STATE='"state-some"'    OUTPUT='"warnings-some"'    test-real
 
 test.%: ../../../../logs/mail.log-%
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser "$<"                        > state      2> warnings';      wc state      warnings;      date ) 2>&1 ) | tee -a results
+	make INPUT='"$<"'               STATE='"state"'         OUTPUT='"warnings"'         test-real
+
+test-real:
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser --out-statefile ${STATE} ${INPUT} 2> ${OUTPUT}'; wc ${STATE} ${OUTPUT}; date) 2>&1) | tee -a results
 
 ../sql/create-tables-sqlite3-generated.sql: ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm
 	(cd ../sql && perl make_schema > "$@")
 
 db: ../sql/create-tables-sqlite3-generated.sql
-	( cd ../sql/ && perl setup-database create-tables-sqlite3-generated.sql populate-rules.sql )
+	(cd ../sql/ && perl setup-database create-tables-sqlite3-generated.sql populate-rules.sql)
 
 db-clean:
-	( cd ../sql/ && perl setup-database cleanup.sql )
+	(cd ../sql/ && perl setup-database cleanup.sql)
 
 # A full profile run on one logfile takes upwards of an hour, blocking any
 # development during that time.  Create a copy of the directories required and
@@ -136,5 +132,5 @@ summary-some:
 summarize:
 	# Delete any lines not matching ^logparser; delete any lines not having 7
 	# colons; substitute the first seven colon-delimited fields with nothing.
-	( echo "${WARNINGS} summary: "; sed -e '/^logparser/!d; /^\([^:]\+:\)\{7\}/!d; s/^\([^:]\+:\)\{6\} \?//' "${WARNINGS}" | sort | uniq -c | sort -n ) | tee -a results
-	( echo -n "${STATE}: "; grep -c ^.queueids "${STATE}" ) | tee -a results
+	(echo "${WARNINGS} summary: "; sed -e '/^logparser/!d; /^\([^:]\+:\)\{7\}/!d; s/^\([^:]\+:\)\{6\} \?//' "${WARNINGS}" | sort | uniq -c | sort -n) | tee -a results
+	(echo -n "${STATE}: "; grep -c ^.queueids "${STATE}") | tee -a results
