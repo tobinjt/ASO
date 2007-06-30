@@ -1293,6 +1293,23 @@ sub load_rules {
             }
         }
 
+        # Check for overlapping columns {result,connection}_{cols,data}.
+        my $overlapping_cols = 0;
+        foreach my $type (qw(connection result)) {
+            my ($type_data, $type_cols) = (qq{${type}_data}, qq{${type}_cols});
+            foreach my $col (keys %{$rule_hash->{$type_data}}) {
+                if (exists $rule_hash->{$type_cols}->{$col}) {
+                    $overlapping_cols++;
+                    $self->my_warn(qq{Overlapping column in both }
+                        . qq{$type_cols and $type_data: $col\n});
+                }
+            }
+        }
+        if ($overlapping_cols) {
+            $self->my_die(qq{Exiting due to overlapping columns in rule:\n},
+                dump_rule($rule_hash));
+        }
+
         if (not exists $self->{actions}->{$rule_hash->{action}}) {
             $self->my_die(qq{load_rules: unknown action $rule_hash->{action}: },
                 dump_rule_from_db($rule));
@@ -1808,15 +1825,12 @@ sub save {
     );
     push @{$connection->{results}}, \%result;
 
-    # We do use $self->update_hash() for result_cols, just in case a rule has
-    # internal conflicts between result_cols and result_data.
+    # We don't use $self->update_hash() for result_cols, we check for internal
+    # conflicts between result_cols and result_data in load_rules().
     # RESULT_COLS
-    my %r_cols_updates;
     foreach my $r_col (keys %{$rule->{result_cols}}) {
-        $r_cols_updates{$r_col} = $matches->[$rule->{result_cols}->{$r_col}];
+        $result{$r_col} = $matches->[$rule->{result_cols}->{$r_col}];
     }
-    $self->update_hash(\%result, {}, \%r_cols_updates, {}, $rule, $line,
-        $connection, q{save: result_cols});
 
 
     # Populate connection.
