@@ -1,0 +1,12 @@
+set xlabel "Rule"
+set ylabel "Number of hits"
+set grid ytics
+
+set terminal postscript monochrome eps size 5.4,7.5
+set output "plot-hits.ps"
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
+
+set noxtics
+#set xrange [0:33]
+plot "stats-hits.txt" using 1:2 title "Number of hits"

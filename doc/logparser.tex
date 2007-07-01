@@ -753,21 +753,23 @@ Each rule defines the following:
     \item [queueid] Specifies the matching field from the regex which gives
         the queueid, or zero if the log line doesn't contain a queueid.
 
-    \item [rule\_order] is an efficiency measure.  This counter is
-        maintained for every rule and incremented each time the rule
-        successfully matches.  At the start of each run the program sorts
-        the rules in descending rule\_order, and at the end of the run
-        updates every rule's rule\_order.  Assuming that the distribution
-        of log lines is reasonably consistent between log files, rules
-        matching more commonly occurring log lines will be tried before
-        rules matching less commonly occurring log lines, lowering the
-        program's execution time.  Rule ordering for efficiency is
-        discussed in section~\ref{rule ordering for efficiency}.
+    \item [hits] is an efficiency measure.  This counter is maintained for
+        every rule and incremented each time the rule successfully matches.
+        At the start of each run the program sorts the rules in descending
+        hits, and at the end of the run updates every rule's hits.
+        Assuming that the distribution of log lines is reasonably
+        consistent between log files, rules matching more commonly
+        occurring log lines will be tried before rules matching less
+        commonly occurring log lines, lowering the program's execution
+        time.  Rule ordering for efficiency is discussed in
+        section~\ref{rule ordering for efficiency}.
 
-    \item [priority] This is the user-configurable companion to
-        rule\_order: rules will be tried in order of priority, overriding
-        rule\_order.  This allows more specific rules to take precedence
-        over more general rules.
+    \item [hits\_total] The total number of hits for this rule over all
+        runs of the parser.
+
+    \item [priority] This is the user-configurable companion to hits: rules
+        will be tried in order of priority, overriding hits.  This allows
+        more specific rules to take precedence over more general rules.
 
 \end{description}
 
@@ -788,8 +790,8 @@ remainder, e.g.\ separating smtp delivery to a filtering proxy from smtp
 delivery to the rest of the world.  The algorithm provides a facility for
 handling overlapping rules: the priority field in each rule (defaults to
 zero).  Rules are tried in order of priority, highest first, overriding the
-rule\_order field maintained by the parser.  Negative priorities may also
-be useful for catchall rules.
+hits field maintained by the parser.  Negative priorities may also be
+useful for catchall rules.
 
 Detecting overlapping rules is difficult, but the following may be helpful:
 
@@ -848,7 +850,8 @@ result\_data        &                                                   \\
 connection\_data    &                                                   \\
 action              & REJECTION                                         \\
 queueid             & 1                                                 \\
-rule\_order         & 0                                                 \\
+hits                & 0                                                 \\
+hits\_total         & 0                                                 \\
 priority            & 0                                                 \\
 
 \end{tabular}
@@ -876,6 +879,11 @@ The various fields are used as follows;
     \item [queueid:] is used the extract the queueid matched by the regex,
         so that the mail can be found by queueid and actions performed on
         it.
+
+    \item [hits, hits\_total and priority:] hits and priority are used in
+        ordering the rules (see section~\ref{rule ordering for
+        efficiency}); hits\_total is updated at the end of each run but is
+        otherwise unused.
 
 \end{description}
 
@@ -932,17 +940,15 @@ file size vs number lines factor}.
 
 \label{rule ordering for efficiency}
 
-XXX DO A FULL RUN ONCE RULE\_ORDER ISN'T BEING TRASHED AND GRAPH RULE
-HITS\@.
-
-Rule ordering was briefly discussed in section~\ref{rule attributes} and
-it will be covered in greater detail in this section.  At the time of
-writing there are 131 different rules, some of which match much more
-frequently than others.  Assuming that the distribution of log lines is
-reasonably steady over time, program efficiency should benefit from trying
-more frequently matching rules before those which match less frequently.
-To test this hypothesis three full test runs were performed with different
-rule orderings:
+Rule ordering was briefly discussed in section~\ref{rule attributes} and it
+will be covered in greater detail in this section.  At the time of writing
+there are 131 different rules, the majority of which match several orders
+of magnitude less frequently than the top 10\%, as shown in graph~\ref{rule
+hits}.  Assuming that the distribution of log lines is reasonably steady
+over time, program efficiency should benefit from trying more frequently
+matching rules before those which match less frequently.  To test this
+hypothesis three full test runs were performed with different rule
+orderings:
 
 \begin{description}
 
@@ -1380,13 +1386,13 @@ Each action is passed the same arguments:
     \item [MAIL\_PICKED\_FOR\_DELIVERY] This action represents Postfix
         picking a mail from the queue to deliver. This action is used for
         both qmgr and cleanup due to out of order log lines; see
-        section~\ref{discarding-cleanup-lines} for details.
+        section~\ref{discarding cleanup lines} for details.
 
     \item [PICKUP] Pickup is the service which deals with mail submitted
         locally via /usr/sbin/sendmail. This action creates a new state
         table entry and saves data to it, unless out of order logging has
         caused the cleanup line to be logged first, as discussed in
-        section~\ref{pickup-logging-after-cleanup}.
+        section~\ref{pickup logging after cleanup}.
 
     \item [CLONE] Multiple mails may be accepted on a single connection, so
         each time a mail is accepted the connection's state table entry
@@ -1622,11 +1628,11 @@ following in the TIMEOUT action:
 \end{enumerate}
 
 This complication is further complicated by out of order cleanup lines: see
-section~\ref{discarding-cleanup-lines} for details.
+section~\ref{discarding cleanup lines} for details.
 
 \subsubsection{Discarding cleanup lines}
 
-\label{discarding-cleanup-lines}
+\label{discarding cleanup lines}
 
 The author has only observed this complication occurring after a timeout,
 though there may be other circumstances which trigger it.  Sometimes the
@@ -1662,7 +1668,7 @@ queueids when the next pickup line is parsed.
 
 \subsubsection{Pickup logging after cleanup}
 
-\label{pickup-logging-after-cleanup}
+\label{pickup logging after cleanup}
 
 Occasionally the pickup line logged when mail is submitted locally via
 sendmail appears later in the logfile than the cleanup line for that mail.
@@ -1778,8 +1784,9 @@ Maintaining full coverage is hard because other servers have different
 restrictions with custom messages, RBLs change their messages over time,
 major releases of Postfix change warning messages (usually adding more
 information), etc.\ so over time the log lines drift and change.
-
-XXX GRAPH RULE HITS
+Graph~\ref{rule hits} shows the hits for each rule over all 93 log files;
+it's obvious that a small number of rules match the vast majority of the
+lines, and more than half the rules match fewer than 100 times.
 
 \subsection{Mails covered}
 
@@ -1824,9 +1831,9 @@ producing more warnings rather than fewer those 25 warnings represent only
 
 The first of these problems cannot be dealt with; although out of order log
 lines (the second problem) are dealt with in other circumstances (see
-sections~\ref{tracking-re-injected-mail}, \ref{discarding-cleanup-lines}
-and \ref{pickup-logging-after-cleanup}), dealing with these lines would
-introduce a large amount of complication (deferred warnings, deferred
+sections~\ref{tracking-re-injected-mail},~\ref{discarding cleanup
+lines}~and~\ref{pickup logging after cleanup}), dealing with these lines
+would introduce a large amount of complication (deferred warnings, deferred
 committal, ambiguity) for a problem which occurs only four times in
 60721709 log lines.
 
@@ -2037,6 +2044,10 @@ XXX THIS NEEDS TO BE EXPANDED
 
 
 \subsection{Rule ordering}
+
+\subsubsection{Rule hits}
+\label{rule hits}
+\includegraphics{plot-hits.ps}
 
 \subsubsection{Normal vs shuffled vs reversed ordering}
 \label{normal vs shuffled vs reversed ordering}

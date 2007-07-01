@@ -18,7 +18,7 @@ copy.working:
 	cp -p warnings warnings-working
 	cp -p state    state-working
 
-test: test.20070428
+test: test.20070616
 
 test-some:
 	# We need to double escape the $, otherwise the submake will clobber it.

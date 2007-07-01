@@ -30,6 +30,7 @@ logparser.dvi: plot-cached-discarded.ps plot-cached-discarded-factor.ps
 logparser.dvi: plot-normal-shuffle-reverse.ps plot-normal-shuffle-reverse-factor.ps
 logparser.dvi: plot-normal-filesize-numlines-factor.ps plot-normal-filesize-numlines.ps
 logparser.dvi: plot-log22-distribution-by-rule.ps plot-log22-distribution-versus-rule-count.ps
+logparser.dvi: plot-hits.ps
 
 logparser-flow-chart.ps: logparser-flow-chart.dot
 	dot -o "$@" -Tps -x "$<"
@@ -42,6 +43,7 @@ plot-normal-filesize-numlines-factor.ps: stats-normal-filesize-numlines-factor.t
 plot-normal-filesize-numlines.ps: stats-normal.txt file-sizes.txt wc.txt
 plot-log22-distribution-by-rule.ps: stats-log22-distribution-by-rule.txt
 plot-log22-distribution-versus-rule-count.ps: stats-log22-rule-count-by-program.txt
+plot-hits.ps: stats-hits.txt
 
 plot-%.ps: plot-%.gpi
 	gnuplot "$<"
@@ -63,6 +65,9 @@ stats-log22-distribution-by-rule.txt:
 
 stats-log22-rule-count-by-program.txt:
 	sqlite3 -separator ' ' ../sql/db.sq3 "select sum(rule_order), count(*), program from rules group by program;" | awk '$$1 > 0 { print }' | nl > "$@"
+
+stats-hits.txt:
+	sqlite3 -separator ' ' ../sql/db.sq3 "select rule_order from rules order by rule_order;" | nl > "$@"
 
 clean:
 	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out

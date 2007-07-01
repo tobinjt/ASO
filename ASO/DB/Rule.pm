@@ -225,9 +225,15 @@ my %cols = (
         sql                 => q{NOT NULL},
         type                => q{integer},
     },
-    # The order to apply the rules in: lowest first; this is automatically
-    # updates after every run of the program.
-    rule_order          => {
+    # The order to apply the rules in: highest first; this is automatically
+    # updated after every run of the program.
+    hits                => {
+        sql                 => q{NOT NULL DEFAULT 0},
+        type                => q{integer},
+    },
+    # The total number of hits this rule has had, i.e. the sum of all hits over
+    # all runs.
+    hits_total          => {
         sql                 => q{NOT NULL DEFAULT 0},
         type                => q{integer},
     },
