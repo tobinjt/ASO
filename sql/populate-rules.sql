@@ -181,12 +181,23 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORED'
 );
 
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Fatal error', 'Fatal error of some sort',
+        'postfix/smtpd',
+        '^fatal: .*$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
 -- }}}
 
 -- SMTPD FATAL RULES {{{1
 
 -- fatal: watchdog timeout
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, priority)
     VALUES('Watchdog timeout', 'Watchdog timed out; kill the active connection.',
         'postfix/smtpd',
         '^fatal: watchdog timeout$',
@@ -194,7 +205,8 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         'SMTPD_WATCHDOG',
         0,
-        'IGNORED'
+        'IGNORED',
+        5
 );
 
 -- }}}
