@@ -308,7 +308,8 @@ sub update_check_order {
             $self->my_warn(qq{update_check_order: Missing rule:},
                 dump_rule_from_db($rule));
         } else {
-            $rule->rule_order($id_map{$id}->{count});
+            $rule->hits($id_map{$id}->{count});
+            $rule->hits_total($rule->hits_total() + $rule->hits());
             $rule->update();
         }
     }
@@ -887,6 +888,9 @@ sub PICKUP {
             # It doesn't meet the criteria, so don't use the existing
             # connection.  Let make_connection_by_queueid() do the logging.
             $connection = undef;
+        } else {
+            # Delete the faked flag added by MAIL_PICKED_FOR_DELIVERY.
+            delete $connection->{faked};
         }
     }
     if (not defined $connection) {
@@ -1288,7 +1292,7 @@ sub load_rules {
             id               => $rule->id(),
             name             => $rule->name(),
             description      => $rule->description(),
-            rule_order       => $rule->rule_order(),
+            hits             => $rule->hits(),
             priority         => $rule->priority(),
             postfix_action   => $rule->postfix_action(),
             action           => $rule->action(),
@@ -1366,10 +1370,10 @@ sub load_rules {
     $self->{sort_rules} = lc $self->{sort_rules};
     if ($self->{sort_rules} eq q{normal}) {
         # Normal, most efficient order.
-        @results = sort { $b->{rule_order} <=> $a->{rule_order} } @results;
+        @results = sort { $b->{hits} <=> $a->{hits} } @results;
     } elsif ($self->{sort_rules} eq q{reverse}) {
         # Reverse order - should be least efficient.
-        @results = sort { $a->{rule_order} <=> $b->{rule_order} } @results;
+        @results = sort { $a->{hits} <=> $b->{hits} } @results;
     } elsif ($self->{sort_rules} eq q{shuffle}) {
         # Shuffle the results.
         @results = shuffle(@results);
@@ -1884,6 +1888,8 @@ sub save {
         postfix_action  => $rule->{postfix_action},
         line            => $line,
         timestamp       => $line->{timestamp},
+        logfile         => $self->{current_logfile},
+        line_number     => $.,
         # Sneakily inline result_data here
         %{$rule->{result_data}},
     );
