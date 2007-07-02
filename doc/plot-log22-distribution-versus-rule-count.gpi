@@ -4,6 +4,7 @@ set y2label "Number of rules"
 set grid ytics
 # Put the scale on the y2axis
 set y2tics border
+set nox2tics
 
 set terminal postscript monochrome eps size 5.4,3.3
 set output "plot-log22-distribution-versus-rule-count.ps"
@@ -14,4 +15,4 @@ set xrange [0:7]
 plot "stats-log22-rule-count-by-program.txt" using 1:2:xticlabels(4) \
         axes x1y1 with lines title "Number of lines", \
      "stats-log22-rule-count-by-program.txt" using 1:3 \
-        axes x1y2 with lines title "Number of rules"
+        axes x1y2 title "Number of rules"

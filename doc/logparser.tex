@@ -2063,17 +2063,20 @@ where it is equivalent to reversed rules.
 The dips at logfiles 22 and 62--68 correspond to peaks in log file size in
 graph~\ref{execution time vs file size vs number lines}.  The explanation
 for this took some time to arrive at, but it turns out to be reasonably
-simple.  Examining the database after parsing logfile~22 shows 64 rules
-matched during parsing, but the distribution of matching rules is extremely
-skewed, as shown in graph~\ref{log22 distribution by rule}.  Comparing the
-number of log lines per program versus rules per program in
-graph~\ref{log22 line and rule distribution by program} shows that
-\textit{postfix/qmgr\/} has the highest number of log lines; however it has
-a low number of rules, so the average parsing time for a
-\textit{postfix/qmgr\/} log line is quite low, reducing the overall average
-parsing time per log line.
-
-XXX FIGURE OUT THE DIP AT LOG 34, mail.log-20070228
+simple.  Examining the database after parsing logfile~22 in isolation shows
+64 rules matched during parsing, but as shown in graph~\ref{log22
+distribution by rule} the distribution of matching rules is extremely
+skewed.  Comparing the number of log lines per program versus rules per
+program in graph~\ref{log22 line and rule distribution by program} shows
+that \textit{postfix/qmgr\/} has the highest number of log lines, however
+it has a low number of rules.  This combination results in a low average
+number of rules to try for \textit{postfix/qmgr\/} log lines, reducing the
+overall average number of rules to try per log line.  In turn this reduces
+the average parsing time per log line, and thus the parsing time for the
+log file.  While the parsing time is substantially greater than the time
+for the log files on either side, the increase from optimal ordering to
+reversed ordering is proportionally smaller, producing the dips in
+graph~\ref{normal vs shuffled vs reversed ordering factor}.
 
 \subsubsection{Log 22 distribution by rule}
 \label{log22 distribution by rule}
@@ -2107,7 +2110,7 @@ delivery failure which resulted in a huge number of log lines, all of which
 were matched by a single rule.  Sorting the rules by the number of
 successful matches has the effect that this rule will be tried first, so
 the average number of regexs compiled per line drops sharply for those
-seven log files, resulting in a much lower increase in relative execution
+eight log files, resulting in a much lower increase in relative execution
 time, as detailed below.
 
 \begin{tabular}[]{lrr}
