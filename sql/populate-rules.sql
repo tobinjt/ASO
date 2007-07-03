@@ -388,10 +388,11 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- <31.pool80-103-5.dynamic.uni2.es[80.103.5.31]>: Client host rejected: Greylisted, see http://isg.ee.ethz.ch/tools/postgrey/help/dsg.cs.tcd.ie.html; from=<iqxrgomtl@purinmail.com> to=<skenny@dsg.cs.tcd.ie> proto=SMTP helo=<31.pool80-103-5.dynamic.uni2.es>
 -- <mail.saraholding.com.sa[212.12.166.254]>: Client host rejected: Greylisted, see http://isg.ee.ethz.ch/tools/postgrey/help/cs.tcd.ie.html; from=<lpty@[212.12.166.226]> to=<colin.little@cs.tcd.ie> proto=ESMTP helo=<mail.saraholding.com.sa>
 -- <flow.helderhosting.nl[82.94.236.142]>: Client host rejected: Greylisted, see http://isg.ee.ethz.ch/tools/postgrey/help/cs.tcd.ie.html; from=<www-data@info+spam@helderhosting.nl> to=<siobhan.clarke@cs.tcd.ie> proto=SMTP helo=<flow.helderhosting.nl>
+-- <host10-102.pool82104.interbusiness.it[82.104.102.10]>: Client host rejected: Greylisted, see http://postgrey.schweikert.ch/help/cs.tcd.ie.html; from=<Tania@nis-portal.de> to=<mite-00@cs.tcd.ie> proto=SMTP helo=<host10-102.pool82104.interbusiness.it>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Greylisted', 'Client greylisted; see http://www.greylisting.org/ for more details',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__HOSTNAME__)\[(__IP__)\]>: Client host rejected: Greylisted, see (http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__HOSTNAME__)\[(__IP__)\]>: Client host rejected: Greylisted, see (http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 9, data = 7, sender = 8',
         'helo = 10, client_hostname = 5, client_ip= 6',
         'REJECTION',
@@ -874,6 +875,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('Rejecting unused sender address', 'Rejecting an address we know is not used for sending mail',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: This address is not in use.; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'sender = 5, recipient = 6',
+        'helo = 7',
+        'REJECTION',
+        1,
+        'REJECTED',
+        'check_sender_access'
+);
+
+-- <bassire@venus.made2own.com>: Sender address rejected: We don't want your spam.; from=<bassire@venus.made2own.com> to=<liz.gray@cs.tcd.ie> proto=ESMTP helo=<venus.made2own.com>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+    VALUES('Rejecting spammer sender address', 'Rejecting an address we know is used for sending spam',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: We don.t want your spam.; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
         'REJECTION',
@@ -1834,7 +1848,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         'MAIL_PICKED_FOR_DELIVERY',
         '1',
-        'INFO'
+        'PROCESSING'
 );
 
 -- libsldap: Status: 7  Mesg: Session error no available conn.

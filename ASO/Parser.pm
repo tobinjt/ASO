@@ -162,6 +162,10 @@ sub init_globals {
     # maybe_remove_faked() to check if a message-id contains a queueid.
     $self->{queueid_regex}    = $self->filter_regex(q{__QUEUEID__});
     $self->{queueid_regex}    = qr/$self->{queueid_regex}/;
+    # Used to set warning in REJECTION.
+    $self->{reject_warning}   =
+            $self->filter_regex(q{^__QUEUEID__: reject_warning:});
+    $self->{reject_warning}   = qr/$self->{reject_warning}/;
 
     # The data to dump in dump_state()
     $self->{data_to_dump} = [qw(queueids connections timeout_queueids)];
@@ -767,6 +771,9 @@ sub REJECTION {
         $connection = $self->get_connection_by_pid($line->{pid});
     }
     $self->save($connection, $line, $rule, $matches);
+    if ($line->{text} =~ m/$self->{reject_warning}/) {
+        $connection->{results}->[-1]->{warning} = 1;
+    }
     return $self->{ACTION_SUCCESS};
 }
 
@@ -1063,7 +1070,7 @@ sub POSTFIX_RELOAD {
     my ($self, $rule, $line, $matches) = @_;
 
     foreach my $connection ($self->get_all_connections_by_pid()) {
-        $self->delete_dead_smtpd($connection);
+        $self->delete_dead_smtpd($connection, $line);
     }
 
     return $self->{ACTION_SUCCESS};
@@ -1119,7 +1126,7 @@ sub SMTPD_WATCHDOG {
     my ($self, $rule, $line, $matches) = @_;
 
     my $connection = $self->get_connection_by_pid($line->{pid});
-    $self->delete_dead_smtpd($connection);
+    $self->delete_dead_smtpd($connection, $line);
     return $self->{ACTION_SUCCESS};
 }
 
@@ -1152,14 +1159,14 @@ sub handle_dead_smtpd {
         return $self->{ACTION_SUCCESS};
     }
     my $connection = $self->get_connection_by_pid($pid);
-    $self->delete_dead_smtpd($connection);
+    $self->delete_dead_smtpd($connection, $line);
 
     return $self->{ACTION_SUCCESS};
 }
 
 =over  4
 
-=item $self->delete_dead_smtpd($connection)
+=item $self->delete_dead_smtpd($connection, $line)
 
 If there's only one
 smtpd log line the connection will be discarded, otherwise it will be committed.
@@ -1169,13 +1176,14 @@ smtpd log line the connection will be discarded, otherwise it will be committed.
 =cut
 
 sub delete_dead_smtpd {
-    my ($self, $connection) = @_;
+    my ($self, $connection, $line) = @_;
 
     if ($connection->{programs}->{q{postfix/smtpd}} == 1) {
         # Only the connect line, delete it.
         $self->delete_connection_by_pid($connection->{pid});
     } else {
         # Hopefully this will work, I'll refine it later if it doesn't.
+        $connection->{connection}->{end} = $line->{timestamp};
         $self->fixup_connection($connection);
         $self->commit_connection($connection);
         $self->delete_connection_by_pid($connection->{pid});
@@ -1890,6 +1898,7 @@ sub save {
         timestamp       => $line->{timestamp},
         logfile         => $self->{current_logfile},
         line_number     => $.,
+        warning         => 0,
         # Sneakily inline result_data here
         %{$rule->{result_data}},
     );
@@ -2036,7 +2045,7 @@ sub commit_connection {
         my $result_in_db = $self->{dbix}->resultset(q{Result})->new_result({
                 connection_id   => $connection_id,
                 rule_id         => $result->{rule_id},
-                #warning         => $result->{warning},
+                warning         => $result->{warning},
                 smtp_code       => $result->{smtp_code},
                 sender          => $result->{sender},
                 recipient       => $result->{recipient},

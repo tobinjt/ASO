@@ -20,6 +20,10 @@ copy.working:
 
 test: test.20070616
 
+test-list:
+	# We need to double escape the $, otherwise the submake will clobber it.
+	make INPUT='$$$$( < logs-list )'  STATE='"state-list"'    OUTPUT='"warnings-list"'    test-real
+
 test-some:
 	# We need to double escape the $, otherwise the submake will clobber it.
 	make INPUT='$$$$( < logs-some )'  STATE='"state-some"'    OUTPUT='"warnings-some"'    test-real
@@ -34,7 +38,7 @@ test-real:
 	(cd ../sql && perl make_schema > "$@")
 
 db: ../sql/create-tables-sqlite3-generated.sql
-	(cd ../sql/ && perl setup-database create-tables-sqlite3-generated.sql populate-rules.sql)
+	(cd ../sql/ && rm db.sq3 && perl setup-database create-tables-sqlite3-generated.sql populate-rules.sql)
 
 db-clean:
 	(cd ../sql/ && perl setup-database cleanup.sql)
