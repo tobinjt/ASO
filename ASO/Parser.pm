@@ -195,26 +195,25 @@ sub init_globals {
     $self->{ACTION_REPARSE} = 2;
 
     # Actions available to rules.
-    # XXX ADD SUBS TO ADD/REMOVE THESE
-    $self->{actions} = {
-        IGNORE                      => 1,
-        CONNECT                     => 1,
-        DISCONNECT                  => 1,
-        SAVE_BY_QUEUEID             => 1,
-        COMMIT                      => 1,
-        TRACK                       => 1,
-        REJECTION                   => 1,
-        MAIL_PICKED_FOR_DELIVERY    => 1,
-        PICKUP                      => 1,
-        CLONE                       => 1,
-        TIMEOUT                     => 1,
-        MAIL_TOO_LARGE              => 1,
-        POSTFIX_RELOAD              => 1,
-        SMTPD_DIED                  => 1,
-        SMTPD_KILLED                => 1,
-        SMTPD_WATCHDOG              => 1,
-    };
-
+    $self->{actions} = {};
+    $self->add_actions(qw(
+        IGNORE
+        CONNECT
+        DISCONNECT
+        SAVE_BY_QUEUEID
+        COMMIT
+        TRACK
+        REJECTION
+        MAIL_PICKED_FOR_DELIVERY
+        PICKUP
+        CLONE
+        TIMEOUT
+        MAIL_TOO_LARGE
+        POSTFIX_RELOAD
+        SMTPD_DIED
+        SMTPD_KILLED
+        SMTPD_WATCHDOG
+    ));
 
     # Used in fixup_connection() to verify data.
     my $mock_result = $self->{dbix}->resultset(q{Result})->new_result({});
@@ -1128,6 +1127,24 @@ sub SMTPD_WATCHDOG {
     my $connection = $self->get_connection_by_pid($line->{pid});
     $self->delete_dead_smtpd($connection, $line);
     return $self->{ACTION_SUCCESS};
+}
+
+=over 4
+
+=item $self->add_actions(@actions)
+
+Add @actions to the list of available actions.  Currently actions cannot be
+removed.  Nothing clever is done to @actions, so you must use the name of the
+subroutine implementing the action.
+
+=back
+
+=cut
+
+sub add_actions {
+    my ($self, @actions) = @_;
+
+    map { $self->{actions}->{$_} = 1 } @actions;
 }
 
 =begin internals
