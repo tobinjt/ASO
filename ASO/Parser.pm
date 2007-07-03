@@ -1238,6 +1238,19 @@ sub maybe_commit_children {
     delete $parent->{committing_children};
 }
 
+=over 4
+
+=item $self->delete_child_from_parent($child, $line, $rule)
+
+Delete $child from its parent's list of children.  Co-operates with
+maybe_commit_children() to ensure it doesn't do anything while
+maybe_commit_children() is executing.  Should be called when a child is being
+committed, not for non-child mails.
+
+=back
+
+=cut
+
 sub delete_child_from_parent {
     my ($self, $child, $line, $rule) = @_;
     my $child_queueid = $child->{queueid};
@@ -1274,6 +1287,42 @@ sub delete_child_from_parent {
 
     delete $parent->{children}->{$child_queueid};
 }
+
+=over 4
+
+=item $self->load_rules()
+
+Load the rules from the database:
+
+=over 8
+
+=item *
+
+Sorting rules according to sort_rules
+
+=item *
+
+Expanding connection_cols and result_cols when __RESTRICTION_START__ is found in
+a regex.
+
+=item *
+
+Passing regexs through filter_regex() and compiling them.
+
+=item *
+
+Checking for overlaps in result_cols and result_data; likewise in
+connection_cols and connection_data.
+
+=item *
+
+Discarding the compiled regex if discard_compiled_regex is set.
+
+=back
+
+=back
+
+=cut
 
 sub load_rules {
     my ($self) = @_;
@@ -1674,8 +1723,32 @@ sub filter_regex {
     return $regex;
 }
 
-# Update the values in a hash, complaining if we change existing values, unless
-# the existing (key, value) is found in silent_overwrite.
+=over 4
+
+=item $self->update_hash($hash, $silent_overwrite, $updates, $silent_discard, $rule, $line, $connection, $name)
+
+Update the values in $hash using $updates, warning if existing values are
+changed, unless the conditions below are met.
+
+If the key exists in $silent_discard and either the new value exists in
+$silent_discard or the value in $silent_discard is undefined and a value for
+that key already exists in $hash the change is silently skipped; i.e. anything
+in $silent_discard is taken as a default value and will not overwrite a more
+specific value.
+
+$silent_overwrite functions similarly, but the values in $silent_overwrite are
+taken as default values which will be silently overwritten by new values from
+$updates.
+
+$silent_overwrite and $silent_discard will frequently be one and the same.
+
+$rule, $line, $connection and $name are used in warnings generated if existing
+values change.
+
+=back
+
+=cut
+
 sub update_hash {
     my ($self, $hash, $silent_overwrite, $updates, $silent_discard, $rule,
         $line, $connection, $name) = @_;
