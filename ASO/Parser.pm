@@ -1891,6 +1891,8 @@ sub save {
 
     # Save the new result in $connection.
     # RESULT_DATA
+    # NOTE: every time a new attribute is added here it needs to be stripped 
+    # out in commit_connection().
     my %result = (
         rule_id         => $rule->{id},
         postfix_action  => $rule->{postfix_action},
@@ -1898,7 +1900,6 @@ sub save {
         timestamp       => $line->{timestamp},
         logfile         => $self->{current_logfile},
         line_number     => $.,
-        warning         => 0,
         # Sneakily inline result_data here
         %{$rule->{result_data}},
     );
@@ -2041,17 +2042,13 @@ sub commit_connection {
             next RESULT;
         }
 
-        # TODO: strip stuff out of the hashes instead.
-        my $result_in_db = $self->{dbix}->resultset(q{Result})->new_result({
-                connection_id   => $connection_id,
-                rule_id         => $result->{rule_id},
-                warning         => $result->{warning},
-                smtp_code       => $result->{smtp_code},
-                sender          => $result->{sender},
-                recipient       => $result->{recipient},
-                data            => $result->{data},
-                timestamp       => $result->{timestamp},
-            });
+        $result->{connection_id} = $connection_id;
+        my @unwanted_attrs = qw(child line line_number logfile postfix_action);
+        foreach my $unwanted_attr (@unwanted_attrs) {
+            delete $result->{$unwanted_attr};
+        }
+        my $result_in_db =
+            $self->{dbix}->resultset(q{Result})->new_result($result);
         $result_in_db->insert();
     }
 
