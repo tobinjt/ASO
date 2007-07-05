@@ -1431,6 +1431,11 @@ Each action is passed the same arguments:
         DNS timeouts, timeouts reading data, etc.  The active connection
         for that smtpd must be committed and deleted from the state tables.
 
+    \item [BOUNCE] Postfix 2.3 (and hopefully subsequent versions) log the
+        creation of bounce messages.  This action creates a new mail if
+        necessary, marking it as a bounce notification and removing the
+        unknown origin flag if it exists.
+
 \end{description}
 
 \subsection{Additional complications}
@@ -1501,6 +1506,9 @@ internally by Postfix is identified as a bounce notification when it is a
 different type of message; arguably this is a benefit rather than a
 drawback, as future mails generated internally by Postfix will be handled
 correctly.
+
+Postfix 2.3 (and hopefully subsequent version) log the creation of a bounce
+message.
 
 \subsubsection{Aborted delivery attempts}
 
@@ -1653,9 +1661,11 @@ mail and discarded if it meets the following requirements:
     \item The queueid must not have been reused yet, i.e.\ there isn't an
         entry in the state tables for the queueid.
 
-    \item The timestamp of the cleanup line must be within six minutes of
+    \item The timestamp of the cleanup line must be within seven minutes of
         the mail acceptance timestamp.  Timeouts happen after five minutes,
-        so six minutes gives one minute of leeway.
+        but some data may have been transferred slowly, and empirical
+        evidence suggests seven minutes is a good compromise between false
+        positives and false negatives.
 
 \end{itemize}
 
@@ -1814,6 +1824,8 @@ are 25 warnings produced, but because the parser errs on the side of
 producing more warnings rather than fewer those 25 warnings represent only
 8 problems:
 
+XXX REDO THIS
+
 \begin{itemize}
 
     \item 3 connections (5 warnings) started before the first log file, so
@@ -1839,8 +1851,27 @@ committal, ambiguity) for a problem which occurs only four times in
 
 XXX WRITE THIS
 
-The
-state table contains entries for mails not yet delivered at the end of the 
+The state table contains entries for mails not yet delivered when the
+parser finishes execution.  Ideally all it should contain are mails which
+are awaiting delivery after the period covered by the logs, though it may
+also contain mails from the start of the logs whose initial entries are not
+contained in the logs.  Any other entries are evidence of a failure in
+parsing or an aberration in the logs.  After parsing the 93 test log files
+the state table contains XXX entries, breaking down into:
+
+\begin{itemize}
+
+    \item 1 connection which started only seconds before the logs ended and
+        had not completed.
+
+    \item 9 mails which had yet to be delivered due to repeated failures.
+
+    \item 4 mails resulting from the out of order log entries described
+        above.
+
+    \item 9 mails whose initial log entries are not present in the logs.
+
+\end{itemize}
 
 \section{Limitations and possible improvements}
 

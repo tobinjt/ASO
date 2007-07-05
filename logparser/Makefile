@@ -38,7 +38,7 @@ test-real:
 	(cd ../sql && perl make_schema > "$@")
 
 db: ../sql/create-tables-sqlite3-generated.sql
-	(cd ../sql/ && rm db.sq3 && perl setup-database create-tables-sqlite3-generated.sql populate-rules.sql)
+	(cd ../sql/ && rm -f db.sq3 && perl setup-database create-tables-sqlite3-generated.sql populate-rules.sql)
 
 db-clean:
 	(cd ../sql/ && perl setup-database cleanup.sql)
@@ -137,5 +137,4 @@ summarize:
 	# Delete any lines not matching ^logparser; delete any lines not having 7
 	# colons; substitute the first six colon-delimited fields with nothing.
 	(echo "${WARNINGS} summary: "; sed -e '/^logparser/!d; /^\([^:]\+:\)\{7\}/!d; s/^\([^:]\+:\)\{6\} \?//' "${WARNINGS}" | sort | uniq -c | sort -n) | tee -a results
-	(echo -n "state: "; grep -c ^.queueids "${STATE}") | tee -a results
-	(echo -n "timeout_queueids: "; grep -c ^.timeout_queueids "${STATE}") | tee -a results
+	(grep 'Starting dump of .* entries' "${STATE}") | tee -a results

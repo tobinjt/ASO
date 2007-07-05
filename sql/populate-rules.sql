@@ -1,8 +1,6 @@
 -- vim: set foldmethod=marker textwidth=1000 :
 -- $Id$
 
--- XXX: how will I specify warning?
-
 DELETE FROM rules;
 
 -- SMTPD CONNECT RULES {{{1
@@ -1916,16 +1914,41 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- BOUNCE RULES {{{1
 
 -- 382CD36E3: sender non-delivery notification: 4419C38A0
--- INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
---     VALUES('Dummy bounce rule', 'Dumy bounce rule to ensure all bounce messages are reported as unparsed',
---         'postfix/bounce',
---         '^a{12345}$',
---         '',
---         '',
---         'IGNORE',
---         0,
---         'IGNORED'
--- );
+-- A81E338BB: sender delivery status notification: 4427638C1
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Postfix created a bounce or delivery status message', 'Postfix created a bounce or delivery status message',
+        'postfix/bounce',
+        '^(__QUEUEID__): sender (?:delivery status|non-delivery) notification: (__QUEUEID__)$',
+        'child = 2',
+        '',
+        'BOUNCE',
+        1,
+        'BOUNCED'
+);
+
+-- libsldap: Status: 2  Mesg: Unable to load configuration '/var/ldap/ldap_client_file' ('').
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Another Solaris LDAP problem.', 'Solaris LDAP really is not reliable.',
+        'postfix/bounce',
+        '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file. \(..\).$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+-- libsldap: Status: 7  Mesg: Session error no available conn.
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Another Solaris LDAP problem 2.', 'Solaris LDAP really is not reliable.',
+        'postfix/bounce',
+        '^libsldap: Status: 7  Mesg: Session error no available conn.$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
 
 -- }}}
 

@@ -213,6 +213,7 @@ sub init_globals {
         SMTPD_DIED
         SMTPD_KILLED
         SMTPD_WATCHDOG
+        BOUNCE
     ));
 
     # Used in fixup_connection() to verify data.
@@ -836,8 +837,9 @@ sub MAIL_PICKED_FOR_DELIVERY {
 
         # First check: the cleanup line should be logged pretty soon after the
         #   rest of the lines, in general it appears within a few lines in the
-        #   log.  Timeouts happen after 5 minutes, so we'll require the cleanup
-        #   line to be seen within 6 minutes (NOTE: if this is changed
+        #   log.  Timeouts happen after 5 minutes, but some data may have been
+        #   transmitted, extending the delay, so we'll require the cleanup
+        #   line to be seen within 7 minutes (NOTE: if this is changed
         #   prune_timeout_queueids() needs to change too).
         # Second check: the queueid shouldn't exist in %queueids: if it does it
         #   means the queueid is being reused so this line is for the new mail,
@@ -845,7 +847,7 @@ sub MAIL_PICKED_FOR_DELIVERY {
         #   race conditions, but I'm doing the best I can.
         my $discarded_mail = delete $self->{timeout_queueids}->{$queueid};
         my $last_timestamp = $discarded_mail->{results}->[-1]->{timestamp};
-        if ($line->{timestamp} - $last_timestamp <= (6 * 60)
+        if ($line->{timestamp} - $last_timestamp <= (7 * 60)
                 and not exists $self->{queueids}->{$queueid}) {
             return $self->{ACTION_SUCCESS};
         }
@@ -1126,6 +1128,31 @@ sub SMTPD_WATCHDOG {
 
     my $connection = $self->get_connection_by_pid($line->{pid});
     $self->delete_dead_smtpd($connection, $line);
+    return $self->{ACTION_SUCCESS};
+}
+
+=over  4
+
+=item BOUNCE
+
+Postfix 2.3 logs the creation of bounce messages, which are handled by this
+action.
+
+=back
+
+=cut
+
+sub BOUNCE {
+    my ($self, $rule, $line, $matches) = @_;
+
+    my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
+    my $connection = $self->get_connection_by_queueid($queueid);
+    $self->save($connection, $line, $rule, $matches);
+    my $bounce_queueid = $connection->{results}->[-1]->{child};
+    my $bounce_con = $self->get_or_make_connection_by_queueid($bounce_queueid);
+    $bounce_con->{bounce_notification} = 1;
+    delete $bounce_con->{faked};
+
     return $self->{ACTION_SUCCESS};
 }
 
@@ -1524,7 +1551,8 @@ PREAMBLE
 
     foreach my $data_source (@{$self->{data_to_dump}}) {
         my %tracked;
-        $state .= qq{## Starting dump of $data_source\n};
+        my $num_keys = keys %{$self->{$data_source}};
+        $state .= qq{## Starting dump of $data_source ($num_keys entries)\n};
         $state .= qq{## } . localtime() . qq{\n};
         my $untracked = q{};
         foreach my $queueid (sort keys %{$self->{$data_source}}) {
@@ -1988,6 +2016,7 @@ sub save {
         postfix_action  => $rule->{postfix_action},
         line            => $line,
         timestamp       => $line->{timestamp},
+        date            => scalar localtime ($line->{timestamp}),
         logfile         => $self->{current_logfile},
         line_number     => $.,
         # Sneakily inline result_data here
@@ -2133,7 +2162,8 @@ sub commit_connection {
         }
 
         $result->{connection_id} = $connection_id;
-        my @unwanted_attrs = qw(child line line_number logfile postfix_action);
+        my @unwanted_attrs = qw(child date line line_number logfile
+            postfix_action);
         foreach my $unwanted_attr (@unwanted_attrs) {
             delete $result->{$unwanted_attr};
         }
@@ -2235,52 +2265,63 @@ sub maybe_remove_faked {
 
 =over 4
 
-=item $self->my_warn($first_line, @further_lines)
+=item $self->my_warn(@warnings)
 
-Wrapper around warn which prepends the current filename and line number to
-$first_line.  If @further_lines isn't empty it will be wrapped with {{{ and }}};
-these are the default markers vim uses for folding blocks of text, so long error
-messages (e.g. where a connection is dumped in the error message) can be folded,
-making navigating through error output easier.
+Wrapper around warn which uses format_error() to provide helpful warnings.
 
 =back
 
 =cut
 
 sub my_warn {
-    my ($self, $first_line, @rest) = @_;
-    my $timestamp = localtime;
-    my $prefix = qq{$0: $timestamp: $self->{current_logfile}: $.: };
+    my ($self, @warnings) = @_;
 
-    if (@rest) {
-        # Make it easy to fold warnings
-        my $newline = q{};
-        if ($first_line =~ m/\n$/) {
-            $newline = qq{\n};
-            $first_line =~ s/\n$//;
-        }
-        warn $prefix, $first_line, q( {{{), $newline, @rest, qq(}}}\n);
-    } else {
-        warn $prefix, $first_line;
-    }
+    warn $self->format_error(@warnings);
+}
+
+=over 4
+
+=item $self->format_error($first_line, @further_lines)
+
+Prepends the current time, filename and line number to $first_line.
+@further_lines and a callstack will be wrapped with {{{ and }}}; these are the
+default markers vim uses for folding blocks of text, so long error messages
+(e.g. where a connection is dumped in the error message) can be folded, making
+navigating through error output easier.
+
+=back
+
+=cut
+
+sub format_error {
+    my ($self, $first_line, @rest) = @_;
+
+    my @message;
+    my $timestamp = localtime;
+    push @message, qq{$0: $timestamp: $self->{current_logfile}: $.: };
+
+    chomp $first_line;
+    push @message, $first_line;
+    # Make it easy to fold warnings
+    push @message, qq( {{{\n), @rest, Carp::longmess(q{}), qq(}}}\n);
+
+    return join q{}, @message;
 }
 
 =over 4
 
 =item $self->my_die(@messages)
 
-Quick wrapper around die which prepends the filename and line number to the
-error messages.
+Wrapper around die which uses format_error() to produce better errors.
 
 =back
 
 =cut
 
 sub my_die {
-    my ($self) = shift @_;
-    my $timestamp = localtime;
-    my $prefix = qq{$0: $timestamp: $self->{current_logfile}: $.: };
-    die $prefix, @_;
+    my ($self, @errors) = @_;
+
+    die $self->format_error(@errors);
 }
 
 # Accessing mails/connections by queueid.
