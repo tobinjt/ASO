@@ -58,7 +58,13 @@ while (<>) {
     } else {
         $current_block .= $_;
     }
+} continue {
+    if (eof) {
+        # Close the current file when we reach the end of it to reset $.
+        close ARGV;
+    }
 }
+
 
 sub run_sql {
     my ($sql) = @_;
