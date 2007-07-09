@@ -1519,13 +1519,14 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 
 -- 3FF7C4317: to=<mcadoor@cs.tcd.ie>, relay=local, delay=0, status=sent (forwarded as 56F5B43FD)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Mail reinjected for forwarding', 'The mail was sent to a local address, but is aliased to an external address',
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=sent \(forwarded as (__QUEUEID__)\)$',
         'recipient = 2, child = 3',
         '',
         'smtp_code = 250',
+        'client_hostname = localhost, client_ip = 127.0.0.1, server_hostname = localhost, server_ip = 127.0.0.1',
         'TRACK',
         1,
         'SENT'

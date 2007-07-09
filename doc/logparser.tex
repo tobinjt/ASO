@@ -1463,9 +1463,6 @@ notifications, and those heuristics are:
         with the mail, indicating it was generated internally by Postfix,
         not accepted via SMTP or submitted locally by sendmail.
 
-    \item The mail will not have been tagged as a tracked mail (see
-        section~\ref{tracking-re-injected-mail}).
-
     \item The message-id has a specific format: \newline
         \texttt{YYYYMMDDhhmmss.queueid@server.hostname} \newline
         e.g.\ \texttt{20070321125732.D168138A1@smtp.cs.tcd.ie}
@@ -1661,11 +1658,11 @@ mail and discarded if it meets the following requirements:
     \item The queueid must not have been reused yet, i.e.\ there isn't an
         entry in the state tables for the queueid.
 
-    \item The timestamp of the cleanup line must be within seven minutes of
+    \item The timestamp of the cleanup line must be within ten minutes of
         the mail acceptance timestamp.  Timeouts happen after five minutes,
         but some data may have been transferred slowly, and empirical
-        evidence suggests seven minutes is a good compromise between false
-        positives and false negatives.
+        evidence shows that ten minutes is not unreasonable; hopefully it
+        is a good compromise between false positives and false negatives.
 
 \end{itemize}
 
@@ -1704,9 +1701,9 @@ heuristics incorrectly match, but none have been identified so far.
 
 \label{smtpd stops logging}
 
-Occasionally an smtpd will just stop logging, without any explicit reason.
-After poring over logs for some time there are several reasons for this
-infrequent occurrence:
+Occasionally an smtpd will just stop logging, without an immediately
+obvious reason.  After poring over logs for some time there are several
+reasons for this infrequent occurrence:
 
 \begin{enumerate}
 
@@ -1726,7 +1723,9 @@ infrequent occurrence:
 \end{enumerate}
 
 The above appear to cover all situations where an smtpd suddenly stops
-logging.
+logging.  In addition to removing an active connection the last accepted
+mail may need to be discarded, as detailed in
+section~\ref{timeouts-during-data-phase}.
 
 
 \section{Parsing coverage}

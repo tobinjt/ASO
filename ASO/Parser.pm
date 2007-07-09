@@ -839,7 +839,7 @@ sub MAIL_PICKED_FOR_DELIVERY {
         #   rest of the lines, in general it appears within a few lines in the
         #   log.  Timeouts happen after 5 minutes, but some data may have been
         #   transmitted, extending the delay, so we'll require the cleanup
-        #   line to be seen within 7 minutes (NOTE: if this is changed
+        #   line to be seen within 10 minutes (NOTE: if this is changed
         #   prune_timeout_queueids() needs to change too).
         # Second check: the queueid shouldn't exist in %queueids: if it does it
         #   means the queueid is being reused so this line is for the new mail,
@@ -847,7 +847,7 @@ sub MAIL_PICKED_FOR_DELIVERY {
         #   race conditions, but I'm doing the best I can.
         my $discarded_mail = delete $self->{timeout_queueids}->{$queueid};
         my $last_timestamp = $discarded_mail->{results}->[-1]->{timestamp};
-        if ($line->{timestamp} - $last_timestamp <= (7 * 60)
+        if ($line->{timestamp} - $last_timestamp <= (10 * 60)
                 and not exists $self->{queueids}->{$queueid}) {
             return $self->{ACTION_SUCCESS};
         }
@@ -949,6 +949,7 @@ sub CLONE {
         # connection.
         programs    => { q{postfix/smtpd} => 1 },
         connection  => { %{$connection->{connection}} },
+        cloned_by   => $line->{pid},
     );
     $self->save($clone, $line, $rule, $matches);
 
@@ -1029,29 +1030,7 @@ sub TIMEOUT {
     my ($self, $rule, $line, $matches) = @_;
     my $connection = $self->get_connection_by_pid($line->{pid});
     $self->save($connection, $line, $rule, $matches);
-
-    if (not exists $connection->{cloned_mails}) {
-        # Nothing has been acccepted, so there's nothing to do.
-        return $self->{ACTION_SUCCESS};
-    }
-
-    # Check the timestamps to see whether there's been a rejection since the
-    # previous acceptance.
-    if (scalar @{$connection->{results}} >= 2
-            and $connection->{results}->[-2]->{timestamp}
-                > $connection->{last_clone_timestamp}) {
-        return $self->{ACTION_SUCCESS};
-    }
-
-    my $last_mail = $connection->{cloned_mails}->[-1];
-    if (not exists $last_mail->{programs}->{q{postfix/cleanup}}) {
-        # We haven't seen a cleanup line yet; add this queueid to the list of
-        # timed out connections.
-        $self->{timeout_queueids}->{$last_mail->{queueid}} = $last_mail;
-    }
-    $self->delete_connection_by_queueid($last_mail->{queueid});
-    delete $connection->{cloned_mails}->[-1];
-    return $self->{ACTION_SUCCESS};
+    return $self->tidy_after_timeout($connection);
 }
 
 =over  4
@@ -1071,6 +1050,8 @@ sub POSTFIX_RELOAD {
     my ($self, $rule, $line, $matches) = @_;
 
     foreach my $connection ($self->get_all_connections_by_pid()) {
+        $self->save($connection, $line, $rule, $matches);
+        $self->tidy_after_timeout($connection);
         $self->delete_dead_smtpd($connection, $line);
     }
 
@@ -1090,6 +1071,11 @@ Sometimes an smtpd exits uncleanly; this cleans up the connection.
 sub SMTPD_DIED {
     my ($self, $rule, $line, $matches) = @_;
 
+    if ($self->pid_exists($line->{pid})) {
+        my $connection = $self->get_connection_by_pid($line->{pid});
+        $self->save($connection, $line, $rule, $matches);
+        $self->tidy_after_timeout($connection);
+    }
     return $self->handle_dead_smtpd($line, q{SMTPD_DIED},
         qr/pid (\d+) exit status/);
 }
@@ -1108,6 +1094,11 @@ an smtpd; this cleans up the connection.
 sub SMTPD_KILLED {
     my ($self, $rule, $line, $matches) = @_;
 
+    if ($self->pid_exists($line->{pid})) {
+        my $connection = $self->get_connection_by_pid($line->{pid});
+        $self->save($connection, $line, $rule, $matches);
+        $self->tidy_after_timeout($connection);
+    }
     return $self->handle_dead_smtpd($line, q{SMTPD_KILLED},
         qr/pid (\d+) killed by signal/);
 }
@@ -1127,6 +1118,8 @@ sub SMTPD_WATCHDOG {
     my ($self, $rule, $line, $matches) = @_;
 
     my $connection = $self->get_connection_by_pid($line->{pid});
+    $self->save($connection, $line, $rule, $matches);
+    $self->tidy_after_timeout($connection);
     $self->delete_dead_smtpd($connection, $line);
     return $self->{ACTION_SUCCESS};
 }
@@ -1172,6 +1165,48 @@ sub add_actions {
     my ($self, @actions) = @_;
 
     map { $self->{actions}->{$_} = 1 } @actions;
+}
+
+=over 4
+
+=item $self->tidy_after_timeout($connection)
+
+Deal with a timeout of some sort occuring: delete the last accepted mail if
+required.
+
+=back
+
+=cut
+
+sub tidy_after_timeout {
+    my ($self, $connection) = @_;
+
+    if (not exists $connection->{cloned_mails}) {
+        # Nothing has been acccepted, so there's nothing to do.
+        return $self->{ACTION_SUCCESS};
+    }
+
+    # Check the timestamps to see whether there's been a rejection since the
+    # previous acceptance.
+    if (scalar @{$connection->{results}} >= 2
+            and $connection->{results}->[-2]->{timestamp}
+                > $connection->{last_clone_timestamp}) {
+        return $self->{ACTION_SUCCESS};
+    }
+
+    my $last_mail = $connection->{cloned_mails}->[-1];
+    if (not $self->queueid_exists($last_mail->{queueid})) {
+        return $self->{ACTION_SUCCESS};
+    }
+    if (not exists $last_mail->{programs}->{q{postfix/cleanup}}) {
+        # We haven't seen a cleanup line yet; add this queueid to the list
+        # of timed out connections.
+        $self->{timeout_queueids}->{$last_mail->{queueid}} = $last_mail;
+    }
+    $self->delete_connection_by_queueid($last_mail->{queueid});
+    delete $connection->{cloned_mails}->[-1];
+
+    return $self->{ACTION_SUCCESS};
 }
 
 =begin internals
@@ -1222,8 +1257,8 @@ smtpd log line the connection will be discarded, otherwise it will be committed.
 sub delete_dead_smtpd {
     my ($self, $connection, $line) = @_;
 
-    if ($connection->{programs}->{q{postfix/smtpd}} == 1) {
-        # Only the connect line, delete it.
+    if ($connection->{programs}->{q{postfix/smtpd}} <= 2) {
+        # Only the connect and/or killed lines, delete it.
         $self->delete_connection_by_pid($connection->{pid});
     } else {
         # Hopefully this will work, I'll refine it later if it doesn't.
@@ -1682,7 +1717,7 @@ sub prune_timeout_queueids {
     foreach my $queueid (keys %{$self->{timeout_queueids}}) {
         my $connection = $self->{timeout_queueids}->{$queueid};
         if ($connection->{results}->[-1]->{timestamp}
-                < ($self->{last_timestamp} - (7 * 60))) {
+                < ($self->{last_timestamp} - (10 * 60))) {
             delete $self->{timeout_queueids}->{$queueid};
         }
     }
@@ -2202,11 +2237,6 @@ was generated internally by Postfix rather than accepted from outside.
 
 =item *
 
-The mail is not marked as tracked; the faked flag will be removed by TRACK() in
-that case, and the mail should not be processed any further before then.
-
-=item *
-
 The sender address is <>.
 
 =item *
@@ -2232,11 +2262,9 @@ sub maybe_remove_faked {
 
     # First try to identify bounced notification mails.
     # If it didn't come from either smtpd or pickup then it must have been
-    # generated internally by postfix.  We check that it's not a tracked mail,
-    # because those are internally generated too.
+    # generated internally by postfix.
     if (not exists $connection->{programs}->{q{postfix/smtpd}}
-            and not exists $connection->{programs}->{q{postfix/pickup}}
-            and not exists $connection->{tracked}) {
+            and not exists $connection->{programs}->{q{postfix/pickup}}) {
         my $sender_found = 0;
         my $bounce_message_id = 0;
         foreach my $result (@{$connection->{results}}) {
