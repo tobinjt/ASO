@@ -161,6 +161,17 @@ my %cols = (
         sql             => q{},
         type            => q{integer},
     },
+
+    # Pseudo-columns which don't exist in the table but are used elsewhere.
+
+    # child is used in TRACK and BOUNCE.
+    child           => {
+        result_cols     => 1,
+    },
+    # used in SMTPD_DIED
+    pid_regex       => {
+        result_cols     => 1,
+    },
 );
 
 =head1 SUBROUTINES/METHODS 

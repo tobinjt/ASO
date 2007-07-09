@@ -20,7 +20,12 @@ CREATE TABLE $table_name (
 SQL
     my %cols = $dummy->get_cols();
     my @cols;
+
+    COL:
     foreach my $col (sort keys %cols) {
+        if (not exists $cols{$col}->{sql}) {
+            next COL;
+        }
         my $sql = $cols{$col}->{sql};
         my $type = $cols{$col}->{type};
         my $spec = qq{    $col $type};

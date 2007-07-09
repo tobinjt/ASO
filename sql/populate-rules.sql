@@ -2006,25 +2006,27 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- warning: process /mail/postfix/libexec/smtpd pid 17850 killed by signal 15
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, priority)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action, priority)
     VALUES('Master daemon killed an smtpd', 'Master daemon had to kill an smtpd forcefully',
         'postfix/master',
         '^warning: process .*/libexec/smtpd pid \d+ killed by signal \d+$',
         '',
         '',
-        'SMTPD_KILLED',
+        'pid_regex = pid (\d+) killed by signal',
+        'SMTPD_DIED',
         0,
         'IGNORED',
         5
 );
 
 -- warning: process /mail/postfix/libexec/smtpd pid 13510 exit status 1
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action)
     VALUES('smtpd died', 'An smtpd died for some reason',
         'postfix/master',
         '^warning: process .*/libexec/smtpd pid \d+ exit status \d+$',
         '',
         '',
+        'pid_regex = pid (\d+) exit status',
         'SMTPD_DIED',
         0,
         'IGNORED'

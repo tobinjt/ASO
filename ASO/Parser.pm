@@ -211,7 +211,6 @@ sub init_globals {
         MAIL_TOO_LARGE
         POSTFIX_RELOAD
         SMTPD_DIED
-        SMTPD_KILLED
         SMTPD_WATCHDOG
         BOUNCE
     ));
@@ -232,8 +231,6 @@ sub init_globals {
     $self->{NUMBER_REQUIRED}          = 1;
     $self->{result_cols_names}        = $mock_result->result_cols_columns();
     $self->{connection_cols_names}    = $mock_conn->connection_cols_columns();
-    # XXX: Hack!  Figure out how to do this properly.
-    $self->{result_cols_names}->{child} = 1;
     # Load the rules, and collate them by program, so that later we'll only try
     # rules for the program that logged the line.
     $self->{rules}            = [$self->load_rules()];
@@ -1076,31 +1073,8 @@ sub SMTPD_DIED {
         $self->save($connection, $line, $rule, $matches);
         $self->tidy_after_timeout($connection);
     }
-    return $self->handle_dead_smtpd($line, q{SMTPD_DIED},
-        qr/pid (\d+) exit status/);
-}
-
-=over  4
-
-=item SMTPD_KILLED
-
-When Postfix is reloaded or stopped the master daemon sometimes forcibly kills
-an smtpd; this cleans up the connection.
-
-=back
-
-=cut
-
-sub SMTPD_KILLED {
-    my ($self, $rule, $line, $matches) = @_;
-
-    if ($self->pid_exists($line->{pid})) {
-        my $connection = $self->get_connection_by_pid($line->{pid});
-        $self->save($connection, $line, $rule, $matches);
-        $self->tidy_after_timeout($connection);
-    }
-    return $self->handle_dead_smtpd($line, q{SMTPD_KILLED},
-        qr/pid (\d+) killed by signal/);
+    my $regex = $self->get_result_col($rule, $matches, q{pid_regex});
+    return $self->handle_dead_smtpd($line, q{SMTPD_DIED}, $regex);
 }
 
 =over  4
@@ -1139,14 +1113,72 @@ sub BOUNCE {
     my ($self, $rule, $line, $matches) = @_;
 
     my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
-    my $connection = $self->get_connection_by_queueid($queueid);
-    $self->save($connection, $line, $rule, $matches);
-    my $bounce_queueid = $connection->{results}->[-1]->{child};
+    if ($self->queueid_exists($queueid)) {
+        my $connection = $self->get_connection_by_queueid($queueid);
+        $self->save($connection, $line, $rule, $matches);
+    }
+    my $bounce_queueid = $self->get_result_col($rule, $matches, q{child});
     my $bounce_con = $self->get_or_make_connection_by_queueid($bounce_queueid);
     $bounce_con->{bounce_notification} = 1;
     delete $bounce_con->{faked};
 
     return $self->{ACTION_SUCCESS};
+}
+
+=over  4
+
+=item $self->get_connection_col($rule, $matches, $column)
+
+Get the value assigned to $column by connection_cols or connection_data in $rule
+and $matches.  Calls my_die() if the column wasn't found; returns the value if
+it was.
+
+=back
+
+=cut
+
+sub get_connection_col {
+    my ($self, $rule, $matches, $column) = @_;
+
+    my $index;
+    foreach my $source (qw(connection_cols connection_data)) {
+        if (exists $rule->{$source}->{$column}) {
+            $index = $rule->{$source}->{$column};
+        }
+    }
+
+    if (not defined $index) {
+        $self->my_die(qq{get_connection_col: Missing column $column});
+    }
+    return $matches->[$index];
+}
+
+=over  4
+
+=item $self->get_result_col($rule, $matches, $column)
+
+Get the value assigned to $column by result_cols or result_data in $rule and
+$matches.  Calls my_die() if the column wasn't found; returns the value if it
+was.
+
+=back
+
+=cut
+
+sub get_result_col {
+    my ($self, $rule, $matches, $column) = @_;
+
+    my $index;
+    foreach my $source (qw(result_cols result_data)) {
+        if (exists $rule->{$source}->{$column}) {
+            $index = $rule->{$source}->{$column};
+        }
+    }
+
+    if (not defined $index) {
+        $self->my_die(qq{get_result_col: Missing column $column});
+    }
+    return $matches->[$index];
 }
 
 =over 4
@@ -1198,11 +1230,19 @@ sub tidy_after_timeout {
     if (not $self->queueid_exists($last_mail->{queueid})) {
         return $self->{ACTION_SUCCESS};
     }
+
+    # If there's a qmgr line then the mail was successfully accepted.
+    if (exists $last_mail->{programs}->{q{postfix/qmgr}}) {
+        return $self->{ACTION_SUCCESS};
+    }
+
     if (not exists $last_mail->{programs}->{q{postfix/cleanup}}) {
         # We haven't seen a cleanup line yet; add this queueid to the list
         # of timed out connections.
         $self->{timeout_queueids}->{$last_mail->{queueid}} = $last_mail;
     }
+    # Delete the mail, it's *almost* certainly not going to have any more log
+    # entries.
     $self->delete_connection_by_queueid($last_mail->{queueid});
     delete $connection->{cloned_mails}->[-1];
 
