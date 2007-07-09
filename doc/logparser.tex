@@ -1819,18 +1819,16 @@ warnings, and the state table should only contain entries for mails which
 had yet to be delivered when the logfiles ended.
 
 At the time of writing the parser is being tested with 93 log files.  There
-are 25 warnings produced, but because the parser errs on the side of
+are 28 warnings produced, but because the parser errs on the side of
 producing more warnings rather than fewer those 25 warnings represent only
-8 problems:
-
-XXX REDO THIS
+10 problems:
 
 \begin{itemize}
 
     \item 3 connections (5 warnings) started before the first log file, so
         their initial log entries are missing.
 
-    \item 5 mails (20 warnings) have out of order log entries, leading to
+    \item 7 mails (23 warnings) have out of order log entries, leading to
         warnings about missing data and queueids.  The two log files where
         the out of order log lines occur are more than an order of
         magnitude larger than normal, due to the extremely large volume of
@@ -1845,30 +1843,30 @@ lines (the second problem) are dealt with in other circumstances (see
 sections~\ref{tracking-re-injected-mail},~\ref{discarding cleanup
 lines}~and~\ref{pickup logging after cleanup}), dealing with these lines
 would introduce a large amount of complication (deferred warnings, deferred
-committal, ambiguity) for a problem which occurs only four times in
+committal, ambiguity) for a problem which occurs only seven times in
 60721709 log lines.
 
-XXX WRITE THIS
-
-The state table contains entries for mails not yet delivered when the
-parser finishes execution.  Ideally all it should contain are mails which
-are awaiting delivery after the period covered by the logs, though it may
-also contain mails from the start of the logs whose initial entries are not
-contained in the logs.  Any other entries are evidence of a failure in
-parsing or an aberration in the logs.  After parsing the 93 test log files
-the state table contains XXX entries, breaking down into:
+The state tables contain entries for mails not yet delivered when the
+parser finishes execution.  Ideally all they should contain are mails which
+are awaiting delivery after the period covered by the logs, though they may
+also contain mails whose initial entries are not contained in the logs.
+Any other entries are evidence of a failure in parsing or an aberration in
+the logs.  After parsing the 93 test log files the state tables contain 27
+entries, breaking down into:
 
 \begin{itemize}
 
-    \item 1 connection which started only seconds before the logs ended and
-        had not completed.
+    \item 2 connections which started only seconds before the logs ended
+        and had not completed.
 
-    \item 9 mails which had yet to be delivered due to repeated failures.
+    \item 7 mails which had yet to be delivered due to repeated failures.
 
-    \item 4 mails resulting from the out of order log entries described
+    \item 5 mails resulting from the out of order log entries described
         above.
 
     \item 9 mails whose initial log entries are not present in the logs.
+
+    \item 4 mails present for unknown reasons.
 
 \end{itemize}
 
