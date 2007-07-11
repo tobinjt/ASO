@@ -134,8 +134,6 @@ sub new {
     return $self;
 }
 
-=begin internals
-
 =over 4
 
 =item $self->init_globals()
@@ -145,8 +143,6 @@ remainder of the module.  It's called automatically by new(), and is separate
 from new() to ease subclassing.
 
 =back
-
-=end internals
 
 =cut
 
@@ -316,10 +312,6 @@ sub update_check_order {
     }
 }
 
-=begin internals
-
-See result_cols in ASO::DB::Rule for a description.
-
 =over 4
 
 =item $self->parse_result_cols($spec, $rule, $number_required, $column_names)
@@ -336,9 +328,9 @@ $number_required is true the right hand side is later required to match \d+.
 There is no way to put a comma or semi-colon in the string.  Returns a hash
 reference containing variable => value.
 
-=back
+See result_cols in ASO::DB::Rule for more details.
 
-=end internals
+=back
 
 =cut
 
@@ -374,8 +366,6 @@ sub parse_result_cols {
     return $assignments;
 }
 
-=begin internals
-
 =over 4
 
 =item $self->parse_line($line)
@@ -385,8 +375,6 @@ associated action.  If no match is found spew a warning.  $line is not a string,
 it's the returned by Parse::Syslog.
 
 =back
-
-=end internals
 
 =cut
 
@@ -494,8 +482,6 @@ sub CONNECT {
 Deal with the remote client disconnecting: enter the connection in the database,
 perform any required cleanup, and delete the connection from the state tables.
 
-=begin internals
-
 Currently the main cleanup requirement is to delete any CLONE()d connections
 which only have two smtpd entries so they don't hang around in the state tables
 causing queueid clashes.  It appears from the logs that the remote client sends
@@ -504,8 +490,6 @@ which will never have any more log entries and wouldn't be disposed of in any
 other way.  There are two problems resulting from this: memory is used, albeit
 only a small amount, and more importantly when the parser has processed enough
 log lines queueids sart being reused and these entries cause queueid clashes.
-
-=end internals
 
 =back
 
@@ -617,8 +601,6 @@ sub SAVE_BY_QUEUEID {
 Enter the data into the database.  Entry may be postponed if the mail is a
 child waiting to be tracked.
 
-=begin internals
-
 Find the correct connection using the queueid from $rule and @matches, then:
 
 =over 8
@@ -652,8 +634,6 @@ Enter the connection in the database.
 Delete the connection from the state tables.
 
 =back
-
-=end internals
 
 =back
 
@@ -781,8 +761,6 @@ sub REJECTION {
 This action represents Postfix picking a mail from the queue to deliver.  This
 action is used for both qmgr and cleanup due to out of order log lines.
 
-=begin internals
-
 There are some complications:
 
 =over 8
@@ -804,8 +782,6 @@ line isn't for the discarded mail, so must be kept.
 
 This action handles the above complications and saves the data extracted from
 the line.
-
-=end internals
 
 =back
 
@@ -914,18 +890,14 @@ accepted the connection's state table entry must be cloned; if the original data
 structure was used the second and subsequent mails would corrupt the data
 structure.
 
-=begin internals
-
 The cloned data structure must have rejections prior to the mail's
-acceptance cleared from it's results, otherwise rejections would be entered
+acceptance cleared from its results, otherwise rejections would be entered
 twice in the database.  The cloned data structure will be added to the global
 state tables but will also be added to the connection's list of accepted mails;
 this is to enable detection of mails where the client gave the RSET commmand
 after recipients were accepted - see the description in DISCONNECT.  The
 last_clone_timestamp is also updated to enable timeout handling to determine
 whether the timeout applies to an accepted mail or not.
-
-=end internals
 
 =back
 
@@ -989,8 +961,6 @@ discarded.  The mail may have been accepted, in which case there's a data
 structure to dispose of, or it may not in which case there's none.  The gory
 details can be found in the internals documentation.
 
-=begin internals
-
 Timeout without an accepted mail happens very often, I think it might be due to
 ESMTP pipelining where the conversation looks like:
 
@@ -1014,8 +984,6 @@ finish.  Whew.
 There's also the problem of stray cleanup lines being logged after the timeout
 line.  This is dealt with by saving the queueid and discarded data structure in
 a global state table which is checked in MAIL_PICKED_FOR_DELIVERY.
-
-=end internals
 
 =back
 
@@ -1249,8 +1217,6 @@ sub tidy_after_timeout {
     return $self->{ACTION_SUCCESS};
 }
 
-=begin internals
-
 =over  4
 
 =item $self->handle_dead_smtpd($line, $action, $regex)
@@ -1260,8 +1226,6 @@ and uses $1 as the pid.  Uses $action in error messages.  Calls
 delete_dead_smtpd() if the connection exists, returns silently otherwise.
 
 =back
-
-=end internals
 
 =cut
 
@@ -1710,8 +1674,6 @@ sub load_state {
     }
 }
 
-=begin internals
-
 =over 4
 
 =item $self->reload_state()
@@ -1730,11 +1692,7 @@ subroutine which does exactly this, so in general the calling sequence will be:
 
 =back
 
-=end internals
-
 =cut
-
-=begin internals
 
 =over 4
 
@@ -1745,8 +1703,6 @@ the timestamp of the last log line parsed, so they don't accumulate forever,
 Called from dump_state() before dumping.
 
 =back
-
-=end internals
 
 =cut
 
