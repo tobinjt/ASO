@@ -147,39 +147,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Bloody Solaris LDAP', 'Solaris LDAP is trying to load something or other',
-        'postfix/smtpd',
-        '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file. \(..\).$',
-        '',
-        '',
-        'IGNORE',
-        0,
-        'IGNORED'
-);
-
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Bloody Solaris LDAP 2', 'Solaris LDAP cannot connect or something',
-        'postfix/smtpd',
-        '^libsldap: Status: 7  Mesg: Session error no available conn.$',
-        '',
-        '',
-        'IGNORE',
-        0,
-        'IGNORED'
-);
-
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Bloody Solaris LDAP 3', 'Solaris LDAP cannot bind or connect or something',
-        'postfix/smtpd',
-        '^libsldap: Status: 91  Mesg: openConnection: simple bind failed - Can.t connect to the LDAP server$',
-        '',
-        '',
-        'IGNORE',
-        0,
-        'IGNORED'
-);
-
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Fatal error', 'Fatal error of some sort',
         'postfix/smtpd',
         '^fatal: .*$',
@@ -1344,19 +1311,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'INFO'
 );
 
--- libsldap: Status: 2  Mesg: Unable to load configuration '/var/ldap/ldap_client_file' ('').
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
-    VALUES('Solaris LDAP throwing a wobbly', 'Something went wrong with Solaris LDAP, yet again.',
-        'postfix/smtp',
-        '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file. .*$',
-        '',
-        '',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
-        'IGNORE',
-        0,
-        'IGNORED'
-);
-
 -- 122E141CD: to=<Taught.Admissions@tcd.ie>, relay=imx1.tcd.ie[134.226.17.160], delay=2, status=bounced (message size 10694768 exceeds size limit 10240000 of server imx1.tcd.ie[134.226.17.160])
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Mail too big for remote server', 'The remote server will not accept mails bigger than X, and this mail is bigger',
@@ -1446,19 +1400,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'INFO'
 );
 
--- libsldap: Status: 7  Mesg: Session error no available conn.
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
-    VALUES('Bloody Solaris LDAP (yet again)', 'Oh look, Solaris LDAP cannot cope, yet again',
-        'postfix/smtp',
-        '^libsldap: Status: 7  Mesg: Session error no available conn.$',
-        '',
-        '',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
-        'IGNORE',
-        0,
-        'IGNORED'
-);
-
 -- 8007B41CD: host redir-mail-telehouse2.gandi.net[217.70.178.1] refused to talk to me: 450 Server configuration problem
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
     VALUES('Server refused to talk (short)', 'Another server refusing to talk',
@@ -1499,17 +1440,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'SAVE_BY_QUEUEID',
         1,
         'BOUNCED'
-);
-
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Bloody Solaris LDAP 4', 'Solaris LDAP cannot bind or connect or anything',
-        'postfix/smtp',
-        '^libsldap: Status: 91  Mesg: openConnection: simple bind failed - Can.t connect to the LDAP server$',
-        '',
-        '',
-        'IGNORE',
-        0,
-        'IGNORED'
 );
 
 -- }}}
@@ -1727,30 +1657,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORED'
 );
 
--- libsldap: Status: 2  Mesg: Unable to load configuration '/var/ldap/ldap_client_file' ('').
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Solaris LDAP fails, oh yes it does', 'Solaris LDAP has failed, yet again',
-        'postfix/local',
-        '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file.*$',
-        '',
-        '',
-        'IGNORE',
-        0,
-        'IGNORE'
-);
-
--- libsldap: Status: 7  Mesg: Session error no available conn.
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Solaris LDAP fails, fails, fails', 'Solaris LDAP has failed, yet again',
-        'postfix/local',
-        '^libsldap: Status: 7  Mesg: Session error no available conn.$',
-        '',
-        '',
-        'IGNORE',
-        0,
-        'IGNORE'
-);
-
 -- 1}}}
 
 -- PICKUP RULES {{{1
@@ -1767,18 +1673,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'PICKUP',
         1,
         'INFO'
-);
-
--- libsldap: Status: 2  Mesg: Unable to load configuration '/var/ldap/ldap_client_file' ('').
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Solaris LDAP fails again', 'Solaris LDAP has failed, yet again',
-        'postfix/pickup',
-        '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file.*$',
-        '',
-        '',
-        'IGNORE',
-        0,
-        'IGNORE'
 );
 
 -- }}}
@@ -1850,30 +1744,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'PROCESSING'
 );
 
--- libsldap: Status: 7  Mesg: Session error no available conn.
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Solaris LDAP fails once more', 'Solaris LDAP is very unstable under load, failing randomly',
-        'postfix/cleanup',
-        '^libsldap: Status: 7  Mesg: Session error no available conn.$',
-        '',
-        '',
-        'IGNORE',
-        0,
-        'IGNORED'
-);
-
--- libsldap: Status: 2  Mesg: Unable to load configuration '/var/ldap/ldap_client_file' ('').
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Solaris LDAP fails, again', 'Solaris LDAP is very unstable under load',
-        'postfix/cleanup',
-        '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file. \(..\).$',
-        '',
-        '',
-        'IGNORE',
-        0,
-        'IGNORED'
-);
-
 -- warning: 9701438A4: read timeout on cleanup socket
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Something went wrong reading mail', 'Cleanup did not get the full mail',
@@ -1925,30 +1795,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'BOUNCE',
         1,
         'BOUNCED'
-);
-
--- libsldap: Status: 2  Mesg: Unable to load configuration '/var/ldap/ldap_client_file' ('').
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Another Solaris LDAP problem.', 'Solaris LDAP really is not reliable.',
-        'postfix/bounce',
-        '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file. \(..\).$',
-        '',
-        '',
-        'IGNORE',
-        0,
-        'IGNORED'
-);
-
--- libsldap: Status: 7  Mesg: Session error no available conn.
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Another Solaris LDAP problem 2.', 'Solaris LDAP really is not reliable.',
-        'postfix/bounce',
-        '^libsldap: Status: 7  Mesg: Session error no available conn.$',
-        '',
-        '',
-        'IGNORE',
-        0,
-        'IGNORED'
 );
 
 -- }}}
@@ -2028,6 +1874,43 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         'pid_regex = pid (\d+) exit status',
         'SMTPD_DIED',
+        0,
+        'IGNORED'
+);
+
+-- }}}
+
+-- * RULES {{{
+-- These rules are applied to all log lines, after the program specific rules.
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Bloody Solaris LDAP', 'Solaris LDAP is trying to load something or other',
+        '*',
+        '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file. \(..\).$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Bloody Solaris LDAP 2', 'Solaris LDAP cannot connect or something',
+        '*',
+        '^libsldap: Status: 7  Mesg: Session error no available conn.$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Bloody Solaris LDAP 3', 'Solaris LDAP cannot bind or connect or something',
+        '*',
+        '^libsldap: Status: 91  Mesg: openConnection: simple bind failed - Can.t connect to the LDAP server$',
+        '',
+        '',
+        'IGNORE',
         0,
         'IGNORED'
 );

@@ -694,7 +694,8 @@ Each rule defines the following:
     \item [program] The program (postfix/smtp, postfix/smtpd, postfix/qmgr,
         etc.) whose log lines the rule applies to.  This avoids needlessly
         trying rules which won't match the line, or worse, might match
-        unintentionally.
+        unintentionally.  Rules whose program is \texttt{*} will be tried
+        against any lines which aren't parsed by program specific rules.
 
     \item [regex] The regular expression\footnote{See
         http://en.wikipedia.org/wiki/Regular\_expression for more
@@ -1828,7 +1829,7 @@ producing more warnings rather than fewer those 25 warnings represent only
     \item 3 connections (5 warnings) started before the first log file, so
         their initial log entries are missing.
 
-    \item 7 mails (23 warnings) have out of order log entries, leading to
+    \item 5 mails (20 warnings) have out of order log entries, leading to
         warnings about missing data and queueids.  The two log files where
         the out of order log lines occur are more than an order of
         magnitude larger than normal, due to the extremely large volume of
@@ -1843,7 +1844,7 @@ lines (the second problem) are dealt with in other circumstances (see
 sections~\ref{tracking-re-injected-mail},~\ref{discarding cleanup
 lines}~and~\ref{pickup logging after cleanup}), dealing with these lines
 would introduce a large amount of complication (deferred warnings, deferred
-committal, ambiguity) for a problem which occurs only seven times in
+committal, ambiguity) for a problem which occurs only five times in
 60721709 log lines.
 
 The state tables contain entries for mails not yet delivered when the
@@ -1851,17 +1852,17 @@ parser finishes execution.  Ideally all they should contain are mails which
 are awaiting delivery after the period covered by the logs, though they may
 also contain mails whose initial entries are not contained in the logs.
 Any other entries are evidence of a failure in parsing or an aberration in
-the logs.  After parsing the 93 test log files the state tables contain 27
+the logs.  After parsing the 93 test log files the state tables contain 25
 entries, breaking down into:
 
 \begin{itemize}
 
-    \item 2 connections which started only seconds before the logs ended
+    \item 1 connection which started only seconds before the logs ended
         and had not completed.
 
     \item 7 mails which had yet to be delivered due to repeated failures.
 
-    \item 5 mails resulting from the out of order log entries described
+    \item 4 mails resulting from the out of order log entries described
         above.
 
     \item 9 mails whose initial log entries are not present in the logs.
@@ -1887,7 +1888,7 @@ always room for improvement.
 
     \item It appears that the hostname used in the HELO command is not
         logged if the mail is accepted.\footnote{Tested with Postfix 2.2.10
-        and 2.3.7; this may possibly have changed in Postfix 2.4.}  It
+        and 2.3.11; this may possibly have changed in Postfix 2.4.}  It
         should be reasonably simple to write a policy server which causes
         Postfix to log a warning containing the HELO hostname when the DATA
         command is accepted.
@@ -1899,8 +1900,6 @@ always room for improvement.
         distinction given the data Postfix logs, though it might be
         possible to write a policy server to provide additional
         logging.
-
-        XXX EXPAND ON THIS
 
     \item The program will not detect parsing the same log file twice,
         resulting in the database containing duplicate entries.

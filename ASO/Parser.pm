@@ -387,7 +387,9 @@ sub parse_line {
     my $text = $line->{text};
 
     RULE:
-    foreach my $rule (@{$self->{rules_by_program}->{$line->{program}}}) {
+    # Use the program specific rules first, then the generic rules.
+    foreach my $rule (@{$self->{rules_by_program}->{$line->{program}}},
+            @{$self->{rules_by_program}->{q{*}}}) {
         if ($text !~ m/$rule->{regex}/) {
             next RULE;
         }
@@ -398,12 +400,6 @@ sub parse_line {
         # regex matches start at one, but array indices start at 0.
         # shift the array forward so they're aligned
         unshift @matches, undef;
-
-        if (not exists $self->{actions}->{$rule->{action}}) {
-            $self->my_warn(qq{unknown action $rule->{action}\n},
-                dump_rule($rule));
-            next LINE;
-        }
 
         # Hmmm, I can't figure out how to combine the next two lines.
         my $action = $rule->{action};
