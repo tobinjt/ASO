@@ -1785,9 +1785,19 @@ __SENDER__, __RECIPIENT__, __MESSAGE_ID__, __HELO__, __EMAIL__, __HOSTNAME__,
 __IP__, __IPv4__, __IPv6__, __SMTP_CODE__, __RESTRICTION_START__, __QUEUEID__,
 __COMMAND__, __SHORT_CMD__, __DELAYS__, __DELAY__, __DSN__ and __CONN_USE__.
 
-XXX TODO: document the matched fields in __RESTRICTION_START__
+__RESTRICTION_START__ matches:
 
-The names should be reasonably self-explanatory.
+    /(__QUEUEID__): reject(?:_warning)?: (?:RCPT|DATA) from (?>(__HOSTNAME__)\\[)(?>(__IP__)\\]): (__SMTP_CODE__)(?: __DSN__)?/gx;
+
+__SHORT_CMD__ matches:
+
+    /(?:CONNECT|HELO|EHLO|AUTH|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN)/gx;
+
+These are the short form of commands, and are used when Postfix logs a lost
+connection or timeout.  It deliberately excludes DATA, because there are
+separate rules matching lost connections or timeouts after DATA.
+
+The other names should be reasonably self-explanatory.
 
 =back
 
