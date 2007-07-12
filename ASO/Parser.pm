@@ -2093,7 +2093,14 @@ init_globals() when the validation data structure is set up.
 sub is_valid_program_combination {
     my ($self, $connection) = @_;
 
-    my $programs_seen = join q{ }, sort keys %{$connection->{programs}};
+    my @extra_programs;
+    if (exists $connection->{bounce_notification}
+            and not exists $connection->{programs}->{q{postfix/bounce}}) {
+        # Fake this for the duration of this check.
+        push @extra_programs, q{postfix/bounce};
+    }
+    my $programs_seen = join q{ }, sort keys %{$connection->{programs}},
+        @extra_programs;
     if (exists $self->{valid_combos}->{$programs_seen}) {
         $self->{valid_combos}->{$programs_seen}++;
     }
