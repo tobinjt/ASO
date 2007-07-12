@@ -223,6 +223,52 @@ sub init_globals {
     $self->{c_cols_silent_overwrite}  = $mock_conn->silent_overwrite_columns();
     $self->{c_cols_silent_discard}    = $mock_conn->silent_discard_columns();
 
+    # Used in is_valid_program_combination()
+    # This list is embedded in the paper too.
+    my @valid_combos = (
+        # Local delivery of bounce notification
+        [qw(postfix/bounce postfix/local                           )],
+        # Local pickup, local delivery.
+        [qw(postfix/local postfix/pickup                           )],
+        # Local pickup, local and remote delivery.
+        [qw(postfix/local postfix/pickup postfix/smtp              )],
+        # Sent from remote client, local and remote delivery.
+        [qw(postfix/local                postfix/smtp postfix/smtpd)],
+        # Sent from remote client, local delivery.
+        [qw(postfix/local                             postfix/smtpd)],
+        # Local pickup, remote delivery.
+        [qw(              postfix/pickup postfix/smtp              )],
+        # Remote delivery of forwarded mail.
+        [qw(                             postfix/smtp              )],
+        # Sent from remote client, remote delivery (relay for internal clients)
+        [qw(                             postfix/smtp postfix/smtpd)],
+    );
+
+    # These two programs should be present for every mail.
+    map { push @{$_}, qw(postfix/cleanup postfix/qmgr); } @valid_combos;
+    # These are added to each of @valid_combos when populating
+    # $self->{valid_combos}.
+    my @extra_programs = (
+        # Don't add anything
+        [],
+        # Pretty much any combo can generate a bounce
+        [qw(postfix/bounce                     )],
+        # Any mail can be deleted using postsuper.
+        [qw(postfix/postsuper                  )],
+        # Or they can both be present.
+        [qw(postfix/bounce    postfix/postsuper)],
+    );
+
+    # Finally build the hash.
+    $self->{valid_combos} = {};
+    foreach my $combo (@valid_combos) {
+        foreach my $extras (@extra_programs) {
+            my %no_dups = map { $_ => 1 } @{$combo}, @{$extras};
+            my $vc = join q{ }, sort keys %no_dups;
+            $self->{valid_combos}->{$vc} = 0;
+        }
+    }
+
     # Used in parse_result_cols().
     $self->{NUMBER_REQUIRED}          = 1;
     $self->{result_cols_names}        = $mock_result->result_cols_columns();
@@ -295,20 +341,10 @@ measure may not be 100% accurate.
 sub update_check_order {
     my ($self) = @_;
 
-    # XXX Hang the original rule off the generated rule, or merge the rules
-    # extracted from the db with the generated rules.
-    my (%id_map) = map { ($_->{id}, $_) } @{$self->{rules}};
-    foreach my $rule ($self->{dbix}->resultset(q{Rule})->search()) {
-        # Sometimes a rule won't have been hit; the value will be set to zero.
-        my $id = $rule->id();
-        if (not exists $id_map{$id}) {
-            $self->my_warn(qq{update_check_order: Missing rule:},
-                dump_rule_from_db($rule));
-        } else {
-            $rule->hits($id_map{$id}->{count});
-            $rule->hits_total($rule->hits_total() + $rule->hits());
-            $rule->update();
-        }
+    foreach my $rule (@{$self->{rules}}) {
+        $rule->{rule}->hits($rule->{count});
+        $rule->{rule}->hits_total($rule->{rule}->hits_total() + $rule->{count});
+        $rule->{rule}->update();
     }
 }
 
@@ -372,7 +408,7 @@ sub parse_result_cols {
 
 Try each regex against the line until a match is found, then perform the
 associated action.  If no match is found spew a warning.  $line is not a string,
-it's the returned by Parse::Syslog.
+it's the hash returned by Parse::Syslog.
 
 =back
 
@@ -515,6 +551,7 @@ sub DISCONNECT {
 
     # Commit the connection.
     $connection->{connection}->{end} = $line->{timestamp};
+    $connection->{end} = localtime $line->{timestamp};
     $self->fixup_connection($connection);
     $self->commit_connection($connection);
     $self->delete_connection_by_pid($line->{pid});
@@ -556,6 +593,7 @@ sub DISCONNECT {
                 and $self->queueid_exists($mail->{queueid})
                 ) {
             $mail->{connection}->{end} = $line->{timestamp};
+            $connection->{end} = localtime $line->{timestamp};
             $self->fixup_connection($mail);
             $self->commit_connection($mail);
             $self->delete_connection_by_queueid($mail->{queueid});
@@ -576,7 +614,8 @@ sub DISCONNECT {
 Use the queueid from $rule and @matches to find the correct connection and call
 $self->save() with the appropriate arguments - see save() in SUBROUTINES for
 more details.  If the connection doesn't exist a connection marked faked will be
-created and a warning issued.
+created and a warning issued.  If the connection has already reached COMMIT()
+but failed is_valid_program_combination(), COMMIT() will be attempted again.
 
 =back
 
@@ -586,6 +625,11 @@ sub SAVE_BY_QUEUEID {
     my ($self, $rule, $line, $matches) = @_;
     my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
     my $connection = $self->get_connection_by_queueid($queueid);
+
+    if (exists $connection->{invalid_program_combination}) {
+        return $self->COMMIT($rule, $line, $matches);
+    }
+
     $self->save($connection, $line, $rule, $matches);
     return $self->{ACTION_SUCCESS};
 }
@@ -649,9 +693,17 @@ sub COMMIT {
         # track()ed, and will be dealt with by committing tracked
         # connections later; mark it so we know it's reached commitment
         # and can be tried again.
-        $connection->{commit_reached} = 1;
+        $connection->{commit_waiting_to_be_tracked} = 1;
         return $self->{ACTION_SUCCESS};
     }
+    if (not $self->is_valid_program_combination($connection)) {
+        # This is generally due to out of order log lines; the next time
+        # SAVE_BY_QUEUEID() is called it will try COMMIT() again.
+        $connection->{invalid_program_combination}++;
+        return $self->{ACTION_SUCCESS};
+    }
+
+    # We're ready to commit now.
     $self->fixup_connection($connection);
     $self->commit_connection($connection);
 
@@ -1263,6 +1315,7 @@ sub delete_dead_smtpd {
     } else {
         # Hopefully this will work, I'll refine it later if it doesn't.
         $connection->{connection}->{end} = $line->{timestamp};
+        $connection->{end} = localtime $line->{timestamp};
         $self->fixup_connection($connection);
         $self->commit_connection($connection);
         $self->delete_connection_by_pid($connection->{pid});
@@ -1298,7 +1351,7 @@ sub maybe_commit_children {
     CHILD:
     foreach my $child_queueid (keys %{$parent->{children}}) {
         my $child = $parent->{children}->{$child_queueid};
-        if (exists $child->{commit_reached}) {
+        if (exists $child->{commit_waiting_to_be_tracked}) {
             # We deliberately don't check for success here; there's nothing we
             # can do at this stage.  These are children which weren't being
             # tracked when they reached commit, so they were still faked - see
@@ -1448,6 +1501,7 @@ sub load_rules {
                                     $rule, 0,
                                     $self->{connection_cols_names}),
             count            => 0,
+            rule             => $rule,
         };
 
         if ($rule_hash->{action} eq q{REJECTION}) {
@@ -1579,8 +1633,6 @@ sub dump_state {
 ## vim: set foldmethod=marker :
 no warnings q{redefine};
 sub reload_state {
-    my %queueids;
-    my %connections;
 
 PREAMBLE
 
@@ -1589,6 +1641,8 @@ PREAMBLE
         my $num_keys = keys %{$self->{$data_source}};
         $state .= qq{## Starting dump of $data_source ($num_keys entries)\n};
         $state .= qq{## } . localtime() . qq{\n};
+        $state .= qq{    my \%$data_source;\n};
+
         my $untracked = q{};
         foreach my $queueid (sort keys %{$self->{$data_source}}) {
             my $connection = $self->{$data_source}->{$queueid};
@@ -2010,6 +2064,30 @@ sub fixup_connection {
     } else {
         $connection->{fixuped} = 1;
     }
+}
+
+=over 4
+
+=item $self->is_valid_program_combination($connection)
+
+Checks if the combination of programs seen in $connection is valid, i.e.
+is a combination which would accept/create a mail and deliver it.  The purpose
+is to identify incomplete mails before committing them, so their committal can
+be postponed and retried later.  The bulk of the work is really done in
+init_globals() when the validation data structure is set up.
+
+=back
+
+=cut
+
+sub is_valid_program_combination {
+    my ($self, $connection) = @_;
+
+    my $programs_seen = join q{ }, sort keys %{$connection->{programs}};
+    if (exists $self->{valid_combos}->{$programs_seen}) {
+        $self->{valid_combos}->{$programs_seen}++;
+    }
+    return exists $self->{valid_combos}->{$programs_seen};
 }
 
 =over 4
