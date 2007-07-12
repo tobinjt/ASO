@@ -134,7 +134,10 @@ summary-some:
 	make WARNINGS=warnings-some STATE=state-some summarize
 
 summarize:
-	# Delete any lines not matching ^logparser; delete any lines not having 7
+	# Delete any lines not matching ^logparser; delete any lines not having 6
 	# colons; substitute the first six colon-delimited fields with nothing.
-	(echo "${WARNINGS} summary: "; sed -e '/^logparser/!d; /^\([^:]\+:\)\{7\}/!d; s/^\([^:]\+:\)\{6\} \?//' "${WARNINGS}" | sort | uniq -c | sort -n) | tee -a results
+	(echo "${WARNINGS} summary: "; sed -e '/^logparser/!d; /^\([^:]\+:\)\{6\}/!d; s/^\([^:]\+:\)\{6\} \?//' "${WARNINGS}" | sort | uniq -c | sort -n) | tee -a results
 	(grep 'Starting dump of .* entries' "${STATE}") | tee -a results
+
+unknown-summary:
+	grep  '^# xxx' state-some | sort | uniq -c | sort  -n
