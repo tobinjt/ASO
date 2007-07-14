@@ -226,8 +226,9 @@ sub init_globals {
     # Used in is_valid_program_combination()
     # This list is embedded in the paper too.
     my @valid_combos = (
-        # Local delivery of bounce notification
-        [qw(postfix/bounce postfix/local                           )],
+        # Local delivery of bounce notification, or local delivery of
+        # forwarded/tracked mail.
+        [qw(postfix/local                                          )],
         # Local pickup, local delivery.
         [qw(postfix/local postfix/pickup                           )],
         # Local pickup, local and remote delivery.
