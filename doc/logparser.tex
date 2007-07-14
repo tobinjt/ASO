@@ -23,8 +23,9 @@
     pdfauthor   = {John Tobin},
     final       = true,
     pdfborder   = {0 0 0},
-    breaklinks  = true,
+%    breaklinks  = true,
 }
+\usepackage{breakurl}
     
 \begin{document}
 
@@ -53,9 +54,6 @@ XXX WHAT IS THE CONCLUSION???  FIRST THING IS TO COMPARE TO OTHER PARSERS
 REVIEWED
 
 XXX MAYBE A PRIOR ART SECTION\@?
-
-XXX TURN OFF RESTRICTIONS FOR ME AND SEE HOW WELL SPAMASSASSIN DEALS WITH
-THE RESULTING MAILS\@; FALSE POSITIVES, FALSE NEGATIVES, ETC\@.
 
 \newpage
 \tableofcontents
@@ -616,6 +614,87 @@ The words \textit{connection\/} and \textit{mail\/} are often used
 interchangeably in this paper; in general the word used was chosen based on
 the context it appears in.
 
+\subsection{Previous research in this area}
+
+There only appears to be one prior paper published about parsing Postfix
+log files: \textit{Log Mail Analyzer: Architecture and Practical
+Utilizations\/}~\cite{log-mail-analyser}.  The aim of Log Mail Analyzer is
+quite different from his parser: it attempts to present correlated log data
+in a form suitable for a systems administrator to search using grep(1),
+producing a CSV file\footnote{Comma-Separated Value, a very simple format
+where a record is stored in a single line, with fields separated by a comma
+or other punctuation symbol.  Problems with CSV files include the
+difficulty in escaping separators, providing multiple values for a field
+(e.g.\ multiple recipients), adding new fields, and lack of a bundled schema
+describing the fields.} which can subsequently be imported into a MySQL or
+Berkeley DB database.  The data stored is limited to time and date,
+hostname and IP address of client, sender and recipient addresses, and the
+SMTP code.  The decision to support both CSV and Berkeley DB appears to
+have been a limiting factor: the values which can be stored are limited,
+it's difficult to link different records (foreign keys in SQL enable this
+easily), and ad-hoc queries require extensive code to be written.  Berkeley
+DB is not an SQL database, it only supports (key, value) pairs; in the main
+table the value used is a CSV line, and the key is an integer referred to
+by other tables.  The secondary by-sender, by-recipient, by-date and by-IP
+tables use the sender/recipient/date/IP as the key, and a CSV list of
+integers referring to the main table is used as the value.  In effect this
+re-implements SQL foreign keys, but without the full functionality offered
+by even the most basic of SQL databases.  It also requires custom code to
+search on some combination of the above.
+
+Handling of multiple recipients, SMTP codes or remote servers\footnote{A
+single mail may be sent to multiple remote servers if it was addressed to
+recipients in different domains, or Postfix needs to try multiple servers
+for one or more recipients.} is not explained in the paper, but the options
+appear to be:
+
+\begin{enumerate}
+
+    \item Discard some of the data; this option is obviously undesirable,
+        and presumably was not chosen by the LMA authors.
+
+    \item Combine all data into a CSV line, which is then embedded into the
+        main CSV line for that mail, making searching even more difficult
+        and requiring a second separating character.
+
+\end{enumerate}
+
+The schema used with the MySQL database is undocumented, but at least it's
+possible to discover the schema with an SQL database, unlike with Berkeley
+DB\@.
+
+Parsing is hand-coded and requires major changes to the code to parse new
+log lines or extract additional data.  It does not appear to deal with any
+of the complications discussed in
+sections~\ref{complications}~and~\ref{additional complications}.  The
+program fails to parse Postfix 2.2.x or 2.3.x log files; indeed it produces
+a number of warnings and no usable output.
+
+In summary Log Mail Analyser appears to be a proof of concept, written to
+demonstrate the point of the paper (that having this information in an
+accessible fashion is useful to systems administrators), rather than a
+program designed to be extensible and useful in a production environment.
+
+% Literature review notes:
+%
+% Hard-coded parsing, requiring code changes to add more.  Attempts to
+% correlate log lines, saves data to database for data mining purposes.
+% Hard to extend/expand/understand.  Appears to only save: date and hour,
+% DNS name and IP address host, mail server IP address, sender, receiver
+% and e-mail status (sent, rejected).  Undocumented schema.  Design
+% decision to use CSV as an intermediate format between the log file and
+% the database seems to have been restrictive.  Appears to require a
+% queueid but majority of log entries (e.g. rejections) lack a queueid.
+% Supports whitelisting IP addresses when parsing logs, but whitelisting
+% when generating reports/data mining would be preferable.  Supporting
+% Berkeley DB is probably limiting the software - an example is the
+% difficulty in searching a pipe-delimited string, so they have
+% re-implemented foreign keys with tables keyed by ip address etc. pointing
+% at the main table - this also won't scale well.  There doesn't appear to
+% be any attempt to deal with the complications I've encountered: their
+% parsing isn't detailed enough to encounter them.  It doesn't run
+% properly; doesn't create any output; throws up errors.
+
 \section{Adaptable parsing: user defined rules}
 
 \label{rules}
@@ -1132,7 +1211,7 @@ fashion, or bugs in the parser, unknown origin mails need to be marked as
 such because they lack some data present in the parent mail; they must copy
 that data from their parent before being entered in the database.
 The effect of this complication upon the algorithm is discussed in
-section~\ref{tracking-re-injected-mail}.
+section~\ref{tracking re-injected mail}.
 
 
 
@@ -1208,7 +1287,7 @@ Re-injection due to forwarding sadly lacks explicit log lines of its
 own;\footnote{Previously discussed in section~\ref{complications},
 complication 3.} re-injection is somewhat awkward to explain because it
 overlaps both the mail acceptance and mail delivery sections.  See
-section~\ref{tracking-re-injected-mail} for a full discussion.
+section~\ref{tracking re-injected mail} for a full discussion.
 
 Internally generated mails lack any explicit origin and can only be
 detected using heuristics (see
@@ -1231,7 +1310,7 @@ four are handled in exactly the same way:
 
     \item Sometimes mail is re-injected and the child mail needs to be
         tracked by the parent mail (action: track; flowchart:~11) ---
-        section~\ref{tracking-re-injected-mail} discusses this in detail.
+        section~\ref{tracking re-injected mail} discusses this in detail.
 
     \item Eventually the mail will be delivered, bounced, or deleted by the
         administrator (action: commit; flowchart:~12).  This is the last
@@ -1239,7 +1318,7 @@ four are handled in exactly the same way:
         referred to if it was re-injected).  If it is neither parent nor
         child of re-injection the data is cleaned up and entered in the
         database (flowchart:~14), then deleted from memory (flowchart:~15).  For
-        re-injected mails see section~\ref{tracking-re-injected-mail}.
+        re-injected mails see section~\ref{tracking re-injected mail}.
 
 \end{enumerate}
 
@@ -1248,11 +1327,11 @@ delivered to a mailbox, piped to a command, delivered to a remote server,
 bounced (due to a mail loop, delivery failure, or five day timeout), or
 deleted by the administrator.  The exception is what happens after delivery
 to the parent or children of mail re-injected due to forwarding, and that
-is explained in section~\ref{tracking-re-injected-mail}.
+is explained in section~\ref{tracking re-injected mail}.
 
 \subsubsection{Tracking re-injected mail}
 
-\label{tracking-re-injected-mail}
+\label{tracking re-injected mail}
 
 It's probably apparent by now that tracking re-injected mails is the single
 most complex part of the algorithm.  Section~\ref{complications} has most
@@ -1451,7 +1530,7 @@ Postfix 2.2.x (and presumably previous versions) lacks explicit logging
 when bounce notifications are generated; suddenly there will be log entries
 for a mail which lacks an obvious source.  There are similarities to the
 problem of re-injected mails discussed in
-section~\ref{tracking-re-injected-mail}, but unlike the solution described
+section~\ref{tracking re-injected mail}, but unlike the solution described
 therein bounce notifications do not eventually have a log line which
 identifies their source.  Heuristics must be used to identify bounce
 notifications, and those heuristics are:
@@ -1729,6 +1808,67 @@ mail may need to be discarded, as detailed in
 section~\ref{timeouts-during-data-phase}.
 
 
+\subsubsection{Out of order log lines}
+
+\label{out of order log lines}
+
+Occasionally a log file will have out of order log lines which cannot be
+dealt with by the techniques described in sections~\ref{tracking
+re-injected mail},~\ref{discarding cleanup lines}~and~\ref{pickup logging
+after cleanup}.  In the 93 log files used for testing this occurs only five
+times in 60721709 log lines, but for completeness of the algorithm it
+should be dealt with.  The five occurrences in the test log files have the
+same characteristics: the postfix/local log line showing delivery to a
+local mailbox occurs after the postfix/qmgr log line showing removal of the
+mail from the queue because delivery is completed.  This causes problems:
+the mail is not complete, so entry into the database fails; a new mail is
+created when the postfix/local line is parsed and remains in the state
+tables; four warnings are issued per pair of out of order log lines.
+
+The solution to this problem is to examine the list of programs which have
+logged messages for each mail, comparing the list against a table of
+known-good combinations of programs.  If combination is found in the valid
+list the mail can be entered in the database; if the combination is not
+found entry must be postponed and the mail flagged.  The SAVE\_BY\_QUEUEID
+action checks for the flag and retries entry; if the additional log lines
+have caused the mail to reach a valid combination entry will succeed,
+otherwise it must be postponed once more.
+
+The list of valid combinations is given below.  Every mail will
+additionally have log entries from postfix/cleanup and postfix/qmgr; any
+mail may also have log entries from postfix/bounce, postfix/postsuper, or
+both.
+
+\begin{description}
+
+    \item [postfix/local:] Local delivery of bounce notification, or local
+        delivery of forwarded/tracked mail.
+
+    \item [postfix/local, postfix/pickup:] Locally submitted mail, locally
+        delivered.
+
+    \item [postfix/local, postfix/pickup, postfix/smtp:] Locally submitted
+        mail, \newline both local and remote delivery.
+
+    \item [postfix/local, postfix/smtp, postfix/smtpd:] Mail accepted from
+        a remote client, both local and remote delivery.
+
+    \item [postfix/local, postfix/smtpd:] Mail accepted from a remote
+        client, local delivery.
+
+    \item [postfix/pickup, postfix/smtp:] Locally submitted mail, remote
+        delivery.
+
+    \item [postfix/smtp:] Remote delivery of forwarded/tracked mail.
+
+    \item [postfix/smtp, postfix/smtpd:] Mail accepted from a remote
+        client, remotely delivered (relaying mail for clients on the local
+        network).
+
+\end{description}
+
+This applies to accepted mails only, not to rejected mails.
+
 \section{Parsing coverage}
 
 The discussion of the parser's coverage of Postfix log files is separated
@@ -1815,57 +1955,33 @@ few warnings about missing queueids or pids in the first few hundred or
 thousand log lines because the earlier log lines are in the previous log
 file; loading the saved state from the previous log file will solve this
 problem} or when there are problems tracking a child mail (see
-section~\ref{tracking-re-injected-mail}).  There should be few or no
+section~\ref{tracking re-injected mail}).  There should be few or no
 warnings, and the state table should only contain entries for mails which
 had yet to be delivered when the logfiles ended.
 
 At the time of writing the parser is being tested with 93 log files.  There
-are 28 warnings produced, but because the parser errs on the side of
-producing more warnings rather than fewer those 25 warnings represent only
-10 problems:
-
-\begin{itemize}
-
-    \item 3 connections (5 warnings) started before the first log file, so
-        their initial log entries are missing.
-
-    \item 5 mails (20 warnings) have out of order log entries, leading to
-        warnings about missing data and queueids.  The two log files where
-        the out of order log lines occur are more than an order of
-        magnitude larger than normal, due to the extremely large volume of
-        mail handled by the server on those days; process scheduling
-        vagaries and the undefined order of messages sent to syslog(8) may
-        explain why the lines were out of order.
-
-\end{itemize}
-
-The first of these problems cannot be dealt with; although out of order log
-lines (the second problem) are dealt with in other circumstances (see
-sections~\ref{tracking-re-injected-mail},~\ref{discarding cleanup
-lines}~and~\ref{pickup logging after cleanup}), dealing with these lines
-would introduce a large amount of complication (deferred warnings, deferred
-committal, ambiguity) for a problem which occurs only five times in
-60721709 log lines.
+are 5 warnings produced, but because the parser errs on the side of
+producing more warnings rather than fewer those 5 warnings represent only 3
+instances of 1 problem: 3 connections started before the first log file, so
+their initial log entries are missing, leading to warnings when their log
+lines are parsed.
 
 The state tables contain entries for mails not yet delivered when the
 parser finishes execution.  Ideally all they should contain are mails which
 are awaiting delivery after the period covered by the logs, though they may
 also contain mails whose initial entries are not contained in the logs.
 Any other entries are evidence of a failure in parsing or an aberration in
-the logs.  After parsing the 93 test log files the state tables contain 25
+the logs.  After parsing the 93 test log files the state tables contain 22
 entries, breaking down into:
 
 \begin{itemize}
 
-    \item 1 connection which started only seconds before the logs ended
+    \item 2 connections which started only seconds before the logs ended
         and had not completed.
 
+    \item 9 mails whose initial log entries were not present in the logs.
+
     \item 7 mails which had yet to be delivered due to repeated failures.
-
-    \item 4 mails resulting from the out of order log entries described
-        above.
-
-    \item 9 mails whose initial log entries are not present in the logs.
 
     \item 4 mails present for unknown reasons.
 
