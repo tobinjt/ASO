@@ -32,7 +32,7 @@ test.%: ../../../../logs/mail.log-%
 	make INPUT='"$<"'                 STATE='"state"'         OUTPUT='"warnings"'         test-real
 
 test-real:
-	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser --out-statefile ${STATE} ${INPUT} 2> ${OUTPUT}'; STATUS="$$?"; wc ${STATE} ${OUTPUT}; date; exit "$$STATUS") 2>&1) | tee -a results
+	((date; nice --adjustment=19 time -v ${SHELL} -c 'perl logparser --out-statefile ${STATE} ${INPUT} > /dev/tty 2> ${OUTPUT}'; STATUS="$$?"; wc ${STATE} ${OUTPUT}; date; exit "$$STATUS") 2>&1) | tee -a results
 
 ../sql/create-tables-sqlite3-generated.sql: ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm
 	(cd ../sql && perl make_schema > "$@")

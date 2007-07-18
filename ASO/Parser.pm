@@ -50,6 +50,7 @@ $| = 1;
 
 use lib q{..};
 use ASO::DB;
+use ASO::ProgressBar;
 use Parse::Syslog;
 use IO::File;
 use Carp qw(cluck croak);
@@ -300,9 +301,40 @@ information.  Data gathered from the logs will be inserted into the database
 sub parse {
     my ($self, $logfile) = @_;
     $self->{current_logfile} = $logfile;
-    my $syslog = Parse::Syslog->new($logfile);
+    my $logfile_fh = IO::File->new(q{< } . $logfile);
+    if (not $logfile_fh) {
+        $self->my_die(qq{parse: failed to open $logfile: $!\n});
+    }
+    my $syslog = Parse::Syslog->new($logfile_fh);
     if (not $syslog) {
-        croak qq{parse: failed creating syslog parser for $logfile: $@\n};
+        $self->my_die(qq{parse: failed creating syslog parser for }
+            . qq{$logfile: $@\n});
+    }
+
+    my ($log_size, $do_progress_bar, $progress_bar, $next_update);
+    # Term::ProgressBar::new doesn't finish if the output FH is not a tty;
+    # dunno why that is, just working around it here.
+    $do_progress_bar = ($logfile ne q{-}) && -t STDOUT;
+    if ($do_progress_bar) {
+        my (@log_stat) = $logfile_fh->stat();
+        if (not @log_stat) {
+            $self->my_die(qq{parse: failed to stat $logfile: $!\n});
+        }
+        $log_size = $log_stat[7];
+        $progress_bar = ASO::ProgressBar->new({
+                name    => $logfile,
+                count   => $log_size,
+                ETA     => q{linear},
+                fh      => \*STDOUT,
+            });
+        if (not $progress_bar) {
+            $self->my_warn(qq{parse: creating progress bar failed\n});
+            $do_progress_bar = 0;
+        } else {
+            # Disable the minor progress indicator, it's confusing.
+            $progress_bar->minor(0);
+        }
+        $next_update = 0;
     }
 
     LINE:
@@ -312,7 +344,23 @@ sub parse {
             # It's not from a program we're interested in, skip it.
             next LINE;
         }
+
+        if ($do_progress_bar) {
+            my $pos = tell $logfile_fh;
+            if ($pos >= $next_update) {
+#                Haven't decided if this is necessary yet.
+#                my @stat = $logfile_fh->stat();
+#                if ($stat[7] != $log_size) {
+#                    $progress_bar->target($stat[7]);
+#                }
+                $next_update = $progress_bar->update($pos);
+            }
+        }
+
         $self->parse_line($line);
+    }
+    if ($next_update < $log_size) {
+        $progress_bar->update($log_size);
     }
 
     # We bundle database inserts into transactions and commit them in bunches;
