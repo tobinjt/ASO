@@ -69,7 +69,7 @@ profile.Profile:
 	PERL5OPT=-d:Profile PERL_PROFILE_SAVETIME=15 make test
 
 # We need this for Windows
-DPROFPP=dprofpp.bat
+DPROFPP=dprofpp
 profile.DProf.stats:
 	# Process tmon.out in various ways
 	# This has a running time of roughly 400% of make test
@@ -87,13 +87,6 @@ profile.DProf:
 	PERL5OPT=-d:DProf make test
 	DPROF_OUT=dprof make profile.DProf.stats
 
-profile.DProfLB:
-	# Devel::DProfLB; use dprofpp to do something useful with tmonlb.out
-	# Running time is about 600% of normal.
-	# dprofpp doesn't do anything useful with tmonlb.out, dunno why,
-	PERL_DPROF_OUT_FILE_NAME=tmonlb.out PERL5OPT=-d:DProfLB make test
-	DPROFPP_OPTS=tmonlb.out DPROF_OUT=dproflb make profile.DProf.stats
-
 profile.SmallProf:
 	# Devel::SmallProf; sort -k 2nr,2 smallprof.out | less
 	# Running time is about 2000% of normal.
@@ -103,23 +96,9 @@ cover: profile.Cover
 
 profile.Cover:
 	# DeveL::Cover; generates coverage reports.
-	if [ -d cover_db ] ; then perl cover -delete; fi
+	if [ -d cover_db ] ; then cover -delete; fi
 	PERL5OPT=-d:Cover make test
-	perl cover
-
-profile.CallStack:
-	# DeveL::CallStack; do something with callstack.out
-	# Running time is about 1% of normal.
-	# This doesn't see to work, it clobbers @_.
-	PERL5OPT=-d:CallStack make test
-
-profile.GraphVizProf:
-	# Devel::GraphVizProf; make a graphviz call graph.
-	# Running time is about 2000% of normal.
-	PERL5OPT=-d:GraphVizProf REDIRECT_STDOUT=profile.dot make test
-	# See profile.png for the call graph.
-	# This failed last time.
-	dot -Tpng -o profile.png profile.dot
+	cover
 
 summary:
 	make WARNINGS=warnings STATE=state summarize
