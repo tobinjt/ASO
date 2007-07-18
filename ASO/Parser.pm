@@ -38,9 +38,6 @@ XXX ADD A WHOLE LOT MORE HERE.
 
 =head1 SUBROUTINES/METHODS 
 
-Most subroutines are for internal use only, and thus are not documented here.
-See the ACTIONS section also.
-
 =cut
 
 
@@ -60,7 +57,7 @@ use List::Util qw(shuffle);
 
 =over 4
 
-=item new(\%options)
+=item ASO::Parser->new(\%options)
 
 New creates an ASO::Parser object with the specified options.  There only 
 required option is data_source; the rest are optional options.
@@ -70,29 +67,29 @@ required option is data_source; the rest are optional options.
 =item data_source
 
 The SQL database to use: rules will be loaded from it and results saved to it.
-If opening the database fails die will be called with an apropriate error
+If opening the database fails die will be called with an appropriate error
 message.  There is no default value; one must be specified.
 
 =item sort_rules
 
-How to sort the rules returned from the database: normal (most effecient,
-default), shuffle, or reverse (least effecient).  Useful for checking new rules;
-you should obtain the same results regardless of the order the rules are tried
-in; if not you have overlapping rules and need to rationalise your ruleset or
-change the priority of one or more rules.
+How to sort the rules returned from the database: C<normal> (most efficient,
+default), C<shuffle>, or C<reverse> (least efficient).  Useful for checking new
+rules: you should obtain the same results regardless of the order the rules are
+tried in; if not you have overlapping rules and need to rationalise your rule
+set or change the priority of one or more rules.
 
 =item discard_copiled_regex
 
-For effeciency the regex in each rule is compiled once and saved.  If you're
-doing something extremely complicated, or want to drasticaly slow down
+For efficiency the regex in each rule is compiled once and cached.  If you're
+doing something extremely complicated, or want to drastically slow down
 execution, set this option to true and the regexs will be recompiled each time
 they're used.  Defaults to false.
 
 =item skip_inserting_results
 
-Inserting results into the database quadrouples the run time of the program,
+Inserting results into the database quadruples the run time of the program,
 because of the disk IO (this is based on using SQLite on Windows, other
-databases and/or OSs may give different results).  For testing it can be very
+databases and/or OS's may give different results).  For testing it can be very
 helpful to disable insertion; everything else happens as normal.
 
 =back
@@ -106,7 +103,8 @@ sub new {
     my %defaults = (
         sort_rules              => q{normal},
         discard_compiled_regex  => 0,
-        # Skip inserting results into the db, because it quadrouples run time.
+        # Skip inserting results into the database, because it quadruples run
+        # time.
         skip_inserting_results => 0,
     );
 
@@ -167,7 +165,7 @@ sub init_globals {
     # The data to dump in dump_state()
     $self->{data_to_dump} = [qw(queueids connections timeout_queueids)];
     # All mail starts off in %connections, unless submitted locally by
-    # sendmail/postgrop, and then moves into %queueids if it gets a queueid.
+    # sendmail/postdrop, and then moves into %queueids if it gets a queueid.
     $self->{connections}      = {};
     $self->{queueids}         = {};
     # When a connection with a sending client times out during the DATA phase,
@@ -379,7 +377,7 @@ sub parse {
 Update the rule order in the database so that more frequently hit rules will be
 tried earlier on the next run.  The order rules are tried in does not change
 during the lifetime of an ASO::Parser object, but the next object created will
-hopefully have a more effecient ordering of rules.  The optimal rule ordering
+hopefully have a more efficient ordering of rules.  The optimal rule ordering
 is dependant on the contents of the logfile currently being parsed, so this
 measure may not be 100% accurate.
 
@@ -467,7 +465,7 @@ sub parse_line {
     my ($self, $line) = @_;
     # Parse::Syslog handles "last line repeated n times" by returning the 
     # same hash as it did on the last call, so any changes we make to the 
-    # contents of the hash will be propogated, thus we need to work on a
+    # contents of the hash will be propagated, thus we need to work on a
     # copy of the text of the line from now on.
     my $text = $line->{text};
 
@@ -551,7 +549,7 @@ smtpd pid) and save both the client hostname and IP address.
 sub CONNECT {
     my ($self, $rule, $line, $matches) = @_;
     my $connection = $self->make_connection_by_pid($line->{pid});
-    # We also want to save the hostname/ip info
+    # We also want to save the hostname/IP info
     $self->save($connection, $line, $rule, $matches);
     return $self->{ACTION_SUCCESS};
 }
@@ -570,7 +568,7 @@ MAIL FROM, RCPT TO, RSET and then starts over; this leaves a state table entry
 which will never have any more log entries and wouldn't be disposed of in any
 other way.  There are two problems resulting from this: memory is used, albeit
 only a small amount, and more importantly when the parser has processed enough
-log lines queueids sart being reused and these entries cause queueid clashes.
+log lines queueids start being reused and these entries cause queueid clashes.
 
 =back
 
@@ -921,7 +919,7 @@ sub MAIL_PICKED_FOR_DELIVERY {
                 and not exists $self->{queueids}->{$queueid}) {
             return $self->{ACTION_SUCCESS};
         }
-        # Otherwise we contine onwards as normal.
+        # Otherwise we continue onwards as normal.
     }
 
     # Sometimes I need to create connections here because there are
@@ -987,12 +985,12 @@ accepted the connection's state table entry must be cloned; if the original data
 structure was used the second and subsequent mails would corrupt the data
 structure.
 
-The cloned data structure must have rejections prior to the mail's
-acceptance cleared from its results, otherwise rejections would be entered
-twice in the database.  The cloned data structure will be added to the global
-state tables but will also be added to the connection's list of accepted mails;
-this is to enable detection of mails where the client gave the RSET commmand
-after recipients were accepted - see the description in DISCONNECT.  The
+The cloned data structure must have rejections prior to the mail's acceptance
+cleared from its results, otherwise rejections would be entered twice in the
+database.  The cloned data structure will be added to the global state tables
+but will also be added to the connection's list of accepted mails; this is to
+enable detection of mails where the client gave the RSET command after
+recipients were accepted - see the description in DISCONNECT.  The
 last_clone_timestamp is also updated to enable timeout handling to determine
 whether the timeout applies to an accepted mail or not.
 
@@ -1068,14 +1066,14 @@ ESMTP pipelining where the conversation looks like:
                                   <-- RCPT TO/MAIL FROM rejected.
   connection lost
 
-There may or may not have been a mail accepted and fully trasnferred before the
+There may or may not have been a mail accepted and fully transferred before the
 timeout.
 
 How to distinguish between a timeout affecting the last mail accepted versus a
-timeout affecting a rejected mail?  This _seems_ to work: track the timesamp of
+timeout affecting a rejected mail?  This _seems_ to work: track the timestamp of
 the last CLONE, i.e. accepted mail, and if there's a reject later than that
 (skipping the timeout just saved at the start of this subroutine) then the
-timeout applies to an unsucessful mail: don't delete anything, just save() and
+timeout applies to an unsuccessful mail: don't delete anything, just save() and
 finish.  Whew.
 
 There's also the problem of stray cleanup lines being logged after the timeout
@@ -1268,7 +1266,7 @@ sub add_actions {
 
 =item $self->tidy_after_timeout($connection)
 
-Deal with a timeout of some sort occuring: delete the last accepted mail if
+Deal with a timeout of some sort occurring: delete the last accepted mail if
 required.
 
 =back
@@ -1279,7 +1277,7 @@ sub tidy_after_timeout {
     my ($self, $connection) = @_;
 
     if (not exists $connection->{cloned_mails}) {
-        # Nothing has been acccepted, so there's nothing to do.
+        # Nothing has been accepted, so there's nothing to do.
         return $self->{ACTION_SUCCESS};
     }
 
@@ -1377,7 +1375,7 @@ sub delete_dead_smtpd {
 =item $self->maybe_commit_children($parent)
 
 This should be called after commit_connection() for any connection which has
-children.  Children which reached COMMIT() before their parent reahced TRACK()
+children.  Children which reached COMMIT() before their parent reached TRACK()
 won't have been entered in the database; instead they will have been marked as
 commit_ready and their database entry postponed.  maybe_commit_children() will
 loop over all children and call both fixup_connection() and commit_connection()
@@ -1877,7 +1875,7 @@ sub filter_regex {
     # message-ids initially look like email addresses, but really they can be
     # absolutely anything; just like email addresses in fact.
     $regex =~ s/__MESSAGE_ID__          /.*?/gx;
-    # We see some pretty screwey hostnames in HELO commands; in fact just match
+    # We see some pretty screwed hostnames in HELO commands; in fact just match
     # any damn thing, the hostnames are particularly weird when Postfix rejects
     # them.
     $regex =~ s/__HELO__                /.*?/gx;
@@ -2012,7 +2010,7 @@ Clean up the data in $connection before entering it in the database:
 
 =item *
 
-Ensure all results have all the required attributes, by propogating attributes
+Ensure all results have all the required attributes, by propagating attributes
 between results if necessary.
 
 =item *
@@ -2190,7 +2188,7 @@ sub save {
         date            => scalar localtime ($line->{timestamp}),
         logfile         => $self->{current_logfile},
         line_number     => $.,
-        # Sneakily inline result_data here
+        # Sneakily in-line result_data here
         %{$rule->{result_data}},
     );
     push @{$connection->{results}}, \%result;
@@ -2270,8 +2268,8 @@ sub save {
 
 Enter the data from the connection into the database (unless
 skip_inserting_results was specified).  If the connection is faked, hasn't
-successfully completed fixup_connection(), or has already been commmitted an
-appropriate error message wll be logged and commit_connection() will abort.  If
+successfully completed fixup_connection(), or has already been committed an
+appropriate error message will be logged and commit_connection() will abort.  If
 skip_inserting_results was specified commit_connection() will finish at this
 point.  A new row will be entered in the connections table, and a new row in the
 results table for each result where postfix_action is not INFO.
@@ -2306,7 +2304,7 @@ sub commit_connection {
     }
 
     # Occasionally we want to test without committing to the database, because 
-    # committing roughly quadrouples the run time.
+    # committing roughly quadruples the run time.
     if ($self->{skip_inserting_results}) {
         $connection->{committed} = 1;
         return;
@@ -2356,7 +2354,7 @@ sub commit_connection {
 Faked connections won't be processed by either fixup_connection() (generally
 there are attributes missing) or commit_connection() (faked connections should
 not be entered in the database).  Sometimes the faked flag is unwarranted, e.g.
-bounce notifications in Postfix 2.2.x will be marked as faked becausd their
+bounce notifications in Postfix 2.2.x will be marked as faked because their
 origin is unclear.  maybe_remove_faked() should be called before
 fixup_connection() or commit_connection() to identify mails which are
 incorrectly marked as faked; it will remove the faked flag so the mail can be
@@ -2448,7 +2446,7 @@ sub my_warn {
 =item $self->format_error($first_line, @further_lines)
 
 Prepends the current time, filename and line number to $first_line.
-@further_lines and a callstack will be wrapped with {{{ and }}}; these are the
+@further_lines and a call stack will be wrapped with {{{ and }}}; these are the
 default markers vim uses for folding blocks of text, so long error messages
 (e.g. where a connection is dumped in the error message) can be folded, making
 navigating through error output easier.
@@ -2494,7 +2492,7 @@ sub my_die {
 
 =item $self->queueid_exists($queueid)
 
-CHecks whether $queueid exists in the state table.
+Checks whether $queueid exists in the state table.
 
 =back
 
@@ -2578,7 +2576,7 @@ sub get_or_make_connection_by_queueid {
 =item $self->delete_connection_by_queueid($queueid)
 
 Delete the connection saved under $queueid from the state tables.  The
-connection won't be changed in any way, and will still be accessable through
+connection won't be changed in any way, and will still be accessible through
 other references.
 
 =back
@@ -2656,7 +2654,7 @@ sub save_connection_by_queueid {
 
 =item $self->pid_exists($pid)
 
-CHecks whether a connection is found for $pid in the state tables.
+Checks whether a connection is found for $pid in the state tables.
 
 =back
 
@@ -2754,7 +2752,7 @@ sub get_or_make_connection_by_pid {
 =item $self->delete_connection_by_pid($pid)
 
 Delete the connection saved under $pid from the state tables.  The connection
-won't be changed in any way, and will still be accessable through other
+won't be changed in any way, and will still be accessible through other
 references.
 
 =back
