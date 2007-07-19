@@ -183,12 +183,6 @@ sub init_globals {
     # Keep track of the number of inserts uncommitted.
     $self->{num_connections_uncommitted} = 0;
 
-    # Return values for actions
-    $self->{ACTION_SUCCESS} = 1;
-    $self->{ACTION_FAILURE} = 0;
-    # This one returns the new text to be parsed.
-    $self->{ACTION_REPARSE} = 2;
-
     # Actions available to rules.
     $self->{actions} = {};
     $self->add_actions(qw(
@@ -357,8 +351,11 @@ sub parse {
 
         $self->parse_line($line);
     }
-    if ($next_update < $log_size) {
+    if ($do_progress_bar and $next_update < $log_size) {
         $progress_bar->update($log_size);
+    }
+    if ($do_progress_bar) {
+        print qq{\n};
     }
 
     # We bundle database inserts into transactions and commit them in bunches;
@@ -463,48 +460,29 @@ it's the hash returned by Parse::Syslog.
 
 sub parse_line {
     my ($self, $line) = @_;
-    # Parse::Syslog handles "last line repeated n times" by returning the 
-    # same hash as it did on the last call, so any changes we make to the 
-    # contents of the hash will be propagated, thus we need to work on a
-    # copy of the text of the line from now on.
-    my $text = $line->{text};
 
     RULE:
     # Use the program specific rules first, then the generic rules.
     foreach my $rule (@{$self->{rules_by_program}->{$line->{program}}},
             @{$self->{rules_by_program}->{q{*}}}) {
-        if ($text !~ m/$rule->{regex}/) {
+        if ($line->{text} !~ m/$rule->{regex}/) {
             next RULE;
         }
         $rule->{count}++;
 
         # TODO: is there a way I can do this without matching twice??
-        my @matches = ($text =~ m/$rule->{regex}/);
+        my @matches = ($line->{text} =~ m/$rule->{regex}/);
         # regex matches start at one, but array indices start at 0.
         # shift the array forward so they're aligned
         unshift @matches, undef;
 
         # Hmmm, I can't figure out how to combine the next two lines.
         my $action = $rule->{action};
-        my ($result, @more) = $self->$action($rule, $line, \@matches);
-
-        if ($result eq $self->{ACTION_SUCCESS}) {
-            return;
-        }
-        if ($result eq $self->{ACTION_FAILURE}) {
-            $self->my_die(qq{ACTION FAILURE: }, dump_rule($rule),
-                dump_line($line), qq{EXTRA INFORMATION: }, @more);
-        }
-        if ($result eq $self->{ACTION_REPARSE}) {
-            $text = $more[0];
-            next RULE;
-        }
-        $self->my_warn(qq{parse_line: unknown action result: $result},
-            dump_rule($rule), dump_line($line), qq{EXTRA INFORMATION: }, @more);
+        return $self->$action($rule, $line, \@matches);
     }
 
     # Last ditch: complain to the user
-    $self->my_warn(qq{unparsed line: $line->{program}: $text\n});
+    $self->my_warn(qq{unparsed line: $line->{program}: $line->{text}\n});
 }
 
 =head1 ACTIONS
@@ -532,7 +510,7 @@ be done.
 
 sub IGNORE {
     my ($self, $rule, $line, $matches) = @_;
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -551,7 +529,7 @@ sub CONNECT {
     my $connection = $self->make_connection_by_pid($line->{pid});
     # We also want to save the hostname/IP info
     $self->save($connection, $line, $rule, $matches);
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -584,7 +562,7 @@ sub DISCONNECT {
             dump_line($line));
         # Does this make sense?  At the moment yes, there aren't any other rules
         # which will deal with these lines anyway.
-        return $self->{ACTION_SUCCESS};
+        return;
     }
 
     my $connection = $self->get_connection_by_pid($line->{pid});
@@ -593,7 +571,7 @@ sub DISCONNECT {
         $self->my_warn(qq{disconnection: PANIC: found queueid: \n},
             dump_connection($connection));
         # Similarly there's no point in failing here.
-        return $self->{ACTION_SUCCESS};
+        return;
     }
 
     # Commit the connection.
@@ -604,7 +582,7 @@ sub DISCONNECT {
     $self->delete_connection_by_pid($line->{pid});
 
     if (not exists $connection->{cloned_mails}) {
-        return $self->{ACTION_SUCCESS};
+        return;
     }
 
     # Cleanup the mails accepted over this connection.
@@ -651,7 +629,7 @@ sub DISCONNECT {
     # Ensure we don't have any circular data structures; it's unlikely to
     # happen, but just in case . . .
     delete $connection->{cloned_mails};
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -678,7 +656,7 @@ sub SAVE_BY_QUEUEID {
     }
 
     $self->save($connection, $line, $rule, $matches);
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -741,13 +719,13 @@ sub COMMIT {
         # connections later; mark it so we know it's reached commitment
         # and can be tried again.
         $connection->{commit_waiting_to_be_tracked} = 1;
-        return $self->{ACTION_SUCCESS};
+        return;
     }
     if (not $self->is_valid_program_combination($connection)) {
         # This is generally due to out of order log lines; the next time
         # SAVE_BY_QUEUEID() is called it will try COMMIT() again.
         $connection->{invalid_program_combination}++;
-        return $self->{ACTION_SUCCESS};
+        return;
     }
 
     # We're ready to commit now.
@@ -765,7 +743,7 @@ sub COMMIT {
     }
 
     $self->delete_connection_by_queueid($queueid);
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -818,7 +796,7 @@ sub TRACK {
     }
     $child->{parent}            = $parent;
 
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -846,7 +824,7 @@ sub REJECTION {
     if ($line->{text} =~ m/$self->{reject_warning}/) {
         $connection->{results}->[-1]->{warning} = 1;
     }
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -917,7 +895,7 @@ sub MAIL_PICKED_FOR_DELIVERY {
         my $last_timestamp = $discarded_mail->{results}->[-1]->{timestamp};
         if ($line->{timestamp} - $last_timestamp <= (10 * 60)
                 and not exists $self->{queueids}->{$queueid}) {
-            return $self->{ACTION_SUCCESS};
+            return;
         }
         # Otherwise we continue onwards as normal.
     }
@@ -929,7 +907,7 @@ sub MAIL_PICKED_FOR_DELIVERY {
         faked => $line
     );
     $self->save($connection, $line, $rule, $matches);
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -973,7 +951,7 @@ sub PICKUP {
         $connection = $self->make_connection_by_queueid($queueid);
     }
     $self->save($connection, $line, $rule, $matches);
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -1027,7 +1005,7 @@ sub CLONE {
     # Save the timestamp so that we can distinguish between accepted mails and
     # non-accepted, pipelined mails during timeout handling (in TIMEOUT action).
     $connection->{last_clone_timestamp} = $line->{timestamp};
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -1115,7 +1093,7 @@ sub POSTFIX_RELOAD {
         $self->delete_dead_smtpd($connection, $line);
     }
 
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -1158,7 +1136,7 @@ sub SMTPD_WATCHDOG {
     $self->save($connection, $line, $rule, $matches);
     $self->tidy_after_timeout($connection);
     $self->delete_dead_smtpd($connection, $line);
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -1185,7 +1163,7 @@ sub BOUNCE {
     $bounce_con->{bounce_notification} = 1;
     delete $bounce_con->{faked};
 
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -1278,7 +1256,7 @@ sub tidy_after_timeout {
 
     if (not exists $connection->{cloned_mails}) {
         # Nothing has been accepted, so there's nothing to do.
-        return $self->{ACTION_SUCCESS};
+        return;
     }
 
     # Check the timestamps to see whether there's been a rejection since the
@@ -1286,17 +1264,17 @@ sub tidy_after_timeout {
     if (scalar @{$connection->{results}} >= 2
             and $connection->{results}->[-2]->{timestamp}
                 > $connection->{last_clone_timestamp}) {
-        return $self->{ACTION_SUCCESS};
+        return;
     }
 
     my $last_mail = $connection->{cloned_mails}->[-1];
     if (not $self->queueid_exists($last_mail->{queueid})) {
-        return $self->{ACTION_SUCCESS};
+        return;
     }
 
     # If there's a qmgr line then the mail was successfully accepted.
     if (exists $last_mail->{programs}->{q{postfix/qmgr}}) {
-        return $self->{ACTION_SUCCESS};
+        return;
     }
 
     if (not exists $last_mail->{programs}->{q{postfix/cleanup}}) {
@@ -1309,7 +1287,7 @@ sub tidy_after_timeout {
     $self->delete_connection_by_queueid($last_mail->{queueid});
     delete $connection->{cloned_mails}->[-1];
 
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
@@ -1329,17 +1307,17 @@ sub handle_dead_smtpd {
 
     if ($line->{text} !~ m/$regex/) {
         $self->my_warn(qq{$action: bad line: $line->{text}\n});
-        return $self->{ACTION_FAILURE};
+        return;
     }
 
     my $pid = $1;
     if (not $self->pid_exists($pid)) {
-        return $self->{ACTION_SUCCESS};
+        return;
     }
     my $connection = $self->get_connection_by_pid($pid);
     $self->delete_dead_smtpd($connection, $line);
 
-    return $self->{ACTION_SUCCESS};
+    return;
 }
 
 =over  4
