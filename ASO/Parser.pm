@@ -54,6 +54,7 @@ use Carp qw(cluck croak);
 use Data::Dumper;
 use Regexp::Common qw(net);
 use List::Util qw(shuffle);
+use Data::Compare;
 
 =over 4
 
@@ -278,6 +279,50 @@ sub init_globals {
 
 =over 4
 
+=item $self->create_progress_bar($logfile, $logfile_fh)
+
+Creates a progress bar if $logfile isn't STDIN, and STDOUT is a terminal.
+Returns the progressbar and the value the progress bar will finish at if a
+progress bar is created, or undef and undef if not.  $logfile_fh is used to find
+the value the progress bar will finish at.
+
+=back
+
+=cut
+
+sub create_progress_bar {
+    my ($self, $logfile, $logfile_fh) = @_;
+
+    # Term::ProgressBar::new doesn't finish if the output FH is not a tty;
+    # dunno why that is, just working around it here.
+    if (($logfile eq q{-}) or not -t STDOUT) {
+        return (undef, undef);
+    }
+
+    my (@log_stat) = $logfile_fh->stat();
+    if (not @log_stat) {
+        $self->my_die(qq{parse: failed to stat $logfile: $!\n});
+    }
+    my $log_size = $log_stat[7];
+
+    my $progress_bar = ASO::ProgressBar->new({
+            name    => $logfile,
+            count   => $log_size,
+            ETA     => q{linear},
+            fh      => \*STDOUT,
+        });
+    if (not $progress_bar) {
+        $self->my_warn(qq{parse: creating progress bar failed\n});
+        return (undef, undef);
+    } else {
+        # Disable the minor progress indicator, it's confusing.
+        $progress_bar->minor(0);
+        return ($progress_bar, $log_size);
+    }
+}
+
+=over 4
+
 =item $parser->parse($logfile)
 
 Parses the logfile, ignoring any lines logged by programs the ruleset doesn't
@@ -303,31 +348,9 @@ sub parse {
             . qq{$logfile: $@\n});
     }
 
-    my ($log_size, $do_progress_bar, $progress_bar, $next_update);
-    # Term::ProgressBar::new doesn't finish if the output FH is not a tty;
-    # dunno why that is, just working around it here.
-    $do_progress_bar = ($logfile ne q{-}) && -t STDOUT;
-    if ($do_progress_bar) {
-        my (@log_stat) = $logfile_fh->stat();
-        if (not @log_stat) {
-            $self->my_die(qq{parse: failed to stat $logfile: $!\n});
-        }
-        $log_size = $log_stat[7];
-        $progress_bar = ASO::ProgressBar->new({
-                name    => $logfile,
-                count   => $log_size,
-                ETA     => q{linear},
-                fh      => \*STDOUT,
-            });
-        if (not $progress_bar) {
-            $self->my_warn(qq{parse: creating progress bar failed\n});
-            $do_progress_bar = 0;
-        } else {
-            # Disable the minor progress indicator, it's confusing.
-            $progress_bar->minor(0);
-        }
-        $next_update = 0;
-    }
+    my ($progress_bar, $log_size)
+        = $self->create_progress_bar($logfile, $logfile_fh);
+    my ($last_update, $next_update) = (0, 0);
 
     LINE:
     while (my $line = $syslog->next()) {
@@ -337,24 +360,21 @@ sub parse {
             next LINE;
         }
 
-        if ($do_progress_bar) {
+        if ($progress_bar) {
             my $pos = tell $logfile_fh;
             if ($pos >= $next_update) {
-#                Haven't decided if this is necessary yet.
-#                my @stat = $logfile_fh->stat();
-#                if ($stat[7] != $log_size) {
-#                    $progress_bar->target($stat[7]);
-#                }
+                $last_update = $pos;
                 $next_update = $progress_bar->update($pos);
             }
         }
 
         $self->parse_line($line);
     }
-    if ($do_progress_bar and $next_update < $log_size) {
-        $progress_bar->update($log_size);
-    }
-    if ($do_progress_bar) {
+
+    if ($progress_bar) {
+        if ($last_update < $log_size) {
+            $progress_bar->update($log_size);
+        }
         print qq{\n};
     }
 
@@ -365,6 +385,8 @@ sub parse {
     if ($self->{num_connections_uncommitted}) {
         $self->{dbix}->txn_commit();
     }
+
+    $self->prune_queueids();
 }
 
 =over 4
@@ -1773,9 +1795,9 @@ subroutine which does exactly this, so in general the calling sequence will be:
 
 =item $self->prune_timeout_queueids()
 
-Remove any connection in $self->{timeout_queueids} older than 7 minutes before
-the timestamp of the last log line parsed, so they don't accumulate forever,
-Called from dump_state() before dumping.
+Remove any connection in $self->{timeout_queueids} more than 10 minutes older
+than the timestamp of the last log line parsed, so they don't accumulate
+forever.  Called from dump_state() before dumping.
 
 =back
 
@@ -1790,6 +1812,46 @@ sub prune_timeout_queueids {
         if ($connection->{results}->[-1]->{timestamp}
                 < ($self->{last_timestamp} - (10 * 60))) {
             delete $self->{timeout_queueids}->{$queueid};
+        }
+    }
+}
+
+=over 4
+
+=item $self->prune_queueids()
+
+Remove any connection in $self->{queueids} which doesn't have any entries after
+the cleanup log line and is more than 12 hours older than the timestamp of the
+last log line parsed.  These mails don't have any further logging after the
+cleanup line, but there aren't any related log lines (e.g. smtpd dying, being
+killed, postfix reloaded), so there's no way to identify these short of scanning
+all mails periodically.  This will be called automatically by parse(), to stop
+these mails accumulating.
+
+=back
+
+=cut
+
+sub prune_queueids {
+    my ($self) = @_;
+
+    # Anything earlier this is old.
+    my $old_timestamp = $self->{last_timestamp} - (12 * 60 * 60);
+    # For a mail to match its programs must equal this.
+    my %programs = (
+        q{postfix/smtpd}    => 2,
+        q{postfix/cleanup}  => 1,
+    );
+
+    QUEUEID:
+    foreach my $connection ($self->get_all_connections_by_queueid()) {
+        # It must be old.
+        if ($connection->{results}->[-1]->{timestamp} >= $old_timestamp) {
+            next QUEUEID;
+        }
+        # And the programs which have logged must match.
+        if (Compare(\%programs, $connection->{programs})) {
+            $self->delete_connection_by_queueid($connection->{queueid});
         }
     }
 }
@@ -2582,6 +2644,21 @@ there's anything wrong with the queueid, or it's not found.
 
 =cut
 
+=over 4
+
+=item $self->get_all_connections_by_queueid()
+
+Returns all connections saved by queueid in the state tables.
+
+=back
+
+=cut
+
+sub get_all_connections_by_queueid {
+    my ($self) = @_;
+    return values %{$self->{queueids}};
+}
+
 sub get_queueid_from_matches {
     my ($self, $line, $rule, $matches) = @_;
 
@@ -2792,12 +2869,12 @@ descriptions must also include details of any configuration language used.
 =head1 DEPENDENCIES
 
 Standard modules shipped with Perl: IO::File, Carp, Data::Dumper,
-Regexp::Common, Storable, List::Util.
+Regexp::Common, List::Util.
 
-Modules packaged with ASO::Parser: ASO::DB.
+Modules packaged with ASO::Parser: ASO::DB, ASO::ProgressBar.
 
-External modules: Parse::Syslog, Regexp::Common::Email::Address, DBIx::Class
-(which has many dependencies), DBI, DBD::whatever.
+External modules: Parse::Syslog, Regexp::Common, DBIx::Class (which has many
+dependencies), DBI, DBD::whatever, Data::Compare.
 
 =head1 INCOMPATIBILITIES
 
