@@ -878,6 +878,22 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- }}}
 
+-- SMTPD INFO RULES {{{
+
+-- NOQUEUE: warn: RCPT from unknown[200.42.252.162]: Logging HELO; from=<apple@cs.tcd.ie> to=<apple@cs.tcd.ie> proto=ESMTP helo=<200.42.252.162>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Logging HELO', 'HELO logged to provide additional data',
+        'postfix/smtpd',
+        '^(__QUEUEID__): warn: __SHORT_CMD__ from (__HOSTNAME__)\[(__IP__)\]: Logging HELO; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'sender = 4, recipient = 5',
+        'client_hostname = 2, client_ip = 3, helo = 6',
+        'SAVE_BY_QUEUEID',
+        1,
+        'INFO'
+);
+
+-- }}}
+
 
 -- QMGR RULES {{{1
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
