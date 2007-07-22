@@ -53,8 +53,6 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 XXX WHAT IS THE CONCLUSION???  FIRST THING IS TO COMPARE TO OTHER PARSERS
 REVIEWED
 
-XXX MAYBE A PRIOR ART SECTION\@?
-
 \newpage
 \tableofcontents
 
@@ -1945,23 +1943,23 @@ lines, and more than half the rules match fewer than 100 times.
 Coverage of mails is much more difficult to determine accurately than
 coverage of lines.  The parser can dump its state tables in a human
 readable form; examining these tables with reference to the log files is
-the best way to detect mails which were not handled properly (all the
+the best way to detect mails which were not handled properly (many of the
 complications discussed in section~\ref{additional complications} were
-diagnosed and sometimes detected in this way).  The parser issues warnings
-when it detects any errors, some of which may alert the user to a problem,
-e.g.\ when a queueid is reused before the previous mail is fully dealt
-with, when a queueid or pid is not found,\footnote{There will often be a
-few warnings about missing queueids or pids in the first few hundred or
-thousand log lines because the earlier log lines are in the previous log
-file; loading the saved state from the previous log file will solve this
-problem} or when there are problems tracking a child mail (see
-section~\ref{tracking re-injected mail}).  There should be few or no
-warnings, and the state table should only contain entries for mails which
-had yet to be delivered when the logfiles ended.
+detected in this way).  The parser issues warnings when it detects any
+errors, some of which may alert the user to a problem, e.g.\ when a queueid
+is reused before the previous mail is fully dealt with, when a queueid or
+pid is not found,\footnote{There will often be warnings about missing
+queueids or pids in the first few hundred or thousand log lines because the
+earlier log lines are in the previous log file; loading the saved state
+from the previous log file will solve this problem.} or when there are
+problems tracking a child mail (see section~\ref{tracking re-injected
+mail}).  There should be few or no warnings, and the state table should
+only contain entries for mails which had yet to be delivered when the
+logfiles ended.
 
 At the time of writing the parser is being tested with 93 log files.  There
 are 5 warnings produced, but because the parser errs on the side of
-producing more warnings rather than fewer those 5 warnings represent only 3
+producing more warnings rather than fewer those 5 warnings represent 3
 instances of 1 problem: 3 connections started before the first log file, so
 their initial log entries are missing, leading to warnings when their log
 lines are parsed.
@@ -1971,21 +1969,25 @@ parser finishes execution.  Ideally all they should contain are mails which
 are awaiting delivery after the period covered by the logs, though they may
 also contain mails whose initial entries are not contained in the logs.
 Any other entries are evidence of a failure in parsing or an aberration in
-the logs.  After parsing the 93 test log files the state tables contain 22
+the logs.  After parsing the 93 test log files the state tables contain 18
 entries, breaking down into:
 
 \begin{itemize}
 
-    \item 2 connections which started only seconds before the logs ended
-        and had not completed.
+    \item 1 connection which started only seconds before the logs ended and
+        had not yet completed.
+
+    \item 1 mail which had been accepted only seconds before the logs ended
+        and had not yet been delivered.
 
     \item 9 mails whose initial log entries were not present in the logs.
 
     \item 7 mails which had yet to be delivered due to repeated failures.
 
-    \item 4 mails present for unknown reasons.
-
 \end{itemize}
+
+The XXX connections and mails handled by Postfix during this period are
+handled correctly by the parser.
 
 \section{Limitations and possible improvements}
 
@@ -2004,10 +2006,23 @@ always room for improvement.
 
     \item It appears that the hostname used in the HELO command is not
         logged if the mail is accepted.\footnote{Tested with Postfix 2.2.10
-        and 2.3.11; this may possibly have changed in Postfix 2.4.}  It
-        should be reasonably simple to write a policy server which causes
-        Postfix to log a warning containing the HELO hostname when the DATA
-        command is accepted.
+        and 2.3.11; this may possibly have changed in Postfix 2.4.}  It is
+        quite easy to rectify this: 
+
+        \begin{enumerate}
+
+            \item Create \texttt{/etc/postfix/log\_helo.pcre}
+                containing:\newline
+                \hspace*{2em}\texttt{/./~~~~WARN~Logging~HELO}
+
+            \item Modify \texttt{smtpd\_sender\_restrictions} in
+                \texttt{/etc/postfix/main.cf} to contain\newline
+                \hspace*{2em}\texttt{check\_client\_access~/etc/postfix/log\_helo.pcre}
+
+        \end{enumerate}
+
+        The purpose of logging the HELO in
+        \texttt{smtpd\_sender\_restrictions} is to only log once per mail.
 
     \item The algorithm does not distinguish between mails where one or
         more mails are rejected and a subsequent mail is accepted; it will
