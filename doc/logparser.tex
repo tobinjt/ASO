@@ -1867,6 +1867,36 @@ both.
 
 This applies to accepted mails only, not to rejected mails.
 
+\subsubsection{Yet more aborted delivery attempts}
+
+\label{yet-more-aborted-delivery-attempts}
+
+The aborted delivery attempts described in
+section~\ref{aborted-delivery-attempts} occur frequently, but the aborted
+delivery attempts described in this section only occur four times in the 93
+log files used for testing.  The symptoms are the same as in
+section~\ref{aborted-delivery-attempts}, except that there \textit{is\/} a
+\texttt{postfix/cleanup} log line; there does not appear to be anything in
+the log file to explain why there are no further log messages.  The only
+way to detect these mails is to periodically scan all mails in the state
+tables, deleting any mails displaying the following characteristics:
+
+\begin{itemize}
+
+    \item The timestamp of the last log line for the mail must be 12 hours
+        or more earlier than the last log line parsed.
+
+    \item There must be exactly two \texttt{postfix/smtpd} and one
+        \texttt{postfix/cleanup} log entries for the mail, with no
+        additional log entries.
+
+\end{itemize}
+
+12 hours is a somewhat arbitrary time period, but it is far longer than
+Postfix would delay delivery of a mail in the queue.  The state tables are
+scanned for mails matching the characteristics above each time the end of a
+log file is reached, and matching mails are deleted.
+
 \section{Parsing coverage}
 
 The discussion of the parser's coverage of Postfix log files is separated
