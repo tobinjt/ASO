@@ -7,7 +7,8 @@ use warnings;
 
 use DBI;
 use IO::File;
-
+use Getopt::Long;
+use Pod::Usage;
 
 my $DB = DBI->connect(
     q{dbi:SQLite:dbname=db.sq3},
@@ -94,3 +95,40 @@ if ($failures) {
 }
 $DB->disconnect ();
 exit $failures;
+
+sub get_options {
+    my %parser_options = (
+        q{data_source=s}            => q{dbi:SQLite:dbname=../sql/db.sq3},
+        q{sort_rules=s}             => q{normal},
+        q{discard_compiled_regex!}  => 0,
+        q{skip_inserting_results!}  => 0,
+    );
+    my %opts = (
+        q{in-statefile|i=s}         => undef,
+        q{out-statefile|o=s}        => q{state},
+        q{help|h}                   => 0,
+        q{version|v}                => 0,
+        %parser_options,
+    );
+
+    my @switches    = keys %opts;
+    %opts           = getopt_to_key(%opts);
+    %parser_options = getopt_to_key(%parser_options);
+
+    Getopt::Long::Configure qw(no_getopt_compat permute bundling);
+    Getopt::Long::GetOptions(\%opts, @switches) or pod2usage(2);
+
+    if ($opts{help}) {
+        pod2usage(1);
+    }
+    if ($opts{version}) {
+        my $version = q{$Id$};
+        print qq{$0 version $version\n};
+        exit 0;
+    }
+
+    map { $parser_options{$_} = $opts{$_}; } keys %parser_options;
+
+    return (\%opts, \%parser_options);
+}
+
