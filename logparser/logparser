@@ -4,18 +4,18 @@
 
 use strict;
 use warnings;
-$| = 1;
 
 use lib q{..};
 use ASO::DB;
 use ASO::Parser;
-use Carp;
 use Getopt::Long;
 use Pod::Usage;
 use File::Temp qw(tempfile);
 
+# Required under Windows.
 binmode STDOUT;
 binmode STDERR;
+$| = 1;
 
 my ($Options, $parser_options) = get_options();
 
@@ -28,8 +28,9 @@ if (not @logs) {
     @logs = q{-};
 }
 
-# Save the startup times seperately, when profiling with Devel::Profile.
+# Save the startup times separately, when profiling with Devel::Profile.
 devel_profile_startup();
+# Restrict the packages Devel::SmallProf will report about.
 set_SmallProf_packages();
 
 warn qq{vim: set foldmethod=marker :\n};
@@ -70,15 +71,17 @@ sub devel_profile_startup {
 
 sub set_SmallProf_packages {
     if (exists $INC{q{Devel/SmallProf.pm}}) {
-        # Silence warnings about it on;y being used once.
+        # Silence warnings about it only being used once.
         %DB::packages = ();
         %DB::packages = (
-            q{main}                 => 1,
-            q{ASO::DB}              => 1,
-            q{ASO::DB::Connection}  => 1,
-            q{ASO::DB::Result}      => 1,
-            q{ASO::DB::Rule}        => 1,
-            q{ASO::Parser}          => 1,
+            q{main}                     => 1,
+            q{ASO::DB}                  => 1,
+            q{ASO::DB::Connection}      => 1,
+            q{ASO::DB::Result}          => 1,
+            q{ASO::DB::Rule}            => 1,
+            q{ASO::Parser}              => 1,
+            q{ASO::ProgressBar}         => 1,
+            q{ASO::ProgressBar::Dummy}  => 1,
         );
     }
 }
@@ -94,8 +97,8 @@ sub get_options {
     my %parser_options = (
         q{data_source=s}            => q{dbi:SQLite:dbname=../sql/db.sq3},
         q{sort_rules=s}             => q{normal},
-        q{discard_compiled_regex}   => 0,
-        q{skip_inserting_results}   => 1,
+        q{discard_compiled_regex!}  => 0,
+        q{skip_inserting_results!}  => 0,
     );
     my %opts = (
         q{in-statefile|i=s}         => undef,
@@ -113,10 +116,7 @@ sub get_options {
     Getopt::Long::GetOptions(\%opts, @switches) or pod2usage(2);
 
     if ($opts{help}) {
-        pod2usage(
-            -verbose    => 1,
-            -exitval    => 0,
-        );
+        pod2usage(1);
     }
     if ($opts{version}) {
         my $version = q{$Id$};
@@ -136,8 +136,7 @@ sub getopt_to_key {
 
     map {
         my ($key, $value) = ($_, $opts{$_});
-        $key =~ s/\|.*//;
-        $key =~ s/=.*//;
+        $key =~ s/[!|=].*//;
         $names{$key} = $value;
     } keys %opts;
 
@@ -147,3 +146,131 @@ sub getopt_to_key {
 sub timewarn {
     warn qq{$0: }, scalar localtime, q{: }, @_;
 }
+
+=pod
+
+=head1 NAME
+
+logparser - parse Postfix log files
+
+=head1 VERSION
+
+This documentation refers to logparser version $Id$
+
+=head1 SYNOPSIS
+
+    # Parse mail.log.1
+    logparser mail.log.1
+    # Parse mail.log.4, mail.log.3 and mail.log.2; save state to parser-state
+    logparser --out-statefile parser-state mail.log.3 mail.log.2 mail.log.1
+    # Parse mail.log.1, loading state from the previous run
+    logparser --in-statefile parser-state mail.log.1
+
+    # Parse mail.log.1 without inserting results in the database to improve 
+    # speed when testing new rules; also use a different database.
+    logparser --skip_inserting_results --data_source 'dbi:SQLite:dbname=test-db.sq3' mail.log.1
+
+=head1 DESCRIPTION
+
+logparser is a thin wrapper around L<ASO::Parser> - it handles parsing of
+multiple files, saving and loading state, plus any other housekeeping required
+by L<ASO::Parser>.  It also performs various profiling related tasks, depending
+on the profiling module, if any, in use.
+
+=head1 OPTIONS
+
+Defaults are equivalent to:
+    logparser --out-statefile 'state' \
+              --data_source 'dbi:SQLite:dbname=../sql/db.sq3' \
+              --sort_rules 'normal'
+
+=over 4
+
+=item --in-statefile FILE, -i FILE
+
+Load state from a previous run from FILE.
+
+=item --out-state FILE, -o FILE
+
+Save state from this run to FILE.  If this option is not given state will be
+saved to a file named 'state' in the current directory.
+
+=item --data_source STRING
+
+Specifies the database to use when loading rules and saving results.  Defaults
+to 'dbi:SQLite:dbname=../sql/db.sq3'.  See L<DBI> for more information about the
+format of this option.
+
+=item --sort_rules normal|shuffle|reverse
+
+Whether to sort the rules for maximum efficiency (normal), minimal efficiency
+(reverse), or randomly (shuffle).  Run time increases by about 20% when using
+reverse sorting, though it is highly data dependant.  This is useful for
+detecting overlapping rules: you should get exactly the same results in the
+database regardless of which ordering you use - if the results change it's an
+indication you have overlapping rules.
+
+=item --discard_compiled_regex
+
+By default every rule's regex is compiled once and cached; this switch disables
+that caching so each regex is compiled every time it's used.  This incurs
+approximately a 450% increase in run time, though again it's data dependant.
+The main use for this option is when generating data to show how much slower the
+parser is without caching of compiled regexs, though it may be possible that a
+sufficiently complicated regex may require re-compilation each time it is used
+(if you can come up with such a regex I'd like to see it).
+--no-discard_compiled_regex will force the regexs to be cached.
+
+=item --skip_inserting_results
+
+Inserting results into the database is slow because of the additional disk or
+network IO required, causing an XXX% slowdown in execution.  When testing new
+rules or parser features disabling insertion of results is essential for a quick
+testing cycle.  You can force insertion of results by specifying
+--no-skip_inserting_results.
+
+=back
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A database containing rules and results is required, created by running:
+
+    perl setup-database create-tables-sqlite3-generated.sql populate-rules.sql
+
+This will create an SQLite3 database containing the required tables and the
+default rules.  You can obviously use a different database, but you'll need to
+adapt the SQL appropriately.  If you do this please send me the new SQL and I'll
+add it to the distribution.
+
+=head1 DEPENDENCIES
+
+Modules packaged with logparser: ASO::DB, ASO::Parser (both have additional
+dependencies, see their documentation for details).
+
+Standard Perl modules: Getopt::Long, Pod::Usage, File::Temp.
+
+=head1 INCOMPATIBILITIES
+
+None known.
+
+=head1 BUGS AND LIMITATIONS
+
+None known.  Bug reports and optionally patches welcome.
+
+=head1 AUTHOR
+
+John Tobin <tobinjt@cs.tcd.ie>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2006-2007 John Tobin <tobinjt@cs.tcd.ie>.  All rights reserved.
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See L<perlartistic>.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+
+=cut
+
