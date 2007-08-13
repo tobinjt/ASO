@@ -1406,6 +1406,10 @@ FUNCTION {begin.bib}
   write$ newline$
   "  \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup \urlstyle{rm}\Url}\fi"
   write$ newline$
+%  "  \section{Bibliography}"
+%  write$ newline$
+%  "  \label{bibliography}"
+%  write$ newline$
 }
 EXECUTE {begin.bib}
 EXECUTE {init.state.consts}

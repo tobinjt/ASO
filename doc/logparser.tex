@@ -39,14 +39,15 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
     Parsing Postfix logs is much more difficult than it first appears but
     it is possible to achieve a high degree of accuracy in understanding
-    the logs and reconstructing the actions taken by Postfix to generate
-    the logs.  This paper describes the process required, documenting the
-    parsing algorithm and rules, explaining the difficulties encountered,
-    with reference to an implementation which stores data gathered from the
-    logs in an SQL database.  The gathered data can then be used to
-    optimise current anti-spam measures, provide a baseline to test new
-    anti-spam measures against, or to produce statistics showing how
-    effective those measures are.
+    the logs, and thus reconstructing the actions taken by Postfix to
+    generate the logs.  This paper describes the creation of a parser,
+    documenting the parsing algorithm and rules, explaining the
+    difficulties encountered and the solutions developed, with reference to
+    an implementation which stores data gleaned from the logs in an SQL
+    database.  The gathered data can then be used to optimise current
+    anti-spam measures, provide a baseline to test new anti-spam measures
+    against, or to produce statistics showing how effective those measures
+    are.
 
 \end{abstract}
 
@@ -67,30 +68,31 @@ explain to a user why their mail is being rejected, or check whether their
 new anti-spam measures are working.  The more adventurous will have
 generated statistics to show how many hits each of their anti-spam measures
 has gotten in the last week, and possibly even generated some graphs to
-clearly illustrate the point to management or complaining
-users.\footnote{This was the author's first real foray into processing
-Postfix logs.}  Very few will have performed in-depth parsing and analysis
-of their logs, where the parsing must correlate the log lines
-per-connection or per-queueid rather than processing lines independently.
-One of the barriers to this type of processing is the unstructured nature
-of Postfix logs, where each logging line was added on an ad hoc basis as a
-requirement was discovered or new functionality was added.  Further
-complication arises because the list of rejection messages is not fixed:
-new messages can be added by the administrator with custom checks; every
-Real-time Black List returns a different explanatory message; policy
-servers may have different messages depending on the characteristics of the
-connection; there are many ways in which the log lines may differ between
-servers.  This paper documents the difficult process of parsing Postfix
-logs, presenting a program which parses logs and places the resulting data
-into a database.  The gathered data can then be used to optimise current
-anti-spam measures, provide a baseline to test new anti-spam measures
-against, or to produce statistics showing how effective those measures are.
-There are numerous other uses for such data: improving server performance
-by identifying troublesome destinations and reconfiguring appropriately or
-dedicating transports to those destinations; identifying regular high
-volume uses (e.g.\ customer newsletters) and restricting those uses to
-off-peak times; detecting virus outbreaks which propagate via email; as a
-base for billing customers on a shared server.
+clearly illustrate the point to management or users.\footnote{This was the
+author's first real foray into processing Postfix logs.}  Very few will
+have performed in-depth parsing and analysis of their logs, where the
+parsing must correlate the log lines per-connection or per-queueid rather
+than processing lines independently.  One of the barriers to this type of
+processing is the unstructured nature of Postfix logs, where each log line
+was added on an ad hoc basis as a requirement was discovered or new
+functionality was added.  Further complication arises because the set of
+rejection messages is not fixed: new messages can be added by the
+administrator with custom checks; every Real-time Black List returns a
+different explanatory message; policy servers may log different messages
+depending on the characteristics of the connection; there are many ways in
+which the log lines may differ between servers.  This paper documents the
+difficult process of parsing Postfix logs, presenting a program which
+parses logs and places the resulting data into a database.  The gathered
+data can then be used to optimise current anti-spam measures, provide a
+baseline to test new anti-spam measures against, or to produce statistics
+showing how effective those measures are.  There are numerous other uses
+for such data: improving server performance by identifying troublesome
+destinations and reconfiguring appropriately or dedicating transports to
+those destinations; identifying regular high volume uses (e.g.\ customer
+newsletters) and restricting those uses to off-peak times; detecting virus
+outbreaks which propagate via email; as a base for billing customers on a
+shared server.  Preserving the raw data enables users to develop a
+multitude of uses far beyond those conceived of by the author.
 
 \vspace{1em}\noindent\textbf{Layout of the paper:}
 
@@ -98,7 +100,7 @@ Section~\ref{background} provides background information useful in
 understanding the paper, parser and algorithm.
 
 Section~\ref{rules} discusses the parsing rules in detail, explaining their
-structure, giving an example rule and sample data it matches successfully
+structure, using an example rule and sample data it matches successfully
 against, followed by a discussion of rule efficiency concerns.
 
 Section~\ref{parsing-algorithm} contains the meat of the paper, describing
@@ -110,8 +112,8 @@ algorithm.
 
 Section~\ref{limitations-improvements} lists the limitations of the program
 and/or the algorithm, then suggests some ways of dealing with the
-limitations, with the goal of improving parsing and reproducing the journey
-a mail takes through the internals of Postfix.
+limitations, with the goal of improving parsing and reproduction of the
+journey a mail takes through Postfix.
 
 Section~\ref{conclusion} describes the results of the project to date and
 contains the paper's conclusion.
@@ -119,13 +121,13 @@ contains the paper's conclusion.
 Section~\ref{other-parsers} discusses other parsers and why they were
 deemed unsuitable for the task.
 
-Section~\ref{bibliography} is the bibliography, containing the resources
-used in developing the algorithm, writing the program and preparing this
-paper.  Also listed are some additional resources expected to be helpful in
-understanding SMTP, Postfix, anti-spam techniques, or the paper.
+The bibliography contains references to the resources used in developing
+the algorithm, writing the program and preparing this paper.  Also listed
+are some additional resources expected to be helpful in understanding SMTP,
+Postfix, anti-spam techniques, or the paper.
 
 Section~\ref{graphs} contains graphs illustrating the topics discussed in
-section~\ref{rule efficiency}.
+section~\ref{rule efficiency}, rule efficiency.
 
 \section{Background}
 
@@ -136,7 +138,7 @@ section~\ref{rule efficiency}.
 This paper and the program it describes are part of a larger project to
 optimise a server's Postfix restrictions, generate statistics and graphs,
 and provide a platform on which new restrictions can be trialled and
-evaluated to see if they are worth using in the fight against spam.  The
+evaluated to see if they are beneficial in the fight against spam.  The
 program parses Postfix logs and populates a database with the data gleaned
 from those logs, providing a consistent and simple view of the logs which
 future tools can utilise.  The gathered data can then be used to optimise
@@ -149,26 +151,26 @@ A short example of the optimisation possible using data from the database
 is which Postfix restrictions reject the highest number of mails:
 
 \begin{verbatim}
-SELECT name, description, restriction_name, rule_order
+SELECT name, description, restriction_name, hits_total
     FROM rules
     WHERE postfix_action = 'REJECTED'
-    ORDER BY rule_order DESC;
+    ORDER BY hits_total DESC;
 \end{verbatim}
 
 If the database supports sub-selects percentages can be
 obtained:
 
 \begin{verbatim}
-SELECT name, description, restriction_name, rule_order,
-        (rule_order * 100.0 /
-            (SELECT SUM(rule_order)
+SELECT name, description, restriction_name, hits_total,
+        (hits_total * 100.0 /
+            (SELECT SUM(hits_total)
                 FROM rules
                 WHERE postfix_action = 'REJECTED'
             )
         ) || '%' AS percentage
     FROM rules
     WHERE postfix_action = 'REJECTED'
-    ORDER BY rule_order DESC;
+    ORDER BY hits_total DESC;
 \end{verbatim}
 
 SQL note: $||$ is the concatenation operator in SQLite3; if the database
@@ -181,17 +183,17 @@ example shows which rules had less than 100 hits on the last log file
 parsed.
 
 \begin{verbatim}
-SELECT name, description, restriction_name, rule_order,
-        (rule_order * 100.0 /
-            (SELECT SUM(rule_order)
+SELECT name, description, restriction_name, hits,
+        (hits * 100.0 /
+            (SELECT SUM(hits)
                 FROM rules
                 WHERE postfix_action = 'REJECTED'
             )
         ) || '%' AS percentage
     FROM rules
     WHERE postfix_action = 'REJECTED'
-        AND rule_order < 100
-    ORDER BY rule_order ASC;
+        AND hits < 100
+    ORDER BY hits ASC;
 \end{verbatim}
 
 \subsection{Database as Application Programming Interface}
@@ -199,10 +201,10 @@ SELECT name, description, restriction_name, rule_order,
 The database populated by this program provides a simple interface to
 Postfix logs.  Although the interface is a database schema, it is in effect
 quite similar to the API provided by a library: it insulates both user and
-provider of the API from changes in the implementation of the other.  The
-algorithm implemented by the program can be improved; support can be added
+provider of the API from changes in the implementation of the API\@.  The
+algorithm implemented by the parser can be improved; support can be added
 for earlier or later releases of Postfix; bugs can be fixed or limitations
-removed from the program.  Statistics and/or graphs can be generated from
+removed from the parser.  Statistics and/or graphs can be generated from
 the database; new restrictions can be tested and the results inspected;
 trends in the fight against spam can emerge from historical data saved in
 the database.  Using a database simplifies writing programs which need to
@@ -211,13 +213,13 @@ interact with the data in several ways:
 \begin{enumerate}
 
     \item Libraries exist for the majority of programming languages
-        allowing access to databases, whereas if this parser was written
-        as a library a new interface layer would need to be written for
+        allowing access to databases, whereas if this parser was written as
+        a shared library a new interface layer would need to be written for
         every programming language using the API\@.
 
     \item Databases provide complex querying and sorting functionality to
         the user without requiring large amounts of programming.  All
-        databases provide a program, of variable complexity and
+        databases provide a program, of varying complexity and
         sophistication, which can be used for ad hoc queries with minimal
         investment of time.
 
@@ -225,7 +227,8 @@ interact with the data in several ways:
         
         \begin{itemize}
 
-            \item Other tables can be added to the database.
+            \item Other tables can be added to the database, e.g.\ to cache
+                historical data.
 
             \item New columns can be added to the tables used by the
                 program, with sufficient DEFAULT clauses or a clever
@@ -267,15 +270,17 @@ CREATE TRIGGER ON INSERT INTO results
 \subsection{Database schema}
 \label{database schema}
 
+XXX SHOULD THIS SECTION BE MOVED ELSEWHERE\@?
+
 The database schema can be conceptually divided in two: the rules which are
 used to parse log files, and the data saved from the parsing of log files.
 Rules have the fields required to parse the log lines, extract data to be
-saved, and cause the correct action to be executed; they also have several
-fields which aid the user in understanding what each rule parses.  The
-rules are described in detail in section~\ref{rules} and the fields in
-particular in section~\ref{rule attributes}, and that discussion won't be
-repeated here.  The data saved from parsing the logs is divided into two
-tables: connections and results.
+saved, and the action to be executed; they also have several fields which
+aid the user in understanding what each rule parses.  The rules are
+described in detail in section~\ref{rules} and the fields in particular in
+section~\ref{rule attributes}, and that discussion won't be repeated here.
+The data saved from parsing the logs is divided into two tables described
+below: connections and results.
 
 \subsubsection{Connections table}
 
@@ -304,18 +309,29 @@ table containing the following fields:
     \item [helo] The hostname used in the HELO command.  The HELO
         occasionally changes during a connection, presumably because spam
         or virus senders think it's a good idea.  By default Postfix only
-        logs this when it rejects an SMTP command, but it is trivial to log
-        this for every connection:
+        logs the HELO when it rejects an SMTP command, but it is quite easy
+        to rectify this: 
 
-        \texttt{smtpd\_helo\_restrictions = \newline
-        \hspace*{2em} check\_helo\_access regexp:/etc/postfix/log\_helo.regex}
+\label{logging helo}
 
-        Where \texttt{/etc/postfix/log\_helo.regex} contains:
+        \begin{enumerate}
 
-        \texttt{/./ WARN Logging HELO for diagnostic purposes}
+            \item Create \texttt{/etc/postfix/log\_helo.pcre}
+                containing:\newline
+                \hspace*{2em}\texttt{/./~~~~WARN~Logging~HELO}
 
-    \item [queueid] The queueid of the mail, or \textit{NOQUEUE\/} if a
-        mail wasn't accepted.
+            \item Modify \texttt{smtpd\_helo\_restrictions} in
+                \texttt{/etc/postfix/main.cf} to contain\newline
+                \hspace*{2em}\texttt{check\_helo\_access~/etc/postfix/log\_helo.pcre}
+
+        \end{enumerate}
+
+        The purpose of logging the HELO in
+        \texttt{smtpd\_helo\_restrictions} is to log only once per mail; it
+        also seems like the natural place.
+
+    \item [queueid] The queueid of the mail if the conection represents an
+        accepted mail, or \textit{NOQUEUE\/} otherwise.
 
     \item [start] The timestamp of the first log line, in seconds since the
         epoch.
@@ -328,31 +344,32 @@ table containing the following fields:
 \subsubsection{Results table}
 
 Every log line corresponding to Postfix performing an action other than
-INFO will have an entry in the results table, e.g.\ rejecting an SMTP
-command, delivering a mail, or bouncing a mail.  Any log line where the
-Postfix action is INFO is not interesting in and of itself, but provides
-additional information which will be saved with other results.
+INFO or IGNORED will have an entry in the results table, e.g.\ rejecting an
+SMTP command, delivering a mail, or bouncing a mail.  Any log line where
+the Postfix action is INFO is not interesting in and of itself, but
+provides additional information which will be saved with other results;
+IGNORED log lines don't even provide useful information.
 
 \begin{description}
 
     \item [connection\_id] A reference to the entry in the connections
-        table this results entry belongs to.
+        table this results table entry belongs to.
 
     \item [rule\_id] A reference to the entry in the rules table which
         matched the log line and created this result.
 
-    \item [warning] Postfix can log a warning instead of rejecting an SMTP
-        command --- a facility that is quite useful for testing new
-        restrictions.  This field will be 1 if the log line parsed was a
-        warning rather than a real rejection, or 0 for a real rejection or
-        any other result.
+    \item [warning] Postfix can be configured to log a warning instead of
+        enforcing a restriction that would reject an SMTP command --- a
+        facility that is quite useful for testing new restrictions.  This
+        field will be 1 if the log line parsed was a warning rather than a
+        real rejection, or 0 for a real rejection or any other result.
 
-    \item [smtp\_code] The SMTP code extracted from the log line.  In
+    \item [smtp\_code] The SMTP code associated with the log line.  In
         general an SMTP code is only present for a rejection or final
         delivery; results missing an SMTP code will duplicate the SMTP code
-        of other results.  Some final delivery log lines don't contain an
-        SMTP code: in those cases the code is faked based on the success or
-        failure represented by the log line.
+        of other results in the connection.  Some final delivery log lines
+        don't contain an SMTP code: in those cases the code is faked based
+        on the success or failure represented by the log line.
 
     \item [sender] The sender's email address.  This can change during one
         single connection, when the connection is reused to send multiple
@@ -375,7 +392,7 @@ additional information which will be saved with other results.
 \label{smtp background}
 
 The Simple Mail Transfer Protocol, originally defined in RFC
-821~\cite{RFC821} and later in RFC 2821~\cite{RFC2821}, is used for
+821~\cite{RFC821} and updated in RFC 2821~\cite{RFC2821}, is used for
 transferring mail between Mail Transport Agents (MTAs).  It is a simple,
 human readable, plain text protocol, making it quite easy to test and debug
 problems with it.  Despite the simplicity many virus and/or spam sending
@@ -411,25 +428,25 @@ introductory guides can be found at~\cite{smtp-intro-01, smtp-intro-02}.
 \subsection{Postfix background}
 
 Postfix is a highly configurable, high performance, secure and scalable
-Mail Transport Agent.  It features extensive optional anti-spam
-restrictions, allowing an administrator to deploy those restrictions which
-they judge suitable for their site's needs, rather than a fixed set chosen
-by Postfix's author.  These restrictions can be selectively applied,
-combined and bypassed on a per-client, per-recipient or per-sender basis,
-allowing varying levels of severity and/or permissiveness.  Postfix
-leverages simple lookup tables to support arbitrarily complicated
-user-defined sequences of restrictions and exceptions, with policy
-servers\footnote{Policy servers will be explained shortly.} as the ultimate
-in flexibility.  Administrators can also supply their own rejection
-messages to make it clear to senders why exactly their mail was rejected.
-Unfortunately this flexibility has a cost: complexity in the logs
-generated.  While it is easy to use \texttt{grep(1)} to determine the fate
-of an individual email, following the journey an email takes through
-Postfix can be quite difficult.  The logs tend to follow a 90\%-10\%
-pattern: 90\% of the time the journey is simple, but the other 10\% of the
-time requires 90\% of the code.\footnote{These numbers don't have a solid
-scientific basis, they're based on gut feeling from writing and debugging
-the software.}
+Mail Transport Agent.  It features extensive and extensible optional
+anti-spam restrictions, allowing an administrator to deploy those
+restrictions which they judge suitable for their site's needs, rather than
+a fixed set chosen by Postfix's author.  These restrictions can be
+selectively applied, combined and bypassed on a per-client, per-recipient
+or per-sender basis, allowing varying levels of severity and/or
+permissiveness.  Postfix leverages simple lookup tables to support
+arbitrarily complicated user-defined sequences of restrictions and
+exceptions, with policy servers\footnote{Policy servers will be explained
+shortly.} as the ultimate in flexibility.  Administrators can also supply
+their own rejection messages to make it clear to senders why exactly their
+mail was rejected.  Unfortunately this flexibility has a cost: complexity
+in the logs generated.  While it is easy to use \texttt{grep(1)} to
+determine the fate of an individual email, following the journey an email
+takes through Postfix can be quite difficult.  The logs tend to follow a
+90\%-10\% pattern: 90\% of the time the journey is simple, but the other
+10\% of the time requires 90\% of the code.\footnote{These numbers don't
+have a solid scientific basis, they're based on gut feeling from writing
+and debugging the software.}
 
 \subsubsection{Mixing and matching Postfix restrictions}
 
@@ -451,8 +468,8 @@ e.g.\ \texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
 whether the IP address of the connected client matches the left hand side
 of each line in the file and will return the right hand side of the first
 matching line.  Other restrictions determine their result in different
-ways, e.g.\ \texttt{reject\_rbl\_client some.rbl.com} checks whether the IP
-address of the client is present in the listed RBL\@.
+ways, e.g.\ \texttt{reject\_rbl\_client rbl.example.com} checks whether the
+IP address of the client is present in the listed RBL\@.
 
 Each restriction is evaluated to produce a result of \textit{reject},
 \textit{permit}, \textit{dunno\/} or the name of another restriction to be
@@ -464,7 +481,7 @@ continue with the next restriction in the list, allowing more specific
 cases to be handled differently from more general cases.  When the result
 is another restriction Postfix will evaluate the new restriction, allowing
 restrictions to be chosen based on the client IP address, HELO hostname,
-sending address, recipient address, etc.  The administrator can define new
+sender address, recipient address, etc.  The administrator can define new
 restrictions as a list of existing restrictions, allowing arbitrarily long
 and complex sequences of lookups and restrictions.
 
@@ -494,7 +511,7 @@ encountered scenarios are:
         resistance to the proposal because it breaks or vastly complicates
         some features of SMTP\@.
 
-    \item Greylisting~\cite{greylisting}, is a technique that temporarily
+    \item Greylisting~\cite{greylisting} is a technique that temporarily
         rejects mail when the triple of (sender, recipient, remote IP
         address) is unknown; on the second and subsequent delivery attempts
         from that triple the mail will be accepted.  The assumption is that
@@ -539,6 +556,8 @@ Example attributes taken from~\cite{policy-servers}:
 
 \subsection{Parser background}
 
+XXX REWRITE THIS
+
 Before getting into detail about the parser a brief overview is in order.
 The parser is split into two parts: the parsing algorithm and the rules
 which are applied to the lines.  Rules can be thought of as the Lex part of
@@ -548,8 +567,7 @@ requested action.  Rules are solely concerned with identifying a line and
 extracting data from it, whereas the algorithm's task is to follow the
 journey each mail takes through Postfix, piecing the data together into a
 coherent whole, saving it in a useful and consistent form, and performing
-housekeeping duties.  Readers familiar with context-free grammars may find
-section~\ref{comparison against context-free grammars} helpful.
+housekeeping duties.
 
 \subsection{Assumptions}
 
@@ -617,28 +635,28 @@ the context it appears in.
 There only appears to be one prior paper published about parsing Postfix
 log files: \textit{Log Mail Analyzer: Architecture and Practical
 Utilizations\/}~\cite{log-mail-analyser}.  The aim of Log Mail Analyzer is
-quite different from his parser: it attempts to present correlated log data
-in a form suitable for a systems administrator to search using grep(1),
-producing a CSV file\footnote{Comma-Separated Value, a very simple format
-where a record is stored in a single line, with fields separated by a comma
-or other punctuation symbol.  Problems with CSV files include the
+quite different from this parser: it attempts to present correlated log
+data in a form suitable for a systems administrator to search using
+grep(1), producing a CSV file\footnote{Comma-Separated Value, a very simple
+format where a record is stored in a single line, with fields separated by
+a comma or other punctuation symbol.  Problems with CSV files include the
 difficulty in escaping separators, providing multiple values for a field
-(e.g.\ multiple recipients), adding new fields, and lack of a bundled schema
-describing the fields.} which can subsequently be imported into a MySQL or
-Berkeley DB database.  The data stored is limited to time and date,
-hostname and IP address of client, sender and recipient addresses, and the
-SMTP code.  The decision to support both CSV and Berkeley DB appears to
-have been a limiting factor: the values which can be stored are limited,
-it's difficult to link different records (foreign keys in SQL enable this
-easily), and ad-hoc queries require extensive code to be written.  Berkeley
-DB is not an SQL database, it only supports (key, value) pairs; in the main
-table the value used is a CSV line, and the key is an integer referred to
-by other tables.  The secondary by-sender, by-recipient, by-date and by-IP
-tables use the sender/recipient/date/IP as the key, and a CSV list of
-integers referring to the main table is used as the value.  In effect this
-re-implements SQL foreign keys, but without the full functionality offered
-by even the most basic of SQL databases.  It also requires custom code to
-search on some combination of the above.
+(e.g.\ multiple recipients), adding new fields, and lack of a bundled
+schema describing the fields.} which can subsequently be imported into a
+MySQL or Berkeley DB database.  The data stored is limited to time and
+date, hostname and IP address of client, sender and recipient addresses,
+and the SMTP code.  The decision to support both CSV and Berkeley DB
+appears to have been a limiting factor: the values which can be stored are
+limited, it's difficult to link different records (foreign keys in SQL
+enable this easily), and ad-hoc queries require extensive code to be
+written.  Berkeley DB is not an SQL database, it only supports (key, value)
+pairs; in the main table the value used is a CSV line, and the key is an
+integer referred to by other tables.  The secondary by-sender,
+by-recipient, by-date and by-IP tables use the sender/recipient/date/IP as
+the key, and a CSV list of integers referring to the main table is used as
+the value.  In effect this re-implements SQL foreign keys, but without the
+full functionality offered by even the most basic of SQL databases.  It
+also requires custom code to search on some combination of the above.
 
 Handling of multiple recipients, SMTP codes or remote servers\footnote{A
 single mail may be sent to multiple remote servers if it was addressed to
@@ -672,6 +690,9 @@ In summary Log Mail Analyser appears to be a proof of concept, written to
 demonstrate the point of the paper (that having this information in an
 accessible fashion is useful to systems administrators), rather than a
 program designed to be extensible and useful in a production environment.
+
+XXX EXPLAIN WHY ASO IS MORE COMPREHENSIVE, WHAT IT DOES BETTER AND WHY\@.
+MAKE THIS A COMPARISON INSTEAD OF A CRITIQUE\@.
 
 % Literature review notes:
 %
@@ -744,8 +765,8 @@ Each rule defines the following:
 
     \item [description] Something must have occurred to cause Postfix to
         log each line (e.g.\ a remote client connecting causes a connection
-        line to be logged).  The description field is generally used to
-        describe the action causing the log lines this rule matches.
+        line to be logged).  This field describes the action causing the
+        log lines this rule matches.
 
     \item [restriction\_name] The restriction which caused the mail to be
         rejected.  Only applicable to rules which have a result of
@@ -768,20 +789,19 @@ Each rule defines the following:
         Uninteresting lines are parsed so that any lines the parser isn't
         capable of handling become immediately obvious errors.
 
-    \item [program] The program (postfix/smtp, postfix/smtpd, postfix/qmgr,
-        etc.) whose log lines the rule applies to.  This avoids needlessly
-        trying rules which won't match the line, or worse, might match
-        unintentionally.  Rules whose program is \texttt{*} will be tried
-        against any lines which aren't parsed by program specific rules.
+    \item [program] The program (\texttt{postfix/smtpd},
+        \texttt{postfix/qmgr}, etc.) whose log lines the rule applies to.
+        This avoids needlessly trying rules which won't match the line, or
+        worse, might match unintentionally.  Rules whose program is
+        \texttt{*} will be tried against any lines which aren't parsed by
+        program specific rules.
 
-    \item [regex] The regular expression\footnote{See
-        http://en.wikipedia.org/wiki/Regular\_expression for more
-        information about regular expressions in general.} to match the log
-        line against.  The regex will first have several keywords expanded:
-        this simplifies reading and writing rules, avoids needless
-        repetition of complex regex components, allows the components
-        to be corrected and/or improved in one location, and makes each
-        regex largely self-documenting.
+    \item [regex] The regular expression\cite{wikipedia-regex, perlre} to
+        match the log line against.  The regex will first have several
+        keywords expanded: this simplifies reading and writing rules;
+        avoids needless repetition of complex regex components; allows the
+        components to be corrected and/or improved in one location; and
+        makes each regex largely self-documenting.
         
         The following keywords are expanded (full explanations can be found
         in the source code):
@@ -802,7 +822,7 @@ Each rule defines the following:
         regex would be recompiled each time it was used, resulting in a
         large, data dependent slowdown.  Rule efficiency concerns are
         discussed in section~\ref{rule efficiency}.
-        
+
     \item [result\_cols, connection\_cols] Specifies how the fields in the
         log line will be extracted.  The format is: \newline
         \texttt{smtp\_code = 1; recipient = 2, sender = 4;} \newline
@@ -811,8 +831,9 @@ Each rule defines the following:
         the right hand side.  The list of acceptable variable names is:
 
         \texttt{connection\_cols: client\_hostname, client\_ip, server\_ip,
-        \newline server\_hostname and helo.\newline} \texttt{result\_cols:
-        sender, recipient, smtp\_code, data \newline and child.}
+        \newline \hspace*{2em} server\_hostname and helo.\newline}
+        \texttt{result\_cols: sender, recipient, smtp\_code, message\_id,
+        \newline \hspace*{2em} pid\_regex, data and child.}
 
     \item [result\_data, connection\_data] Sometimes rules need to supply a
         piece of data which isn't present in the log line: e.g.\ setting
@@ -834,7 +855,7 @@ Each rule defines the following:
     \item [hits] is an efficiency measure.  This counter is maintained for
         every rule and incremented each time the rule successfully matches.
         At the start of each run the program sorts the rules in descending
-        hits, and at the end of the run updates every rule's hits.
+        order of hits, and at the end of the run updates every rule's hits.
         Assuming that the distribution of log lines is reasonably
         consistent between log files, rules matching more commonly
         occurring log lines will be tried before rules matching less
@@ -847,12 +868,15 @@ Each rule defines the following:
 
     \item [priority] This is the user-configurable companion to hits: rules
         will be tried in order of priority, overriding hits.  This allows
-        more specific rules to take precedence over more general rules.
+        more specific rules to take precedence over more general rules
+        (described in section~\ref{overlapping rules}).
 
 \end{description}
 
 
 \subsection{Overlapping rules}
+
+\label{overlapping rules}
 
 The parser does not try to detect overlapping rules;\footnote{It may be
 possible to parse each rule's regex, generate an NFA, and compare all NFAs
@@ -864,9 +888,9 @@ overlapping rules lead to inconsistent parsing and data extraction because
 the order in which rules are tried against each line determines which rule
 matches.  Overlapping rules are frequently a requirement, allowing a more
 specific rule to match some lines and a more general rule to match the
-remainder, e.g.\ separating smtp delivery to a filtering proxy from smtp
+majority, e.g.\ separating smtp delivery to a filtering proxy from smtp
 delivery to the rest of the world.  The algorithm provides a facility for
-handling overlapping rules: the priority field in each rule (defaults to
+ordering overlapping rules: the priority field in each rule (defaults to
 zero).  Rules are tried in order of priority, highest first, overriding the
 hits field maintained by the parser.  Negative priorities may also be
 useful for catchall rules.
@@ -888,8 +912,8 @@ Detecting overlapping rules is difficult, but the following may be helpful:
         differences indicate overlapping rules, and the rule\_ids which
         differ determine which rules overlap.  Unfortunately this method
         cannot prove the absence of overlapping rules; it can detect
-        overlapping rules --- but only if there are log lines which match
-        more than one rule.
+        overlapping rules --- but only if there are log lines in the input
+        files which match more than one rule.
 
 \end{itemize}
 
@@ -904,9 +928,10 @@ This rule would match the following log line:
 
 \begin{verbatim}
 NOQUEUE: reject: RCPT from example.com[10.1.1.1]: 
-  550 <foo@bar.baz>: Sender address rejected: Domain not found;
-  from=<foo@bar.baz> to=<info@example.com> proto=SMTP
-  helo=<smtp.bar.baz>
+  550 <foo@example.com>: Sender address rejected:
+  Domain not found; from=<foo@example.com>
+  to=<info@example.net> proto=SMTP
+  helo=<smtp.example.com>
 \end{verbatim}
 
 % Don't reformat this!
@@ -934,6 +959,8 @@ priority            & 0                                                 \\
 
 \end{tabular}
 
+\vspace{1em}
+
 The various fields are used as follows;
 
 \begin{description}
@@ -944,8 +971,10 @@ The various fields are used as follows;
 
     \item [program and regex:] If the program in the rule equals the
         program which logged the line the regex will be matched against the
-        line; if the match is successful the action will be called, if not
-        the next rule will be tried.
+        line; if the match is successful the action will be executed, if not
+        the next rule will be tried.  If the program-specific rules don't
+        match the log line, the generic rules will be tried in the same
+        way.
 
     \item [action:] will be executed if the regex matches successfully (see
         section~\ref{actions-in-detail} for full details).
@@ -955,8 +984,8 @@ The various fields are used as follows;
         save data matched by the regex.
 
     \item [queueid:] is used the extract the queueid matched by the regex,
-        so that the mail can be found by queueid and actions performed on
-        it.
+        so that the correct mail can be found by queueid and actions
+        performed on it.
 
     \item [hits, hits\_total and priority:] hits and priority are used in
         ordering the rules (see section~\ref{rule ordering for
@@ -966,7 +995,7 @@ The various fields are used as follows;
 \end{description}
 
 Additional fields are captured by \_\_RESTRICTION\_START\_\_, hence the
-fields in result\_cols and connection\_cols start at 5.
+fields in result\_cols and connection\_cols start at 5 in the example.
 
         
 \subsection{Rule efficiency}
@@ -974,7 +1003,7 @@ fields in result\_cols and connection\_cols start at 5.
 \label{rule efficiency}
 
 Parsing efficiency is an obvious concern when the parser routinely needs to
-deal with 50 MB log files containing 300,000 log lines (for a small mail
+deal with 75 MB log files containing 300,000 log lines (for a small mail
 server --- large scale mail servers would have much larger log files on a
 daily basis).  When generating the data for the graphs included in
 section~\ref{graphs}, 93 log files (totaling 10.08 GB, 60.72 million lines)
@@ -1018,15 +1047,15 @@ file size vs number lines factor}.
 
 \label{rule ordering for efficiency}
 
-Rule ordering was briefly discussed in section~\ref{rule attributes} and it
-will be covered in greater detail in this section.  At the time of writing
-there are 131 different rules, the majority of which match several orders
-of magnitude less frequently than the top 10\%, as shown in graph~\ref{rule
-hits}.  Assuming that the distribution of log lines is reasonably steady
-over time, program efficiency should benefit from trying more frequently
-matching rules before those which match less frequently.  To test this
-hypothesis three full test runs were performed with different rule
-orderings:
+Rule ordering was mentioned in section~\ref{rule attributes} and will be
+covered in greater detail in this section.  At the time of writing there
+are 139 different rules, with the top 10\% matching the vast majority of
+the log lines, and the remaining log lines split across the other 90\% of
+the rules (as shown in graph~\ref{rule hits}).  Assuming that the
+distribution of log lines is reasonably steady over time, program
+efficiency should benefit from trying more frequently matching rules before
+those which match less frequently.  To test this hypothesis three full test
+runs were performed with different rule orderings:
 
 \begin{description}
 
@@ -1065,16 +1094,16 @@ worthwhile increase.
 
 \subsubsection{Caching each regex}
 
+Perl compiles the original regex into an internal representation,
+optimising the regex to improve the speed of matching, but this compilation
+and optimisation takes CPU time.  Perl automatically caches static regexs,
+but dynamic regexs need to be explicitly compiled and cached.
 Graph~\ref{normal regex vs discard regex} shows execution times with and
 without caching the regex; also shown on the graph are the file sizes and
 number of lines in each file.  Caching the compiled regexs is obviously far
 more efficient; graph~\ref{normal regex vs disarded regex factor} shows the
 percentage execution time increase when not caching each regex is between
-350--570\% (mean 465.58\%, standard deviation 114.70\%).  Perl compiles the
-original regex into an internal representation, optimising the regex to
-improve the speed of matching, but this compilation and optimisation takes
-CPU time.  Perl automatically caches static regexs, but dynamic regexs need
-to be explicitly compiled and cached.
+350--570\% (mean 465.58\%, standard deviation 114.70\%).  
 
 
 \section{Parsing algorithm}
@@ -1165,16 +1194,16 @@ from the above sequence, but currently there will only be one.
 
 \subsubsection{Re-injected mails}
 
-The most difficult complication is that locally addressed mails are not
-always delivered directly to a mailbox: sometimes they are accepted for a
-local address but need to be delivered to one or more remote addresses due
-to aliases.  When this occurs a child mail will be injected into the
-postfix queue, but without the explicit logging smtpd or sendmail injected
-mails have.  Thus the source is not immediately discernible from the log
-line in which the mail first appears; from a strictly chronological reading
-of the logs it \textit{usually\/} appears as if the child mail has appeared
-from thin air.  Subsequently the parent mail will log the creation of the
-child mail:
+The most difficult complication initially encountered is that locally
+addressed mails are not always delivered directly to a mailbox: sometimes
+they are accepted for a local address but need to be delivered to one or
+more remote addresses due to aliases.  When this occurs a child mail will
+be injected into the postfix queue, but without the explicit logging smtpd
+or sendmail injected mails have.  Thus the source is not immediately
+discernible from the log line in which the mail first appears; from a
+strictly chronological reading of the logs it \textit{usually\/} appears as
+if the child mail has appeared from thin air.  Subsequently the parent mail
+will log the creation of the child mail:
 
 \texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline 
 delay=0, status=sent (forwarded as 56F5B43FD)}
@@ -1193,7 +1222,7 @@ been written to disk.}
 
 Because of this the parser cannot complain when it encounters a log line
 from qmgr for a previously unseen mail; it must flag the mail as coming
-from an unknown origin and subsequently clear the flag if and when the
+from an unknown origin, and subsequently clear the flag if and when the
 origin of the mail becomes clear.  Obviously the parser could omit checking
 of where mails originate from, but the author believes that it is better to
 require an explicit source, as bugs are more likely to be exposed.
@@ -1202,13 +1231,13 @@ Process scheduling can have a still more confusing effect: quite often the
 child mail will be created, delivered and entirely finished with
 \textbf{before} the parent logs the creation line!  Thus mails flagged as
 coming from an unknown origin cannot be entered into the database when
-their final log line is parsed; instead they must be marked as database
-ready and subsequently entered by the parent mail once it has been
+their final log line is parsed; instead they must be marked as ready for
+entry and subsequently entered by the parent mail once it has been
 identified.  Quite apart from identifying mail injected in an unknown
 fashion, or bugs in the parser, unknown origin mails need to be marked as
 such because they lack some data present in the parent mail; they must copy
-that data from their parent before being entered in the database.
-The effect of this complication upon the algorithm is discussed in
+that data from their parent before being entered in the database.  The
+effect of this complication upon the algorithm is discussed in
 section~\ref{tracking re-injected mail}.
 
 
@@ -1240,8 +1269,7 @@ line represents.  The former is achieved by using the smtpd process id to
 identify the correct mail during the initial phase, then switching to the
 queueid once the mail has been accepted.  The latter uses the action field
 of the rule which matched the log line, executing the code in the function
-named by the action.  From a high level viewpoint this design shares
-significant similarity with how an event dispatch loop works in a GUI\@.
+named by the action.
 
 Section~\ref{actions-in-detail} explains the actions in substantive detail;
 this section will omit such detail because it would clutter and confuse the
@@ -1287,8 +1315,8 @@ complication 3.} re-injection is somewhat awkward to explain because it
 overlaps both the mail acceptance and mail delivery sections.  See
 section~\ref{tracking re-injected mail} for a full discussion.
 
-Internally generated mails lack any explicit origin and can only be
-detected using heuristics (see
+Internally generated mails lack any explicit origin (in Postfix 2.2.x) and
+can only be detected using heuristics (see
 section~\ref{identifying-bounce-notifications} for details).  Bounce
 notifications are the primary example of internally generated mails, though
 there may be other types.
@@ -1315,8 +1343,9 @@ four are handled in exactly the same way:
         log line for this particular mail (though it may be indirectly
         referred to if it was re-injected).  If it is neither parent nor
         child of re-injection the data is cleaned up and entered in the
-        database (flowchart:~14), then deleted from memory (flowchart:~15).  For
-        re-injected mails see section~\ref{tracking re-injected mail}.
+        database (flowchart:~14), then deleted from memory (flowchart:~15).
+        Re-injected mails are described in section~\ref{tracking
+        re-injected mail}.
 
 \end{enumerate}
 
@@ -1331,10 +1360,6 @@ is explained in section~\ref{tracking re-injected mail}.
 
 \label{tracking re-injected mail}
 
-It's probably apparent by now that tracking re-injected mails is the single
-most complex part of the algorithm.  Section~\ref{complications} has most
-of the previous discussion, should you wish to review it.  
-
 The crux of the problem is that re-injected mails appear in the logs
 without explicit logging indicating their source.  There are two implicit
 indications:
@@ -1344,23 +1369,22 @@ indications:
     \item The indicator which more commonly introduces re-injection is qmgr
         selecting a mail with a previously unseen queueid for delivery
         (action: mail\_picked\_for\_delivery; flowchart:~3), in which case
-        a new data structure will be created.  The mail will have been
-        flagged as having unknown origins; this flag should be subsequently
-        cleared once the origin has been established.  The data is then
-        saved.  This may also be an indicator that the mail is a bounce
-        notification, see section~\ref{identifying-bounce-notifications}
-        for details.
+        a new data structure will be created.  The mail will be flagged as
+        having unknown origins; this flag should be subsequently cleared
+        once the origin has been established.  This may also be an
+        indicator that the mail is a bounce notification, see
+        section~\ref{identifying-bounce-notifications} for details.
 
     \item Local delivery re-injects the mail and logs a relayed delivery
         rather than delivering directly to a mailbox or program as it
         usually would (action: track; flowchart:~11).\footnote{Relayed
         delivery is performed by the SMTP client; local delivery means
-        local to the server, i.e.\ an address the server accepts mail for.}
-        In this case the mail may already have been created (action:
-        qmgr\_chooses\_mail; flowchart:~3; described above) and the unknown
-        origin flag will be cleared; if not a new data structure will be
-        created.  In both cases the new mail is marked as a child of the
-        parent.  The log line in question is:
+        local to the server, i.e.\ an address the server is final
+        destination for.} In this case the mail may already have been
+        created (action: qmgr\_chooses\_mail; flowchart:~3; described
+        above) and the unknown origin flag will be cleared; if not a new
+        data structure will be created.  In both cases the new mail is
+        marked as a child of the parent.  The log line in question is:
 
         \texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline 
         delay=0, status=sent (forwarded as 56F5B43FD)}
@@ -1404,7 +1428,7 @@ finally be described:
         not yet delivered, in which case (flowchart:~26) the parent must
         wait for those children to be finished with.  As soon as the last
         child is deleted from the state tables the parent will also be
-        finished with (flowchart:~27).
+        finished with (flowchart:~27), and deleted from the state tables.
 
 \end{itemize}
 
@@ -1428,6 +1452,8 @@ Each action is passed the same arguments:
 
 \end{description}
 
+The actions:
+
 \begin{description}
 
     \item [IGNORE] This rule just returns successfully; it is used when a
@@ -1442,8 +1468,8 @@ Each action is passed the same arguments:
         connection in the database, perform any required cleanup, and
         delete the connection from the state tables.
 
-    \item [SAVE\_BY\_QUEUEID] Save the data extracted by the regex to the
-        mail identified by the queueid from the log line.
+    \item [SAVE\_BY\_QUEUEID] Find the correct mail based on the queueid in
+        the log line, and save the data extracted by the regex to it.
 
     \item [COMMIT] Enter the data from the mail into the database. Entry
         will be postponed if the mail is a child waiting to be tracked.
@@ -1453,31 +1479,33 @@ Each action is passed the same arguments:
         another mail server; this happens when a local address is aliased
         to a remote address.  TRACK will be called when dealing with the
         parent mail, and will create the child mail if necessary. TRACK
-        checks if the child has already been tracked, either with this
-        parent or with another parent, and issues appropriate warnings in
-        either case.
+        checks if the child has already been tracked, either by this parent
+        or by another parent, and issues appropriate warnings in either
+        case.
 
     \item [REJECTION] Deal with postfix rejecting an SMTP command from the
-        remote client: log the rejection with the last accepted mail or the
-        connection, as appropriate.
+        remote client: log the rejection with a mail if there is a queueid
+        in the log line, or with the connection if not.
 
     \item [MAIL\_PICKED\_FOR\_DELIVERY] This action represents Postfix
         picking a mail from the queue to deliver. This action is used for
-        both qmgr and cleanup due to out of order log lines; see
-        section~\ref{discarding cleanup lines} for details.
+        both qmgr and cleanup as it needs to deal with out of order log
+        lines; see section~\ref{discarding cleanup lines} for details.
 
     \item [PICKUP] Pickup is the service which deals with mail submitted
-        locally via /usr/sbin/sendmail. This action creates a new state
-        table entry and saves data to it, unless out of order logging has
-        caused the cleanup line to be logged first, as discussed in
-        section~\ref{pickup logging after cleanup}.
+        locally via /usr/sbin/sendmail. 
+
+        Out of order log entries may have caused the state table entry to
+        already exist (see section~\ref{pickup logging after cleanup});
+        otherwise it is created.  The data from the log line is then saved
+        to the state table entry.
 
     \item [CLONE] Multiple mails may be accepted on a single connection, so
         each time a mail is accepted the connection's state table entry
         must be cloned; if the original data structure was used the second
-        and subsequent mails would corrupt the data structure.
+        and subsequent mails would overwrite one another's data.
 
-    \item [MAIL\_TOO\_LARGE] When the client tries to send a larger message
+    \item [MAIL\_TOO\_LARGE] When the client tries to send a message larger
         than the local server accepts the mail will be discarded.  See
         TIMEOUT for further discussion; the two are handled in exactly the
         same way.
@@ -1485,14 +1513,14 @@ Each action is passed the same arguments:
     \item [TIMEOUT] The connection timed out so the mail currently being
         transferred must be discarded. The mail may have been accepted, in
         which case there's a data structure to dispose of, or it may not in
-        which case there's none. See
+        which case there is not.  See
         section~\ref{timeouts-during-data-phase} for the gory details.
 
     \item [POSTFIX\_RELOAD] When Postfix stops or reloads its configuration
         it kills all smtpds,\footnote{Possibly other programs are killed
-        also, but the parser is only affected by and interested in smtpd.}
-        requiring any active connections to be committed and deleted from
-        the state tables.
+        also, but the parser is only affected by and interested in smtpds
+        exiting.} requiring any active connections to be committed and
+        deleted from the state tables.
 
     \item [SMTPD\_KILLED] Sometimes Postfix needs to forcefully kill an
         smtpd; the active connection for that smtpd must be committed and
@@ -1509,10 +1537,10 @@ Each action is passed the same arguments:
         DNS timeouts, timeouts reading data, etc.  The active connection
         for that smtpd must be committed and deleted from the state tables.
 
-    \item [BOUNCE] Postfix 2.3 (and hopefully subsequent versions) log the
+    \item [BOUNCE] Postfix 2.3 (and hopefully subsequent versions) logs the
         creation of bounce messages.  This action creates a new mail if
         necessary, marking it as a bounce notification and removing the
-        unknown origin flag if it exists.
+        unknown origin flag if it already exists.
 
 \end{description}
 
@@ -1535,15 +1563,15 @@ notifications, and those heuristics are:
 
 \begin{enumerate}
 
-    \item The sender address will be $<>$.
+    \item The sender address is $<>$.
 
-    \item Neither smtpd nor pickup will have logged any messages associated
-        with the mail, indicating it was generated internally by Postfix,
-        not accepted via SMTP or submitted locally by sendmail.
+    \item Neither smtpd nor pickup have logged any messages associated with
+        the mail, indicating it was generated internally by Postfix, not
+        accepted via SMTP or submitted locally by sendmail.
 
     \item The message-id has a specific format: \newline
         \texttt{YYYYMMDDhhmmss.queueid@server.hostname} \newline
-        e.g.\ \texttt{20070321125732.D168138A1@smtp.cs.tcd.ie}
+        e.g.\ \texttt{20070321125732.D168138A1@smtp.example.com}
 
     \item The queueid in the message-id must be the same as the queueid of
         the mail: this is what distinguishes bounce notifications generated
@@ -1582,8 +1610,8 @@ different type of message; arguably this is a benefit rather than a
 drawback, as future mails generated internally by Postfix will be handled
 correctly.
 
-Postfix 2.3 (and hopefully subsequent version) log the creation of a bounce
-message.
+Postfix 2.3 (and hopefully subsequent versions) log the creation of a
+bounce message.
 
 \subsubsection{Aborted delivery attempts}
 
@@ -1609,7 +1637,7 @@ until the delivery is complete.
 Once again Postfix does not log a message making the client's behaviour
 clear, so once again heuristics are required to identify when this
 behaviour occurs.  In this case a list of all mails accepted during a
-connection are saved in the connection state, and the accepted mails
+connection are saved in the connection state, and the accepted mails are
 examined when the disconnection line is parsed and the disconnection action
 executed.  Each mail is checked for the following characteristics:
 
@@ -1749,7 +1777,7 @@ because not every connection where a timeout occurs will have a cleanup
 line logged for it; if the algorithm blindly discarded the next cleanup
 line it would in some cases be mistaken.  Whether or not the next cleanup
 line is discarded the queueid will be removed from the cache of timeout
-queueids when the next pickup line is parsed.
+queueids when the next pickup line containing that queueid is parsed.
 
 \subsubsection{Pickup logging after cleanup}
 
@@ -1814,28 +1842,29 @@ Occasionally a log file will have out of order log lines which cannot be
 dealt with by the techniques described in sections~\ref{tracking
 re-injected mail},~\ref{discarding cleanup lines}~and~\ref{pickup logging
 after cleanup}.  In the 93 log files used for testing this occurs only five
-times in 60721709 log lines, but for completeness of the algorithm it
+times in 607,21,709 log lines, but for completeness of the algorithm it
 should be dealt with.  The five occurrences in the test log files have the
-same characteristics: the postfix/local log line showing delivery to a
-local mailbox occurs after the postfix/qmgr log line showing removal of the
-mail from the queue because delivery is completed.  This causes problems:
-the mail is not complete, so entry into the database fails; a new mail is
-created when the postfix/local line is parsed and remains in the state
-tables; four warnings are issued per pair of out of order log lines.
+same characteristics: the \texttt{postfix/local} log line showing delivery
+to a local mailbox occurs after the \texttt{postfix/qmgr} log line showing
+removal of the mail from the queue because delivery is completed.  This
+causes problems: the mail is not complete, so entry into the database
+fails; a new mail is created when the \texttt{postfix/local} line is parsed
+and remains in the state tables; four warnings are issued per pair of out
+of order log lines.
 
 The solution to this problem is to examine the list of programs which have
 logged messages for each mail, comparing the list against a table of
-known-good combinations of programs.  If combination is found in the valid
-list the mail can be entered in the database; if the combination is not
-found entry must be postponed and the mail flagged.  The SAVE\_BY\_QUEUEID
-action checks for the flag and retries entry; if the additional log lines
-have caused the mail to reach a valid combination entry will succeed,
-otherwise it must be postponed once more.
+known-good combinations of programs.  If the mail's combination is found in
+the valid list the mail can be entered in the database; if the combination
+is not found entry must be postponed and the mail flagged.  The
+SAVE\_BY\_QUEUEID action checks for the flag and retries entry if it's
+found; if the additional log lines have caused the mail to reach a valid
+combination entry will succeed, otherwise it must be postponed once more.
 
 The list of valid combinations is given below.  Every mail will
-additionally have log entries from postfix/cleanup and postfix/qmgr; any
-mail may also have log entries from postfix/bounce, postfix/postsuper, or
-both.
+additionally have log entries from \texttt{postfix/cleanup} and
+\texttt{postfix/qmgr}; any mail may also have log entries from
+\texttt{postfix/bounce}, \texttt{postfix/postsuper}, or both.
 
 \begin{description}
 
@@ -1893,11 +1922,12 @@ tables, deleting any mails displaying the following characteristics:
 \end{itemize}
 
 12 hours is a somewhat arbitrary time period, but it is far longer than
-Postfix would delay delivery of a mail in the queue.  The state tables are
-scanned for mails matching the characteristics above each time the end of a
-log file is reached, and matching mails are deleted.
+Postfix would delay delivery of a mail in the queue.\footnote{This may be a
+problem if Postfix is not running for an extended period of time.}  The
+state tables are scanned for mails matching the characteristics above each
+time the end of a log file is reached, and matching mails are deleted.
 
-\section{Parsing coverage}
+\section{Coverage}
 
 The discussion of the parser's coverage of Postfix log files is separated
 into two parts: log lines covered and mails covered.  The first is
@@ -1921,11 +1951,9 @@ Parsing a log line is a three stage process:
     \item Check if there are any rules for the program which produced the
         log line; if not then skip the line.  
 
-    \item Try each rule, ordered by priority and rule order (see
-        sections~\ref{rule attributes} and~\ref{rule ordering for
-        efficiency}), until a matching rule is found.
+    \item Try each rule until a matching rule is found.
 
-    \item Execute the appropriate action.
+    \item Execute the action specified by the rule.
 
 \end{enumerate}
 
@@ -1933,13 +1961,12 @@ Full coverage of log lines requires the following:
 
 \begin{enumerate}
 
-    \item Each program of interest must have at least one rule or it's log
+    \item Each program of interest must have at least one rule or its log
         lines will be silently skipped; in the extreme case of zero rules
         the parser would happily skip every log line.  There may be any
         number of log lines from other programs intermingled in the log
         file, and there are some Postfix programs which don't produce any
-        log lines of interest (currently \textit{postfix/anvil\/} and
-        \textit{postfix/scache\/}).
+        log lines of interest.
 
     \item There must be a rule to match each different line produced by
         each program; if a line is not successfully matched the parser will
@@ -1954,17 +1981,17 @@ Full coverage of log lines requires the following:
 
 \end{enumerate}
 
-Full coverage of log lines is both easy to achieve and hard to maintain.
-It is easy to achieve full coverage for a limited set of log files (at the
-time of writing the parser has 131 rules, fully parsing 93 contiguous log
-files from Postfix 2.2 and 2.3), and new rules are easy to add.
-Maintaining full coverage is hard because other servers have different
-restrictions with custom messages, RBLs change their messages over time,
-major releases of Postfix change warning messages (usually adding more
-information), etc.\ so over time the log lines drift and change.
-Graph~\ref{rule hits} shows the hits for each rule over all 93 log files;
-it's obvious that a small number of rules match the vast majority of the
-lines, and more than half the rules match fewer than 100 times.
+Full coverage of log lines is easy to achieve yet hard to maintain.  It is
+easy to achieve full coverage for a limited set of log files (at the time
+of writing the parser has 139 rules, fully parsing 93 contiguous log files
+from Postfix 2.2 and 2.3), and new rules are easy to add.  Maintaining full
+coverage is hard because other servers have different restrictions with
+custom messages, RBLs change their messages over time, major releases of
+Postfix change warning messages (usually adding more information), etc.\ so
+over time the log lines drift and change.  Graph~\ref{rule hits} shows the
+number of hits for each rule over all 93 log files; it's obvious that a
+small number of rules match the vast majority of the lines, and more than
+half the rules match fewer than 100 times.
 
 \subsection{Mails covered}
 
@@ -1980,12 +2007,13 @@ errors, some of which may alert the user to a problem, e.g.\ when a queueid
 is reused before the previous mail is fully dealt with, when a queueid or
 pid is not found,\footnote{There will often be warnings about missing
 queueids or pids in the first few hundred or thousand log lines because the
-earlier log lines are in the previous log file; loading the saved state
-from the previous log file will solve this problem.} or when there are
-problems tracking a child mail (see section~\ref{tracking re-injected
-mail}).  There should be few or no warnings, and the state table should
-only contain entries for mails which had yet to be delivered when the
-logfiles ended.
+earlier log lines for those connections or mails are in the previous log
+file; loading the saved state from the previous log file will solve this
+problem.} or when there are problems tracking a child mail (see
+section~\ref{tracking re-injected mail}).  There should be few or no
+warnings, and the state table should only contain entries for mails which
+had yet to be delivered when the logfiles ended, or started before the
+logfiles began.
 
 At the time of writing the parser is being tested with 93 log files.  There
 are 5 warnings produced, but because the parser errs on the side of
@@ -2016,8 +2044,8 @@ entries, breaking down into:
 
 \end{itemize}
 
-The XXX connections and mails handled by Postfix during this period are
-handled correctly by the parser.
+The 13,850,793 connections and mails accepted, rejected or delivered by
+Postfix during this period are handled correctly by the parser.
 
 \section{Limitations and possible improvements}
 
@@ -2036,23 +2064,9 @@ always room for improvement.
 
     \item It appears that the hostname used in the HELO command is not
         logged if the mail is accepted.\footnote{Tested with Postfix 2.2.10
-        and 2.3.11; this may possibly have changed in Postfix 2.4.}  It is
-        quite easy to rectify this: 
-
-        \begin{enumerate}
-
-            \item Create \texttt{/etc/postfix/log\_helo.pcre}
-                containing:\newline
-                \hspace*{2em}\texttt{/./~~~~WARN~Logging~HELO}
-
-            \item Modify \texttt{smtpd\_sender\_restrictions} in
-                \texttt{/etc/postfix/main.cf} to contain\newline
-                \hspace*{2em}\texttt{check\_client\_access~/etc/postfix/log\_helo.pcre}
-
-        \end{enumerate}
-
-        The purpose of logging the HELO in
-        \texttt{smtpd\_sender\_restrictions} is to only log once per mail.
+        and 2.3.11; this may possibly have changed in Postfix 2.4.}
+        Rectifying this has already been described in section~\ref{logging
+        helo}.
 
     \item The algorithm does not distinguish between mails where one or
         more mails are rejected and a subsequent mail is accepted; it will
@@ -2071,13 +2085,7 @@ always room for improvement.
 
 \begin{itemize}
 
-    \item A progress bar would be useful when run interactively, as the
-        program takes roughly one minute per 10MB of
-        logs.\footnote{Approximately 80\% of the run time is consumed by
-        logging to the database.}  Obviously performance is entirely
-        dependant on the machine the program is running on.
-
-    \item Write the policy servers referred to in the limitations above.
+    \item Write the policy server referred to in the limitations above.
 
 \end{itemize}
 
@@ -2093,7 +2101,9 @@ XXX WRITE THIS
 
 \section{Other Postfix log parsers reviewed}
 
-XXX THIS NEEDS TO BE EXPANDED
+XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
+
+XXX ADD DATES CHECKED FOR ALL PARSERS
 
 \label{other-parsers}
 
@@ -2212,8 +2222,8 @@ XXX THIS NEEDS TO BE EXPANDED
 
 
 \bibliographystyle{logparser-bibliography-style}
-\label{bibliography}
 \bibliography{logparser-bibliography}
+\label{bibliography}
 
 \section{Graphs}
 
@@ -2241,7 +2251,7 @@ XXX THIS NEEDS TO BE EXPANDED
 \label{normal vs shuffled vs reversed ordering}
 \includegraphics{plot-normal-shuffle-reverse.ps}
 
-\subsubsection{Percentage increase of shuffled and reversed over normal}
+\subsubsection{Percentage increase of shuffled + reversed over normal}
 \label{normal vs shuffled vs reversed ordering factor}
 \includegraphics{plot-normal-shuffle-reverse-factor.ps}
 
@@ -2256,9 +2266,9 @@ simple.  Examining the database after parsing logfile~22 in isolation shows
 distribution by rule} the distribution of matching rules is extremely
 skewed.  Comparing the number of log lines per program versus rules per
 program in graph~\ref{log22 line and rule distribution by program} shows
-that \textit{postfix/qmgr\/} has the highest number of log lines, however
-it has a low number of rules.  This combination results in a low average
-number of rules to try for \textit{postfix/qmgr\/} log lines, reducing the
+that \texttt{postfix/qmgr} has the highest number of log lines, however it
+has a low number of rules.  This combination results in a low average
+number of rules to try for \texttt{postfix/qmgr} log lines, reducing the
 overall average number of rules to try per log line.  In turn this reduces
 the average parsing time per log line, and thus the parsing time for the
 log file.  While the parsing time is substantially greater than the time
