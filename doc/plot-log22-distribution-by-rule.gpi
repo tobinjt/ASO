@@ -8,5 +8,6 @@ set output "plot-log22-distribution-by-rule.ps"
 set key top left Left reverse
 
 set noxtics
-set xrange [0:33]
+set xrange [0:62]
+set xtics out 0,10,60
 plot "stats-log22-distribution-by-rule.txt" using 1:2 title "Number of lines"

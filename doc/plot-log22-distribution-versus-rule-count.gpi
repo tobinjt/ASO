@@ -11,7 +11,7 @@ set output "plot-log22-distribution-versus-rule-count.ps"
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
 
-set xrange [0:7]
+set xrange [0:8]
 plot "stats-log22-rule-count-by-program.txt" using 1:2:xticlabels(4) \
         axes x1y1 with lines title "Number of lines", \
      "stats-log22-rule-count-by-program.txt" using 1:3 \

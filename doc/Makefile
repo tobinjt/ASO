@@ -27,10 +27,11 @@ all: logparser.pdf
 logparser.dvi: logparser-flow-chart.ps logparser-bibliography.bib
 logparser.dvi: logparser-bibliography-style.bst
 logparser.dvi: plot-cached-discarded.ps plot-cached-discarded-factor.ps
-logparser.dvi: plot-normal-shuffle-reverse.ps plot-normal-shuffle-reverse-factor.ps
+logparser.dvi: plot-normal-shuffle-reverse.ps plot-normal-shuffle-factor.ps plot-normal-reverse-factor.ps
 logparser.dvi: plot-normal-filesize-numlines-factor.ps plot-normal-filesize-numlines.ps
 logparser.dvi: plot-log22-distribution-by-rule.ps plot-log22-distribution-versus-rule-count.ps
 logparser.dvi: plot-hits.ps
+logparser.dvi: stats-cached-discarded-include.tex
 
 logparser-flow-chart.ps: logparser-flow-chart.dot
 	dot -o "$@" -Tps -x "$<"
@@ -38,7 +39,8 @@ logparser-flow-chart.ps: logparser-flow-chart.dot
 plot-cached-discarded.ps: stats-cached.txt stats-discarded.txt
 plot-cached-discarded-factor.ps: stats-cached-discarded-factor.txt
 plot-normal-shuffle-reverse.ps: stats-normal.txt stats-shuffle.txt stats-reverse.txt
-plot-normal-shuffle-reverse-factor.ps: stats-normal-shuffle-reverse-factor.txt
+plot-normal-shuffle-factor.ps: stats-normal-shuffle-reverse-factor.txt
+plot-normal-reverse-factor.ps: stats-normal-shuffle-reverse-factor.txt
 plot-normal-filesize-numlines-factor.ps: stats-normal-filesize-numlines-factor.txt
 plot-normal-filesize-numlines.ps: stats-normal.txt file-sizes.txt wc.txt
 plot-log22-distribution-by-rule.ps: stats-log22-distribution-by-rule.txt
@@ -61,16 +63,53 @@ stats-normal-shuffle-reverse-factor.txt: stats-normal.txt stats-shuffle.txt stat
 	paste -d ' ' $^ | awk '$$1 != "#" {print (($$9 * 100 / $$3) - 100), " ", (($$15 * 100 / $$3) - 100) }' > "$@"
 
 stats-log22-distribution-by-rule.txt:
-	sqlite3 -separator ' ' ../sql/db.sq3 "select rule_order, program from rules where rule_order > 100 order by rule_order;" | nl > "$@"
+	sqlite3 -separator ' ' ../sql/db.sq3 "select hits, program from rules where hits > 0 order by hits;" | nl > "$@"
 
 stats-log22-rule-count-by-program.txt:
-	sqlite3 -separator ' ' ../sql/db.sq3 "select sum(rule_order), count(*), program from rules group by program;" | awk '$$1 > 0 { print }' | nl > "$@"
+	sqlite3 -separator ' ' ../sql/db.sq3 "select sum(hits), count(*), program from rules group by program;" | awk '$$1 > 0 { print }' | sed -e 's,postfix/,,' | nl > "$@"
 
 stats-hits.txt:
 	sqlite3 -separator ' ' ../sql/db.sq3 "select rule_order from rules order by rule_order;" | nl > "$@"
 
+stats-cached-discarded-stats.txt: stats-cached-discarded-factor.txt
+	perl ../stats/stddev "$<" > "$@"
+	echo "Row: All logs" >> "$@"
+
+stats-cached-discarded-stats-fast.txt: stats-cached-discarded-factor.txt
+	sed -e '1,21d; 23,61d; 69,$$d;' "$<" | perl ../stats/stddev > "$@"
+	echo "Row: Logs 22 and 62--68" >> "$@"
+
+stats-cached-discarded-stats-slow.txt: stats-cached-discarded-factor.txt
+	sed -e '22d; 62,68d;' "$<" | perl ../stats/stddev > "$@"
+	echo "Row: All logs except 22 and 62--68" >> "$@"
+
+stats-cached-discarded-include.tex: stats-cached-discarded-stats.txt stats-cached-discarded-stats-slow.txt stats-cached-discarded-stats-fast.txt
+	perl mk-stats-cached-discarded-include $^ > "$@"
+
+stats-normal.txt: stats-normal
+	DIR="$<" FILE="$@" make parse-stats
+
+stats-cached.txt: stats-normal
+	DIR="$<" FILE="$@" make parse-stats
+
+stats-shuffle.txt: stats-shuffle
+	DIR="$<" FILE="$@" make parse-stats
+
+stats-reverse.txt: stats-reverse
+	DIR="$<" FILE="$@" make parse-stats
+
+stats-discarded.txt: stats-normal-regex
+	DIR="$<" FILE="$@" make parse-stats
+
+parse-stats:
+	perl -I../stats ../stats/parse-stats --discard-first "${DIR}"/results.mail.log* > "${FILE}" || rm -f "${FILE}"
+
 clean:
 	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out
+
+veryclean: clean
+	rm -f stats-cached.txt stats-discarded.txt stats-normal.txt stats-reverse.txt stats-shuffle.txt stats-cached-discarded-include.tex
+
 
 check:
 	chktex logparser.tex

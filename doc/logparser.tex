@@ -2252,7 +2252,9 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
 
 \subsubsection{Percentage increase of shuffled + reversed over normal}
 \label{normal vs shuffled vs reversed ordering factor}
-\includegraphics{plot-normal-shuffle-reverse-factor.ps}
+\includegraphics{plot-normal-shuffle-factor.ps}
+\newline
+\includegraphics{plot-normal-reverse-factor.ps}
 
 The worst-case performance of shuffled rules can be seen at log file 30,
 where it is equivalent to reversed rules.
@@ -2310,13 +2312,7 @@ the average number of regexs compiled per line drops sharply for those
 eight log files, resulting in a much lower increase in relative execution
 time, as detailed below.
 
-\begin{tabular}[]{lrr}
-                                    & Mean      & Standard Deviation    \\
-    All logs                        & 465.58\%  & 114.70\%              \\
-    All logs except 22 and 62--68   & 497.43\%  & 50.58\%               \\
-    Logs 22 and 62--68              & 127.16\%  & 21.28\%               \\
-
-\end{tabular}
+\input{stats-cached-discarded-include}
 
 
 

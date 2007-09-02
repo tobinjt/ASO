@@ -9,5 +9,4 @@ set key top left Left reverse
 
 set noxtics
 set xtics out 0,25,125
-#set xrange [0:33]
 plot "stats-hits.txt" using 1:2 title "Number of hits"

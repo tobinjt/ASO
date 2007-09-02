@@ -1,0 +1,38 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use File::Slurp;
+
+my ($label, $mean, $stddev);
+format ROW = 
+    @<<<<<<<<<<<<<<<<<<<<<<<<<<<<   & @<<<<<<<  & @<<<<<<<<<<<<<<<<<    \\
+    $label,                           $mean,      $stddev
+.
+$~ = q{ROW};
+
+print q(\begin{tabular}[]{lrr}) . qq{\n};
+
+$label  = q{};
+$mean   = q{Mean};
+$stddev = q{Standard Deviation};
+write;
+
+foreach my $file (@ARGV) {
+    my @lines = read_file($file);
+    my %data;
+    foreach my $line (@lines) {
+        my ($key, $value) = split /: /, $line;
+        $data{$key} = $value;
+    }
+    $label  = $data{q{Row}};
+    $mean   = sprintf q{%.2f\%%}, $data{q{Mean}};
+    $stddev = sprintf q{%.2f\%%}, $data{q{Standard deviation}};
+    write;
+}
+
+print q(\end{tabular}) . qq{\n};
+
