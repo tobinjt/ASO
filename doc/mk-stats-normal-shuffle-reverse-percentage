@@ -1,0 +1,36 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use File::Slurp;
+
+print q(\begin{description}) . qq{\n\n};
+
+foreach my $file (@ARGV) {
+    my @lines = read_file($file);
+    my %data;
+    foreach my $line (@lines) {
+        chomp $line;
+        my ($key, $value) = split /: /, $line;
+        $data{$key} = $value;
+    }
+
+    my ($label, $increase, $mean, $stddev);
+    $label      = $data{q{Row}};
+    $mean       = sprintf q{%.2f}, $data{q{Mean}};
+    $stddev     = sprintf q{%.2f}, $data{q{Standard deviation}};
+    $increase   = sprintf q{%.2f--%.2f},
+                    $mean - $stddev,
+                    $mean + $stddev;
+
+    print <<"LINE";
+    \\item [$label] $increase\\% increase; mean $mean\\%, standard deviation $stddev\\%.
+
+LINE
+}
+
+print q(\end{description}) . qq{\n\n};
+

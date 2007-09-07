@@ -7,18 +7,19 @@ use warnings;
 
 use File::Slurp;
 
-my ($label, $mean, $stddev);
+my ($label, $mean, $stddev, $range);
 format ROW = 
-    @<<<<<<<<<<<<<<<<<<<<<<<<<<<<   & @<<<<<<<  & @<<<<<<<<<<<<<<<<<    \\
-    $label,                           $mean,      $stddev
+    @<<<<<<<<<<<<<<<<<<<<<<<<<<<< & @<<<<<<< & @<<<<<<<<<<<<<<<<< & @<<<<<<<<<<<<<<<<<<<<<   \\
+    $label,                         $mean,     $stddev,             $range
 .
 $~ = q{ROW};
 
-print q(\begin{tabular}[]{lrr}) . qq{\n};
+print q(\begin{tabular}[]{lrrr}) . qq{\n};
 
 $label  = q{};
 $mean   = q{Mean};
-$stddev = q{Standard Deviation};
+$stddev = q{Std Dev};
+$range  = q{Range};
 write;
 
 foreach my $file (@ARGV) {
@@ -31,6 +32,9 @@ foreach my $file (@ARGV) {
     $label  = $data{q{Row}};
     $mean   = sprintf q{%.2f\%%}, $data{q{Mean}};
     $stddev = sprintf q{%.2f\%%}, $data{q{Standard deviation}};
+    $range  = sprintf q{%.2f--%.2f\%%},
+                $data{Mean} - $data{q{Standard deviation}},
+                $data{Mean} + $data{q{Standard deviation}};
     write;
 }
 

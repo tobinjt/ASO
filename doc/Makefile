@@ -31,7 +31,8 @@ logparser.dvi: plot-normal-shuffle-reverse.ps plot-normal-shuffle-factor.ps plot
 logparser.dvi: plot-normal-filesize-numlines-factor.ps plot-normal-filesize-numlines.ps
 logparser.dvi: plot-log22-distribution-by-rule.ps plot-log22-distribution-versus-rule-count.ps
 logparser.dvi: plot-hits.ps
-logparser.dvi: stats-cached-discarded-include.tex
+logparser.dvi: stats-cached-discarded-include-for-graph.tex stats-cached-discarded-include-for-discussion.tex
+logparser.dvi: stats-normal-shuffle-reverse-percentage.tex
 
 logparser-flow-chart.ps: logparser-flow-chart.dot
 	dot -o "$@" -Tps -x "$<"
@@ -83,8 +84,26 @@ stats-cached-discarded-stats-slow.txt: stats-cached-discarded-factor.txt
 	sed -e '22d; 62,68d;' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: All logs except 22 and 62--68" >> "$@"
 
-stats-cached-discarded-include.tex: stats-cached-discarded-stats.txt stats-cached-discarded-stats-slow.txt stats-cached-discarded-stats-fast.txt
-	perl mk-stats-cached-discarded-include $^ > "$@"
+stats-cached-discarded-include-for-graph.tex: stats-cached-discarded-stats.txt stats-cached-discarded-stats-fast.txt stats-cached-discarded-stats-slow.txt 
+	perl mk-stats-cached-discarded-include $^ > "$@" || rm -f "$@"
+
+stats-cached-discarded-stats2.txt: stats-cached-discarded-factor.txt
+	perl ../stats/stddev "$<" > "$@"
+	echo "Row:  " >> "$@"
+
+stats-cached-discarded-include-for-discussion.tex: stats-cached-discarded-stats2.txt
+	perl mk-stats-normal-shuffle-reverse-percentage $^ > "$@" || rm -f "$@"
+
+stats-normal-shuffle-stats.txt: stats-normal-shuffle-reverse-factor.txt
+	awk '{print $$1}' "$<" | perl ../stats/stddev > "$@"
+	echo "Row: shuffled" >> "$@"
+
+stats-normal-reverse-stats.txt: stats-normal-shuffle-reverse-factor.txt
+	awk '{print $$2}' "$<" | perl ../stats/stddev > "$@"
+	echo "Row: reversed" >> "$@"
+
+stats-normal-shuffle-reverse-percentage.tex: stats-normal-shuffle-stats.txt stats-normal-reverse-stats.txt
+	perl mk-stats-normal-shuffle-reverse-percentage $^ > "$@" || rm -f "$@"
 
 stats-normal.txt: stats-normal
 	DIR="$<" FILE="$@" make parse-stats
@@ -108,8 +127,14 @@ clean:
 	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out
 
 veryclean: clean
-	rm -f stats-cached.txt stats-discarded.txt stats-normal.txt stats-reverse.txt stats-shuffle.txt stats-cached-discarded-include.tex
-
+	rm -f	stats-cached.txt stats-discarded.txt stats-normal.txt stats-reverse.txt stats-shuffle.txt 	\
+			stats-cached-discarded-factor.txt stats-cached-discarded-include-for-discussion.tex			\
+			stats-cached-discarded-include-for-graph.tex stats-cached-discarded-stats-slow.txt			\
+			stats-cached-discarded-stats-fast.txt														\
+			stats-cached-discarded-stats.txt stats-cached-discarded-stats2.txt							\
+			stats-normal-filesize-numlines-factor.txt stats-normal-reverse-stats.txt					\
+			stats-normal-shuffle-reverse-factor.txt stats-normal-shuffle-reverse-percentage.tex			\
+			stats-normal-shuffle-stats.txt stats-normal-stripped.txt
 
 check:
 	chktex logparser.tex

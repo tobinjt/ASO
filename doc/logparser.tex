@@ -37,7 +37,7 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
 \begin{abstract}
 
-    Parsing Postfix logs is much more difficult than it first appears but
+    Parsing Postfix logs is much more difficult than it first appears, but
     it is possible to achieve a high degree of accuracy in understanding
     the logs, and thus reconstructing the actions taken by Postfix to
     generate the logs.  This paper describes the creation of a parser,
@@ -144,6 +144,22 @@ section~\ref{rule efficiency}, rule efficiency.
 \section{Background}
 
 \label{background}
+
+\subsection{Introduction}
+
+This section provides background information helpful in understanding the
+remainder of the paper.  It begins with a discussion of the motivation
+underlying the project, followed by some technical information: the use of
+a database as an API\@; a brief introduction to the SMTP protocol; and a
+longer introduction to Postfix, concentrating on the topics most relevant
+to this paper, namely Postfix restrictions and policy servers.  The
+assumptions made in designing and implementing the parser are explained, as
+are the conventions used in this paper.  Other projects which attempt to
+parse Postfix logs are summarised (full details are available in
+Section~\ref{other-parsers}), plus a review of previously published
+research in this area.
+
+XXX SHOULD THERE BE A REGEX SECTION\@?
 
 \subsection{Motivation}
 
@@ -355,7 +371,8 @@ has more information available when logging the rejection.\footnote{The
 \texttt{smtpd\_delay\_reject} parameter controls this behaviour.}  Postfix
 uses simple lookup tables as the deciding factor for some restrictions,
 e.g.\ \texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
-\footnote{\texttt{cidr} is the type of the lookup table.} will check
+\footnote{\texttt{cidr} is the type of the lookup table.  XXX PROVIDE A
+REFERENCE} will check
 whether the IP address of the connected client matches the left hand side
 of each line in the file and will return the right hand side of the first
 matching line.  Other restrictions determine their result in different
@@ -445,16 +462,6 @@ Example attributes taken from~\cite{policy-servers}:
 
 
 
-\subsection{Parser background}
-
-Before getting into detail about the parser a brief overview is in order.
-The parser is split into two parts: the parsing algorithm and the rules
-which are applied to the lines.  Rules are solely concerned with
-identifying a line and extracting data from it, whereas the algorithm's
-task is to follow the journey each mail takes through Postfix, piecing the
-data extracted by rules into a coherent whole, saving it in a useful and
-consistent form, and performing housekeeping duties.
-
 \subsection{Assumptions}
 
 The algorithm described and the program implementing it make a small number
@@ -491,6 +498,12 @@ significant investment of time:
 \end{tabular}
 
 
+\subsection{Conventions used in the paper}
+
+The words \textit{connection\/} and \textit{mail\/} are often used
+interchangeably in this paper; in general the word used was chosen based on
+the context it appears in.
+
 \subsection{Other parsers}
 
 10 other parsers have been reviewed in Appendix~\ref{other-parsers} as part
@@ -509,12 +522,6 @@ much more detailed log analysis by providing a stable platform for
 subsequent programs to develop upon.
 
 
-
-\subsection{Conventions used in the paper}
-
-The words \textit{connection\/} and \textit{mail\/} are often used
-interchangeably in this paper; in general the word used was chosen based on
-the context it appears in.
 
 \subsection{Previous research in this area}
 
@@ -605,167 +612,64 @@ MAKE THIS A COMPARISON INSTEAD OF A CRITIQUE\@.
 % parsing isn't detailed enough to encounter them.  It doesn't run
 % properly; doesn't create any output; throws up errors.
 
+\subsection{Conclusion}
+
+This section has provided background information on several topics relevant
+to the remainder of the paper.  It started with the motivation behind the
+project, continuing with explanations of:
+
+\begin{itemize}
+
+    \item Using a database as an application programming interface.
+
+    \item The SMTP protocol.
+
+    \item Postfix restrictions and policy servers.
+
+\end{itemize}
+
+The assumptions which must be satisfied for the parser to work correctly
+were discussed; the conventions used in the paper were listed; a brief
+comparison of this project against other Postfix parsers was provided,
+followed by a review of the previously published literature.
+
 \section{Database schema}
 \label{database schema}
+
+The database is an integral part of the parser: it stores the rules and the
+results of applying those rules to Postfix log files.  Understanding the
+database schema is important in understanding the actions of the parser,
+and essential to developing further applications which utilise the data
+gathered.
+
+\subsection{Introduction}
 
 The database schema can be conceptually divided in two: the rules which are
 used to parse log files, and the data saved from the parsing of log files.
 Rules have the fields required to parse the log lines, extract data to be
 saved, and the action to be executed; they also have several fields which
 aid the user in understanding what each rule parses.  The rules are
-described in detail in section~\ref{rules} and the fields in particular in
-section~\ref{rule attributes}, and that discussion won't be repeated here.
-The data saved from parsing the logs is divided into two tables described
-below: connections and results.
+described in detail in section~\ref{rules} but the fields are covered in
+section~\ref{rule attributes}.
 
-\subsection{Connections table}
+The data saved from parsing the logs is also divided into two tables as
+described below: connections and results.  The connections table contains a
+row for every mail accepted and every connection where there was a
+rejection; the individual fields will be described in the forthcoming
+section~\ref{connections table}.  The results table has one or more rows
+per row in the connections table, depending on the specifics of the
+mail/connection; the fields will be covered in detail in
+section~\ref{results table}.
 
-Every connection and/or mail will have a single entry in the connections
-table containing the following fields:
-
-\begin{description}
-
-    \item [id] This field uniquely identifies the row.
-
-    \item [server\_ip] The IP address (IPv4 or IPv6) of the server: the
-        local server when receiving mail, the remote server when sending
-        mail.
-
-    \item [server\_hostname] The hostname of the server, it will be
-        \textit{unknown\/} if the IP address could not be resolved to a
-        hostname via DNS\@.
-
-    \item [client\_ip] The client IP address (IPv4 or IPv6): the remote
-        server when receiving mail, the local server when sending mail.
-
-    \item [client\_hostname] The hostname of the client, it will be
-        \textit{unknown\/} if the IP address could not be resolved to a
-        hostname via DNS\@.
-
-    \item [helo] The hostname used in the HELO command.  The HELO
-        occasionally changes during a connection, presumably because spam
-        or virus senders think it's a good idea.  By default Postfix only
-        logs the HELO when it rejects an SMTP command, but it is quite easy
-        to rectify this: 
-
-\label{logging helo}
-
-        \begin{enumerate}
-
-            \item Create \texttt{/etc/postfix/log\_helo.pcre}
-                containing:\newline
-                \hspace*{2em}\texttt{/./~~~~WARN~Logging~HELO}
-
-            \item Modify \texttt{smtpd\_helo\_restrictions} in
-                \texttt{/etc/postfix/main.cf} to contain\newline
-                \hspace*{2em}\texttt{check\_helo\_access~/etc/postfix/log\_helo.pcre}
-
-        \end{enumerate}
-
-        The purpose of logging the HELO in
-        \texttt{smtpd\_helo\_restrictions} is to log only once per mail; it
-        also seems like the natural place.
-
-    \item [queueid] The queueid of the mail if the conection represents an
-        accepted mail, or \textit{NOQUEUE\/} otherwise.
-
-    \item [start] The timestamp of the first log line, in seconds since the
-        epoch.
-
-    \item [end] The timestamp of the last log line, in seconds since the
-        epoch.
-
-\end{description}
-
-\subsection{Results table}
-
-Every log line corresponding to Postfix performing an action other than
-INFO or IGNORED will have an entry in the results table, e.g.\ rejecting an
-SMTP command, delivering a mail, or bouncing a mail.  Any log line where
-the Postfix action is INFO is not interesting in and of itself, but
-provides additional information which will be saved with other results;
-IGNORED log lines don't even provide useful information.
-
-\begin{description}
-
-    \item [connection\_id] A reference to the entry in the connections
-        table this results table entry belongs to.
-
-    \item [rule\_id] A reference to the entry in the rules table which
-        matched the log line and created this result.
-
-    \item [warning] Postfix can be configured to log a warning instead of
-        enforcing a restriction that would reject an SMTP command --- a
-        facility that is quite useful for testing new restrictions.  This
-        field will be 1 if the log line parsed was a warning rather than a
-        real rejection, or 0 for a real rejection or any other result.
-
-    \item [smtp\_code] The SMTP code associated with the log line.  In
-        general an SMTP code is only present for a rejection or final
-        delivery; results missing an SMTP code will duplicate the SMTP code
-        of other results in the connection.  Some final delivery log lines
-        don't contain an SMTP code: in those cases the code is faked based
-        on the success or failure represented by the log line.
-
-    \item [sender] The sender's email address.  This can change during one
-        single connection, when the connection is reused to send multiple
-        mails.
-
-    \item [recipient] The recipient address.
-
-    \item [message\_id] The message-id of the accepted mail, or NULL if no
-        mail was accepted.
-
-    \item [data] A field available for anything not covered by other
-        fields, e.g.\ the rejection message from an RBL\@.
-
-    \item [timestamp] The time the line was logged, in seconds since the
-        epoch.
-
-\end{description}
-
-\section{Adaptable parsing: user defined rules}
-
-\label{rules}
-
-The complexity and variation in Postfix's logs requires similar flexibility
-in the parser; decoupling the parsing rules from the associated actions
-allows new rules to be written and tested without requiring modifications
-to the algorithm source code (significantly lowering the barrier to entry
-for new or casual users), and greatly simplifies both algorithm and rules.
-It also creates a clear separation of functionality: rules handle low level
-details of identifying log lines and extracting data from a line, whereas
-the algorithm handles the higher level details of following the path a mail
-takes through Postfix, assembling the required data, etc.
-
-Rule have certain characteristics which may help in understanding the
-parser:
-
-\begin{itemize}
-
-    \item The first matching rule wins: no further rules are tried against
-        that line, but there is a facility for specifying the order of
-        rules so that more specific rules can be tried first.
-
-    \item Rules are completely self-contained and can be understood in
-        isolation, without reference to any other rules.
-
-    \item There are no sub-rules, so rules have linear computational
-        complexity.
-
-\end{itemize}
-
-\label{comparison against context-free grammars}
-
-In context-free grammar terms the parser rules could be described as:
-
-$\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
-\text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
-
-
-\subsection{Rule attributes}
+\subsection{Rules table}
 
 \label{rule attributes}
+
+Rules are discussed in detain in section~\ref{rules}, but the rules table
+is covered here.  Rules are created by the user, not the parser, and will
+not be modified by the parser (except for the hits and hits\_total fields).
+Rules parse the individual lines, telling the parser which fields to
+extract and what action to take for that line.
 
 Each rule defines the following:
 
@@ -882,6 +786,186 @@ Each rule defines the following:
         (described in section~\ref{overlapping rules}).
 
 \end{description}
+
+
+\subsection{Connections table}
+
+\label{connections table}
+
+Every accepted mail and every connection where there was a rejection will
+have a single entry in the connections table containing the following
+fields:
+
+\begin{description}
+
+    \item [id] This field uniquely identifies the row.
+
+    \item [server\_ip] The IP address (IPv4 or IPv6) of the server: the
+        local server when receiving mail, the remote server when sending
+        mail.
+
+    \item [server\_hostname] The hostname of the server, it will be
+        \textit{unknown\/} if the IP address could not be resolved to a
+        hostname via DNS\@.
+
+    \item [client\_ip] The client IP address (IPv4 or IPv6): the remote
+        server when receiving mail, the local server when sending mail.
+
+    \item [client\_hostname] The hostname of the client, it will be
+        \textit{unknown\/} if the IP address could not be resolved to a
+        hostname via DNS\@.
+
+    \item [helo] The hostname used in the HELO command.  The HELO
+        occasionally changes during a connection, presumably because spam
+        or virus senders think it's a good idea.  By default Postfix only
+        logs the HELO when it rejects an SMTP command, but it is quite easy
+        to rectify this: 
+
+\label{logging helo}
+
+        \begin{enumerate}
+
+            \item Create \texttt{/etc/postfix/log\_helo.pcre}
+                containing:\newline
+                \hspace*{2em}\texttt{/./~~~~WARN~Logging~HELO}
+
+            \item Modify \texttt{smtpd\_helo\_restrictions} in
+                \texttt{/etc/postfix/main.cf} to contain\newline
+                \hspace*{2em}\texttt{check\_helo\_access~/etc/postfix/log\_helo.pcre}
+
+        \end{enumerate}
+
+        The purpose of logging the HELO in
+        \texttt{smtpd\_helo\_restrictions} is to log only once per mail; it
+        also seems like the natural place.
+
+    \item [queueid] The queueid of the mail if the conection represents an
+        accepted mail, or \textit{NOQUEUE\/} otherwise.
+
+    \item [start] The timestamp of the first log line, in seconds since the
+        epoch.
+
+    \item [end] The timestamp of the last log line, in seconds since the
+        epoch.
+
+\end{description}
+
+\subsection{Results table}
+
+\label{results table}
+
+Every log line corresponding to Postfix performing an action other than
+INFO or IGNORED will have an entry in the results table, e.g.\ rejecting an
+SMTP command, delivering a mail, or bouncing a mail.  Any log line where
+the Postfix action is INFO is not interesting in and of itself, but
+provides additional information which will be saved with other results;
+IGNORED log lines don't even provide useful information.  Each row is
+associated with a single connection, though there may be many results per
+connection.
+
+\begin{description}
+
+    \item [connection\_id] A reference to the entry in the connections
+        table this results table entry belongs to.
+
+    \item [rule\_id] A reference to the entry in the rules table which
+        matched the log line and created this result.
+
+    \item [warning] Postfix can be configured to log a warning instead of
+        enforcing a restriction that would reject an SMTP command --- a
+        facility that is quite useful for testing new restrictions.  This
+        field will be 1 if the log line parsed was a warning rather than a
+        real rejection, or 0 for a real rejection or any other result.
+
+    \item [smtp\_code] The SMTP code associated with the log line.  In
+        general an SMTP code is only present for a rejection or final
+        delivery; results missing an SMTP code will duplicate the SMTP code
+        of other results in the connection.  Some final delivery log lines
+        don't contain an SMTP code: in those cases the code is faked based
+        on the success or failure represented by the log line.
+
+    \item [sender] The sender's email address.  This can change during one
+        single connection, when the connection is reused to send multiple
+        mails.
+
+    \item [recipient] The recipient address.
+
+    \item [message\_id] The message-id of the accepted mail, or NULL if no
+        mail was accepted.
+
+    \item [data] A field available for anything not covered by other
+        fields, e.g.\ the rejection message from an RBL\@.
+
+    \item [timestamp] The time the line was logged, in seconds since the
+        epoch.
+
+\end{description}
+
+\subsection{Conclusion}
+
+The table containing the rules used by the parser, and the two tables
+containing the data extracted from the Postfix logs were described, with
+the purpose of each field discussed in detail.  A clear, comprehensible
+schema is essential in using the extracted data; it's more important for
+using the data than storing the data, because storing the data is a
+write-once operation, whereas utilising the data requires frequent
+searching, sorting and manipulation of the data to produce customised
+reports and/or statistics.
+
+\section{Adaptable parsing: user defined rules}
+
+\label{rules}
+
+\subsection{Introduction}
+
+This section discusses the rules used in parsing Postfix log files,
+starting with rule characteristics, continuing with detecting and dealing
+with overlapping rules, and the problems they can cause.  An example rule
+and a line it would match are provided, plus a description of how the
+fields in the rule are used when matching and performing the action (the
+details of the table containing the rules have already been described in
+section~\ref{rule attributes},).  This section finishes with a discussion
+of rule efficiency concerns, referring to the graphs in
+section~\ref{graphs}.
+
+
+\subsection{Rule characteristics}
+
+The parser is split into two parts: the parsing algorithm and the rules
+which are applied to the lines.  The complexity and variation in Postfix's
+logs requires similar flexibility in the parser; decoupling the parsing
+rules from the associated actions allows new rules to be written and tested
+without requiring modifications to the algorithm source code (significantly
+lowering the barrier to entry for new or casual users), and greatly
+simplifies both algorithm and rules.  It also creates a clear separation of
+functionality: rules handle low level details of identifying log lines and
+extracting data from a line, whereas the algorithm handles the higher level
+details of following the path a mail takes through Postfix, assembling the
+required data, etc.
+
+Rule have certain characteristics which may help in understanding the
+parser:
+
+\begin{itemize}
+
+    \item The first matching rule wins: no further rules are tried against
+        that line, but there is a facility for specifying the order of
+        rules so that more specific rules can be tried first.
+
+    \item Rules are completely self-contained and can be understood in
+        isolation, without reference to any other rules.
+
+    \item There are no sub-rules, so rules have linear computational
+        complexity.
+
+\end{itemize}
+
+\label{comparison against context-free grammars}
+
+In context-free grammar terms the parser rules could be described as:
+
+$\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
+\text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
 
 
 \subsection{Overlapping rules}
@@ -1090,17 +1174,9 @@ vs reversed ordering}, where the difference is not readily apparent, but
 graph~\ref{normal vs shuffled vs reversed ordering factor} shows the
 percentage increase of execution times:
 
-\begin{description}
+\input{stats-normal-shuffle-reverse-percentage}
 
-    \item [shuffled] 6--11\% increase; mean 8.34, standard deviation 2.44.
-
-    \item [reversed] 15--22\% increase; mean 17.97, standard deviation
-        2.94.
-
-\end{description}
-
-Overall this increases the parser's efficiency by 5.5--10\%; a modest but
-worthwhile increase.
+Overall this provides a modest but worthwhile performance increase.
 
 \subsubsection{Caching each regex}
 
@@ -1112,9 +1188,40 @@ Graph~\ref{normal regex vs discard regex} shows execution times with and
 without caching the regex; also shown on the graph are the file sizes and
 number of lines in each file.  Caching the compiled regexs is obviously far
 more efficient; graph~\ref{normal regex vs disarded regex factor} shows the
-percentage execution time increase when not caching each regex is between
-350--570\% (mean 465.58\%, standard deviation 114.70\%).  
+percentage execution time increase when not caching each regex.  Over all
+93 log files the execution time increase when not caching each compiled
+regex works out at:
 
+XXX IMPROVE THIS\@.
+
+\input{stats-cached-discarded-include-for-discussion}
+
+\subsection{Conclusion}
+
+This section dealt with the rules used in parsing Postfix log files:
+
+\begin{itemize}
+
+    \item The characteristics of the rules were described.
+
+    \item Detecting overlapping rules and dealing with the problems they
+        can cause was covered, including a discussion of why overlapping
+        rules can be helpful as well as harmful.
+
+    \item An example log line and the rule matching it was given, followed
+        by a description of how the fields in the rule are used both in the
+        matching and the subsequent action that is executed.
+
+    \item The database table containing the rules is dealt with in
+        section~\ref{rule attributes}, and is not duplicated in this
+        section.
+
+    \item The final part of this section discusses rule efficiency,
+        covering the effects of caching compiled regexs and optimal
+        ordering ordering of rules, with reference to the graphs in
+        section~\ref{graphs}.
+
+\end{itemize}
 
 \section{Parsing algorithm}
 
@@ -1124,9 +1231,36 @@ Where the rules are quite simple and each rule is completely independent of
 its fellows, the algorithm is significantly more complicated and highly
 internally interdependent.  The algorithm deals with all the complications
 of parsing, the eccentricities and oddities of Postfix logs, and presents
-the resulting data in a normalised, easy to use representation.
+the resulting data in a normalised, easy to use representation.  The
+algorithm's task is to follow the journey each mail takes through Postfix,
+piecing the data extracted by rules into a coherent whole, saving it in a
+useful and consistent form, and performing housekeeping duties.
 
-\subsection{A naive approach}
+\subsection{Introduction}
+
+This section covers the following topics:
+
+\begin{itemize}
+
+    \item A high level overview of the algorithm.
+
+    \item The first set of complications encountered: initially obvious
+        difficulties which had to be overcome.
+
+    \item A flow chart showing the paths a mail can take through the
+        algorithm.
+
+    \item A description of the full algorithm.
+
+    \item The actions which can be taken by the parser are described in
+        detail.
+
+    \item Additional complications which have arisen during the development
+        of this parser are described.
+
+\end{itemize}
+
+\subsection{A high level overview}
 
 A high level view of the algorithm could be expressed as:
 
@@ -1141,7 +1275,7 @@ A high level view of the algorithm could be expressed as:
 
 \end{enumerate}
 
-Unfortunately it's not that straightforward.
+Unfortunately that ignores the many complications encountered.
 
 
 \subsection{Complications encountered}
@@ -1258,7 +1392,9 @@ section~\ref{tracking re-injected mail}.
 \label{flow-chart}
 
 This flow chart shows the paths the data representing a mail/connection can
-take through the parser algorithm.
+take through the parser algorithm.  The flow chart covers the most common
+paths only; there are additional, uncommon paths which are excluded for the
+sake of clarity.
 
 \includegraphics{logparser-flow-chart.ps}
 
@@ -1284,7 +1420,11 @@ named by the action.
 Section~\ref{actions-in-detail} explains the actions in substantive detail;
 this section will omit such detail because it would clutter and confuse the
 algorithm description.  The data flow chart in section~\ref{flow-chart}
-should also be consulted while reading this section.
+should also be consulted while reading this section.  For the sake of
+clarity this description covers the most common paths through the
+algorithm, as including every path would hinder understanding.  The more
+uncommon paths are caused by the complications described in
+section~\ref{additional complications}, and are covered therein.
 
 \subsubsection{Mail enters the system}
 
@@ -1557,6 +1697,9 @@ The actions:
 \subsection{Additional complications}
 
 \label{additional complications}
+
+XXX EXPLAIN EXACTLY WHERE IN THE ALGORITHM THE \newline CHECKS ETC\@. KICK
+IN\@.
 
 \subsubsection{Identifying bounce notifications}
 
@@ -1937,9 +2080,13 @@ problem if Postfix is not running for an extended period of time.}  The
 state tables are scanned for mails matching the characteristics above each
 time the end of a log file is reached, and matching mails are deleted.
 
+\subsection{Conclusion}
+
 \section{Coverage}
 
 \label{parsing coverage}
+
+\subsection{Introduction}
 
 The discussion of the parser's coverage of Postfix log files is separated
 into two parts: log lines covered and mails covered.  The first is
@@ -2057,9 +2204,13 @@ entries, breaking down into:
 The 13,850,793 connections and mails accepted, rejected or delivered by
 Postfix during this period are handled correctly by the parser.
 
+\subsection{Conclusion}
+
 \section{Limitations and possible improvements}
 
 \label{limitations-improvements}
+
+\subsection{Introduction}
 
 Every piece of software suffers from some limitations and there is almost
 always room for improvement.
@@ -2099,6 +2250,8 @@ always room for improvement.
 
 \end{itemize}
 
+\subsection{Conclusion}
+
 \section{Conclusion}
 
 \label{conclusion}
@@ -2114,6 +2267,10 @@ XXX WRITE THIS
 XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
 
 \label{other-parsers}
+
+\subsection{Introduction}
+
+\subsection{Parsers reviewed}
 
 \begin{description}
 
@@ -2219,6 +2376,8 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
 
 \end{description}
 
+\subsection{Conclusion}
+
 
 \bibliographystyle{logparser-bibliography-style}
 \bibliography{logparser-bibliography}
@@ -2227,6 +2386,8 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
 \section{Graphs}
 
 \label{graphs}
+
+\subsection{Introduction}
 
 \subsection{Parser scalability}
 
@@ -2312,8 +2473,10 @@ the average number of regexs compiled per line drops sharply for those
 eight log files, resulting in a much lower increase in relative execution
 time, as detailed below.
 
-\input{stats-cached-discarded-include}
+\input{stats-cached-discarded-include-for-graph}
 
+
+\subsection{Conclusion}
 
 
 \end{document}

@@ -3,7 +3,7 @@
 
 digraph logparser {
     graph [
-        size = "6.8, 7.3"
+        size = "6.8, 6.9"
         margin = "0"
         center = true
     ]
