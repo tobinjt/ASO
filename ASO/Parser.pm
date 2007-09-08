@@ -385,6 +385,21 @@ sub parse {
     if ($self->{num_connections_uncommitted}) {
         $self->{dbix}->txn_commit();
     }
+}
+
+=over 4
+
+=item $parser->post_parsing()
+
+Do anything that needs to be done after parsing: currently it just runs 
+$self->prune_queueids().
+
+=back
+
+=cut
+
+sub post_parsing {
+    my ($self) = @_;
 
     $self->prune_queueids();
 }
@@ -2908,9 +2923,6 @@ John Tobin <tobinjt@cs.tcd.ie>
 =head1 LICENCE AND COPYRIGHT
 
 Copyright (c) 2006-2007 John Tobin <tobinjt@cs.tcd.ie>.  All rights reserved.
-
-Followed by whatever licence you wish to release it under. 
-For Perl code that is often just:
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.

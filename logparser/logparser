@@ -5,6 +5,12 @@
 use strict;
 use warnings;
 
+use Time::HiRes qw(gettimeofday tv_interval);
+my $start_time;
+BEGIN {
+    $start_time = [gettimeofday()];
+}
+
 use lib q{..};
 use ASO::DB;
 use ASO::Parser;
@@ -27,33 +33,65 @@ if (not @logs and -t STDIN) {
 if (not @logs) {
     @logs = q{-};
 }
+my $timing_file;
+    $timing_file = IO::File->new(q{> } . $Options->{q{timing-data}})
+        or die qq{$0: failed opening } . $Options->{q{timing-data}} . qq{: $!\n};
 
 # Save the startup times separately, when profiling with Devel::Profile.
 devel_profile_startup();
 # Restrict the packages Devel::SmallProf will report about.
 set_SmallProf_packages();
 
+my $finished_loading = [gettimeofday()];
+print_timing(q{Loaded modules}, tv_interval($start_time, $finished_loading));
+
 warn qq{vim: set foldmethod=marker :\n};
 my $parser = ASO::Parser->new($parser_options);
+my $parser_created = [gettimeofday()];
+print_timing(q{Parser created}, tv_interval($finished_loading, $parser_created));
+
 if ($Options->{q{in-statefile}}) {
     $parser->load_state($Options->{q{in-statefile}});
 }
+my $state_loaded = [gettimeofday()];
+print_timing(q{State loaded}, tv_interval($parser_created, $state_loaded));
 
 foreach my $logfile (@logs) {
     timewarn(qq{Starting to read $logfile\n});
+    my $parse_starting = [gettimeofday()];
     $parser->parse($logfile);
+    my $parse_finished = [gettimeofday()];
+    print_timing(qq{Parsed $logfile},
+        tv_interval($parse_starting, $parse_finished));
+
+    $parser->post_parsing();
+    my $post_parsing_finished = [gettimeofday()];
+    print_timing(qq{Post-parse $logfile},
+        tv_interval($parse_finished, $post_parsing_finished));
+
     my $statefile = IO::File->new(q{>} . $Options->{q{out-statefile}})
         or die qq{Failed to open $Options->{q{out-statefile}}: $!\n};
     print $statefile $parser->dump_state();
+    my $dump_finished = [gettimeofday()];
+    print_timing(qq{Dumped_state $logfile},
+        tv_interval($parse_finished, $dump_finished));
 }
 
-timewarn(qq{Updating rule_order\n});
+timewarn(qq{Updating hits\n});
+my $update_starting = [gettimeofday()];
 $parser->update_check_order();
+my $update_finished = [gettimeofday()];
+print_timing(qq{Updated hits}, tv_interval($update_starting, $update_finished));
 
 # Some profiling modules dump their data to stdout, but we want to redirect
 # that.  If the correct environment variable is set stdout will be redirected
 # here and the data will go to the requested file.
 redirect_stdout();
+my $finished = [gettimeofday()];
+    print_timing(qq{Total time},
+        tv_interval($start_time, $finished));
+
+exit 0;
 
 sub devel_profile_startup {
     if (exists $ENV{PERL_PROFILE_SAVETIME}) {
@@ -98,11 +136,12 @@ sub get_options {
         q{data_source=s}            => q{dbi:SQLite:dbname=../sql/db.sq3},
         q{sort_rules=s}             => q{normal},
         q{discard_compiled_regex!}  => 0,
-        q{skip_inserting_results!}  => 0,
+        q{skip_inserting_results!}  => 1,
     );
     my %opts = (
         q{in-statefile|i=s}         => undef,
         q{out-statefile|o=s}        => q{state},
+        q{timing-data|t=s}          => undef,
         q{help|h}                   => 0,
         q{version|v}                => 0,
         %parser_options,
@@ -145,6 +184,13 @@ sub getopt_to_key {
 
 sub timewarn {
     warn qq{$0: }, scalar localtime, q{: }, @_;
+}
+
+sub print_timing {
+    my ($message, $interval) = @_;
+    if ($Options->{q{timing-data}}) {
+        printf $timing_file qq{$message: %.6f\n}, $interval;
+    }
 }
 
 =pod
@@ -190,7 +236,7 @@ Defaults are equivalent to:
 
 Load state from a previous run from FILE.
 
-=item --out-state FILE, -o FILE
+=item --out-statefile FILE, -o FILE
 
 Save state from this run to FILE.  If this option is not given state will be
 saved to a file named 'state' in the current directory.
@@ -228,6 +274,10 @@ network IO required, causing an XXX% slowdown in execution.  When testing new
 rules or parser features disabling insertion of results is essential for a quick
 testing cycle.  You can force insertion of results by specifying
 --no-skip_inserting_results.
+
+=item --timing-data FILE
+
+Save timing data to FILE.
 
 =back
 
