@@ -422,11 +422,15 @@ measure may not be 100% accurate.
 sub update_check_order {
     my ($self) = @_;
 
+    $self->{dbix}->txn_begin();
+
     foreach my $rule (@{$self->{rules}}) {
         $rule->{rule}->hits($rule->{count});
         $rule->{rule}->hits_total($rule->{rule}->hits_total() + $rule->{count});
         $rule->{rule}->update();
     }
+
+    $self->{dbix}->txn_commit();
 }
 
 =over 4
