@@ -8,11 +8,12 @@ use warnings;
 use File::Slurp;
 use List::Util qw(sum);
 use Getopt::Long;
-require q{time2secs.pl};
+use IO::Dir;
+use File::Spec::Functions qw(catfile);
 
 sub usage {
     my ($status) = @_;
-    my $usage = qq{Usage: $0 [--discard-first] [--help] <list of files>\n};
+    my $usage = qq{Usage: $0 [--discard-first] [--help] <directory>\n};
     if ($status) {
         warn $usage;
     } else {
@@ -20,8 +21,6 @@ sub usage {
     }
     exit $status;
 }
-
-@ARGV or usage(1);
 
 my %Options = (
     q{discard-first}    => 0,
@@ -36,28 +35,50 @@ if ($Options{help}) {
     usage(0);
 }
 
-print qq{# file_num first_value mean stddev num_values filename\n};
-my $file_num = 1;
-foreach my $file (@ARGV) {
-    my @values = read_file($file);
-    chomp @values;
+scalar @ARGV == 1 or usage(1);
 
-    # The first value is sometimes quite divergent from the others, so there's
-    # an option to discard it.
-    if ($Options{q{discard-first}}) {
-        shift @values;
+my $directory = $ARGV[0];
+my $dir = IO::Dir->new($directory)
+    or die qq{$0: failed opening $directory: $!\n};
+
+print qq{# file_num first_value mean stddev num_values filename\n};
+
+my %data;
+FILE:
+while (my $file = $dir->read()) {
+    $file =~ m/^(timing\..*)\.(\d{1,2})$/ or next FILE;
+    my $filename = catfile($directory, $file);
+
+    my ($prefix, $number) = ($1, $2);
+    if (not exists $data{$prefix}) {
+        $data{$prefix} = [];
     }
 
-    @values = map { time2secs($_) } @values;
+    my (@lines) = read_file($filename);
+    foreach my $line (@lines) {
+        if ($line =~ m/^Parsed .*: (.*)$/) {
+            $data{$prefix}->[$number] = $1;
+        }
+    }
+}
 
-    my $first_value = $values[0];
-    my $num_values = @values;
-    my $mean = sum(@values) / $num_values;
+my $file_num = 1;
+foreach my $logfile (sort keys %data) {
+    my $values = $data{$logfile};
+    # Strip the first undef element.
+    shift @$values;
+    if ($Options{q{discard-first}}) {
+        shift @$values;
+    }
+
+    my $first_value = $values->[0];
+    my $num_values = @$values;
+    my $mean = sum(@$values) / $num_values;
     my $sum_of_differences = 0;
-    foreach my $value (@values) {
+    foreach my $value (@$values) {
         $sum_of_differences += (($value - $mean) ** 2);
     }
     my $stddev = sqrt ($sum_of_differences / $num_values);
-    print qq{$file_num $first_value $mean $stddev $num_values "$file"\n};
+    print qq{$file_num $first_value $mean $stddev $num_values "$logfile"\n};
     $file_num++;
 }
