@@ -34,8 +34,10 @@ if (not @logs) {
     @logs = q{-};
 }
 my $timing_file;
+if ($Options->{q{timing-data}}) {
     $timing_file = IO::File->new(q{> } . $Options->{q{timing-data}})
         or die qq{$0: failed opening } . $Options->{q{timing-data}} . qq{: $!\n};
+}
 
 # Save the startup times separately, when profiling with Devel::Profile.
 devel_profile_startup();
@@ -73,7 +75,7 @@ foreach my $logfile (@logs) {
         or die qq{Failed to open $Options->{q{out-statefile}}: $!\n};
     print $statefile $parser->dump_state();
     my $dump_finished = [gettimeofday()];
-    print_timing(qq{Dumped state} $logfile,
+    print_timing(qq{Dumped state}, $logfile,
         tv_interval($parse_finished, $dump_finished));
 }
 
