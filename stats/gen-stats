@@ -32,6 +32,8 @@ for log in $( < "$loglist" ); do
     for i in $( seq 1 10 ); do
         echo "$filename: $i" 1>&2
         perl logparser --out-statefile "$state" $in_state --timing-data "$dir/timing.$filename.$i" "$log" 2> "$dir/warnings.$filename.$i"
+        sync
+        sleep 1
     done
     old_state="$state"
     echo "$filename: finished" 1>&2
