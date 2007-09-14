@@ -10,6 +10,7 @@ use List::Util qw(sum);
 use Getopt::Long;
 use IO::Dir;
 use File::Spec::Functions qw(catfile);
+use Regexp::Common;
 
 sub usage {
     my ($status) = @_;
@@ -56,7 +57,7 @@ while (my $file = $dir->read()) {
 
     my (@lines) = read_file($filename);
     foreach my $line (@lines) {
-        if ($line =~ m/^Parsed .*: (.*)$/) {
+        if ($line =~ m/^Parsed logfile:.*:($RE{num}{real})$/) {
             $data{$prefix}->[$number] = $1;
         }
     }

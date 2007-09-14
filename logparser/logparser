@@ -43,37 +43,37 @@ devel_profile_startup();
 set_SmallProf_packages();
 
 my $finished_loading = [gettimeofday()];
-print_timing(q{Loaded modules}, tv_interval($start_time, $finished_loading));
+print_timing(q{Loaded modules}, q{}, tv_interval($start_time, $finished_loading));
 
 warn qq{vim: set foldmethod=marker :\n};
 my $parser = ASO::Parser->new($parser_options);
 my $parser_created = [gettimeofday()];
-print_timing(q{Parser created}, tv_interval($finished_loading, $parser_created));
+print_timing(q{Parser created}, q{}, tv_interval($finished_loading, $parser_created));
 
 if ($Options->{q{in-statefile}}) {
     $parser->load_state($Options->{q{in-statefile}});
 }
 my $state_loaded = [gettimeofday()];
-print_timing(q{State loaded}, tv_interval($parser_created, $state_loaded));
+print_timing(q{State loaded}, q{}, tv_interval($parser_created, $state_loaded));
 
 foreach my $logfile (@logs) {
     timewarn(qq{Starting to read $logfile\n});
     my $parse_starting = [gettimeofday()];
     $parser->parse($logfile);
     my $parse_finished = [gettimeofday()];
-    print_timing(qq{Parsed $logfile},
+    print_timing(qq{Parsed logfile}, $logfile,
         tv_interval($parse_starting, $parse_finished));
 
     $parser->post_parsing();
     my $post_parsing_finished = [gettimeofday()];
-    print_timing(qq{Post-parse $logfile},
+    print_timing(qq{Post parse}, $logfile,
         tv_interval($parse_finished, $post_parsing_finished));
 
     my $statefile = IO::File->new(q{>} . $Options->{q{out-statefile}})
         or die qq{Failed to open $Options->{q{out-statefile}}: $!\n};
     print $statefile $parser->dump_state();
     my $dump_finished = [gettimeofday()];
-    print_timing(qq{Dumped_state $logfile},
+    print_timing(qq{Dumped state} $logfile,
         tv_interval($parse_finished, $dump_finished));
 }
 
@@ -81,14 +81,14 @@ timewarn(qq{Updating hits\n});
 my $update_starting = [gettimeofday()];
 $parser->update_check_order();
 my $update_finished = [gettimeofday()];
-print_timing(qq{Updated hits}, tv_interval($update_starting, $update_finished));
+print_timing(qq{Updated hits}, q{}, tv_interval($update_starting, $update_finished));
 
 # Some profiling modules dump their data to stdout, but we want to redirect
 # that.  If the correct environment variable is set stdout will be redirected
 # here and the data will go to the requested file.
 redirect_stdout();
 my $finished = [gettimeofday()];
-    print_timing(qq{Total time},
+    print_timing(qq{Total time}, q{},
         tv_interval($start_time, $finished));
 
 exit 0;
@@ -187,9 +187,9 @@ sub timewarn {
 }
 
 sub print_timing {
-    my ($message, $interval) = @_;
+    my ($message, $filename, $interval) = @_;
     if ($Options->{q{timing-data}}) {
-        printf $timing_file qq{$message: %.6f\n}, $interval;
+        printf $timing_file qq{$message: $filename: %.6f\n}, $interval;
     }
 }
 
