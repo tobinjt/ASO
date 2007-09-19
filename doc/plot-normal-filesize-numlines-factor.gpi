@@ -3,7 +3,7 @@ set ylabel "Ratio of line count / 10000 and file size in MB to execution time in
 set grid
 
 set terminal postscript monochrome eps size 5.4,3.3
-set output "plot-normal-filesize-numlines-factor.ps"
+set output "build/plot-normal-filesize-numlines-factor.ps"
 # Don't continue the scales to the next round number; stop at the topmost point.
 set autoscale xfixmax
 # Make the y axis start at 0.
@@ -11,7 +11,7 @@ set yrange [0:*]
 # Put the legend at the top left, Left justified text.
 set key bottom left Left reverse
 
-plot "stats-normal-filesize-numlines-factor.txt" using 1 with lines \
+plot "build/stats-normal-filesize-numlines-factor.txt" using 1 with lines \
         title "Ratio of line count (/ 10000) to execution time in seconds", \
-    "stats-normal-filesize-numlines-factor.txt" using 2 with lines \
+    "build/stats-normal-filesize-numlines-factor.txt" using 2 with lines \
         title "Ratio of file size in MB to execution time in seconds"

@@ -3,7 +3,7 @@ set ylabel "Number of hits"
 set grid ytics
 
 set terminal postscript monochrome eps size 5.4,7.5
-set output "plot-hits.ps"
+set output "build/plot-hits.ps"
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
 

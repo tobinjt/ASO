@@ -1174,7 +1174,7 @@ vs reversed ordering}, where the difference is not readily apparent, but
 graph~\ref{normal vs shuffled vs reversed ordering factor} shows the
 percentage increase of execution times:
 
-\input{stats-normal-shuffle-reverse-percentage}
+\input{build/stats-normal-shuffle-reverse-percentage}
 
 Overall this provides a modest but worthwhile performance increase.
 
@@ -1194,7 +1194,7 @@ regex works out at:
 
 XXX IMPROVE THIS\@.
 
-\input{stats-cached-discarded-include-for-discussion}
+\input{build/stats-cached-discarded-include-for-discussion}
 
 \subsection{Conclusion}
 
@@ -1396,7 +1396,7 @@ take through the parser algorithm.  The flow chart covers the most common
 paths only; there are additional, uncommon paths which are excluded for the
 sake of clarity.
 
-\includegraphics{logparser-flow-chart.ps}
+\includegraphics{build/logparser-flow-chart.ps}
 
 \subsection{Full algorithm}
 
@@ -2389,36 +2389,47 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
 
 \subsection{Introduction}
 
+Graphs are an excellent means of displaying data, transforming a
+meaningless stream of numbers into an easily comprehensible form, where
+anomalies and patterns are immediately obvious.  These graphs are used to
+illustrate the topics discussed in section~\ref{rule efficiency}.  The
+graphs in the first section cover parser scalability, demonstrating that
+its performance scales linearly with input size.  The impact of rule
+ordering is shown in section~\ref{rule ordering graphs}, and the lower
+impact of rule ordering on larger log files is explained.  The final group
+of graphs vividly shows the huge impact that caching compiled regexs has on
+parser performance.
+
 \subsection{Parser scalability}
 
 \subsubsection{Execution time vs file size vs number of lines.}
 \label{execution time vs file size vs number lines}
-\includegraphics{plot-normal-filesize-numlines.ps}
+\includegraphics{build/plot-normal-filesize-numlines.ps}
 
 \subsubsection{Ratio of file size and number of lines to execution time}
 \label{execution time vs file size vs number lines factor}
-\includegraphics{plot-normal-filesize-numlines-factor.ps}
+\includegraphics{build/plot-normal-filesize-numlines-factor.ps}
 
+\input{build/stats-normal-filesize-line-count-include}
 
 
 \subsection{Rule ordering}
 
+\label{rule ordering graphs}
+
 \subsubsection{Rule hits}
 \label{rule hits}
-\includegraphics{plot-hits.ps}
+\includegraphics{build/plot-hits.ps}
 
 \subsubsection{Normal vs shuffled vs reversed ordering}
 \label{normal vs shuffled vs reversed ordering}
-\includegraphics{plot-normal-shuffle-reverse.ps}
+\includegraphics{build/plot-normal-shuffle-reverse.ps}
 
 \subsubsection{Percentage increase of shuffled + reversed over normal}
 \label{normal vs shuffled vs reversed ordering factor}
-\includegraphics{plot-normal-shuffle-factor.ps}
+\includegraphics{build/plot-normal-shuffle-factor.ps}
 \newline
-\includegraphics{plot-normal-reverse-factor.ps}
-
-The worst-case performance of shuffled rules can be seen at log file 30,
-where it is equivalent to reversed rules.
+\includegraphics{build/plot-normal-reverse-factor.ps}
 
 The dips at logfiles 22 and 62--68 correspond to peaks in log file size in
 graph~\ref{execution time vs file size vs number lines}.  The explanation
@@ -2438,16 +2449,21 @@ for the log files on either side, the increase from optimal ordering to
 reversed ordering is proportionally smaller, producing the dips in
 graph~\ref{normal vs shuffled vs reversed ordering factor}.
 
+This non-intuitive effect will not be exhibited by log files in general: in
+a normally functioning mail system the impact of rule ordering will scale
+linearly with log file size.  The skewed distribution of log lines in the
+specific log files creates the anomaly described herein.
+
 \subsubsection{Log 22 distribution by rule}
 \label{log22 distribution by rule}
-\includegraphics{plot-log22-distribution-by-rule.ps}
+\includegraphics{build/plot-log22-distribution-by-rule.ps}
 
 The individual rules are not labelled on the x-axis because doing so makes
 the graph illegible.
 
 \subsubsection{Log 22 line and rule distribution by program}
 \label{log22 line and rule distribution by program}
-\includegraphics{plot-log22-distribution-versus-rule-count.ps}
+\includegraphics{build/plot-log22-distribution-versus-rule-count.ps}
 
 
 
@@ -2456,11 +2472,11 @@ the graph illegible.
 
 \subsubsection{Regex: cached vs discarded}
 \label{normal regex vs discard regex}
-\includegraphics{plot-cached-discarded.ps}
+\includegraphics{build/plot-cached-discarded.ps}
 
 \subsubsection{Regex: percentage execution time increase}
 \label{normal regex vs disarded regex factor}
-\includegraphics{plot-cached-discarded-factor.ps}
+\includegraphics{build/plot-cached-discarded-factor.ps}
 
 Two large dips can be seen in graph~\ref{normal regex vs disarded regex
 factor} at log files 22 and 62--68, corresponding to the spikes in log file
@@ -2473,7 +2489,7 @@ the average number of regexs compiled per line drops sharply for those
 eight log files, resulting in a much lower increase in relative execution
 time, as detailed below.
 
-\input{stats-cached-discarded-include-for-graph}
+\input{build/stats-cached-discarded-include-for-graph}
 
 
 \subsection{Conclusion}

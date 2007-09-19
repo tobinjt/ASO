@@ -3,7 +3,7 @@ set ylabel "Number of lines"
 set grid ytics
 
 set terminal postscript monochrome eps size 5.4,3.3
-set output "plot-log22-distribution-by-rule.ps"
+set output "build/plot-log22-distribution-by-rule.ps"
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
 

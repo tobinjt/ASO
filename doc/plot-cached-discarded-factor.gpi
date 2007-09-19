@@ -1,12 +1,12 @@
 set xlabel "Log file"
 set ylabel "Percentage increase of compiled once over compiled and discarded"
-set grid
+set grid ytics
 
 set terminal postscript monochrome eps size 5.4,3.3
-set output "plot-cached-discarded-factor.ps"
+set output "build/plot-cached-discarded-factor.ps"
 # Don't continue the scales to the next round number; stop at the topmost point.
 set autoscale xfixmax
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
 
-plot "stats-cached-discarded-factor.txt" using 1 with lines title ""
+plot "build/stats-cached-discarded-factor.txt" using 1 with lines title ""

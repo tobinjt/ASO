@@ -7,7 +7,7 @@ set y2tics border
 set nox2tics
 
 set terminal postscript monochrome eps size 5.4,3.3
-set output "plot-log22-distribution-versus-rule-count.ps"
+set output "build/plot-log22-distribution-versus-rule-count.ps"
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
 
