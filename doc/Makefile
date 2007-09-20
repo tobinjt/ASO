@@ -9,21 +9,31 @@ all: logparser.pdf
 %.dvi: %.tex
 	# Run latex to handle \cite: latex will add \cite references to
 	# logparser.aux.
-	latex -interaction=nonstopmode "$<"           || (rm -f "$@"; false)
+	(latex -interaction=nonstopmode "$<" || rm -f "$@") | tee "$@.out"
+	[ -f "$@" ]
 	# Run bibtex to extract the right entries from logparser-bibliography.bib
 	# into logparser-bibliography.bbl
-	bibtex $$( echo "$<" | sed -e 's/.tex$$//' )  || (rm -f "$@"; false)
 	# Run latex again to pull in logparser-bibliography.bbl.
-	latex -interaction=nonstopmode "$<"           || (rm -f "$@"; false)
-	# Run latex for a third time to fix up references from logparser.tex to
+	if grep -q "LaTeX Warning: Citation .* on page .* undefined" "$@.out"; then \
+		set -e; \
+		bibtex $$( echo "$<" | sed -e 's/.tex$$//' ) \
+            || (rm -f "$@"; false); \
+		make logparser.deps; \
+		( latex -interaction=nonstopmode "$<" || rm -f "$@" ) | tee "$@.out"; \
+	fi
+	[ -f "$@" ]
+	# Run latex for a third time to fix up references from $< to
 	# logparser-bibliography.bbl.
-	latex -interaction=nonstopmode "$<"           || (rm -f "$@"; false)
+	if grep -q "LaTeX Warning: Reference .* on page .* undefined" "$@.out"; then \
+		( latex -interaction=nonstopmode "$<" || rm -f "$@" ) | tee "$@.out"; \
+	fi
+	[ -f "$@" ]
 	# Finally done.
 
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
-logparser.deps: build/logparser-flow-chart.ps \
-				logparser-bibliography.bib logparser-bibliography-style.bst \
+logparser.deps: logparser.bbl \
+				build/logparser-flow-chart.ps \
 				build/plot-cached-discarded.ps build/plot-cached-discarded-factor.ps  \
 				build/plot-normal-shuffle-reverse.ps build/plot-normal-shuffle-factor.ps  \
 				build/plot-normal-reverse-factor.ps build/plot-normal-filesize-numlines-factor.ps \
@@ -36,6 +46,13 @@ logparser.deps: build/logparser-flow-chart.ps \
 	touch "$@"
 
 logparser.dvi: logparser.deps
+
+logparser.bbl: logparser-bibliography.bib logparser-bibliography-style.bst
+	BASE=$$( basename "$@" .bbl ); \
+	if [ ! -f "$$BASE.aux" ]; then \
+		latex -interaction=nonstopmode "$$BASE" || ( rm -f "$$BASE.dvi"; false ); \
+	fi
+	bibtex $$( basename "$@" .bbl ) || (rm -f "$@"; false);
 
 build/logparser-flow-chart.ps: logparser-flow-chart.dot
 	dot -o "$@" -Tps -x "$<"
