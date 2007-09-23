@@ -28,25 +28,30 @@ all: logparser.pdf
 		( latex -interaction=nonstopmode "$<" || rm -f "$@" ) | tee "$@.out"; \
 	fi
 	[ -f "$@" ]
+	# Run latex for a fourth time in case labels have changed.
+	if grep -q "Rerun to get cross-references right." "$@.out"; then \
+		( latex -interaction=nonstopmode "$<" || rm -f "$@" ) | tee "$@.out"; \
+	fi
+	[ -f "$@" ]
+	cat "$@.out"
 	# Finally done.
 
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
-logparser.deps: logparser.bbl \
-				build/logparser-flow-chart.ps \
+logparser.dvi: logparser.deps logparser.bbl
+logparser.deps: build/logparser-flow-chart.ps \
 				build/plot-cached-discarded.ps build/plot-cached-discarded-factor.ps  \
 				build/plot-normal-shuffle-reverse.ps build/plot-normal-shuffle-factor.ps  \
 				build/plot-normal-reverse-factor.ps build/plot-normal-filesize-numlines-factor.ps \
 				build/plot-normal-filesize-numlines.ps build/plot-log22-distribution-by-rule.ps \
 				build/plot-log22-distribution-versus-rule-count.ps build/plot-hits.ps \
 				build/stats-cached-discarded-include-for-graph.tex \
-				build/stats-cached-discarded-include-for-discussion.tex \
-				build/stats-normal-shuffle-reverse-percentage.tex \
-				build/stats-normal-filesize-line-count-include.tex
+				build/stats-normal-filesize-line-count-include.tex \
+				build/stats-normal-shuffle-reverse-include.tex \
+				build/plot-log22-distribution-versus-rule-count-factor.ps
 	touch "$@"
 
-logparser.dvi: logparser.deps
-
+# Rebuild the bibtex db whenever the input changes.
 logparser.bbl: logparser-bibliography.bib logparser-bibliography-style.bst
 	BASE=$$( basename "$@" .bbl ); \
 	if [ ! -f "$$BASE.aux" ]; then \
@@ -57,6 +62,7 @@ logparser.bbl: logparser-bibliography.bib logparser-bibliography-style.bst
 build/logparser-flow-chart.ps: logparser-flow-chart.dot
 	dot -o "$@" -Tps -x "$<"
 
+# graph dependencies
 build/plot-cached-discarded.ps: build/stats-cached.txt build/stats-discarded.txt
 build/plot-cached-discarded-factor.ps: build/stats-cached-discarded-factor.txt
 build/plot-normal-shuffle-reverse.ps: build/stats-normal.txt build/stats-shuffle.txt build/stats-reverse.txt
@@ -74,6 +80,7 @@ build/plot-%.ps: plot-%.gpi
 build/stats-normal-stripped.txt: build/stats-normal.txt
 	sed -e '/^#/d' "$<" > "$@"
 
+# Factored stats for graphs.
 build/stats-normal-filesize-numlines-factor.txt: build/stats-normal-stripped.txt wc.txt file-sizes.txt
 	paste -d ' ' $^ | awk 'BEGIN { print "# line-count file-size"; }; $$1 != "#" {print (($$3 * 10 * 1000 / $$8)), " ", (($$3 * 1000 * 1000 / $$11)) }' > "$@"
 
@@ -83,6 +90,7 @@ build/stats-cached-discarded-factor.txt: build/stats-cached.txt build/stats-disc
 build/stats-normal-shuffle-reverse-factor.txt: build/stats-normal.txt build/stats-shuffle.txt build/stats-reverse.txt
 	paste -d ' ' $^ | awk '$$1 != "#" {print (($$9 * 100 / $$3) - 100), " ", (($$15 * 100 / $$3) - 100) }' > "$@"
 
+# Log 22 stats
 stats-log22-distribution-by-rule.txt:
 	sqlite3 -separator ' ' ../sql/db.sq3 "select hits, program from rules where hits > 0 order by hits;" | nl > "$@"
 
@@ -90,8 +98,11 @@ stats-log22-rule-count-by-program.txt:
 	sqlite3 -separator ' ' ../sql/db.sq3 "select sum(hits), count(*), program from rules group by program;" | awk '$$1 > 0 { print }' | sed -e 's,postfix/,,' | nl > "$@"
 
 stats-hits.txt:
-	sqlite3 -separator ' ' ../sql/db.sq3 "select rule_order from rules order by rule_order;" | nl > "$@"
+	sqlite3 -separator ' ' ../sql/db.sq3 "select hits_total from rules order by hits_total;" > "$@.tmp"
+	nl "$@.tmp" > "$@"
+	rm "$@.tmp"
 
+# Stats for cached/discarded regexs: all logs, logs 22,62-68, all other logs.
 build/stats-cached-discarded-stats.txt: build/stats-cached-discarded-factor.txt
 	perl ../stats/stddev "$<" > "$@"
 	echo "Row: All logs" >> "$@"
@@ -107,35 +118,67 @@ build/stats-cached-discarded-stats-slow.txt: build/stats-cached-discarded-factor
 build/stats-cached-discarded-include-for-graph.tex: build/stats-cached-discarded-stats.txt build/stats-cached-discarded-stats-fast.txt build/stats-cached-discarded-stats-slow.txt 
 	perl mk-stats-cached-discarded-include $^ > "$@" || (rm -f "$@"; false)
 
+# File size and number of lines ratios: stddev, mean, etc.
 build/stats-normal-filesize-stddev.txt: build/stats-normal-filesize-numlines-factor.txt
 	awk '!/#/ {print $$2}' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: File size ratio" >> "$@"
+
+build/stats-normal-filesize-stddev-22_62-68.txt: build/stats-normal-filesize-numlines-factor.txt
+	awk '!/#/ {print $$2}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
+	echo "Row: File size ratio (logs 22, 62--68)" >> "$@"
+
+build/stats-normal-filesize-stddev-other.txt: build/stats-normal-filesize-numlines-factor.txt
+	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
+	echo "Row: File size ratio (all other logs)" >> "$@"
 
 build/stats-normal-line-count-stddev.txt: build/stats-normal-filesize-numlines-factor.txt
 	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: Number of lines ratio" >> "$@"
 
-build/stats-normal-filesize-line-count-include.tex: build/stats-normal-filesize-stddev.txt build/stats-normal-line-count-stddev.txt
+build/stats-normal-line-count-stddev-22_62-68.txt: build/stats-normal-filesize-numlines-factor.txt
+	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
+	echo "Row: Number of lines ratio (logs 22, 62--68)" >> "$@"
+
+build/stats-normal-line-count-stddev-other.txt: build/stats-normal-filesize-numlines-factor.txt
+	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
+	echo "Row: Number of lines ratio (all other logs)" >> "$@"
+
+build/stats-normal-filesize-line-count-include.tex: \
+		build/stats-normal-filesize-stddev.txt build/stats-normal-filesize-stddev-22_62-68.txt build/stats-normal-filesize-stddev-other.txt \
+		build/stats-normal-line-count-stddev.txt build/stats-normal-line-count-stddev-22_62-68.txt build/stats-normal-line-count-stddev-other.txt
 	perl mk-stats-cached-discarded-include $^ | sed -e 's/\\%//g' > "$@" || (rm -f "$@"; false)
 
-build/stats-cached-discarded-stats2.txt: build/stats-cached-discarded-factor.txt
-	perl ../stats/stddev "$<" > "$@"
-	echo "Row:  " >> "$@"
+# Normal/shuffle/reverse ratios: stddev, mean, etc.
+build/stats-normal-shuffle-stddev.txt: build/stats-normal-shuffle-reverse-factor.txt
+	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
+	echo "Row: Shuffle (all logs)" >> "$@"
 
-build/stats-cached-discarded-include-for-discussion.tex: build/stats-cached-discarded-stats2.txt
-	perl mk-stats-normal-shuffle-reverse-percentage $^ > "$@" || (rm -f "$@"; false)
+build/stats-normal-shuffle-stddev-22_62-68.txt: build/stats-normal-shuffle-reverse-factor.txt
+	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
+	echo "Row: Shuffle (logs 22, 62--68)" >> "$@"
 
-build/stats-normal-shuffle-stats.txt: build/stats-normal-shuffle-reverse-factor.txt
-	awk '{print $$1}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: shuffled" >> "$@"
+build/stats-normal-shuffle-stddev-other.txt: build/stats-normal-shuffle-reverse-factor.txt
+	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
+	echo "Row: Shuffle (all other logs)" >> "$@"
 
-build/stats-normal-reverse-stats.txt: build/stats-normal-shuffle-reverse-factor.txt
-	awk '{print $$2}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: reversed" >> "$@"
+build/stats-normal-reverse-stddev.txt: build/stats-normal-shuffle-reverse-factor.txt
+	awk '!/#/ {print $$2}' "$<" | perl ../stats/stddev > "$@"
+	echo "Row: Reverse (all logs)" >> "$@"
 
-build/stats-normal-shuffle-reverse-percentage.tex: build/stats-normal-shuffle-stats.txt build/stats-normal-reverse-stats.txt
-	perl mk-stats-normal-shuffle-reverse-percentage $^ > "$@" || (rm -f "$@"; false)
+build/stats-normal-reverse-stddev-22_62-68.txt: build/stats-normal-shuffle-reverse-factor.txt
+	awk '!/#/ {print $$2}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
+	echo "Row: Reverse (logs 22, 62--68)" >> "$@"
 
+build/stats-normal-reverse-stddev-other.txt: build/stats-normal-shuffle-reverse-factor.txt
+	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
+	echo "Row: Reverse (all other logs)" >> "$@"
+
+build/stats-normal-shuffle-reverse-include.tex: \
+		build/stats-normal-shuffle-stddev.txt build/stats-normal-shuffle-stddev-22_62-68.txt build/stats-normal-shuffle-stddev-other.txt \
+		build/stats-normal-reverse-stddev.txt build/stats-normal-reverse-stddev-22_62-68.txt build/stats-normal-reverse-stddev-other.txt
+	perl mk-stats-cached-discarded-include $^ | sed -e 's/\\%//g' > "$@" || (rm -f "$@"; false)
+
+# Build stats from the directory created by gen-stats.
 build/stats-normal.txt: stats-normal
 	DIR="$<" FILE="$@" make parse-stats
 
@@ -153,7 +196,16 @@ build/stats-discarded.txt: stats-normal-regex
 
 parse-stats:
 	perl ../stats/parse-stats --discard-first "${DIR}" > "${FILE}" || (rm -f "${FILE}"; false)
+	SRC_DIR="${DIR}" DEST_DIR="${DIR}-graphed" make extract-stats
 
+extract-stats: 
+	if [ ! -d "${DEST_DIR}" ]; then \
+		mkdir -p "${DEST_DIR}"; \
+	fi
+	perl ../stats/extract-stats.pl "${SRC_DIR}" "${DEST_DIR}" > "${DEST_DIR}/${SRC_DIR}-synposis"
+
+
+# Cleanup.
 clean:
 	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out
 

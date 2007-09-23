@@ -371,13 +371,12 @@ has more information available when logging the rejection.\footnote{The
 \texttt{smtpd\_delay\_reject} parameter controls this behaviour.}  Postfix
 uses simple lookup tables as the deciding factor for some restrictions,
 e.g.\ \texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
-\footnote{\texttt{cidr} is the type of the lookup table.  XXX PROVIDE A
-REFERENCE} will check
-whether the IP address of the connected client matches the left hand side
-of each line in the file and will return the right hand side of the first
-matching line.  Other restrictions determine their result in different
-ways, e.g.\ \texttt{reject\_rbl\_client rbl.example.com} checks whether the
-IP address of the client is present in the listed RBL\@.
+\footnote{\texttt{cidr} is the type of the lookup table \cite{cidr_table}}
+will check whether the IP address of the connected client matches the left
+hand side of each line in the file and will return the right hand side of
+the first matching line.  Other restrictions determine their result in
+different ways, e.g.\ \texttt{reject\_rbl\_client rbl.example.com} checks
+whether the IP address of the client is present in the listed RBL\@.
 
 Each restriction is evaluated to produce a result of \textit{reject},
 \textit{permit}, \textit{dunno\/} or the name of another restriction to be
@@ -1171,12 +1170,10 @@ runs were performed with different rule orderings:
 
 The resulting execution times are plotted in graph~\ref{normal vs shuffled
 vs reversed ordering}, where the difference is not readily apparent, but
-graph~\ref{normal vs shuffled vs reversed ordering factor} shows the
-percentage increase of execution times:
-
-\input{build/stats-normal-shuffle-reverse-percentage}
-
-Overall this provides a modest but worthwhile performance increase.
+graphs~\ref{normal vs shuffled vs reversed ordering factor} show the
+percentage increase of execution times (mean and standard deviation are
+shown after the graph).  Overall this provides a modest but worthwhile
+performance increase.
 
 \subsubsection{Caching each regex}
 
@@ -1185,16 +1182,12 @@ optimising the regex to improve the speed of matching, but this compilation
 and optimisation takes CPU time.  Perl automatically caches static regexs,
 but dynamic regexs need to be explicitly compiled and cached.
 Graph~\ref{normal regex vs discard regex} shows execution times with and
-without caching the regex; also shown on the graph are the file sizes and
-number of lines in each file.  Caching the compiled regexs is obviously far
+without caching the regex.  Caching the compiled regexs is obviously far
 more efficient; graph~\ref{normal regex vs disarded regex factor} shows the
-percentage execution time increase when not caching each regex.  Over all
-93 log files the execution time increase when not caching each compiled
-regex works out at:
+percentage execution time increase when not caching each regex.
 
-XXX IMPROVE THIS\@.
-
-\input{build/stats-cached-discarded-include-for-discussion}
+Caching the compiled regexs is quite simple, and is the single most
+effective optimisation tried in the parser.
 
 \subsection{Conclusion}
 
@@ -2082,6 +2075,19 @@ time the end of a log file is reached, and matching mails are deleted.
 
 \subsection{Conclusion}
 
+This section has presented the parsing algorithm, divided into: a high
+level overview of the basic algorithm, followed by the first group of
+difficulties thwarted.  The revised algorithm was detailed, preceded by a
+flow chart depicting the paths a mail may take through the algorithm.  The
+actions which are available to rules were described in full, and finally
+the remaining complications discovered and overcome in the process of
+refining and completing the algorithm.  Detecting, diagnosing and defeating
+complications forms the largest single subsection of this document,
+mirroring the development of the parser,  The complications are described
+in the order they were overcome, with subsequent problems affecting fewer
+mails (often by an order or magnitude), though the time required to solve
+problems increased with each successive problem.
+
 \section{Coverage}
 
 \label{parsing coverage}
@@ -2206,6 +2212,21 @@ Postfix during this period are handled correctly by the parser.
 
 \subsection{Conclusion}
 
+Parser coverage is divided into two topics in this section: log lines
+covered, and mails covered.  The former is initially more important, as the
+parser must successfully parse every line if it is to be complete, but
+subsequently the latter takes precedence because reproducing the path a
+mail takes through Postfix is the aim of the parser.  Increasing the
+percentage of log lines parsed is relatively simple and not intrusive:
+adding new rules or modifying existing rules is simplified by the parser
+implementation.  Improving the logical coverage is harder, as the actions
+taken by Postfix must be reconstructed, and the new sequence of actions
+integrated into the existing model without breaking the existing sequences.
+detecting a deficiency in the parsing algorithm is also significantly
+harder than detecting unparsed log lines, as the parser will warn about any
+unparsed line, whereas the author must spot a flaw in the parser by
+understanding the warnings generated.
+
 \section{Limitations and possible improvements}
 
 \label{limitations-improvements}
@@ -2251,6 +2272,9 @@ always room for improvement.
 \end{itemize}
 
 \subsection{Conclusion}
+
+This section has covered the limitations of the parser and possible
+improvements which may be implemented in the future.
 
 \section{Conclusion}
 
@@ -2394,32 +2418,45 @@ meaningless stream of numbers into an easily comprehensible form, where
 anomalies and patterns are immediately obvious.  These graphs are used to
 illustrate the topics discussed in section~\ref{rule efficiency}.  The
 graphs in the first section cover parser scalability, demonstrating that
-its performance scales linearly with input size.  The impact of rule
-ordering is shown in section~\ref{rule ordering graphs}, and the lower
-impact of rule ordering on larger log files is explained.  The final group
-of graphs vividly shows the huge impact that caching compiled regexs has on
-parser performance.
+performance scales linearly with input size.  The impact of rule ordering
+is shown in section~\ref{rule ordering graphs}, and the lower impact of
+rule ordering on larger log files is explained.  The final group of graphs
+vividly shows the huge impact that caching compiled regexs has on parser
+performance.
 
 \subsection{Parser scalability}
 
 \subsubsection{Execution time vs file size vs number of lines.}
 \label{execution time vs file size vs number lines}
+
+The Y axis represents the following:
+
+\begin{enumerate}
+
+    \item The time required, in seconds, to parse the log file.
+
+    \item The size of the log file, in megabytes.
+
+    \item The number of lines in the log file, divided by 10000.
+
+\end{enumerate}
+
+\noindent
 \includegraphics{build/plot-normal-filesize-numlines.ps}
 
 \subsubsection{Ratio of file size and number of lines to execution time}
 \label{execution time vs file size vs number lines factor}
+
+\noindent
 \includegraphics{build/plot-normal-filesize-numlines-factor.ps}
 
+\input
 \input{build/stats-normal-filesize-line-count-include}
 
 
 \subsection{Rule ordering}
 
 \label{rule ordering graphs}
-
-\subsubsection{Rule hits}
-\label{rule hits}
-\includegraphics{build/plot-hits.ps}
 
 \subsubsection{Normal vs shuffled vs reversed ordering}
 \label{normal vs shuffled vs reversed ordering}
@@ -2454,7 +2491,9 @@ a normally functioning mail system the impact of rule ordering will scale
 linearly with log file size.  The skewed distribution of log lines in the
 specific log files creates the anomaly described herein.
 
-\subsubsection{Log 22 distribution by rule}
+\noindent\input{build/stats-normal-shuffle-reverse-include.tex}
+
+\subsubsection{Log 22 distribution}
 \label{log22 distribution by rule}
 \includegraphics{build/plot-log22-distribution-by-rule.ps}
 
@@ -2463,8 +2502,26 @@ the graph illegible.
 
 \subsubsection{Log 22 line and rule distribution by program}
 \label{log22 line and rule distribution by program}
+
+\noindent
 \includegraphics{build/plot-log22-distribution-versus-rule-count.ps}
 
+\subsubsection{Log 22 lines per rule}
+\label{log22 lines per rule}
+
+As shown in this graph, the most common log lines (see graph~\ref{log22
+line and rule distribution by program}) are from programs which have a low
+number of rules, thus reducing the average parsing time per line, and the
+overall execution time relative to the input size.
+
+\noindent
+\includegraphics{build/plot-log22-distribution-versus-rule-count-factor.ps}
+
+
+\subsubsection{Rule hits}
+\label{rule hits}
+
+\noindent\includegraphics{build/plot-hits.ps}
 
 
 
@@ -2481,18 +2538,25 @@ the graph illegible.
 Two large dips can be seen in graph~\ref{normal regex vs disarded regex
 factor} at log files 22 and 62--68, corresponding to the spikes in log file
 size in graph~\ref{execution time vs file size vs number lines}.  The
-anomaly at files 62--68 is caused by a combination of a mail loop and a
-delivery failure which resulted in a huge number of log lines, all of which
-were matched by a single rule.  Sorting the rules by the number of
-successful matches has the effect that this rule will be tried first, so
-the average number of regexs compiled per line drops sharply for those
-eight log files, resulting in a much lower increase in relative execution
-time, as detailed below.
+anomalies are caused by a combination of a mail loop and a delivery failure
+which resulted in a huge number of log lines, all of which were matched by
+a single rule.  Sorting the rules by the number of successful matches has
+the effect that this rule will be tried first, so the average number of
+regexs compiled per line drops sharply for those eight log files, resulting
+in a much lower increase in relative execution time, as detailed below.
 
 \input{build/stats-cached-discarded-include-for-graph}
 
 
 \subsection{Conclusion}
 
+The graphs presented in this section illustrate the topics discussed in
+section~\ref{rule efficiency}.  The first collection of graphs are about
+parser scalability, showing the linearly relationship between execution
+time and input size.  Section~\ref{rule ordering graphs} relates to the
+effect of rule ordering on execution time, and the unexpected consequences
+of specific inputs.  The necessity of caching compiled regexs is attested
+to by the final group of graphs, where the difference between caching and
+discarding is staggering.
 
 \end{document}
