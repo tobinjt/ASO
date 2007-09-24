@@ -7,7 +7,7 @@
 \usepackage{url}
 %\DeclareUrlCommand\urlwrap{}
 %\newcommand{\urlwrapfill}[1]{\urlwrap{#1}\hfill}
-\newcommand{\parsername}{ASO }
+\newcommand{\parsername}{ASO}
 % Include images
 \usepackage[final]{graphicx}
 % Change how nested enumerate environments are labelled.
@@ -370,7 +370,7 @@ has more information available when logging the rejection.\footnote{The
 \texttt{smtpd\_delay\_reject} parameter controls this behaviour.}  Postfix
 uses simple lookup tables as the deciding factor for some restrictions,
 e.g.\ \texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
-\footnote{\texttt{cidr} is the type of the lookup table \cite{cidr_table}}
+\footnote{\texttt{cidr} is the type of the lookup table~\cite{cidr_table}}
 will check whether the IP address of the connected client matches the left
 hand side of each line in the file and will return the right hand side of
 the first matching line.  Other restrictions determine their result in
@@ -574,9 +574,9 @@ The schema used with the MySQL database is undocumented, but at least it's
 possible to discover the schema with an SQL database, unlike with Berkeley
 DB\@.
 
-\parsername is bundled with extensive documentation, including an in-depth
+\parsername{} is bundled with extensive documentation, including an in-depth
 explanation of the database schema.  It supports multiple values for every
-field for which multiple values are reasonable (e.g. the sender address
+field for which multiple values are reasonable (e.g.\ the sender address
 should have one value only, whereas the recipient address can have
 multiple values).  The default database it uses is SQLite3, which supports
 most standard SQL features (its lacks full foreign key support), has
@@ -588,8 +588,8 @@ parse new log lines or extract additional data.  It does not appear to deal
 with any of the complications discussed in
 sections~\ref{complications}~and~\ref{additional complications}.  The
 program fails to parse Postfix 2.2.x or 2.3.x log files; indeed it produces
-a number of warnings and no usable output.  Parsing in \parsername is
-divided in two (see sections~\ref{rules} and ~\ref{parsing-algorithm} for a
+a number of warnings and no usable output.  Parsing in \parsername{} is
+divided in two (see sections~\ref{rules} and~\ref{parsing-algorithm} for a
 more detailed explanation): parsing a new log line is a trivial matter of
 adding a new rule, but code changes may be required if new complications
 (sections~\ref{complications} and~\ref{additional complications}) must be
@@ -597,7 +597,7 @@ dealt with or a new action is required (section~\ref{actions-in-detail}).
 
 LMA does provide some simple reports (IP-STORY, FROM-STORY, DAILY-EMAIL and
 DAILY-REJECT); the author was unable to parse any logs with LMA, so didn't
-have an opportunity to review the reports.  \parsername does not have any
+have an opportunity to review the reports.  \parsername{} does not have any
 bundled reports, it delegates that task to a separate, dedicated program.
 
 In summary Log Mail Analyser appears to be a proof of concept, written to
@@ -1705,9 +1705,6 @@ The actions:
 
 \label{additional complications}
 
-XXX EXPLAIN EXACTLY WHERE IN THE ALGORITHM THE \newline CHECKS ETC\@. KICK
-IN\@.
-
 \subsubsection{Identifying bounce notifications}
 
 \label{identifying-bounce-notifications}
@@ -1773,6 +1770,8 @@ correctly.
 Postfix 2.3 (and hopefully subsequent versions) log the creation of a
 bounce message.
 
+This check is performed during the COMMIT action.
+
 \subsubsection{Aborted delivery attempts}
 
 \label{aborted-delivery-attempts}
@@ -1820,6 +1819,9 @@ reused.  The mail cannot be entered in the database as the only data
 available is the client hostname and IP address, but the database schema
 requires many more fields be populated (see section~\ref{database schema}).
 
+This check is performed in the DISCONNECT action; it requires support in
+the CLONE action where a list of cloned connections is maintained.
+
 \subsubsection{Further aborted delivery attempts}
 
 Some mail clients disconnect abruptly if a second or subsequent recipient
@@ -1846,11 +1848,9 @@ expected by now.  The checks to identify this happening are:
 These checks are made during the DISCONNECT action: if all checks are
 successful then the mail is assumed to have been discarded when the client
 disconnected.  There will be no further entries logged for such mails, so
-without identifying and discarding them they accumulate in the state table
-and will cause clashes if the queueid is reused.  The mail cannot be
-entered in the database as the only data available is the client hostname
-and IP address, but the database schema (see section~\ref{database schema})
-requires many more fields be populated.
+without identifying and entering them in the database immediately they
+accumulate in the state table and will cause clashes if the queueid is
+reused.
 
 \subsubsection{Timeouts during DATA phase}
 
@@ -1939,6 +1939,13 @@ line it would in some cases be mistaken.  Whether or not the next cleanup
 line is discarded the queueid will be removed from the cache of timeout
 queueids when the next pickup line containing that queueid is parsed.
 
+During the TIMEOUT action if the mail lacks a cleanup line, the queueid and
+other data about the mail, particularly the timestamp of the last log line,
+are added to a global cache of timeout queueids.  This cache is
+subsequently consulted during the MAIL\_PICKED\_FOR\_DELIVERY action, and
+if the queueid exists and the cleanup line passes the checks listed above
+it will be discarded.
+
 \subsubsection{Pickup logging after cleanup}
 
 \label{pickup logging after cleanup}
@@ -1962,6 +1969,8 @@ order:
 
 As always with heuristics there may be circumstances in which these
 heuristics incorrectly match, but none have been identified so far.
+
+This complication is dealt with during the PICKUP action.
 
 \subsubsection{Smtpd stops logging}
 
@@ -1993,6 +2002,8 @@ logging.  In addition to removing an active connection the last accepted
 mail may need to be discarded, as detailed in
 section~\ref{timeouts-during-data-phase}.
 
+These occurrences are handled by the three actions POSTFIX\_RELOAD,
+SMTPD\_DIED and SMTPD\_WATCHDOG\@.
 
 \subsubsection{Out of order log lines}
 
@@ -2002,7 +2013,7 @@ Occasionally a log file will have out of order log lines which cannot be
 dealt with by the techniques described in sections~\ref{tracking
 re-injected mail},~\ref{discarding cleanup lines}~and~\ref{pickup logging
 after cleanup}.  In the 93 log files used for testing this occurs only five
-times in 607,21,709 log lines, but for completeness of the algorithm it
+times in 60,721,709 log lines, but for completeness of the algorithm it
 should be dealt with.  The five occurrences in the test log files have the
 same characteristics: the \texttt{postfix/local} log line showing delivery
 to a local mailbox occurs after the \texttt{postfix/qmgr} log line showing
@@ -2014,12 +2025,13 @@ of order log lines.
 
 The solution to this problem is to examine the list of programs which have
 logged messages for each mail, comparing the list against a table of
-known-good combinations of programs.  If the mail's combination is found in
-the valid list the mail can be entered in the database; if the combination
-is not found entry must be postponed and the mail flagged.  The
-SAVE\_BY\_QUEUEID action checks for the flag and retries entry if it's
-found; if the additional log lines have caused the mail to reach a valid
-combination entry will succeed, otherwise it must be postponed once more.
+known-good combinations of programs (this check is performed during the
+COMMIT action).  If the mail's combination is found in the valid list the
+mail can be entered in the database; if the combination is not found entry
+must be postponed and the mail flagged.  The SAVE\_BY\_QUEUEID action
+checks for the flag and retries entry if it's found; if the additional log
+lines have caused the mail to reach a valid combination entry will succeed,
+otherwise it must be postponed once more.
 
 The list of valid combinations is given below.  Every mail will
 additionally have log entries from \texttt{postfix/cleanup} and
@@ -2464,7 +2476,6 @@ The Y axis represents the following:
 \noindent
 \includegraphics{build/plot-normal-filesize-numlines-factor.ps}
 
-\input
 \input{build/stats-normal-filesize-line-count-include}
 
 
