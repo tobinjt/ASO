@@ -7,6 +7,7 @@
 \usepackage{url}
 %\DeclareUrlCommand\urlwrap{}
 %\newcommand{\urlwrapfill}[1]{\urlwrap{#1}\hfill}
+\newcommand{\parsername}{ASO }
 % Include images
 \usepackage[final]{graphicx}
 % Change how nested enumerate environments are labelled.
@@ -158,8 +159,6 @@ are the conventions used in this paper.  Other projects which attempt to
 parse Postfix logs are summarised (full details are available in
 Section~\ref{other-parsers}), plus a review of previously published
 research in this area.
-
-XXX SHOULD THERE BE A REGEX SECTION\@?
 
 \subsection{Motivation}
 
@@ -531,28 +530,27 @@ log files: \textit{Log Mail Analyzer: Architecture and Practical
 Utilizations\/}~\cite{log-mail-analyser}.  The aim of Log Mail Analyzer is
 quite different from this parser: it attempts to present correlated log
 data in a form suitable for a systems administrator to search using
-grep(1), awk(1) and the myriad of other Unix utilities already available,
-producing a CSV file which can subsequently be imported into a
-MySQL or Berkeley DB database.  The decision to support both CSV and
-Berkeley DB appears to have been a limiting factor:
-Comma-Separated Value is a very simple format
-where a record is stored in a single line, with fields separated by a comma
-or other punctuation symbol.  Problems with CSV files include the
-difficulty in escaping separators, providing multiple values for a field
-(e.g.\ multiple recipients), adding new fields, and lack of a bundled
-schema describing the fields.
+grep(1), awk(1) and the myriad of other standard Unix text processing
+utilities already available, producing a CSV file which can subsequently be
+imported into a MySQL or Berkeley DB database.  The decision to support
+both CSV and Berkeley DB appears to have been a limiting factor:
+Comma-Separated Value is a very simple format where a record is stored in a
+single line, with fields separated by a comma or other punctuation symbol.
+Problems with CSV files include the difficulty in escaping separators,
+providing multiple values for a field (e.g.\ multiple recipients), adding
+new fields, and lack of a bundled schema describing the fields.
 
-Berkeley DB is not an SQL database, it only supports (key, value) pairs; in
-the main table the value used is a CSV line, and the key is an integer
-referred to by other tables.  The secondary by-sender, by-recipient,
-by-date and by-IP tables use the sender/recipient/date/IP as the key, and a
-CSV list of integers referring to the main table is used as the value.  In
-effect this re-implements SQL foreign keys, but without the full
-functionality offered by even the most basic of SQL databases.  It also
-requires custom code to search on some combination of the above, though the
-authors of LMA did provide some queries: IP-STORY, FROM-STORY, DAILY-EMAIL
-and DAILY-REJECT\@.  Berkeley DB appears to be the least useful of the
-three output formats
+Berkeley DB is not an SQL database, supporting only (key, value) pairs; in
+the main table the key is an integer referred to by secondary tables and
+the value used is a CSV line containing all the data for that row.  The
+secondary by-sender, by-recipient, by-date and by-IP tables use the
+sender/recipient/date/IP as the key, and a CSV list of integers referring
+to the main table is the value.  In effect this re-implements SQL foreign
+keys, but without the functionality offered by even the most basic of SQL
+databases (joins, ordering, searches, etc.).  It also requires custom code
+to search on some combination of the above, though the authors of LMA did
+provide some queries: IP-STORY, FROM-STORY, DAILY-EMAIL and DAILY-REJECT\@.
+Berkeley DB appears to be the least useful of the three output formats
 
 The data stored is limited to time and date, hostname and IP address of
 client, sender and recipient addresses, and the SMTP code.  Handling of
@@ -576,20 +574,36 @@ The schema used with the MySQL database is undocumented, but at least it's
 possible to discover the schema with an SQL database, unlike with Berkeley
 DB\@.
 
-Parsing is hand-coded and requires major changes to the code to parse new
-log lines or extract additional data.  It does not appear to deal with any
-of the complications discussed in
+\parsername is bundled with extensive documentation, including an in-depth
+explanation of the database schema.  It supports multiple values for every
+field for which multiple values are reasonable (e.g. the sender address
+should have one value only, whereas the recipient address can have
+multiple values).  The default database it uses is SQLite3, which supports
+most standard SQL features (its lacks full foreign key support), has
+libraries available for most common programming languages, and a simple
+text based client allowing ad-hoc queries with minimal effort.
+
+Parsing in LMA is hand-coded and requires major changes to the code to
+parse new log lines or extract additional data.  It does not appear to deal
+with any of the complications discussed in
 sections~\ref{complications}~and~\ref{additional complications}.  The
 program fails to parse Postfix 2.2.x or 2.3.x log files; indeed it produces
-a number of warnings and no usable output.
+a number of warnings and no usable output.  Parsing in \parsername is
+divided in two (see sections~\ref{rules} and ~\ref{parsing-algorithm} for a
+more detailed explanation): parsing a new log line is a trivial matter of
+adding a new rule, but code changes may be required if new complications
+(sections~\ref{complications} and~\ref{additional complications}) must be
+dealt with or a new action is required (section~\ref{actions-in-detail}).
+
+LMA does provide some simple reports (IP-STORY, FROM-STORY, DAILY-EMAIL and
+DAILY-REJECT); the author was unable to parse any logs with LMA, so didn't
+have an opportunity to review the reports.  \parsername does not have any
+bundled reports, it delegates that task to a separate, dedicated program.
 
 In summary Log Mail Analyser appears to be a proof of concept, written to
 demonstrate the point of the paper (that having this information in an
 accessible fashion is useful to systems administrators), rather than a
 program designed to be extensible and useful in a production environment.
-
-XXX EXPLAIN WHY ASO IS MORE COMPREHENSIVE, WHAT IT DOES BETTER AND WHY\@.
-MAKE THIS A COMPARISON INSTEAD OF A CRITIQUE\@.
 
 % Literature review notes:
 %
