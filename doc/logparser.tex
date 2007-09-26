@@ -2324,26 +2324,62 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
 
 \begin{description}
 
-    \item [pflogsumm.pl] \textit{pflogsumm.pl is designed to provide an
-        over-view of postfix activity, with just enough detail to give the
+    \item [Pflogsumm] \textit{pflogsumm is designed to provide an over-view
+        of Postfix activity, with just enough detail to give the
         administrator a ``heads up'' for potential trouble spots.\/}
-        \newline \url{http://jimsun.linxnet.com/postfix_contrib.html}
+
+        Pflogsumm produces a report designed for troubleshooting, and does
+        not support saving any data; parsing is fixed and concentrates on
+        extracting only the data required to produce the report.  Both the
+        parsing and reporting are difficult to extend, as it is a
+        specialised tool.  It does not attempt to correlate log lines by
+        queueid or pid, nor does it need to deal with the complications
+        encountered during this project.  Pflogsumm produces a useful
+        report, and successfully dealt with all the Postfix logs tested
+        with.
+
+        \url{http://jimsun.linxnet.com/postfix_contrib.html}
         \newline (Last checked 2007/08/13.)
 
     \item [Sawmill Universal Log File Analysis and Reporting] is a general
         purpose commercial product which parses 687 log file formats
-        (correct as of 2007/04/15) and produces reports.  I have not
-        experimented with it due to its limited data extraction facilities;
-        it does have three different sets of data for Postfix (as of
-        2007/04/15, one is beta), but they do not appear to be interlinked,
-        nor does it save sufficient data for the purposes of this project.
+        (correct as of 2007/04/15) and produces reports.  Its data
+        extraction facilities are quite limited, though it does extract
+        three different sets of data for Postfix (as of 2007/04/15, one is
+        beta), but they do not appear to be interlinked, nor does it save
+        sufficient data for the purposes of this project.  Not attempt is
+        made to correlate log lines or deal with the difficulties
+        documented in sections~\ref{complications} and~\ref{additional
+        complications}.\footnote{If any attempt is made there is no
+        reference to it in the documentation available on the website.}
         The source code is available in an obfuscated form only (presumably
         for a fee), and the product is quite expensive, as it requires a
-        license for each report which is to be generated. \newline
+        license for each report which is to be generated.  The web
+        interface allows creation of dynamic reports based on any field,
+        but due to the associated cost the author has not experimented with
+        it.
+
         \url{http://www.thesawmill.co.uk/formats/postfix.html} \newline
+        Fields extracted: from, to, server, UID, relay, status, number of
+        recipients, origin hostname, origin IP and virus.  The fields
+        \textit{server}, \textit{uid\/} and \textit{virus\/} are not
+        explained in their documentation: \textit{server\/} is probably the
+        server the mail is delivered to, and \textit{uid\/} might be the
+        uid of the user submitting mail locally.  Postfix does not perform
+        any form of virus checking (though it has many options for
+        cooperating with an external virus scanner), so the
+        \textit{virus\/} field is a mystery.
+
         \url{http://www.thesawmill.co.uk/formats/postfix_ii.html} \newline
+        Fields extracted: from, to, RBL list, client hostname and client
+        IP\@.
+
         \url{http://www.thesawmill.co.uk/formats/beta_postfix.html}
-        \newline (Last checked 2007/08/13.)
+        \newline
+        Fields extracted: from, to, client hostname, client IP, relay
+        hostname, relay IP, status, response code, RBL list and message id.
+
+        (Last checked 2007/09/26.)
 
     \item [Splunk] \textit{Splunk is an IT Search engine. It is software
         that indexes any format of IT data from any source in real time,
@@ -2394,7 +2430,7 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
         Unix tools unless the user has a very high proficiency with those
         tools.
 
-        \url{http://www.splunk.com}
+        \url{http://www.splunk.com/} \newline (Last checked 2007/09/25.)
 
     \item [Isoqlog] \textit{Isoqlog is an MTA log analysis program written
         in C. It designed to scan qmail, postfix, sendmail and exim logfile
@@ -2402,7 +2438,14 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
         browser. It produces Top domains output according to Sender,
         Receiver, Total mails and bytes; it keeps your main domain mail
         statistics with regard to Days Top Domain, Top Users values for per
-        day, per month and years.\/}  \newline
+        day, per month and years.\/}
+
+        Due to the paucity of data gathered by this tool the author has not
+        experimented with it, but based on the documentation it is obvious
+        that it doesn't attempt to gather the breadth of data required for
+        in-depth analysis, and presumably doesn't attempt to correlate log
+        lines per-connection or per-mail.
+
         \url{http://www.enderunix.org/isoqlog/} \newline (Last checked
         2007/08/13.)
 
@@ -2411,10 +2454,15 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
         statistics, graphically.\/}
         
         AWStats will produce simple graphs for many different services, but
-        that restricts it to supporting the Lowest Common Denominator: the
-        data it will extract from an MTA log file is:
-        \texttt{time2, email, email\_r, host, host\_r, method, url, code,
-        and bytesd.} \newline
+        that restricts it to supporting the Lowest Common Denominator.  The
+        data it will extract from an MTA log file is limited to: \newline
+        \hspace*{2em} time2, email, email\_r, host, host\_r, method, url,
+        code and bytesd.  \newline  There does not seem to be an
+        explanation of those fields in the documentation.  As AWStats is a
+        generic log processor it can safely be assumed that it has
+        no special purpose code to deal with the intricacies of Postfix
+        logs.
+
         \url{http://awstats.sourceforge.net/} \newline
         \url{http://awstats.sourceforge.net/awstats.mail.html} \newline
         \url{http://awstats.sourceforge.net/docs/awstats_faq.html#MAIL}
@@ -2424,7 +2472,10 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
         number of events which occurred over a particular time and warns if
         the frequency of events passes a certain threshold.  It's designed
         to provide real time alerts when dictionary attacks, mail loops or
-        similar problems occur.  \newline
+        similar problems occur. It doesn't attempt to extract or save data,
+        correlate log lines, or any of the more advanced tasks described in
+        this document, because it is not designed to do so.
+
         \url{http://home.uninet.ee/~ragnar/throughput_monitor/} \newline
         (Last checked 2007/08/13.)
 
@@ -2437,7 +2488,13 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
         stdout or to files.\/}
 
         Anteater hasn't been updated since November 2003, and doesn't have
-        any English documentation.
+        any English documentation so it's difficult, nigh impossible, to
+        accurately comment on what analysis is performs.  It did not run
+        successfully when tested, and its parsing would certainly be out of
+        date as Postfix has evolved considerably since this tool was last
+        updated.  As it neither ran successfully nor has documentation the
+        author can read it is difficult to comment on the features it
+        provides.
         
         \url{http://anteater.drzoom.ch/} \newline (Last checked
         2007/08/13.)
