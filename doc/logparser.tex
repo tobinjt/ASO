@@ -27,6 +27,7 @@
 %    breaklinks  = true,
 }
 \usepackage{breakurl}
+\usepackage{lastpage}
     
 \begin{document}
 
@@ -2248,7 +2249,7 @@ adding new rules or modifying existing rules is simplified by the parser
 implementation.  Improving the logical coverage is harder, as the actions
 taken by Postfix must be reconstructed, and the new sequence of actions
 integrated into the existing model without breaking the existing sequences.
-detecting a deficiency in the parsing algorithm is also significantly
+Detecting a deficiency in the parsing algorithm is also significantly
 harder than detecting unparsed log lines, as the parser will warn about any
 unparsed line, whereas the author must spot a flaw in the parser by
 understanding the warnings generated.
@@ -2606,16 +2607,16 @@ simple.  Examining the database after parsing logfile~22 in isolation shows
 64 rules matched during parsing, but as shown in graph~\ref{log22
 distribution by rule} the distribution of matching rules is extremely
 skewed.  Comparing the number of log lines per program versus rules per
-program in graph~\ref{log22 line and rule distribution by program} shows
-that \texttt{postfix/qmgr} has the highest number of log lines, however it
-has a low number of rules.  This combination results in a low average
-number of rules to try for \texttt{postfix/qmgr} log lines, reducing the
-overall average number of rules to try per log line.  In turn this reduces
-the average parsing time per log line, and thus the parsing time for the
-log file.  While the parsing time is substantially greater than the time
-for the log files on either side, the increase from optimal ordering to
-reversed ordering is proportionally smaller, producing the dips in
-graph~\ref{normal vs shuffled vs reversed ordering factor}.
+program in graphs~\ref{log22 log line and rule distribution by program}
+shows that \texttt{postfix/qmgr} has the highest number of log lines,
+however it has a low number of rules.  This combination results in a low
+average number of rules to try for \texttt{postfix/qmgr} log lines,
+reducing the overall average number of rules to try per log line.  In turn
+this reduces the average parsing time per log line, and thus the parsing
+time for the log file.  While the parsing time is substantially greater
+than the time for the log files on either side, the increase from optimal
+ordering to reversed ordering is proportionally smaller, producing the dips
+in graph~\ref{normal vs shuffled vs reversed ordering factor}.
 
 This non-intuitive effect will not be exhibited by log files in general: in
 a normally functioning mail system the impact of rule ordering will scale
@@ -2631,23 +2632,18 @@ specific log files creates the anomaly described herein.
 The individual rules are not labelled on the x-axis because doing so makes
 the graph illegible.
 
-\subsubsection{Log 22 line and rule distribution by program}
-\label{log22 line and rule distribution by program}
+\subsubsection{Log 22 log line and rule distribution by program}
+\label{log22 log line and rule distribution by program}
 
 \noindent
-\includegraphics{build/plot-log22-distribution-versus-rule-count.ps}
-
-\subsubsection{Log 22 lines per rule}
-\label{log22 lines per rule}
-
-As shown in this graph, the most common log lines (see graph~\ref{log22
-line and rule distribution by program}) are from programs which have a low
-number of rules, thus reducing the average parsing time per line, and the
-overall execution time relative to the input size.
+\includegraphics{build/plot-log22-rules.ps}
 
 \noindent
-\includegraphics{build/plot-log22-distribution-versus-rule-count-factor.ps}
+\includegraphics{build/plot-log22-log-lines.ps}
 
+As shown in graphs above, the most common log lines are from programs which
+have a low number of rules, thus reducing the average parsing time per
+line, and the overall execution time relative to the input size.
 
 \subsubsection{Rule hits}
 \label{rule hits}
