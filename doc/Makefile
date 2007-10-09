@@ -48,7 +48,9 @@ logparser.deps: build/logparser-flow-chart.ps \
 				build/stats-cached-discarded-include-for-graph.tex \
 				build/stats-normal-filesize-line-count-include.tex \
 				build/stats-normal-shuffle-reverse-include.tex \
-				build/plot-log22-distribution-versus-rule-count-factor.ps
+				build/plot-log22-distribution-versus-rule-count-factor.ps \
+				build/plot-log22-log-lines.ps \
+				build/plot-log22-rules.ps
 	touch "$@"
 
 # Rebuild the bibtex db whenever the input changes.
@@ -73,6 +75,8 @@ build/plot-normal-filesize-numlines.ps: build/stats-normal.txt file-sizes.txt wc
 build/plot-log22-distribution-by-rule.ps: stats-log22-distribution-by-rule.txt
 build/plot-log22-distribution-versus-rule-count.ps: stats-log22-rule-count-by-program.txt
 build/plot-hits.ps: stats-hits.txt
+build/plot-log22-log-lines.ps: stats-log22-rule-count-by-program.txt
+build/plot-log22-rules.ps: stats-log22-rule-count-by-program.txt
 
 build/plot-%.ps: plot-%.gpi
 	gnuplot "$<"
