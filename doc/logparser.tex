@@ -355,6 +355,15 @@ takes through Postfix can be quite difficult.  The logs tend to follow a
 have a solid scientific basis, they're based on gut feeling from writing
 and debugging the software.}
 
+Postfix's design follows the Unix philosophy of \textit{Write programs that
+do one thing and do it well\/}~\cite{unix-philosophy}, and is separated
+into various component programs to perform the tasks required of an MTA\@:
+receive mail, send mail, local delivery of mail, etc. --- full details can
+be found at~\cite{postfix-overview}.  Each log line contains the name of
+the Postfix program which produced the log line, and this information is
+used when determining which rules should be used to parse each log line
+(see section~\ref{rule characteristics} for details.)
+
 \subsubsection{Mixing and matching Postfix restrictions}
 
 Postfix restrictions are documented fully in~\cite{smtpd_access_readme,
@@ -945,6 +954,8 @@ section~\ref{graphs}.
 
 \subsection{Rule characteristics}
 
+\label{rule characteristics}
+
 The parser is split into two parts: the parsing algorithm and the rules
 which are applied to the lines.  The complexity and variation in Postfix's
 logs requires similar flexibility in the parser; decoupling the parsing
@@ -961,6 +972,15 @@ Rule have certain characteristics which may help in understanding the
 parser:
 
 \begin{itemize}
+
+    \item Rules are annotated with the name of a Postfix program, and will
+        only be used when parsing log lines produced by that
+        program.\footnote{There are also generic rules which are used when
+        parsing log lines produced by any Postfix program, but only if
+        there are also rules specific to that program, and those rules must
+        already have been tried and failed.}  Any given rule will only be
+        used to parse a subset of the log lines, and any given log line
+        will only be parsed by a subset of the rules.
 
     \item The first matching rule wins: no further rules are tried against
         that line, but there is a facility for specifying the order of
