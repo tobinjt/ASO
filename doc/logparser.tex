@@ -2321,6 +2321,16 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
 
 \subsection{Introduction}
 
+It is important to compare and contrast newly developed programs,
+algorithms and parsers against those already available, to accurately judge
+what, if any, improvements are delivered by the newcomers.  There are not
+that many previously developed Postfix log parsers, indeed it was quite
+difficult to find ten parsers to review for this project, and the
+functionality offered ranges from quite basic to much more mature,
+depending on the needs of the creator.  The programs are not reviewed from
+an independent viewpoint; the objective is to compare and contrast each
+program with \parsername{}.
+
 \subsection{Parsers reviewed}
 
 \begin{description}
@@ -2500,15 +2510,51 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
         \url{http://anteater.drzoom.ch/} \newline (Last checked
         2007/08/13.)
 
-    \item [Yet Another Advanced Logfile Analyser] uses a plugin based
-        system to analyse log files and produce output reports.  The core
-        code is merely 91 lines long, as all the parsing and report
-        generation is handled by modules.  Using YAALA as a base would be
-        only slightly less work as both input and output modules would need
-        to be written; it may even be more work to implement the parser
-        within the constraints of YAALA\@.
+    \item [Yet Another Advanced Logfile Analyser] \textit{yaala is a very
+        flexible analyser for all kinds of logfiles. It uses parsers to
+        extract information from a logfile, an SQL-like query language to
+        relate the information to each other and an output-module to format
+        the information appropriately.\/}
 
-        \url{http://yaala.org/} \newline (Last checked 2007/08/13.)
+        YAALA uses a plugin based system to analyse log files and produce
+        HTML output reports.  The core code is merely 153 lines long, as
+        all the parsing and report generation is handled by modules.  YAALA
+        supports storing previously gathered data; it dumps its internal
+        data structures using Perl's Storable module~\cite{perl-storable},
+        so with some knowledge of the module responsible for parsing
+        Postfix log files it should be possible to extract data with an
+        external program.  Using YAALA as a base would be only slightly
+        less work as both input and output modules would need to be
+        written; it may even be more work to implement the parser within
+        the constraints of YAALA\@.  YAALA bundles a Postfix parser, which
+        uses hard-coded parsing to extract the following fields from
+        specific log lines:
+
+        Aggregations: count, bytes (the sum of bytes transferred; count is
+        not explained).\newline
+        Keyfields [sic]: date, hour, sender, recipient, defer\_count, delay,
+        incoming\_host, outgoing\_host.
+
+        YAALA provides an SQL like mini-language used when generating the
+        reports; sample reports can be seen at~\cite{yaala-samples}.
+        Example query: \newline \hspace*{2em} \texttt{requests BY file
+        WHERE host =\~{} Google}. \newline The mini-language is quite
+        limited, and cannot be used to extract data, merely to create
+        reports.
+
+        YAALA as distributed does not attempt the in-depth parsing
+        explained in this document, and implementing it within the confines
+        of YAALA would be at least as much work as implementing it
+        separately.
+
+        In summary YAALA provides a Postfix parser which is not extensible
+        unless the user is prepared to change the source
+        code,\footnote{\parsername{} requires source code changes for some
+        new features, but parsing new log lines is accomplished by adding
+        new rules.} and reasonably flexible report generation, but no
+        facilities to extract data for use in other tools.
+
+        \url{http://yaala.org/} \newline (Last checked 2007/10/09.)
 
     \item [Logparser/Lire] Lire is another general purpose log parser, but
         is developed under the GNU GPL\@.  Like other general purpose log
@@ -2534,6 +2580,20 @@ XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
 \end{description}
 
 \subsection{Conclusion}
+
+While there are other programs available which perform basic Postfix log
+parsing (some to a greater level of intricacy and detail than others), none
+attempt to correlate log lines by pid or queueid to produce an overall
+record of the journey each mail traverses through Postfix.  Most other
+parsers immediately generate a report and discard the data extracted from
+the logs; those which don't discard the data retain it in a format
+inaccessible to other tools.  All of the parsers reviewed can produce a
+report of greater or lesser detail and complexity, a facility not offered
+by \parsername{}; reporting is deferred to a subsequent application.
+
+The overriding difference between \parsername{} and the other parsers
+reviewed herein is that none of them aim to achieve the high level of
+understanding of Postfix logs achieved by \parsername{}.
 
 
 \bibliographystyle{logparser-bibliography-style}
