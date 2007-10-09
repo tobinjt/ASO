@@ -2556,13 +2556,43 @@ program with \parsername{}.
 
         \url{http://yaala.org/} \newline (Last checked 2007/10/09.)
 
-    \item [Logparser/Lire] Lire is another general purpose log parser, but
-        is developed under the GNU GPL\@.  Like other general purpose log
-        parsers it doesn't extract enough data from Postfix logs to be
-        worthwhile.  Development also seems to have stalled, with only a
-        minor update since October 2004.  \newline
+    \item [Logparser/Lire] \textit{As any good system administrator knows,
+        there's a lot more to keep track of in an active network than just
+        webservers. Lire is hands down the most versatile log analysis
+        software available today. Lire not only keeps you informed about
+        your HTTP, FTP, and mail traffic, it also reports on your
+        firewalls, your print servers, and your DNS activity. The ever
+        growing list of Lire-supported services clearly outstrips any other
+        software, in large part thanks to the numerous volunteers who have
+        pioneered many new services and features. Lire is a total solution
+        for your log analysis needs.\/}
+
+        Lire is a general purpose log parser supporting many different
+        types of log file.  Its Postfix parser extracts the following data
+        from Postfix logs: \textit{The email servers' reports will show you
+        the number of deliveries and the volume of email delivered by day,
+        the domains from which you receive or send the most emails, the
+        relays most used, etc.\/}; notably rejections are not mentioned.
+        It supports multiple output formats (text, HTML, PDF and Excel 95).
+        Logs can be imported and the extracted data saved, and reports
+        generated later.  Accessing this data from another application is
+        undocumented; given the source code it should be possible, with
+        time, to access the data.
+
+        Unlike other parsers reviewed, Lire does attempt to correlate log
+        lines by queueid, but not by pid, so e.g.\ the complete list of
+        recipients for a mail should be available.
+
+        Lire does attempt to correlate log lines by queueid, not pid, but
+        its hard coded parsing extracts only part of the available data and
+        makes no attempt to deal with the other complications described in
+        sections~\ref{complications} and~\ref{additional complications}.
+        It stores data, but not in an easily accessible format.  It
+        generates reports in multiple formats, but those reports do not
+        appear to be customisable.
+        
         \url{http://logreport.org/lire.html} \newline (Last checked
-        2007/08/13.)
+        2007/10/09.)
 
     \item [Logrep] \textit{Logrep is a secure multi-platform framework for
         the collection, extraction, and presentation of information from
@@ -2574,8 +2604,8 @@ program with \parsername{}.
         \url{http://www.itefix.no/phpws/index.php} \newline (Last checked
         2007/08/13.)
 
-    \item [Log Mail Analyser]~\cite{log-mail-analyser} has already been
-        discussed in section~\ref{prior art}.
+    \item [Log Mail Analyser] has already been discussed in
+        section~\ref{prior art}.
 
 \end{description}
 
