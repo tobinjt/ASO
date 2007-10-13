@@ -4,9 +4,7 @@ set xlabel "Rule"
 set ylabel "Number of lines"
 set output "build/plot-log22-distribution-by-rule.ps"
 
-# Disable the default tics because they're illegible.
-set noxtics
-set xrange [0:62]
-set xtics out 0,10,60
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
 
 plot "stats-log22-distribution-by-rule.txt" using 1:2 title "Number of lines"

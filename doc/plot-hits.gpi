@@ -4,8 +4,7 @@ set xlabel "Rule"
 set ylabel "Number of hits"
 set output "build/plot-hits.ps"
 
-# Disable the default tics because they're illegible.
-set noxtics
-set xtics out 0,25,125
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
 
 plot "stats-hits.txt" using 1:2 title "Number of hits"

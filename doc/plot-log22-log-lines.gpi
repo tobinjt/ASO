@@ -4,7 +4,11 @@ set xlabel "Program"
 set ylabel "Number of log lines"
 set output "build/plot-log22-log-lines.ps"
 
+# Extend the X range by one on each side because otherwise the last two 
+# points are hard to see.
 set xrange [0:8]
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
 
 plot "stats-log22-rule-count-by-program.txt" using 1:2:xticlabels(4) \
     with lines title "Number of log lines"
