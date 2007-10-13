@@ -2335,8 +2335,6 @@ XXX WRITE THIS
 
 \section{Other Postfix log parsers reviewed}
 
-XXX THIS NEEDS TO BE EXPANDED\@; EXPLAIN WHY THEY'RE NOT GOOD ENOUGH
-
 \label{other-parsers}
 
 \subsection{Introduction}
@@ -2482,22 +2480,35 @@ program with \parsername{}.
 
     \item [AWStats] \textit{AWStats is a free powerful and featureful tool
         that generates advanced web, streaming, ftp or mail server
-        statistics, graphically.\/}
+        statistics, graphically. This log analyzer works as a CGI or from
+        command line and shows you all possible information your log
+        contains, in few graphical web pages. It uses a partial information
+        file to be able to process large log files, often and quickly. It
+        can analyze log files from all major server tools like Apache log
+        files (NCSA combined/XLF/ELF log format or common/CLF log format),
+        WebStar, IIS (W3C log format) and a lot of other web, proxy, wap,
+        streaming servers, mail servers and some ftp servers.\/}
         
         AWStats will produce simple graphs for many different services, but
         that restricts it to supporting the Lowest Common Denominator.  The
         data it will extract from an MTA log file is limited to: \newline
         \hspace*{2em} time2, email, email\_r, host, host\_r, method, url,
         code and bytesd.  \newline  There does not seem to be an
-        explanation of those fields in the documentation.  As AWStats is a
-        generic log processor it can safely be assumed that it has
-        no special purpose code to deal with the intricacies of Postfix
-        logs.
+        explanation of those fields in the documentation.  AWStats has no
+        special purpose code to deal with the intricacies of Postfix logs,
+        in fact it operates by coercing Postfix logs into
+        Apache\footnote{The Apache web server is the most popular HTTP
+        server in use for the past 10 years; more information is available
+        at \url{http://httpd.apache.org/}} format log files, for analysis
+        by its HTTP log file parser.  The converting parser is hard coded,
+        hard to extend, and only deals with a small portion of the log
+        lines generates by Postfix, but it does correlate log lines by
+        queueid.
 
         \url{http://awstats.sourceforge.net/} \newline
         \url{http://awstats.sourceforge.net/awstats.mail.html} \newline
         \url{http://awstats.sourceforge.net/docs/awstats_faq.html#MAIL}
-        \newline (Last checked 2007/08/13.)
+        \newline (Last checked 2007/10/13.)
 
     \item [Log analyser --- throughput monitor] This utility tracks the
         number of events which occurred over a particular time and warns if
@@ -2616,15 +2627,56 @@ program with \parsername{}.
 
     \item [Logrep] \textit{Logrep is a secure multi-platform framework for
         the collection, extraction, and presentation of information from
-        various log files.\/}
+        various log files. It features HTML reports, multi dimensional
+        analysis, overview pages, SSH communication, and graphs, and
+        supports over 30 popular systems including Snort, Squid, Postfix,
+        Apache, Sendmail, syslog, ipchains, iptables, NT event logs,
+        Firewall-1, wtmp, xferlog, Oracle listener and Pix.\/}
 
-        The parsing Logrep performs is extremely basic, counting the number
-        of different processes executed, from address, to addresses, number
-        of recipients, bytes transferred and delay.  \newline
+        Logrep extracts the following fields from Postfix logs:
+
+        \begin{itemize}
+
+            \item For mail sent and received: from address, size, and
+                time and date.
+
+            \item For mail sent: to addresses, SMTP code, and delay.
+
+            \item For mail received: the hostname of the sender.
+                
+        \end{itemize}
+        
+        Fields are correlated based on the queueid (referred to as
+        sessionname within Logrep), but not by pid.  The parsing is hard
+        coded, hard to extend, and error prone: empty fields are saved when
+        the log line doesn't match the regex, though it appears that they
+        will not overwrite existing data.  It also counts the number of log
+        lines parsed and skipped.  Most notably rejections are completely
+        ignored, making it unsuitable for the purposes of this project.
+        Needless to say it doesn't attempt to address any of the
+        complications in sections~\ref{complications} and~\ref{additional
+        complications} except for correlating by queueid.
+
+        Logrep does not come with any documentation, though some scanty
+        documentation is available on its website.  It requires a web
+        browser to interact with it, ensuring that automated log processing
+        will be difficult.  Sadly all attempts to use Logrep failed, as it
+        was unable to access the log files selected; this appears to be a
+        bug rather than operator error.  As parsing failed it wasn't
+        possible to review the reports Logrep can generate (available in
+        HTML only), nor to examine the (undocumented) format in which it
+        can save extracted data for subsequent reuse.
+
+        Logrep extracts far less data from Postfix logs than \parsername{},
+        completely ignores rejections, is effectively undocumented, doesn't
+        deal with the more complicated aspects of Postfix logs, cannot be
+        easily extended by the user, and at the time of writing doesn't
+        work properly.
+
         \url{http://www.itefix.no/phpws/index.php} \newline (Last checked
-        2007/08/13.)
+        2007/10/13.)
 
-    \item [Log Mail Analyser] has already been discussed in
+    \item [Log Mail Analyser] Please see the previous discussion in
         section~\ref{prior art}.
 
 \end{description}
@@ -2632,14 +2684,16 @@ program with \parsername{}.
 \subsection{Conclusion}
 
 While there are other programs available which perform basic Postfix log
-parsing (some to a greater level of intricacy and detail than others), none
-attempt to correlate log lines by pid or queueid to produce an overall
-record of the journey each mail traverses through Postfix.  Most other
-parsers immediately generate a report and discard the data extracted from
-the logs; those which don't discard the data retain it in a format
-inaccessible to other tools.  All of the parsers reviewed can produce a
-report of greater or lesser detail and complexity, a facility not offered
-by \parsername{}; reporting is deferred to a subsequent application.
+parsing (some to a greater level of detail than others), few
+attempt to correlate log lines queueid (none correlate by pid) to produce
+an overall record of the journey each mail traverses through Postfix.  No
+other parser collects the breadth of information gathered by \parsername{},
+nor makes it as easy to add new parsing rules.  Most other parsers
+immediately generate a report and discard the data extracted from the logs;
+those which don't discard the data retain it in a format inaccessible to
+other tools.  All of the parsers reviewed can produce a report of greater
+or lesser detail and complexity, a facility not offered by \parsername{};
+reporting is deferred to a subsequent application.
 
 The overriding difference between \parsername{} and the other parsers
 reviewed herein is that none of them aim to achieve the high level of
