@@ -1,14 +1,8 @@
+load "plot-defaults.gpi"
 
 set xlabel "Log file"
 set ylabel "Percentage increase of shuffled over normal"
-
-set terminal postscript monochrome eps size 5.4,3.3
 set output "build/plot-normal-shuffle-factor.ps"
-# Don't continue the scales to the next round number; stop at the topmost point.
-set autoscale xfixmax
-# Put the legend at the top left, Left justified text.
-set key top left Left reverse
-set grid ytics
 
 plot "build/stats-normal-shuffle-reverse-factor.txt" using 1 with lines \
         title "Shuffle vs normal"

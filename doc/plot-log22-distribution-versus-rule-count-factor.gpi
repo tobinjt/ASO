@@ -1,15 +1,11 @@
+load "plot-defaults.gpi"
+
 set xlabel "Program"
 set ylabel "Lines per rule"
-set grid ytics
-set nox2tics
-
-set terminal postscript monochrome eps size 5.4,3.2
 set output "build/plot-log22-distribution-versus-rule-count-factor.ps"
-# Put the legend at the top left, Left justified text.
-set key top left Left reverse
 
-#set logscale y
-
+set nox2tics
 set xrange [0:8]
+
 plot "stats-log22-rule-count-by-program.txt" using 1:($2 / $3):xticlabels(4) \
         with lines title "Lines per rule"

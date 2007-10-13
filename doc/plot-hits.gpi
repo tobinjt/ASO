@@ -1,12 +1,11 @@
+load "plot-defaults.gpi"
+
 set xlabel "Rule"
 set ylabel "Number of hits"
-set grid ytics
-
-set terminal postscript monochrome eps size 5.4,7.5
 set output "build/plot-hits.ps"
-# Put the legend at the top left, Left justified text.
-set key top left Left reverse
 
+# Disable the default tics because they're illegible.
 set noxtics
 set xtics out 0,25,125
+
 plot "stats-hits.txt" using 1:2 title "Number of hits"

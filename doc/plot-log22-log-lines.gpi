@@ -1,0 +1,10 @@
+load "plot-defaults.gpi"
+
+set xlabel "Program"
+set ylabel "Number of log lines"
+set output "build/plot-log22-log-lines.ps"
+
+set xrange [0:8]
+
+plot "stats-log22-rule-count-by-program.txt" using 1:2:xticlabels(4) \
+    with lines title "Number of log lines"
