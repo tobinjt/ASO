@@ -57,7 +57,7 @@ while (my $file = $dir->read()) {
 
     my (@lines) = read_file($filename);
     foreach my $line (@lines) {
-        if ($line =~ m/^Parsed logfile:.*:($RE{num}{real})$/) {
+        if ($line =~ m/^Parsed logfile:.*: ($RE{num}{real})$/) {
             $data{$prefix}->[$number] = $1;
         }
     }
