@@ -1202,10 +1202,7 @@ runs were performed with different rule orderings:
 
 \end{description}
 
-
-The resulting execution times are plotted in graph~\ref{normal vs shuffled
-vs reversed ordering}, where the difference is not readily apparent, but
-graphs~\ref{normal vs shuffled vs reversed ordering factor} show the
+Graphs~\ref{normal vs shuffled vs reversed ordering factor} show the
 percentage increase of execution times (mean and standard deviation are
 shown after the graph).  Overall this provides a modest but worthwhile
 performance increase.
@@ -2726,6 +2723,9 @@ performance.
 \subsubsection{Execution time vs file size vs number of lines.}
 \label{execution time vs file size vs number lines}
 
+\noindent
+\includegraphics{build/plot-normal-filesize-numlines.ps}
+
 The Y axis represents the following:
 
 \begin{enumerate}
@@ -2737,9 +2737,6 @@ The Y axis represents the following:
     \item The number of lines in the log file, divided by 10000.
 
 \end{enumerate}
-
-\noindent
-\includegraphics{build/plot-normal-filesize-numlines.ps}
 
 \subsubsection{Ratio of file size and number of lines to execution time}
 \label{execution time vs file size vs number lines factor}
@@ -2754,65 +2751,111 @@ The Y axis represents the following:
 
 \label{rule ordering graphs}
 
-\subsubsection{Normal vs shuffled vs reversed ordering}
-\label{normal vs shuffled vs reversed ordering}
-\includegraphics{build/plot-normal-shuffle-reverse.ps}
-
 \subsubsection{Percentage increase of shuffled + reversed over normal}
 \label{normal vs shuffled vs reversed ordering factor}
 \includegraphics{build/plot-normal-shuffle-factor.ps}
 \newline
 \includegraphics{build/plot-normal-reverse-factor.ps}
 
-The dips at logfiles 22 and 62--68 correspond to peaks in log file size in
-graph~\ref{execution time vs file size vs number lines}.  The explanation
-for this took some time to arrive at, but it turns out to be reasonably
-simple.  Examining the database after parsing logfile~22 in isolation shows
-64 rules matched during parsing, but as shown in graph~\ref{log22
-distribution by rule} the distribution of matching rules is extremely
-skewed.  Comparing the number of log lines per program versus rules per
-program in graphs~\ref{log22 log line and rule distribution by program}
-shows that \texttt{postfix/qmgr} has the highest number of log lines,
-however it has a low number of rules.  This combination results in a low
-average number of rules to try for \texttt{postfix/qmgr} log lines,
-reducing the overall average number of rules to try per log line.  In turn
-this reduces the average parsing time per log line, and thus the parsing
-time for the log file.  While the parsing time is substantially greater
-than the time for the log files on either side, the increase from optimal
-ordering to reversed ordering is proportionally smaller, producing the dips
-in graph~\ref{normal vs shuffled vs reversed ordering factor}.
+\subsubsection{Why are there dips in the graphs?}
+\label{Why are there dips in the graphs?}
 
-This non-intuitive effect will not be exhibited by log files in general: in
-a normally functioning mail system the impact of rule ordering will scale
-linearly with log file size.  The skewed distribution of log lines in the
-specific log files creates the anomaly described herein.
+The dips at logfiles 22 and 62--68 correspond to peaks in log file size in
+graph~\ref{execution time vs file size vs number lines}, and peaks in
+graph~\ref{execution time vs file size vs number lines factor} (where a
+peak means that more lines are processed per second, i.e.\ performance is
+better).  The explanation for this took some time to arrive at, but it
+turns out to be reasonably simple.  The large log files in question were
+caused by a mail forwarding loop, where the distribution of log lines is
+quite different to normal, resulting in different performance
+characteristics.
+
+The mail loop was set up by a user modifying his mail forwarding to:
+\newline \hspace*{2em}\texttt{$\backslash$username, username@domain}
+\newline This instructs Postfix to deliver the mail to the local user, and
+also forward to the remote address; this is generally not a problem except
+that the remote address in this case is the user's address, creating an
+infinite loop.  To prevent this happening Postfix examines the Delivered-To
+header in the mail and if the mail has already been delivered to the
+current address it is bounced back to the sender with the error message
+\texttt{mail forwarding loop for username@domain}.  Ordinarily this works
+well, but unfortunately the user noticed they had not received any mail in
+a while, and opted to send a test mail to themselves, causing a loop not
+caught by Postfix as described below.
+
+\begin{enumerate}
+
+    \item Postfix accepts a mail from username@domain, for
+        username@domain.
+
+    \item Postfix delivers the mail to the local mailbox and
+        username@domain, as instructed by the user's forwarding
+        instructions. The forwarded mail has a
+        \texttt{Delivered-To:~username@domain} header added, and the
+        envelope sender address is username@domain.  Log lines are added by
+        \textit{postfix/local}, \textit{postfix/qmgr\/} (twice),
+        \textit{postfix/cleanup\/} and finally \textit{postfix/pickup}.
+
+    \item Postfix accepts the mail for username@domain, but while
+        delivering it notices that the \texttt{Delivered-To} header already
+        contains the address it's currently delivering to, and therefore
+        sends a bounce notification with sender address \textit{$<>$\/} to
+        the original sender: username@domain.  Log lines are added by
+        \textit{postfix/local}, \textit{postfix/qmgr\/} (twice) and
+        \textit{postfix/cleanup}.
+
+    \item Postfix delivers the bounce notification to both the local
+        mailbox and to username@domain, as instructed by the user's
+        forwarding instructions.  A \texttt{Delivered-To:~username@domain}
+        header is added to the forwarded bounce notification, and the
+        envelope sender address is now username@domain.  Log lines are
+        added by \textit{postfix/local},
+        \textit{postfix/qmgr\/} (twice), \textit{postfix/cleanup}, and finally
+        \textit{postfix/pickup}.
+
+    \item Postfix accepts the forwarded bounce notification but while
+        delivering it notices that the \texttt{Delivered-To} header already
+        contains the address currently being delivered to, and sends a
+        bounce notification to the sender: username@domain.  Log lines are
+        added by \textit{postfix/local}, \textit{postfix/qmgr\/} (twice)
+        and \textit{postfix/cleanup}.
+
+    \item GOTO 2.
+
+\end{enumerate}
+
+The sequence described above occurs extremely rapidly, as Postfix does not
+have to deliver the mail to an external system, so mails are delivered,
+bounced and generated as fast as the disks can keep up, resulting in a huge
+volume of logs.
+
+The vast majority of log lines when a mail loop occurs are from Postfix
+components which have a small number of rules associated with them, whereas
+in general the most common log lines are logged by \textit{postfix/smtpd},
+which also has the highest number of rules.  \textit{postfix/smtpd\/} log
+lines are distributed across rules much more evenly that
+\textit{postfix/qmgr}, \textit{postfix/local}, \textit{postfix/cleanup\/}
+or \textit{postfix/pickup}, so the average number of rules required to
+parse a \textit{postfix/smtpd\/} log line is much higher that the average
+number required to parse other log lines.  Thus the average number of rules
+required to parse a random line from logs containing a mail loop is much
+lower than the average number required to parse a random log line from logs
+without a mail loop, as can be seen in the peaks in graphs~\ref{execution
+time vs file size vs number lines factor} and~\ref{normal vs shuffled vs
+reversed ordering factor}.  The difference is more extreme in the reversed
+ordering case because the largest number of rules to be consulted for the
+commonly occurring log lines during a mail loop is far less than the
+largest number of rules that are consulted for commonly occurring lines
+outside of a mail loop.  The number of rules which needs to be consulted
+when the ordering is shuffled varies between the optimum and nadir, and
+the performance varies proportionally.
+
+The difference between logs with a mail loop and logs without can be seen
+in this table showing the increases for the different rule orderings and
+combinations of log files:
 
 \noindent\input{build/stats-normal-shuffle-reverse-include.tex}
 
-\subsubsection{Log 22 distribution}
-\label{log22 distribution by rule}
-\includegraphics{build/plot-log22-distribution-by-rule.ps}
-
-The individual rules are not labelled on the x-axis because doing so makes
-the graph illegible.
-
-\subsubsection{Log 22 log line and rule distribution by program}
-\label{log22 log line and rule distribution by program}
-
-\noindent
-\includegraphics{build/plot-log22-rules.ps}
-
-\noindent
-\includegraphics{build/plot-log22-log-lines.ps}
-
-As shown in graphs above, the most common log lines are from programs which
-have a low number of rules, thus reducing the average parsing time per
-line, and the overall execution time relative to the input size.
-
-\subsubsection{Rule hits}
-\label{rule hits}
-
-\noindent\includegraphics{build/plot-hits.ps}
 
 
 
@@ -2837,6 +2880,12 @@ regexs compiled per line drops sharply for those eight log files, resulting
 in a much lower increase in relative execution time, as detailed below.
 
 \input{build/stats-cached-discarded-include-for-graph}
+
+
+\subsection{Rule hits}
+\label{rule hits}
+
+\noindent\includegraphics{build/plot-hits.ps}
 
 
 \subsection{Conclusion}
