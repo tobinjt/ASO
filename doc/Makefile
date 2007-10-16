@@ -46,6 +46,8 @@ logparser.deps: build/logparser-flow-chart.ps \
 				build/plot-normal-reverse-factor.ps build/plot-normal-filesize-numlines-factor.ps \
 				build/plot-normal-filesize-numlines.ps build/plot-log22-distribution-by-rule.ps \
 				build/plot-log22-distribution-versus-rule-count.ps build/plot-hits.ps \
+				build/plot-hits-high.ps build/plot-hits-middle.ps \
+				build/plot-hits-low.ps \
 				build/stats-cached-discarded-include-for-graph.tex \
 				build/stats-normal-filesize-line-count-include.tex \
 				build/stats-normal-shuffle-reverse-include.tex \
@@ -76,6 +78,9 @@ build/plot-normal-filesize-numlines.ps: build/stats-normal.txt file-sizes.txt wc
 build/plot-log22-distribution-by-rule.ps: stats-log22-distribution-by-rule.txt
 build/plot-log22-distribution-versus-rule-count.ps: stats-log22-rule-count-by-program.txt
 build/plot-hits.ps: stats-hits.txt
+build/plot-hits-high.ps: stats-hits.txt
+build/plot-hits-middle.ps: stats-hits.txt
+build/plot-hits-low.ps: stats-hits.txt
 build/plot-log22-log-lines.ps: stats-log22-rule-count-by-program.txt
 build/plot-log22-rules.ps: stats-log22-rule-count-by-program.txt
 
@@ -181,7 +186,7 @@ build/stats-normal-reverse-stddev-other.txt: build/stats-normal-shuffle-reverse-
 build/stats-normal-shuffle-reverse-include.tex: \
 		build/stats-normal-shuffle-stddev.txt build/stats-normal-shuffle-stddev-22_62-68.txt build/stats-normal-shuffle-stddev-other.txt \
 		build/stats-normal-reverse-stddev.txt build/stats-normal-reverse-stddev-22_62-68.txt build/stats-normal-reverse-stddev-other.txt
-	perl mk-stats-cached-discarded-include $^ | sed -e 's/\\%//g' > "$@" || (rm -f "$@"; false)
+	perl mk-stats-cached-discarded-include $^ > "$@" || (rm -f "$@"; false)
 
 # Build stats from the directory created by gen-stats.
 build/stats-normal.txt: stats-normal

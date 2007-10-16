@@ -2713,10 +2713,11 @@ anomalies and patterns are immediately obvious.  These graphs are used to
 illustrate the topics discussed in section~\ref{rule efficiency}.  The
 graphs in the first section cover parser scalability, demonstrating that
 performance scales linearly with input size.  The impact of rule ordering
-is shown in section~\ref{rule ordering graphs}, and the lower impact of
-rule ordering on larger log files is explained.  The final group of graphs
+is shown in section~\ref{rule ordering graphs}, and the anomalous dips and
+peaks apparent in some graphs are explained.  The next group of graphs
 vividly shows the huge impact that caching compiled regexs has on parser
-performance.
+performance.  This section concludes with a breakdown of the rule hits
+accumulated during a single test run of the parser.
 
 \subsection{Parser scalability}
 
@@ -2726,7 +2727,7 @@ performance.
 \noindent
 \includegraphics{build/plot-normal-filesize-numlines.ps}
 
-The Y axis represents the following:
+The Y axis in the graph above represents the following:
 
 \begin{enumerate}
 
@@ -2861,6 +2862,14 @@ combinations of log files:
 
 \subsection{Caching regexs}
 
+The following graphs show the impact that not caching compiled regexs has
+on parser performance: on typical log files the execution time when not
+caching compiled regexs is 500--600\% of the execution time when caching;
+reversing the perspective shows that cached execution time is merely
+17--20\% of non-cached execution time.  Caching compiled regexs is probably
+the single most effective optimisation possible in the parser's
+implementation.
+
 \subsubsection{Regex: cached vs discarded}
 \label{normal regex vs discard regex}
 \includegraphics{build/plot-cached-discarded.ps}
@@ -2872,12 +2881,15 @@ combinations of log files:
 Two large dips can be seen in graph~\ref{normal regex vs disarded regex
 factor} at log files 22 and 62--68, corresponding to the spikes in log file
 size in graph~\ref{execution time vs file size vs number lines}.  The
-anomalies are caused by a combination of a mail loop and a delivery failure
-which resulted in a huge number of log lines, all of which were matched by
-a single rule.  Sorting the rules by the number of successful matches has
-the effect that this rule will be tried first, so the average number of
-regexs compiled per line drops sharply for those eight log files, resulting
-in a much lower increase in relative execution time, as detailed below.
+reason for the anomalous log files has already been explained in
+section~\ref{Why are there dips in the graphs?}.
+
+The distribution of log lines across rules is much different and the
+average number of rules consulted per log line is much lower when there is
+a mail loop; this results in far fewer regex compilations per line than
+when there isn't a mail loop, and a correspondingly decreased execution
+time.  The increases in execution time when not caching regexs for
+different combinations of log files are summarised in the table below:
 
 \input{build/stats-cached-discarded-include-for-graph}
 
@@ -2885,8 +2897,24 @@ in a much lower increase in relative execution time, as detailed below.
 \subsection{Rule hits}
 \label{rule hits}
 
+The number of hits per rule is quite unevenly spread, resembling a Power
+Law distribution~\cite{powerlaw}.
+
 \noindent\includegraphics{build/plot-hits.ps}
 
+As the graph above is quite difficult to read it has been separated into
+three sections below: low, middle and high.
+
+\noindent\includegraphics{build/plot-hits-low.ps}
+
+It is apparent from the low graph that some rules have few or no hits;
+those with zero hits are rules which were written to parse log files used
+during development of the parser but not utilised in the test runs
+performed for this document.
+
+\noindent\includegraphics{build/plot-hits-middle.ps}
+
+\noindent\includegraphics{build/plot-hits-high.ps}
 
 \subsection{Conclusion}
 
@@ -2896,7 +2924,8 @@ parser scalability, showing the linearly relationship between execution
 time and input size.  Section~\ref{rule ordering graphs} relates to the
 effect of rule ordering on execution time, and the unexpected consequences
 of specific inputs.  The necessity of caching compiled regexs is attested
-to by the final group of graphs, where the difference between caching and
-discarding is staggering.
+to by the third group of graphs, where the difference between caching and
+discarding is staggering.  This section concluded with a breakdown of the
+rule hits accumulated during a single test run of the parser.
 
 \end{document}
