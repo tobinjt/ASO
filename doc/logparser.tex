@@ -28,6 +28,14 @@
 }
 \usepackage{breakurl}
 \usepackage{lastpage}
+
+% \showgraph{filename}{caption}{label}
+\newcommand{\showgraph}[3]{
+    \begin{figure}[hbt!]
+        \caption{#2}\label{#3}
+        \includegraphics{#1}
+    \end{figure}
+}
     
 \begin{document}
 
@@ -1157,18 +1165,18 @@ the speed of the parser rather than the speed of the database.
 
 An important property of a parser is how execution time scales with input
 size: does it scale linearly, polynomially, or exponentially?
-Graph~\ref{execution time vs file size vs number lines} shows the execution
-time in seconds, file size in MB and tens of thousands of lines per log
-file per log file.  All three lines run roughly in parallel, giving a
-visual impression that the algorithm scales linearly with input size.  This
-impression is borne out by graph~\ref{execution time vs file size vs number
-lines factor}, which plots the ratio of file size vs execution time and
-number of lines vs execution time.  As the reader can see, the ratios are
-quite tightly banded, showing that the algorithm scales linearly: the much
-larger log files between points 60 and 70 on the X axis in
-graph~\ref{execution time vs file size vs number lines} don't cause any
-abnormality in the corresponding points in graph~\ref{execution time vs
-file size vs number lines factor}.
+Graph~\ref{execution time vs file size vs number of lines graph} shows the
+execution time in seconds, file size in MB and tens of thousands of lines
+per log file per log file.  All three lines run roughly in parallel, giving
+a visual impression that the algorithm scales linearly with input size.
+This impression is borne out by graph~\ref{execution time vs file size vs
+number lines factor}, which plots the ratio of file size vs execution time
+and number of lines vs execution time.  As the reader can see, the ratios
+are quite tightly banded, showing that the algorithm scales linearly: the
+much larger log files between points 60 and 70 on the X axis in
+graph~\ref{execution time vs file size vs number of lines graph} don't
+cause any abnormality in the corresponding points in graph~\ref{execution
+time vs file size vs number lines factor}.
 
 
 \subsubsection{Rule ordering for efficiency}
@@ -1202,10 +1210,11 @@ runs were performed with different rule orderings:
 
 \end{description}
 
-Graphs~\ref{normal vs shuffled vs reversed ordering factor} show the
-percentage increase of execution times (mean and standard deviation are
-shown after the graph).  Overall this provides a modest but worthwhile
-performance increase.
+Graphs~\ref{percentage increase of shuffled over normal}
+and~\ref{percentage increase of reversed over normal} show the percentage
+increase of execution times (mean and standard deviation are shown after
+the graph).  Overall this provides a modest but worthwhile performance
+increase.
 
 \subsubsection{Caching each regex}
 
@@ -1215,8 +1224,8 @@ and optimisation takes CPU time.  Perl automatically caches static regexs,
 but dynamic regexs need to be explicitly compiled and cached.
 Graph~\ref{normal regex vs discard regex} shows execution times with and
 without caching the regex.  Caching the compiled regexs is obviously far
-more efficient; graph~\ref{normal regex vs disarded regex factor} shows the
-percentage execution time increase when not caching each regex.
+more efficient; graph~\ref{normal regex vs discarded regex factor} shows
+the percentage execution time increase when not caching each regex.
 
 Caching the compiled regexs is quite simple, and is the single most
 effective optimisation tried in the parser.
@@ -2705,6 +2714,8 @@ understanding of Postfix logs achieved by \parsername{}.
 
 \label{graphs}
 
+\renewcommand{\figurename}{Graph}
+
 \subsection{Introduction}
 
 Graphs are an excellent means of displaying data, transforming a
@@ -2721,11 +2732,8 @@ accumulated during a single test run of the parser.
 
 \subsection{Parser scalability}
 
-\subsubsection{Execution time vs file size vs number of lines.}
-\label{execution time vs file size vs number lines}
-
-\noindent
-\includegraphics{build/plot-normal-filesize-numlines.ps}
+\showgraph{build/plot-normal-filesize-numlines.ps}{Execution time vs file
+size vs number of lines}{execution time vs file size vs number of lines graph}
 
 The Y axis in the graph above represents the following:
 
@@ -2739,30 +2747,29 @@ The Y axis in the graph above represents the following:
 
 \end{enumerate}
 
-\subsubsection{Ratio of file size and number of lines to execution time}
-\label{execution time vs file size vs number lines factor}
-
-\noindent
-\includegraphics{build/plot-normal-filesize-numlines-factor.ps}
+\showgraph{build/plot-normal-filesize-numlines-factor.ps}{Ratio of file
+size and number of lines to execution time}{execution time vs file size vs
+number lines factor}
 
 \input{build/stats-normal-filesize-line-count-include}
 
+\clearpage
 
 \subsection{Rule ordering}
 
 \label{rule ordering graphs}
 
-\subsubsection{Percentage increase of shuffled + reversed over normal}
-\label{normal vs shuffled vs reversed ordering factor}
-\includegraphics{build/plot-normal-shuffle-factor.ps}
-\newline
-\includegraphics{build/plot-normal-reverse-factor.ps}
+\showgraph{build/plot-normal-shuffle-factor.ps}{Percentage increase of
+shuffled over normal}{percentage increase of shuffled over normal}
+
+\showgraph{build/plot-normal-reverse-factor.ps}{Percentage increase of
+reversed over normal}{percentage increase of reversed over normal}
 
 \subsubsection{Why are there dips in the graphs?}
 \label{Why are there dips in the graphs?}
 
 The dips at logfiles 22 and 62--68 correspond to peaks in log file size in
-graph~\ref{execution time vs file size vs number lines}, and peaks in
+graph~\ref{execution time vs file size vs number of lines graph}, and peaks in
 graph~\ref{execution time vs file size vs number lines factor} (where a
 peak means that more lines are processed per second, i.e.\ performance is
 better).  The explanation for this took some time to arrive at, but it
@@ -2842,14 +2849,15 @@ number required to parse other log lines.  Thus the average number of rules
 required to parse a random line from logs containing a mail loop is much
 lower than the average number required to parse a random log line from logs
 without a mail loop, as can be seen in the peaks in graphs~\ref{execution
-time vs file size vs number lines factor} and~\ref{normal vs shuffled vs
-reversed ordering factor}.  The difference is more extreme in the reversed
-ordering case because the largest number of rules to be consulted for the
-commonly occurring log lines during a mail loop is far less than the
-largest number of rules that are consulted for commonly occurring lines
-outside of a mail loop.  The number of rules which needs to be consulted
-when the ordering is shuffled varies between the optimum and nadir, and
-the performance varies proportionally.
+time vs file size vs number lines factor},~\ref{percentage increase of
+shuffled over normal} and~\ref{percentage increase of reversed over
+normal}.  The difference is more extreme in the reversed ordering case
+because the largest number of rules to be consulted for the commonly
+occurring log lines during a mail loop is far less than the largest number
+of rules that are consulted for commonly occurring lines outside of a mail
+loop.  The number of rules which needs to be consulted when the ordering is
+shuffled varies between the optimum and nadir, and the performance varies
+proportionally.
 
 The difference between logs with a mail loop and logs without can be seen
 in this table showing the increases for the different rule orderings and
@@ -2870,19 +2878,18 @@ reversing the perspective shows that cached execution time is merely
 the single most effective optimisation possible in the parser's
 implementation.
 
-\subsubsection{Regex: cached vs discarded}
-\label{normal regex vs discard regex}
-\includegraphics{build/plot-cached-discarded.ps}
+\showgraph{build/plot-cached-discarded.ps}{Regex: cached vs
+discarded}{normal regex vs discard regex}
 
-\subsubsection{Regex: percentage execution time increase}
-\label{normal regex vs disarded regex factor}
-\includegraphics{build/plot-cached-discarded-factor.ps}
+\showgraph{build/plot-cached-discarded-factor.ps}{Regex: percentage
+execution time increase}{normal regex vs discarded regex factor}
 
-Two large dips can be seen in graph~\ref{normal regex vs disarded regex
+Two large dips can be seen in graph~\ref{normal regex vs discarded regex
 factor} at log files 22 and 62--68, corresponding to the spikes in log file
-size in graph~\ref{execution time vs file size vs number lines}.  The
-reason for the anomalous log files has already been explained in
-section~\ref{Why are there dips in the graphs?}.
+size in graphs~\ref{execution time vs file size vs number of lines graph}
+and~\ref{normal regex vs discard regex}.  The reason for the anomalous log
+files has already been explained in section~\ref{Why are there dips in the
+graphs?}.
 
 The distribution of log lines across rules is much different and the
 average number of rules consulted per log line is much lower when there is
@@ -2900,21 +2907,25 @@ different combinations of log files are summarised in the table below:
 The number of hits per rule is quite unevenly spread, resembling a Power
 Law distribution~\cite{powerlaw}.
 
-\noindent\includegraphics{build/plot-hits.ps}
+\showgraph{build/plot-hits.ps}{Hits per rule}{rule hits graph}
 
-As the graph above is quite difficult to read it has been separated into
-three sections below: low, middle and high.
+As graph~\ref{rule hits graph} is quite difficult to read it has been
+separated into three sections: low, middle and high.
 
-\noindent\includegraphics{build/plot-hits-low.ps}
+\showgraph{build/plot-hits-low.ps}{Hits per rule (low)}{hits per rule low}
 
-It is apparent from the low graph that some rules have few or no hits;
-those with zero hits are rules which were written to parse log files used
-during development of the parser but not utilised in the test runs
-performed for this document.
+It is apparent from the low graph (graph~\ref{hits per rule low}) that some
+rules have few or no hits; those with zero hits are rules which were
+written to parse log files used during development of the parser but not
+utilised in the test runs performed for this document.
 
-\noindent\includegraphics{build/plot-hits-middle.ps}
+\showgraph{build/plot-hits-middle.ps}{Hits per rule (middle)}{hits per rule
+middle}
 
-\noindent\includegraphics{build/plot-hits-high.ps}
+\showgraph{build/plot-hits-high.ps}{Hits per rule (high)}{hits per rule
+high}
+
+\clearpage
 
 \subsection{Conclusion}
 
