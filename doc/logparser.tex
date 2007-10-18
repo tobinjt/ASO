@@ -36,6 +36,11 @@
         \includegraphics{#1}
     \end{figure}
 }
+
+% Replacement for \ref{}, adds the page number too.
+\newcommand{\refwithpage}[1]{%
+    \empty{}\ref{#1} (page~\pageref{#1})%
+}
     
 \begin{document}
 
@@ -109,10 +114,10 @@ multitude of uses far beyond those conceived of by the author.
 Section~\ref{background} provides background information useful in
 understanding the paper, parser and algorithm.
 
-Section~\ref{database schema} partially describes the database schema used by
-the parser, explaining in detail the tables used for storing the resulting
-data.  The remainder of the schema is laid out in section~\ref{rule
-attributes}.
+Section~\ref{database schema} partially describes the database schema used
+by the parser, explaining in detail the tables used for storing the
+resulting data.  The remainder of the schema is laid out in
+section~\ref{rule attributes}.
 
 Section~\ref{rules} discusses the parsing rules in detail, describing the
 table used to hold the rules and explaining their structure, using an
@@ -166,7 +171,7 @@ to this paper, namely Postfix restrictions and policy servers.  The
 assumptions made in designing and implementing the parser are explained, as
 are the conventions used in this paper.  Other projects which attempt to
 parse Postfix logs are summarised (full details are available in
-Section~\ref{other-parsers}), plus a review of previously published
+section~\refwithpage{other-parsers}), plus a review of previously published
 research in this area.
 
 \subsection{Motivation}
@@ -180,8 +185,8 @@ from those logs, providing a consistent and simple view of the logs which
 future tools can utilise.  The gathered data can then be used to optimise
 current anti-spam measures, provide a baseline to test new anti-spam
 measures against, or to produce statistics showing how effective those
-measures are.\footnote{Section~\ref{introduction} lists some more example
-uses.}
+measures are.\footnote{Section~\refwithpage{introduction} lists some more
+example uses.}
 
 A short example of the optimisation possible using data from the database
 is which Postfix restrictions reject the highest number of mails:
@@ -370,7 +375,7 @@ receive mail, send mail, local delivery of mail, etc. --- full details can
 be found at~\cite{postfix-overview}.  Each log line contains the name of
 the Postfix program which produced the log line, and this information is
 used when determining which rules should be used to parse each log line
-(see section~\ref{rule characteristics} for details.)
+(see section~\refwithpage{rule characteristics} for details.)
 
 \subsubsection{Mixing and matching Postfix restrictions}
 
@@ -522,19 +527,19 @@ the context it appears in.
 
 \subsection{Other parsers}
 
-10 other parsers have been reviewed in Appendix~\ref{other-parsers} as part
-of the background research for this project.  None of the reviewed parsers
-perform the type of advanced parsing and log correlation described here;
-all are intended to perform a specific parsing and reporting task, rather
-than be a generic parser, extracting data and leaving generation of reports
-from the data to other programs.  Some parsers save the data extracted to a
-database but the majority discard all data once they have finished running,
-making historical analysis impossible.  The other parsers reviewed all
-produce a report of greater or lesser complexity and detail, whereas the
-program described here doesn't attempt to produce a report at all; that
-responsibility is deferred to a separate program, to be developed later.
-The parsing algorithm and program described here are designed to enable
-much more detailed log analysis by providing a stable platform for
+10 other parsers have been reviewed in Appendix~\refwithpage{other-parsers}
+as part of the background research for this project.  None of the reviewed
+parsers perform the type of advanced parsing and log correlation described
+here; all are intended to perform a specific parsing and reporting task,
+rather than be a generic parser, extracting data and leaving generation of
+reports from the data to other programs.  Some parsers save the data
+extracted to a database but the majority discard all data once they have
+finished running, making historical analysis impossible.  The other parsers
+reviewed all produce a report of greater or lesser complexity and detail,
+whereas the program described here doesn't attempt to produce a report at
+all; that responsibility is deferred to a separate program, to be developed
+later.  The parsing algorithm and program described here are designed to
+enable much more detailed log analysis by providing a stable platform for
 subsequent programs to develop upon.
 
 
@@ -592,10 +597,10 @@ The schema used with the MySQL database is undocumented, but at least it's
 possible to discover the schema with an SQL database, unlike with Berkeley
 DB\@.
 
-\parsername{} is bundled with extensive documentation, including an in-depth
-explanation of the database schema.  It supports multiple values for every
-field for which multiple values are reasonable (e.g.\ the sender address
-should have one value only, whereas the recipient address can have
+\parsername{} is bundled with extensive documentation, including an
+in-depth explanation of the database schema.  It supports multiple values
+for every field for which multiple values are reasonable (e.g.\ the sender
+address should have one value only, whereas the recipient address can have
 multiple values).  The default database it uses is SQLite3, which supports
 most standard SQL features (its lacks full foreign key support), has
 libraries available for most common programming languages, and a simple
@@ -604,14 +609,16 @@ text based client allowing ad-hoc queries with minimal effort.
 Parsing in LMA is hand-coded and requires major changes to the code to
 parse new log lines or extract additional data.  It does not appear to deal
 with any of the complications discussed in
-sections~\ref{complications}~and~\ref{additional complications}.  The
-program fails to parse Postfix 2.2.x or 2.3.x log files; indeed it produces
-a number of warnings and no usable output.  Parsing in \parsername{} is
-divided in two (see sections~\ref{rules} and~\ref{parsing-algorithm} for a
-more detailed explanation): parsing a new log line is a trivial matter of
-adding a new rule, but code changes may be required if new complications
-(sections~\ref{complications} and~\ref{additional complications}) must be
-dealt with or a new action is required (section~\ref{actions-in-detail}).
+sections~\refwithpage{complications} and~\refwithpage{additional
+complications}.  The program fails to parse Postfix 2.2.x or 2.3.x log
+files; indeed it produces a number of warnings and no usable output.
+Parsing in \parsername{} is divided in two (see
+sections~\refwithpage{rules} and~\refwithpage{parsing-algorithm} for a more
+detailed explanation): parsing a new log line is a trivial matter of adding
+a new rule, but code changes may be required if new complications
+(sections~\refwithpage{complications} and~\refwithpage{additional
+complications}) must be dealt with or a new action is required
+(section~\refwithpage{actions-in-detail}).
 
 LMA does provide some simple reports (IP-STORY, FROM-STORY, DAILY-EMAIL and
 DAILY-REJECT); the author was unable to parse any logs with LMA, so didn't
@@ -680,27 +687,27 @@ used to parse log files, and the data saved from the parsing of log files.
 Rules have the fields required to parse the log lines, extract data to be
 saved, and the action to be executed; they also have several fields which
 aid the user in understanding what each rule parses.  The rules are
-described in detail in section~\ref{rules} but the fields are covered in
-section~\ref{rule attributes}.
+described in detail in section~\refwithpage{rules} but the fields are
+covered in section~\refwithpage{rule attributes}.
 
 The data saved from parsing the logs is also divided into two tables as
 described below: connections and results.  The connections table contains a
 row for every mail accepted and every connection where there was a
 rejection; the individual fields will be described in the forthcoming
-section~\ref{connections table}.  The results table has one or more rows
-per row in the connections table, depending on the specifics of the
+section~\refwithpage{connections table}.  The results table has one or more
+rows per row in the connections table, depending on the specifics of the
 mail/connection; the fields will be covered in detail in
-section~\ref{results table}.
+section~\refwithpage{results table}.
 
 \subsection{Rules table}
 
 \label{rule attributes}
 
-Rules are discussed in detain in section~\ref{rules}, but the rules table
-is covered here.  Rules are created by the user, not the parser, and will
-not be modified by the parser (except for the hits and hits\_total fields).
-Rules parse the individual lines, telling the parser which fields to
-extract and what action to take for that line.
+Rules are discussed in detain in section~\refwithpage{rules}, but the rules
+table is covered here.  Rules are created by the user, not the parser, and
+will not be modified by the parser (except for the hits and hits\_total
+fields).  Rules parse the individual lines, telling the parser which fields
+to extract and what action to take for that line.
 
 Each rule defines the following:
 
@@ -766,12 +773,12 @@ Each rule defines the following:
         compiled before attempting to parse the log file --- otherwise each
         regex would be recompiled each time it was used, resulting in a
         large, data dependent slowdown.  Rule efficiency concerns are
-        discussed in section~\ref{rule efficiency}.
+        discussed in section~\refwithpage{rule efficiency}.
 
     \item [result\_cols, connection\_cols] Specifies how the fields in the
         log line will be extracted.  The format is: \newline
-        \texttt{smtp\_code = 1; recipient = 2, sender = 4;} \newline
-        i.e.\ semi-colon or comma separated assignment statements, with the
+        \texttt{smtp\_code = 1; recipient = 2, sender = 4;} \newline i.e.\
+        semi-colon or comma separated assignment statements, with the
         variable name on the left and the matching field from the regex on
         the right hand side.  The list of acceptable variable names is:
 
@@ -792,7 +799,7 @@ Each rule defines the following:
         assignment.
 
     \item [action] The action the algorithm will take; a full list can be
-        found in Section~\ref{actions-in-detail}.
+        found in Section~\refwithpage{actions-in-detail}.
 
     \item [queueid] Specifies the matching field from the regex which gives
         the queueid, or zero if the log line doesn't contain a queueid.
@@ -806,7 +813,7 @@ Each rule defines the following:
         occurring log lines will be tried before rules matching less
         commonly occurring log lines, lowering the program's execution
         time.  Rule ordering for efficiency is discussed in
-        section~\ref{rule ordering for efficiency}.
+        section~\refwithpage{rule ordering for efficiency}.
 
     \item [hits\_total] The total number of hits for this rule over all
         runs of the parser.
@@ -814,7 +821,7 @@ Each rule defines the following:
     \item [priority] This is the user-configurable companion to hits: rules
         will be tried in order of priority, overriding hits.  This allows
         more specific rules to take precedence over more general rules
-        (described in section~\ref{overlapping rules}).
+        (described in section~\refwithpage{overlapping rules}).
 
 \end{description}
 
@@ -955,9 +962,9 @@ with overlapping rules, and the problems they can cause.  An example rule
 and a line it would match are provided, plus a description of how the
 fields in the rule are used when matching and performing the action (the
 details of the table containing the rules have already been described in
-section~\ref{rule attributes},).  This section finishes with a discussion
-of rule efficiency concerns, referring to the graphs in
-section~\ref{graphs}.
+section~\refwithpage{rule attributes},).  This section finishes with a
+discussion of rule efficiency concerns, referring to the graphs in
+section~\refwithpage{graphs}.
 
 
 \subsection{Rule characteristics}
@@ -1039,12 +1046,12 @@ Detecting overlapping rules is difficult, but the following may be helpful:
         similar to: \textbf{select regex from rules order by regex;}
 
     \item Compare the results of parsing using sorted, shuffled and
-        reversed rules.\footnote{See section~\ref{rule efficiency} for more
-        details of sorting the rules.}  Parse a number of log files using
-        normal sorting, dump a textual representation of the connections
-        and results tables, and delete everything from those tables.
-        Repeat with shuffled and reversed sorting.  If there are no
-        overlapping rules the tables from each run will be identical;
+        reversed rules.\footnote{See section~\refwithpage{rule efficiency}
+        for more details of sorting the rules.}  Parse a number of log
+        files using normal sorting, dump a textual representation of the
+        connections and results tables, and delete everything from those
+        tables.  Repeat with shuffled and reversed sorting.  If there are
+        no overlapping rules the tables from each run will be identical;
         differences indicate overlapping rules, and the rule\_ids which
         differ determine which rules overlap.  Unfortunately this method
         cannot prove the absence of overlapping rules; it can detect
@@ -1113,7 +1120,7 @@ The various fields are used as follows;
         way.
 
     \item [action:] will be executed if the regex matches successfully (see
-        section~\ref{actions-in-detail} for full details).
+        section~\refwithpage{actions-in-detail} for full details).
 
     \item [result\_cols, connection\_cols, result\_data and
         connection\_data:] are \newline used by the action to extract and
@@ -1124,7 +1131,7 @@ The various fields are used as follows;
         performed on it.
 
     \item [hits, hits\_total and priority:] hits and priority are used in
-        ordering the rules (see section~\ref{rule ordering for
+        ordering the rules (see section~\refwithpage{rule ordering for
         efficiency}); hits\_total is updated at the end of each run but is
         otherwise unused.
 
@@ -1142,9 +1149,9 @@ Parsing efficiency is an obvious concern when the parser routinely needs to
 deal with 75 MB log files containing 300,000 log lines (for a small mail
 server --- large scale mail servers would have much larger log files on a
 daily basis).  When generating the data for the graphs included in
-section~\ref{graphs}, 93 log files (totaling 10.08 GB, 60.72 million lines)
-were each parsed 10 times, the first run discarded and the remaining 9 runs
-averaged.  The first run is discarded for two reasons:
+section~\refwithpage{graphs}, 93 log files (totaling 10.08 GB, 60.72
+million lines) were each parsed 10 times, the first run discarded and the
+remaining 9 runs averaged.  The first run is discarded for two reasons:
 
 \begin{enumerate}
 
@@ -1165,30 +1172,31 @@ the speed of the parser rather than the speed of the database.
 
 An important property of a parser is how execution time scales with input
 size: does it scale linearly, polynomially, or exponentially?
-Graph~\ref{execution time vs file size vs number of lines graph} shows the
-execution time in seconds, file size in MB and tens of thousands of lines
-per log file per log file.  All three lines run roughly in parallel, giving
-a visual impression that the algorithm scales linearly with input size.
-This impression is borne out by graph~\ref{execution time vs file size vs
-number lines factor}, which plots the ratio of file size vs execution time
-and number of lines vs execution time.  As the reader can see, the ratios
-are quite tightly banded, showing that the algorithm scales linearly: the
-much larger log files between points 60 and 70 on the X axis in
-graph~\ref{execution time vs file size vs number of lines graph} don't
-cause any abnormality in the corresponding points in graph~\ref{execution
-time vs file size vs number lines factor}.
+Graph~\refwithpage{execution time vs file size vs number of lines graph}
+shows the execution time in seconds, file size in MB and tens of thousands
+of lines per log file per log file.  All three lines run roughly in
+parallel, giving a visual impression that the algorithm scales linearly
+with input size.  This impression is borne out by
+graph~\refwithpage{execution time vs file size vs number lines factor},
+which plots the ratio of file size vs execution time and number of lines vs
+execution time.  As the reader can see, the ratios are quite tightly
+banded, showing that the algorithm scales linearly: the much larger log
+files between points 60 and 70 on the X axis in
+graph~\refwithpage{execution time vs file size vs number of lines graph}
+don't cause any abnormality in the corresponding points in
+graph~\refwithpage{execution time vs file size vs number lines factor}.
 
 
 \subsubsection{Rule ordering for efficiency}
 
 \label{rule ordering for efficiency}
 
-Rule ordering was mentioned in section~\ref{rule attributes} and will be
-covered in greater detail in this section.  At the time of writing there
-are 139 different rules, with the top 10\% matching the vast majority of
-the log lines, and the remaining log lines split across the other 90\% of
-the rules (as shown in graph~\ref{rule hits}).  Assuming that the
-distribution of log lines is reasonably steady over time, program
+Rule ordering was mentioned in section~\refwithpage{rule attributes} and
+will be covered in greater detail in this section.  At the time of writing
+there are 139 different rules, with the top 10\% matching the vast majority
+of the log lines, and the remaining log lines split across the other 90\%
+of the rules (as shown in graph~\refwithpage{rule hits}).  Assuming that
+the distribution of log lines is reasonably steady over time, program
 efficiency should benefit from trying more frequently matching rules before
 those which match less frequently.  To test this hypothesis three full test
 runs were performed with different rule orderings:
@@ -1210,11 +1218,11 @@ runs were performed with different rule orderings:
 
 \end{description}
 
-Graphs~\ref{percentage increase of shuffled over normal}
-and~\ref{percentage increase of reversed over normal} show the percentage
-increase of execution times (mean and standard deviation are shown after
-the graph).  Overall this provides a modest but worthwhile performance
-increase.
+Graphs~\refwithpage{percentage increase of shuffled over normal}
+and~\refwithpage{percentage increase of reversed over normal} show the
+percentage increase of execution times (mean and standard deviation are
+shown after the graph).  Overall this provides a modest but worthwhile
+performance increase.
 
 \subsubsection{Caching each regex}
 
@@ -1222,10 +1230,11 @@ Perl compiles the original regex into an internal representation,
 optimising the regex to improve the speed of matching, but this compilation
 and optimisation takes CPU time.  Perl automatically caches static regexs,
 but dynamic regexs need to be explicitly compiled and cached.
-Graph~\ref{normal regex vs discard regex} shows execution times with and
-without caching the regex.  Caching the compiled regexs is obviously far
-more efficient; graph~\ref{normal regex vs discarded regex factor} shows
-the percentage execution time increase when not caching each regex.
+Graph~\refwithpage{normal regex vs discard regex} shows execution times
+with and without caching the regex.  Caching the compiled regexs is
+obviously far more efficient; graph~\refwithpage{normal regex vs discarded
+regex factor} shows the percentage execution time increase when not caching
+each regex.
 
 Caching the compiled regexs is quite simple, and is the single most
 effective optimisation tried in the parser.
@@ -1247,13 +1256,13 @@ This section dealt with the rules used in parsing Postfix log files:
         matching and the subsequent action that is executed.
 
     \item The database table containing the rules is dealt with in
-        section~\ref{rule attributes}, and is not duplicated in this
-        section.
+        section~\refwithpage{rule attributes}, and is not duplicated in
+        this section.
 
     \item The final part of this section discusses rule efficiency,
         covering the effects of caching compiled regexs and optimal
         ordering ordering of rules, with reference to the graphs in
-        section~\ref{graphs}.
+        section~\refwithpage{graphs}.
 
 \end{itemize}
 
@@ -1347,7 +1356,7 @@ one mail. Happily once the mail has been accepted log entries won't be
 correlated by pid for that mail any more (its queueid will be used
 instead), so there isn't any ambiguity about which mail a given log line
 belongs to.\footnote{Unfortunately this statement is not completely
-accurate: see section~\ref{timeouts-during-data-phase} for details.
+accurate: see section~\refwithpage{timeouts-during-data-phase} for details.
 However in general there isn't any ambiguity about which data structure
 should be used for a given log line.}  The original connection will be
 discarded unsaved when the client disconnects if it doesn't have any data
@@ -1383,7 +1392,7 @@ strictly chronological reading of the logs it \textit{usually\/} appears as
 if the child mail has appeared from thin air.  Subsequently the parent mail
 will log the creation of the child mail:
 
-\texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline 
+\texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline
 delay=0, status=sent (forwarded as 56F5B43FD)}
 
 Unfortunately while all log lines from an individual process appear in
@@ -1416,7 +1425,7 @@ fashion, or bugs in the parser, unknown origin mails need to be marked as
 such because they lack some data present in the parent mail; they must copy
 that data from their parent before being entered in the database.  The
 effect of this complication upon the algorithm is discussed in
-section~\ref{tracking re-injected mail}.
+section~\refwithpage{tracking re-injected mail}.
 
 
 
@@ -1451,14 +1460,15 @@ queueid once the mail has been accepted.  The latter uses the action field
 of the rule which matched the log line, executing the code in the function
 named by the action.
 
-Section~\ref{actions-in-detail} explains the actions in substantive detail;
-this section will omit such detail because it would clutter and confuse the
-algorithm description.  The data flow chart in section~\ref{flow-chart}
-should also be consulted while reading this section.  For the sake of
-clarity this description covers the most common paths through the
-algorithm, as including every path would hinder understanding.  The more
-uncommon paths are caused by the complications described in
-section~\ref{additional complications}, and are covered therein.
+Section~\refwithpage{actions-in-detail} explains the actions in substantive
+detail; this section will omit such detail because it would clutter and
+confuse the algorithm description.  The data flow chart in
+section~\refwithpage{flow-chart} should also be consulted while reading
+this section.  For the sake of clarity this description covers the most
+common paths through the algorithm, as including every path would hinder
+understanding.  The more uncommon paths are caused by the complications
+described in section~\refwithpage{additional complications}, and are
+covered therein.
 
 \subsubsection{Mail enters the system}
 
@@ -1489,21 +1499,21 @@ SMTP is more complicated:
         data structure).
 
     \item If one or more mails were accepted there will be more log entries
-        for those mails later, see section~\ref{mail-delivery}.
+        for those mails later, see section~\refwithpage{mail-delivery}.
 
 \end{enumerate}
 
 Re-injection due to forwarding sadly lacks explicit log lines of its
-own;\footnote{Previously discussed in section~\ref{complications},
+own;\footnote{Previously discussed in section~\refwithpage{complications},
 complication 3.} re-injection is somewhat awkward to explain because it
 overlaps both the mail acceptance and mail delivery sections, so discussion
-is deferred to section~\ref{tracking re-injected mail}.
+is deferred to section~\refwithpage{tracking re-injected mail}.
 
 Internally generated mails lack any explicit origin in Postfix 2.2.x and
 must be detected using heuristics (see
-section~\ref{identifying-bounce-notifications} for details).  Bounce
-notifications are the primary example of internally generated mails, though
-there may be other types.
+section~\refwithpage{identifying-bounce-notifications} for details).
+Bounce notifications are the primary example of internally generated mails,
+though there may be other types.
 
 \subsubsection{Mail delivery}
 
@@ -1520,7 +1530,8 @@ All four are handled in exactly the same way:
 
     \item Sometimes mail is re-injected and the child mail needs to be
         tracked by the parent mail (action: track; flowchart:~11) ---
-        section~\ref{tracking re-injected mail} discusses this in detail.
+        section~\refwithpage{tracking re-injected mail} discusses this in
+        detail.
 
     \item Eventually the mail will be delivered, bounced, or deleted by the
         administrator (action: commit; flowchart:~12).  This is the last
@@ -1529,7 +1540,7 @@ All four are handled in exactly the same way:
         child of re-injection the data is cleaned up and entered in the
         database (flowchart:~14), then deleted from the state tables
         (flowchart:~15).  Re-injected mails are described in
-        section~\ref{tracking re-injected mail}.
+        section~\refwithpage{tracking re-injected mail}.
 
 \end{enumerate}
 
@@ -1538,7 +1549,7 @@ delivered to a mailbox, piped to a command, delivered to a remote server,
 bounced (due to a mail loop, delivery failure, or five day timeout), or
 deleted by the administrator.  The exception is what happens after delivery
 to the parent or children of mail re-injected due to forwarding, and that
-is explained in section~\ref{tracking re-injected mail}.
+is explained in section~\refwithpage{tracking re-injected mail}.
 
 \subsubsection{Tracking re-injected mail}
 
@@ -1550,15 +1561,15 @@ indications:
 
 \begin{enumerate}
 
-    \item The indicator which more commonly introduces re-injection is when 
-        \texttt{postfix/qmgr}
-        selects a mail with a previously unseen queueid for delivery
-        (action: mail\_picked\_for\_delivery; flowchart:~3), in which case
-        a new data structure will be created.  The mail will be flagged as
-        having unknown origins; this flag should be subsequently cleared
-        once the origin has been established.  This may also be an
-        indicator that the mail is a bounce notification, see
-        section~\ref{identifying-bounce-notifications} for details.
+    \item The indicator which more commonly introduces re-injection is when
+        \texttt{postfix/qmgr} selects a mail with a previously unseen
+        queueid for delivery (action: mail\_picked\_for\_delivery;
+        flowchart:~3), in which case a new data structure will be created.
+        The mail will be flagged as having unknown origins; this flag
+        should be subsequently cleared once the origin has been
+        established.  This may also be an indicator that the mail is a
+        bounce notification, see
+        section~\refwithpage{identifying-bounce-notifications} for details.
 
     \item Local delivery re-injects the mail and logs a relayed delivery
         rather than delivering directly to a mailbox or program as it
@@ -1674,15 +1685,16 @@ The actions:
     \item [MAIL\_PICKED\_FOR\_DELIVERY] This action represents Postfix
         picking a mail from the queue to deliver. This action is used for
         both qmgr and cleanup as it needs to deal with out of order log
-        lines; see section~\ref{discarding cleanup lines} for details.
+        lines; see section~\refwithpage{discarding cleanup lines} for
+        details.
 
     \item [PICKUP] Pickup is the service which deals with mail submitted
         locally via /usr/sbin/sendmail. 
 
         Out of order log entries may have caused the state table entry to
-        already exist (see section~\ref{pickup logging after cleanup});
-        otherwise it is created.  The data from the log line is then saved
-        to the state table entry.
+        already exist (see section~\refwithpage{pickup logging after
+        cleanup}); otherwise it is created.  The data from the log line is
+        then saved to the state table entry.
 
     \item [CLONE] Multiple mails may be accepted on a single connection, so
         each time a mail is accepted the connection's state table entry
@@ -1698,7 +1710,8 @@ The actions:
         transferred must be discarded. The mail may have been accepted, in
         which case there's a data structure to dispose of, or it may not in
         which case there is not.  See
-        section~\ref{timeouts-during-data-phase} for the gory details.
+        section~\refwithpage{timeouts-during-data-phase} for the gory
+        details.
 
     \item [POSTFIX\_RELOAD] When Postfix stops or reloads its configuration
         it kills all smtpds,\footnote{Possibly other programs are killed
@@ -1739,11 +1752,11 @@ The actions:
 Postfix 2.2.x (and presumably previous versions) lacks explicit logging
 when bounce notifications are generated; suddenly there will be log entries
 for a mail which lacks an obvious source.  There are similarities to the
-problem of re-injected mails discussed in
-section~\ref{tracking re-injected mail}, but unlike the solution described
-therein bounce notifications do not eventually have a log line which
-identifies their source.  Heuristics must be used to identify bounce
-notifications, and those heuristics are:
+problem of re-injected mails discussed in section~\refwithpage{tracking
+re-injected mail}, but unlike the solution described therein bounce
+notifications do not eventually have a log line which identifies their
+source.  Heuristics must be used to identify bounce notifications, and
+those heuristics are:
 
 \begin{enumerate}
 
@@ -1844,7 +1857,8 @@ logged for such mails, so without identifying and discarding them they
 accumulate in the state table and will cause clashes if the queueid is
 reused.  The mail cannot be entered in the database as the only data
 available is the client hostname and IP address, but the database schema
-requires many more fields be populated (see section~\ref{database schema}).
+requires many more fields be populated (see section~\refwithpage{database
+schema}).
 
 This check is performed in the DISCONNECT action; it requires support in
 the CLONE action where a list of cloned connections is maintained.
@@ -1854,9 +1868,9 @@ the CLONE action where a list of cloned connections is maintained.
 Some mail clients disconnect abruptly if a second or subsequent recipient
 is rejected; they may also disconnect after other errors, but such
 disconnections are either unimportant or are handled elsewhere in the
-algorithm (section~\ref{timeouts-during-data-phase}).  Sadly Postfix
-doesn't log a message saying the mail has been discarded, as should be
-expected by now.  The checks to identify this happening are:
+algorithm (section~\refwithpage{timeouts-during-data-phase}).  Sadly
+Postfix doesn't log a message saying the mail has been discarded, as should
+be expected by now.  The checks to identify this happening are:
 
 \begin{itemize}
 
@@ -1926,7 +1940,7 @@ following in the TIMEOUT action:
 \end{enumerate}
 
 This complication is further complicated by out of order cleanup lines: see
-section~\ref{discarding cleanup lines} for details.
+section~\refwithpage{discarding cleanup lines} for details.
 
 \subsubsection{Discarding cleanup lines}
 
@@ -2027,7 +2041,7 @@ reasons for this infrequent occurrence:
 The above appear to cover all situations where an smtpd suddenly stops
 logging.  In addition to removing an active connection the last accepted
 mail may need to be discarded, as detailed in
-section~\ref{timeouts-during-data-phase}.
+section~\refwithpage{timeouts-during-data-phase}.
 
 These occurrences are handled by the three actions POSTFIX\_RELOAD,
 SMTPD\_DIED and SMTPD\_WATCHDOG\@.
@@ -2037,18 +2051,18 @@ SMTPD\_DIED and SMTPD\_WATCHDOG\@.
 \label{out of order log lines}
 
 Occasionally a log file will have out of order log lines which cannot be
-dealt with by the techniques described in sections~\ref{tracking
-re-injected mail},~\ref{discarding cleanup lines}~and~\ref{pickup logging
-after cleanup}.  In the 93 log files used for testing this occurs only five
-times in 60,721,709 log lines, but for completeness of the algorithm it
-should be dealt with.  The five occurrences in the test log files have the
-same characteristics: the \texttt{postfix/local} log line showing delivery
-to a local mailbox occurs after the \texttt{postfix/qmgr} log line showing
-removal of the mail from the queue because delivery is completed.  This
-causes problems: the mail is not complete, so entry into the database
-fails; a new mail is created when the \texttt{postfix/local} line is parsed
-and remains in the state tables; four warnings are issued per pair of out
-of order log lines.
+dealt with by the techniques described in sections~\refwithpage{tracking
+re-injected mail},~\refwithpage{discarding cleanup
+lines}~and~\refwithpage{pickup logging after cleanup}.  In the 93 log files
+used for testing this occurs only five times in 60,721,709 log lines, but
+for completeness of the algorithm it should be dealt with.  The five
+occurrences in the test log files have the same characteristics: the
+\texttt{postfix/local} log line showing delivery to a local mailbox occurs
+after the \texttt{postfix/qmgr} log line showing removal of the mail from
+the queue because delivery is completed.  This causes problems: the mail is
+not complete, so entry into the database fails; a new mail is created when
+the \texttt{postfix/local} line is parsed and remains in the state tables;
+four warnings are issued per pair of out of order log lines.
 
 The solution to this problem is to examine the list of programs which have
 logged messages for each mail, comparing the list against a table of
@@ -2100,14 +2114,15 @@ This applies to accepted mails only, not to rejected mails.
 \label{yet-more-aborted-delivery-attempts}
 
 The aborted delivery attempts described in
-section~\ref{aborted-delivery-attempts} occur frequently, but the aborted
-delivery attempts described in this section only occur four times in the 93
-log files used for testing.  The symptoms are the same as in
-section~\ref{aborted-delivery-attempts}, except that there \textit{is\/} a
-\texttt{postfix/cleanup} log line; there does not appear to be anything in
-the log file to explain why there are no further log messages.  The only
-way to detect these mails is to periodically scan all mails in the state
-tables, deleting any mails displaying the following characteristics:
+section~\refwithpage{aborted-delivery-attempts} occur frequently, but the
+aborted delivery attempts described in this section only occur four times
+in the 93 log files used for testing.  The symptoms are the same as in
+section~\refwithpage{aborted-delivery-attempts}, except that there
+\textit{is\/} a \texttt{postfix/cleanup} log line; there does not appear to
+be anything in the log file to explain why there are no further log
+messages.  The only way to detect these mails is to periodically scan all
+mails in the state tables, deleting any mails displaying the following
+characteristics:
 
 \begin{itemize}
 
@@ -2193,7 +2208,7 @@ Full coverage of log lines requires the following:
         strings and have a rigid pattern, so this is not a problem.
 
     \item The appropriate action to take --- this is discussed in
-        section~\ref{mails-covered}.
+        section~\refwithpage{mails-covered}.
 
 \end{enumerate}
 
@@ -2204,10 +2219,10 @@ from Postfix 2.2 and 2.3), and new rules are easy to add.  Maintaining full
 coverage is hard because other servers have different restrictions with
 custom messages, RBLs change their messages over time, major releases of
 Postfix change warning messages (usually adding more information), etc.\ so
-over time the log lines drift and change.  Graph~\ref{rule hits} shows the
-number of hits for each rule over all 93 log files; it's obvious that a
-small number of rules match the vast majority of the lines, and more than
-half the rules match fewer than 100 times.
+over time the log lines drift and change.  Graph~\refwithpage{rule hits}
+shows the number of hits for each rule over all 93 log files; it's obvious
+that a small number of rules match the vast majority of the lines, and more
+than half the rules match fewer than 100 times.
 
 \subsection{Mails covered}
 
@@ -2217,8 +2232,8 @@ Coverage of mails is much more difficult to determine accurately than
 coverage of lines.  The parser can dump its state tables in a human
 readable form; examining these tables with reference to the log files is
 the best way to detect mails which were not handled properly (many of the
-complications discussed in section~\ref{additional complications} were
-detected in this way).  The parser issues warnings when it detects any
+complications discussed in section~\refwithpage{additional complications}
+were detected in this way).  The parser issues warnings when it detects any
 errors, some of which may alert the user to a problem, e.g.\ when a queueid
 is reused before the previous mail is fully dealt with, when a queueid or
 pid is not found,\footnote{There will often be warnings about missing
@@ -2226,10 +2241,10 @@ queueids or pids in the first few hundred or thousand log lines because the
 earlier log lines for those connections or mails are in the previous log
 file; loading the saved state from the previous log file will solve this
 problem.} or when there are problems tracking a child mail (see
-section~\ref{tracking re-injected mail}).  There should be few or no
-warnings, and the state table should only contain entries for mails which
-had yet to be delivered when the logfiles ended, or started before the
-logfiles began.
+section~\refwithpage{tracking re-injected mail}).  There should be few or
+no warnings, and the state table should only contain entries for mails
+which had yet to be delivered when the logfiles ended, or started before
+the logfiles began.
 
 At the time of writing the parser is being tested with 93 log files.  There
 are 5 warnings produced, but because the parser errs on the side of
@@ -2300,16 +2315,15 @@ always room for improvement.
     \item It appears that the hostname used in the HELO command is not
         logged if the mail is accepted.\footnote{Tested with Postfix 2.2.10
         and 2.3.11; this may possibly have changed in Postfix 2.4.}
-        Rectifying this has already been described in section~\ref{logging
-        helo}.
+        Rectifying this has already been described in
+        section~\refwithpage{logging helo}.
 
     \item The algorithm does not distinguish between mails where one or
         more mails are rejected and a subsequent mail is accepted; it will
         appear in the database as one mail with lots of rejections followed
         by acceptance.  I don't believe it's possible to make this
         distinction given the data Postfix logs, though it might be
-        possible to write a policy server to provide additional
-        logging.
+        possible to write a policy server to provide additional logging.
 
     \item The program will not detect parsing the same log file twice,
         resulting in the database containing duplicate entries.
@@ -2373,8 +2387,8 @@ program with \parsername{}.
         report, and successfully dealt with all the Postfix logs tested
         with.
 
-        \url{http://jimsun.linxnet.com/postfix_contrib.html}
-        \newline (Last checked 2007/08/13.)
+        \url{http://jimsun.linxnet.com/postfix_contrib.html} \newline (Last
+        checked 2007/08/13.)
 
     \item [Sawmill Universal Log File Analysis and Reporting] is a general
         purpose commercial product which parses 687 log file formats
@@ -2384,15 +2398,15 @@ program with \parsername{}.
         beta), but they do not appear to be interlinked, nor does it save
         sufficient data for the purposes of this project.  Not attempt is
         made to correlate log lines or deal with the difficulties
-        documented in sections~\ref{complications} and~\ref{additional
-        complications}.\footnote{If any attempt is made there is no
-        reference to it in the documentation available on the website.}
-        The source code is available in an obfuscated form only (presumably
-        for a fee), and the product is quite expensive, as it requires a
-        license for each report which is to be generated.  The web
-        interface allows creation of dynamic reports based on any field,
-        but due to the associated cost the author has not experimented with
-        it.
+        documented in sections~\refwithpage{complications}
+        and~\refwithpage{additional complications}.\footnote{If any attempt
+        is made there is no reference to it in the documentation available
+        on the website.} The source code is available in an obfuscated form
+        only (presumably for a fee), and the product is quite expensive, as
+        it requires a license for each report which is to be generated.
+        The web interface allows creation of dynamic reports based on any
+        field, but due to the associated cost the author has not
+        experimented with it.
 
         \url{http://www.thesawmill.co.uk/formats/postfix.html} \newline
         Fields extracted: from, to, server, UID, relay, status, number of
@@ -2410,9 +2424,9 @@ program with \parsername{}.
         IP\@.
 
         \url{http://www.thesawmill.co.uk/formats/beta_postfix.html}
-        \newline
-        Fields extracted: from, to, client hostname, client IP, relay
-        hostname, relay IP, status, response code, RBL list and message id.
+        \newline Fields extracted: from, to, client hostname, client IP,
+        relay hostname, relay IP, status, response code, RBL list and
+        message id.
 
         (Last checked 2007/09/26.)
 
@@ -2456,14 +2470,13 @@ program with \parsername{}.
         The interface is optimised for interactive rather than automated
         queries and it does not appear to be possible to write independent
         tools to utilise the Splunk database.  Splunk is a generic tool, so
-        it lacks any Postfix specific support over and above extracting
-        the \texttt{key=<value>} fields; most importantly it makes no
-        attempt to correlate log lines by queueid or pid, nor to handle any
-        of the myriad complications discussed in this document.
-        Correlation of log lines is left up to the user, and Splunk
-        certainly makes the job easier than using grep, awk and similar
-        Unix tools unless the user has a very high proficiency with those
-        tools.
+        it lacks any Postfix specific support over and above extracting the
+        \texttt{key=<value>} fields; most importantly it makes no attempt
+        to correlate log lines by queueid or pid, nor to handle any of the
+        myriad complications discussed in this document.  Correlation of
+        log lines is left up to the user, and Splunk certainly makes the
+        job easier than using grep, awk and similar Unix tools unless the
+        user has a very high proficiency with those tools.
 
         \url{http://www.splunk.com/} \newline (Last checked 2007/09/25.)
 
@@ -2568,9 +2581,8 @@ program with \parsername{}.
         specific log lines:
 
         Aggregations: count, bytes (the sum of bytes transferred; count is
-        not explained).\newline
-        Keyfields [sic]: date, hour, sender, recipient, defer\_count, delay,
-        incoming\_host, outgoing\_host.
+        not explained).\newline Keyfields [sic]: date, hour, sender,
+        recipient, defer\_count, delay, incoming\_host, outgoing\_host.
 
         YAALA provides an SQL like mini-language used when generating the
         reports; sample reports can be seen at~\cite{yaala-samples}.
@@ -2623,10 +2635,10 @@ program with \parsername{}.
         Lire does attempt to correlate log lines by queueid, not pid, but
         its hard coded parsing extracts only part of the available data and
         makes no attempt to deal with the other complications described in
-        sections~\ref{complications} and~\ref{additional complications}.
-        It stores data, but not in an easily accessible format.  It
-        generates reports in multiple formats, but those reports do not
-        appear to be customisable.
+        sections~\refwithpage{complications} and~\refwithpage{additional
+        complications}.  It stores data, but not in an easily accessible
+        format.  It generates reports in multiple formats, but those
+        reports do not appear to be customisable.
         
         \url{http://logreport.org/lire.html} \newline (Last checked
         2007/10/09.)
@@ -2643,8 +2655,8 @@ program with \parsername{}.
 
         \begin{itemize}
 
-            \item For mail sent and received: from address, size, and
-                time and date.
+            \item For mail sent and received: from address, size, and time
+                and date.
 
             \item For mail sent: to addresses, SMTP code, and delay.
 
@@ -2660,8 +2672,9 @@ program with \parsername{}.
         lines parsed and skipped.  Most notably rejections are completely
         ignored, making it unsuitable for the purposes of this project.
         Needless to say it doesn't attempt to address any of the
-        complications in sections~\ref{complications} and~\ref{additional
-        complications} except for correlating by queueid.
+        complications in sections~\refwithpage{complications}
+        and~\refwithpage{additional complications} except for correlating
+        by queueid.
 
         Logrep does not come with any documentation, though some scanty
         documentation is available on its website.  It requires a web
@@ -2683,7 +2696,7 @@ program with \parsername{}.
         2007/10/13.)
 
     \item [Log Mail Analyser] Please see the previous discussion in
-        section~\ref{prior art}.
+        section~\refwithpage{prior art}.
 
 \end{description}
 
@@ -2721,14 +2734,14 @@ understanding of Postfix logs achieved by \parsername{}.
 Graphs are an excellent means of displaying data, transforming a
 meaningless stream of numbers into an easily comprehensible form, where
 anomalies and patterns are immediately obvious.  These graphs are used to
-illustrate the topics discussed in section~\ref{rule efficiency}.  The
-graphs in the first section cover parser scalability, demonstrating that
-performance scales linearly with input size.  The impact of rule ordering
-is shown in section~\ref{rule ordering graphs}, and the anomalous dips and
-peaks apparent in some graphs are explained.  The next group of graphs
-vividly shows the huge impact that caching compiled regexs has on parser
-performance.  This section concludes with a breakdown of the rule hits
-accumulated during a single test run of the parser.
+illustrate the topics discussed in section~\refwithpage{rule efficiency}.
+The graphs in the first section cover parser scalability, demonstrating
+that performance scales linearly with input size.  The impact of rule
+ordering is shown in section~\refwithpage{rule ordering graphs}, and the
+anomalous dips and peaks apparent in some graphs are explained.  The next
+group of graphs vividly shows the huge impact that caching compiled regexs
+has on parser performance.  This section concludes with a breakdown of the
+rule hits accumulated during a single test run of the parser.
 
 \subsection{Parser scalability}
 
@@ -2769,13 +2782,13 @@ reversed over normal}{percentage increase of reversed over normal}
 \label{Why are there dips in the graphs?}
 
 The dips at logfiles 22 and 62--68 correspond to peaks in log file size in
-graph~\ref{execution time vs file size vs number of lines graph}, and peaks in
-graph~\ref{execution time vs file size vs number lines factor} (where a
-peak means that more lines are processed per second, i.e.\ performance is
-better).  The explanation for this took some time to arrive at, but it
-turns out to be reasonably simple.  The large log files in question were
-caused by a mail forwarding loop, where the distribution of log lines is
-quite different to normal, resulting in different performance
+graph~\refwithpage{execution time vs file size vs number of lines graph},
+and peaks in graph~\refwithpage{execution time vs file size vs number lines
+factor} (where a peak means that more lines are processed per second, i.e.\
+performance is better).  The explanation for this took some time to arrive
+at, but it turns out to be reasonably simple.  The large log files in
+question were caused by a mail forwarding loop, where the distribution of
+log lines is quite different to normal, resulting in different performance
 characteristics.
 
 The mail loop was set up by a user modifying his mail forwarding to:
@@ -2793,8 +2806,7 @@ caught by Postfix as described below.
 
 \begin{enumerate}
 
-    \item Postfix accepts a mail from username@domain, for
-        username@domain.
+    \item Postfix accepts a mail from username@domain, for username@domain.
 
     \item Postfix delivers the mail to the local mailbox and
         username@domain, as instructed by the user's forwarding
@@ -2817,9 +2829,8 @@ caught by Postfix as described below.
         forwarding instructions.  A \texttt{Delivered-To:~username@domain}
         header is added to the forwarded bounce notification, and the
         envelope sender address is now username@domain.  Log lines are
-        added by \textit{postfix/local},
-        \textit{postfix/qmgr\/} (twice), \textit{postfix/cleanup}, and finally
-        \textit{postfix/pickup}.
+        added by \textit{postfix/local}, \textit{postfix/qmgr\/} (twice),
+        \textit{postfix/cleanup}, and finally \textit{postfix/pickup}.
 
     \item Postfix accepts the forwarded bounce notification but while
         delivering it notices that the \texttt{Delivered-To} header already
@@ -2848,15 +2859,16 @@ parse a \textit{postfix/smtpd\/} log line is much higher that the average
 number required to parse other log lines.  Thus the average number of rules
 required to parse a random line from logs containing a mail loop is much
 lower than the average number required to parse a random log line from logs
-without a mail loop, as can be seen in the peaks in graphs~\ref{execution
-time vs file size vs number lines factor},~\ref{percentage increase of
-shuffled over normal} and~\ref{percentage increase of reversed over
-normal}.  The difference is more extreme in the reversed ordering case
-because the largest number of rules to be consulted for the commonly
-occurring log lines during a mail loop is far less than the largest number
-of rules that are consulted for commonly occurring lines outside of a mail
-loop.  The number of rules which needs to be consulted when the ordering is
-shuffled varies between the optimum and nadir, and the performance varies
+without a mail loop, as can be seen in the peaks in
+graphs~\refwithpage{execution time vs file size vs number lines
+factor},~\refwithpage{percentage increase of shuffled over normal}
+and~\refwithpage{percentage increase of reversed over normal}.  The
+difference is more extreme in the reversed ordering case because the
+largest number of rules to be consulted for the commonly occurring log
+lines during a mail loop is far less than the largest number of rules that
+are consulted for commonly occurring lines outside of a mail loop.  The
+number of rules which needs to be consulted when the ordering is shuffled
+varies between the optimum and nadir, and the performance varies
 proportionally.
 
 The difference between logs with a mail loop and logs without can be seen
@@ -2884,12 +2896,12 @@ discarded}{normal regex vs discard regex}
 \showgraph{build/plot-cached-discarded-factor.ps}{Regex: percentage
 execution time increase}{normal regex vs discarded regex factor}
 
-Two large dips can be seen in graph~\ref{normal regex vs discarded regex
-factor} at log files 22 and 62--68, corresponding to the spikes in log file
-size in graphs~\ref{execution time vs file size vs number of lines graph}
-and~\ref{normal regex vs discard regex}.  The reason for the anomalous log
-files has already been explained in section~\ref{Why are there dips in the
-graphs?}.
+Two large dips can be seen in graph~\refwithpage{normal regex vs discarded
+regex factor} at log files 22 and 62--68, corresponding to the spikes in
+log file size in graphs~\refwithpage{execution time vs file size vs number
+of lines graph} and~\refwithpage{normal regex vs discard regex}.  The
+reason for the anomalous log files has already been explained in
+section~\refwithpage{Why are there dips in the graphs?}.
 
 The distribution of log lines across rules is much different and the
 average number of rules consulted per log line is much lower when there is
@@ -2909,15 +2921,15 @@ Law distribution~\cite{powerlaw}.
 
 \showgraph{build/plot-hits.ps}{Hits per rule}{rule hits graph}
 
-As graph~\ref{rule hits graph} is quite difficult to read it has been
-separated into three sections: low, middle and high.
+As graph~\refwithpage{rule hits graph} is quite difficult to read it has
+been separated into three sections: low, middle and high.
 
 \showgraph{build/plot-hits-low.ps}{Hits per rule (low)}{hits per rule low}
 
-It is apparent from the low graph (graph~\ref{hits per rule low}) that some
-rules have few or no hits; those with zero hits are rules which were
-written to parse log files used during development of the parser but not
-utilised in the test runs performed for this document.
+It is apparent from the low graph (graph~\refwithpage{hits per rule low})
+that some rules have few or no hits; those with zero hits are rules which
+were written to parse log files used during development of the parser but
+not utilised in the test runs performed for this document.
 
 \showgraph{build/plot-hits-middle.ps}{Hits per rule (middle)}{hits per rule
 middle}
@@ -2930,13 +2942,14 @@ high}
 \subsection{Conclusion}
 
 The graphs presented in this section illustrate the topics discussed in
-section~\ref{rule efficiency}.  The first collection of graphs are about
-parser scalability, showing the linearly relationship between execution
-time and input size.  Section~\ref{rule ordering graphs} relates to the
-effect of rule ordering on execution time, and the unexpected consequences
-of specific inputs.  The necessity of caching compiled regexs is attested
-to by the third group of graphs, where the difference between caching and
-discarding is staggering.  This section concluded with a breakdown of the
-rule hits accumulated during a single test run of the parser.
+section~\refwithpage{rule efficiency}.  The first collection of graphs are
+about parser scalability, showing the linearly relationship between
+execution time and input size.  Section~\refwithpage{rule ordering graphs}
+relates to the effect of rule ordering on execution time, and the
+unexpected consequences of specific inputs.  The necessity of caching
+compiled regexs is attested to by the third group of graphs, where the
+difference between caching and discarding is staggering.  This section
+concluded with a breakdown of the rule hits accumulated during a single
+test run of the parser.
 
 \end{document}
