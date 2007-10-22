@@ -861,6 +861,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'check_sender_access'
 );
 
+-- Client host rejected: Fix your mail system please, you've filling up our mail queue.; from=<> to=<root@pc910.cs.tcd.ie> proto=ESMTP helo=<pc910.cs.tcd.ie>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+    VALUES('Rejecting client flooding us with mail', 'Rejecting a client which is flooding us with mail.',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <(?:__HOSTNAME__)\[(?:__IP__)\]>: Client host rejected: Fix your mail system please, you.ve filling up our mail queue.; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'sender = 5, recipient = 6',
+        'helo = 7',
+        'REJECTION',
+        1,
+        'REJECTED',
+        'check_sender_access'
+);
+
 -- }}}
 
 -- SMTPD ACCEPT RULES {{{1
@@ -884,7 +897,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Logging HELO', 'HELO logged to provide additional data',
         'postfix/smtpd',
-        '^(__QUEUEID__): warn: __SHORT_CMD__ from (__HOSTNAME__)\[(__IP__)\]: Logging HELO; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^(__QUEUEID__): warn: (?:__SHORT_CMD__|DATA) from (__HOSTNAME__)\[(__IP__)\]: Logging HELO; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 4, recipient = 5',
         'client_hostname = 2, client_ip = 3, helo = 6',
         'SAVE_BY_QUEUEID',
@@ -1924,6 +1937,17 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('Bloody Solaris LDAP 3', 'Solaris LDAP cannot bind or connect or something',
         '*',
         '^libsldap: Status: 91  Mesg: openConnection: simple bind failed - Can.t connect to the LDAP server$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Bloody Solaris LDAP 4', 'Solaris LDAP cannot contact server',
+        '*',
+        '^libsldap: Status: 81 Mesg: openConnection: simple bind failed - Can.t contact LDAP server$',
         '',
         '',
         'IGNORE',
