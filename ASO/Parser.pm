@@ -194,6 +194,7 @@ sub init_globals {
         COMMIT
         TRACK
         REJECTION
+        EXPIRY
         MAIL_PICKED_FOR_DELIVERY
         PICKUP
         CLONE
@@ -837,6 +838,27 @@ sub TRACK {
     }
     $child->{parent}            = $parent;
 
+    return;
+}
+
+=over  4
+
+=item EXPIRY
+
+Deal with Postfix expiring a mail and returning it to the sender: set a flag
+which will be checked later in is_valid_program_combination().
+
+=back
+
+=cut
+
+sub EXPIRY {
+    my ($self, $rule, $line, $matches) = @_;
+    my $connection;
+    my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
+    $connection = $self->get_connection_by_queueid($queueid);
+    $self->save($connection, $line, $rule, $matches);
+    $connection->{expired} = 1;
     return;
 }
 
@@ -2193,7 +2215,9 @@ Checks if the combination of programs seen in $connection is valid, i.e.
 is a combination which would accept/create a mail and deliver it.  The purpose
 is to identify incomplete mails before committing them, so their committal can
 be postponed and retried later.  The bulk of the work is really done in
-init_globals() when the validation data structure is set up.
+init_globals() when the validation data structure is set up.  There are some
+exceptions made, e.g. the EXPIRY action sets a flag which is checked for here,
+because otherwise expired mails would never be committed.
 
 =back
 
@@ -2201,6 +2225,11 @@ init_globals() when the validation data structure is set up.
 
 sub is_valid_program_combination {
     my ($self, $connection) = @_;
+
+    # Ensure that expired mails pass this check.
+    if (exists $connection->{expired}) {
+        return 1;
+    }
 
     my @extra_programs;
     if (exists $connection->{bounce_notification}

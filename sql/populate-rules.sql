@@ -928,7 +928,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'sender = 1',
         '',
         'smtp_code = 554',
-        'SAVE_BY_QUEUEID',
+        'EXPIRY',
         1,
         'EXPIRED'
 );
