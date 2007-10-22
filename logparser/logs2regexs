@@ -149,34 +149,6 @@ sub replace_regexs {
     return ($tempfile, $num_lines);
 }
 
-sub hash {
-    my ($string, $size) = @_;
-    my $hash = 23;
-
-    foreach my $char (split //, $string) {
-        my $update = ($hash << 5) + ($hash >> 2) + ord $char;
-        $hash = $hash ^ $update;
-    }
-
-    return $hash % $size;
-}
-
-sub build_hashed_frequency {
-    my ($input) = @_;
-    seek $input, 0, 0;
-
-    my @freqs;
-    while (<$input>) {
-        my @words = split /\s+/, $_;
-        foreach my $word (@words) {
-            my $index = hash($word, $HASH_SIZE);
-            $freqs[$index]++;
-        }
-    }
-
-    return \@freqs;
-}
-
 sub build_pattern_hashes {
     my ($input, $frequency_table, $num_lines) = @_;
     seek $input, 0, 0;
