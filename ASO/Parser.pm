@@ -1933,6 +1933,9 @@ sub filter_regex {
     $regex =~ s/__RESTRICTION_START__   /(__QUEUEID__): reject(?:_warning)?: (?:RCPT|DATA) from (?>(__HOSTNAME__)\\[)(?>(__IP__)\\]): (__SMTP_CODE__)(?: __DSN__)?/gx;
     # message-ids initially look like email addresses, but really they can be
     # absolutely anything; just like email addresses in fact.
+    # E.g.  <%RND_DIGIT[10].%STATWORD@mail%SINGSTAT.%RND_FROM_DOMAIN>
+    #       <45BA63320008E5FC@mail06.sc2.he.tucows.com> (added by postmaster@globo.com)
+    #       <848511243547.G96470@flatland.vjopu.com (HELO chignon.gb-media.com [96.168.158.213])>
     $regex =~ s/__MESSAGE_ID__          /.*?/gx;
     # We see some pretty screwed hostnames in HELO commands; in fact just match
     # any damn thing, the hostnames are particularly weird when Postfix rejects
@@ -1941,7 +1944,7 @@ sub filter_regex {
 #   This doesn't work, as it matches valid addresses, not real world addresses.
 #   $regex =~ s/__EMAIL__               /$RE{Email}{Address}/gx;
 #   Wibble: from=<<>@inprima.locaweb.com.br>; just match anything as an address.
-    $regex =~ s/__EMAIL__               /.*?/gx;
+    $regex =~ s/__EMAIL__               /[^>]*?/gx;
     # This doesn't match, for varous reason - I think numeric subnets are one.
     #$regex =~ s/__HOSTNAME__           /$RE{net}{domain}{-nospace}/gx;
     $regex =~ s/__HOSTNAME__            /$hostname_re/gx;
