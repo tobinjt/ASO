@@ -14,25 +14,16 @@ use Data::Dumper;
 $Data::Dumper::Sortkeys = 1;
 use List::Util qw(sum);
 
-my $HASH_SIZE = 256;
 my $COUNT_STRING = q{__COUNT__};
-# Restrict the set of packages SmallProf will profile.
-%DB::packages = ();
-%DB::packages = (
-    q{main}                     => 1,
-);
 
 # Read all the input files, replacing known regexs in each line.
 debug(qq{$0: starting replace_regexs()\n});
 my ($filtered_file, $number_of_lines) = replace_regexs(@ARGV);
-#$filtered_file->unlink_on_destroy(0);
 
 my $filename = $filtered_file->filename();
 debug(qq{$0: Temporary file: $filename\n});
 my $file = IO::File->new($filename)
     or die qq{$0: failed opening $filename: $!\n};
-
-#my $frequency_table = build_hashed_frequency($file);
 
 debug(qq{$0: starting count_frequency()\n});
 my $frequency = count_frequency($file);
