@@ -1,0 +1,271 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use lib qw(..);
+use ASO::Parser;
+use File::Temp;
+use File::Spec;
+use IO::File;
+use Data::Dumper;
+$Data::Dumper::Sortkeys = 1;
+use List::Util qw(sum);
+
+my $HASH_SIZE = 256;
+my $COUNT_STRING = q{__COUNT__};
+# Restrict the set of packages SmallProf will profile.
+%DB::packages = ();
+%DB::packages = (
+    q{main}                     => 1,
+);
+
+# Read all the input files, replacing known regexs in each line.
+debug(qq{$0: starting replace_regexs()\n});
+my ($filtered_file, $number_of_lines) = replace_regexs(@ARGV);
+#$filtered_file->unlink_on_destroy(0);
+
+my $filename = $filtered_file->filename();
+debug(qq{$0: Temporary file: $filename\n});
+my $file = IO::File->new($filename)
+    or die qq{$0: failed opening $filename: $!\n};
+
+#my $frequency_table = build_hashed_frequency($file);
+
+debug(qq{$0: starting count_frequency()\n});
+my $frequency = count_frequency($file);
+
+debug(qq{$0: starting build_pattern_hashes()\n});
+my $pattern_hashes = build_pattern_hashes($file, $frequency, $number_of_lines);
+debug(qq{$0: starting build_regexs()\n});
+my $patterns = build_regexs($pattern_hashes, $frequency, $number_of_lines);
+
+my $lines_matched = 0;
+foreach my $regex_pair (sort { $a->[0] cmp $b->[0] } @$patterns) {
+    print qq{$regex_pair->[1]\t $regex_pair->[0]\n};
+    $lines_matched += $regex_pair->[1];
+}
+my $percent = $lines_matched * 100 / $number_of_lines;
+debug(qq{Matching $lines_matched/$number_of_lines lines ($percent\%)\n});
+
+sub count_frequency {
+    my ($input) = @_;
+
+    my %frequency;
+
+    seek $input, 0, 0;
+    while (<$input>) {
+        my @fields = split /\s+/, $_;
+        my $i = 0;
+        foreach my $field (@fields) {
+            $frequency{$field}->[$i]++;
+            $i++;
+        }
+    }
+
+    return \%frequency;
+}
+
+sub replace_regexs {
+    my (@files) = @_;
+
+    my $template = File::Spec->catfile(File::Spec->tmpdir(), q{X} x 16);
+    my $tempfile = File::Temp->new(TEMPLATE => $template)
+        or die qq{$0: failed creating tempfile (template $template): $!\n};
+
+    # Order is important here; more specific regexs should come first.
+    # These are a few standard things which need to be replaced in lots of log 
+    # lines to produce rules.
+    # q// is used because it makes escaping easier - no double escaping required.
+    # I tried qr// but printing it produced (?-xism:) around the regex chunks.
+    # Missing keywords: __SMTP_CODE__ __COMMAND__ __SHORT_CMD__
+    # NOTE: in q// strings Perl will perform two substitutions:
+    #   \/ will be replaced with /
+    #   \\ will be replaced with \
+    # This means that every \ you want in the string needs to be doubled.
+    my @regexs = (
+        q/^__RESTRICTION_START__/,
+        q/from=<(__SENDER__)>/,
+        # XXX how do these two rules interace?  I think the second rule will
+        # clobber the result of the first line.  Maybe the space at the end of
+        # the second rule will sort it.
+        q/to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)?/,
+        q/to=<(__RECIPIENT__)>/,
+        q/helo=<(__HELO__)>/,
+        q/<__RECIPIENT__>: Recipient address rejected:/,
+        q/<__SENDER__>: Sender address rejected:/,
+        q/<__HELO__>: Helo command rejected:/,
+        q/<__RECIPIENT__>: Relay access denied:/,
+        # Ideally I'd use /g to substitute as many times as necessary, but that 
+        # won't work.
+        # In the input [] will be replaced by \[\], so I need to match \\\[, 
+        # and every \ needs to be doubled.
+        [q/(__HOSTNAME__)\\\\\\[(__IP__)\\\\\\]/, q/(__HOSTNAME__)\[(__IP__)\]/],
+        q/(__IPv4__|__IPv6__)/,
+        q/hostname (__HOSTNAME__) verification failed:/,
+        q/(__HOSTNAME__): Host not found(?:, try again)?/,
+        # This won't catch every queueid, but it's a start.
+        q/^(__QUEUEID__)/,
+        q/(?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?/,
+        q/proto=E?SMTP/,
+    );
+    
+    my @regex_pairs;
+    foreach my $regex (@regexs) {
+        if (ref $regex) {
+            my ($unfiltered_regex, $replacement) = @$regex;
+            my $filtered_regex = ASO::Parser::filter_regex(undef, $unfiltered_regex);
+            push @regex_pairs, [$replacement, qr/$filtered_regex/];
+        } else {
+            my $filtered_regex = ASO::Parser::filter_regex(undef, $regex);
+            push @regex_pairs, [$regex, qr/$filtered_regex/];
+        }
+    }
+
+    my ($num_lines) = 0;
+    local @ARGV = @files;
+    while (<>) {
+        $num_lines++;
+        # These need to be escaped in the input lines, and the regexs above
+        # need to take the escaping into account.
+        s/\[/\\[/g;
+        s/\]/\\]/g;
+        s/\(/\\(/g;
+        s/\)/\\)/g;
+        s/\?/\\?/g;
+
+        foreach my $pair (@regex_pairs) {
+            my ($replacement, $pattern) = @$pair;
+            s/$pattern/$replacement/g;
+        }
+
+        # name=value pairs need to be replaced separately.
+        s/(\w+)=\d+/$1=\\d+/g;
+        print $tempfile $_;
+    }
+
+    return ($tempfile, $num_lines);
+}
+
+sub hash {
+    my ($string, $size) = @_;
+    my $hash = 23;
+
+    foreach my $char (split //, $string) {
+        my $update = ($hash << 5) + ($hash >> 2) + ord $char;
+        $hash = $hash ^ $update;
+    }
+
+    return $hash % $size;
+}
+
+sub build_hashed_frequency {
+    my ($input) = @_;
+    seek $input, 0, 0;
+
+    my @freqs;
+    while (<$input>) {
+        my @words = split /\s+/, $_;
+        foreach my $word (@words) {
+            my $index = hash($word, $HASH_SIZE);
+            $freqs[$index]++;
+        }
+    }
+
+    return \@freqs;
+}
+
+sub build_pattern_hashes {
+    my ($input, $frequency_table, $num_lines) = @_;
+    seek $input, 0, 0;
+
+    my %patterns;
+    # Only use words which are present in 0.05% or more of lines.
+    my $minimum_frequency = int $num_lines / 2000;
+    $minimum_frequency = 50;
+
+    while (<$input>) {
+        my @words = split /\s+/, $_;
+        my $pattern = \%patterns;
+        my $i = 0;
+        foreach my $word (@words) {
+            if ($frequency_table->{$word}->[$i] < $minimum_frequency) {
+                $frequency_table->{q{.*}}->[$i] += $frequency_table->{$word}->[$i];
+                $word = q{.*};
+            }
+            if (not exists $pattern->{$word}) {
+                $pattern->{$word} = {};
+            }
+            $pattern = $pattern->{$word};
+            $i++;
+        }
+        $pattern->{$COUNT_STRING}++;
+    }
+
+    return \%patterns;
+}
+
+sub build_regexs {
+    my ($pattern_hash, $frequency_table, $num_lines) = @_;
+
+    my @patterns = build_regexs_recursive($pattern_hash, q{}, $frequency_table, 0);
+    my %no_dupes;
+    foreach my $pattern (@patterns) {
+        my ($regex, $count) = @$pattern;
+        # There'll be an extra space at the start of the line.
+        $regex =~ s/^ //;
+        # Replace sequences of '.* .* etc' with '.*'
+        $regex =~ s/(?:\.\* )+/.* /g;
+        $regex =~ s/(?: \.\*)+/ .*/g;
+        $regex =~ s/(?:\.\* \.\*)+/.*/g;
+        $no_dupes{$regex} += $count;
+    }
+
+    my @modified_patterns;
+    my $min_matches = int $num_lines / 100;
+    REGEX:
+    foreach my $regex (keys %no_dupes) {
+        if ($no_dupes{$regex} < $min_matches) {
+            next REGEX;
+        }
+        my $count = $no_dupes{$regex};
+        # Add start and end anchors to speed up failure when matching.
+        if ($regex !~ m/^\^/) {
+            $regex =~ s/^/^/;
+        }
+        if ($regex !~ m/\$$/) {
+            $regex =~ s/$/\$/;
+        }
+        push @modified_patterns, [$regex => $count];
+    }
+    return \@modified_patterns;
+}
+
+# Returns an array of (regex => count) pairs.
+sub build_regexs_recursive {
+    my ($pattern_hash, $regex, $frequency_table, $word_pos) = @_;
+
+    my @patterns;
+    foreach my $piece (sort keys %$pattern_hash) {
+        if ($piece eq $COUNT_STRING) {
+            push @patterns, [$regex => $pattern_hash->{$piece}];
+        } else {
+            my $word_freq = $frequency_table->{$piece}->[$word_pos];
+            #my $new_regex = qq{$regex $piece\($word_freq\)};
+            my $new_regex = qq{$regex $piece};
+            push @patterns, build_regexs_recursive(
+                $pattern_hash->{$piece}, $new_regex,
+                $frequency_table, $word_pos + 1
+            );
+        }
+    }
+
+    return @patterns;
+}
+
+sub debug {
+    my $time = localtime;
+    warn $time, q{ }, @_;
+}
