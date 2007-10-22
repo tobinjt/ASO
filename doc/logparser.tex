@@ -71,6 +71,7 @@ REVIEWED
 
 \newpage
 \tableofcontents
+\listoffigures
 
 \newpage
 \section{Introduction}
@@ -1434,12 +1435,20 @@ section~\refwithpage{tracking re-injected mail}.
 
 \label{flow-chart}
 
-This flow chart shows the paths the data representing a mail/connection can
-take through the parser algorithm.  The flow chart covers the most common
-paths only; there are additional, uncommon paths which are excluded for the
-sake of clarity.
+Figure~\ref{flow chart image} shows the paths the data representing a
+mail/connection can take through the parser algorithm.  The flow chart
+covers the most common paths only; there are additional, uncommon paths
+which are excluded for the sake of clarity, but are described in
+section~\refwithpage{additional complications}.
 
-\includegraphics{build/logparser-flow-chart.ps}
+% This is very likely to move around as the flow chart is as big as
+% possible, so if any preceding text changes the flow chart may end up on
+% the next page, which may not be a bad thing, maybe.  What woould be a bad
+% thing is the \clearpage seems to cause a blank page sometimes, if the
+% image is just slightly too big.
+\showgraph{build/logparser-flow-chart.ps}{Parser flow chart}{flow chart
+image}
+\clearpage
 
 \subsection{Full algorithm}
 
@@ -2207,7 +2216,7 @@ Full coverage of log lines requires the following:
         line, but not in a meaningful way.} most log lines contain fixed
         strings and have a rigid pattern, so this is not a problem.
 
-    \item The appropriate action to take --- this is discussed in
+    \item The appropriate action to take --- discussed in
         section~\refwithpage{mails-covered}.
 
 \end{enumerate}
@@ -2695,8 +2704,8 @@ program with \parsername{}.
         \url{http://www.itefix.no/phpws/index.php} \newline (Last checked
         2007/10/13.)
 
-    \item [Log Mail Analyser] Please see the previous discussion in
-        section~\refwithpage{prior art}.
+    \item [Log Mail Analyser] Please see the previous in-depth discussion
+        of Log Mail Analyser in section~\refwithpage{prior art}.
 
 \end{description}
 

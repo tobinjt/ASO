@@ -3,7 +3,10 @@
 
 digraph logparser {
     graph [
-        size = "6.8, 6.9"
+        /* This seems to be width, height - but they interact strangely, so 
+         * I'm never sure.
+         */
+        size = "6.0, 6.4"
         margin = "0"
         center = true
     ]
