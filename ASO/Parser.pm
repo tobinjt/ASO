@@ -523,8 +523,10 @@ sub parse_line {
         return $self->$action($rule, $line, \@matches);
     }
 
-    # Last ditch: complain to the user
-    $self->my_warn(qq{unparsed line: $line->{program}: $line->{text}\n});
+    # Last ditch: complain to the user.  Notice that we deliberately don't 
+    # use my_warn because it complicates and clutters the warning.
+    warn qq{$0: $self->{current_logfile}: $.: }
+        . qq{unparsed line: $line->{program}: $line->{text}\n};
 }
 
 =head1 ACTIONS
@@ -1696,11 +1698,10 @@ sub dump_rule_from_db {
 
 =over 4
 
-=item $self->dump_state();
+=item $self->dump_state($filehandle);
 
-Returns a string which can be eval'd to restore the state tables.
-To avoid overwriting existing data structures the string contains a subroutine
-named reload_state() which returns the state tables when executed.
+Dumps the current state tables to $filehandle, in the form of a subroutine 
+named reload_state() which returns the state tables when run.
 
 =back
 
@@ -1711,13 +1712,13 @@ named reload_state() which returns the state tables when executed.
 # dumping anything untracked individually and creating a new hash for tracked
 # connections because they're interlinked and need to be dumped all at once.
 sub dump_state {
-    my ($self) = @_;
+    my ($self, $filehandle) = @_;
     my $state = q{};
 
     $self->prune_timeout_queueids();
 
     local $Data::Dumper::Sortkeys = 1;
-    $state = <<'PREAMBLE';
+    print $filehandle <<'PREAMBLE';
 ## vim: set foldmethod=marker :
 no warnings q{redefine};
 sub reload_state {
@@ -1725,40 +1726,64 @@ sub reload_state {
 PREAMBLE
 
     foreach my $data_source (@{$self->{data_to_dump}}) {
-        my %tracked;
+        my (%tracked, %untracked);
+        my $time= localtime;
         my $num_keys = keys %{$self->{$data_source}};
-        $state .= qq{## Starting dump of $data_source ($num_keys entries)\n};
-        $state .= qq{## } . localtime() . qq{\n};
-        $state .= qq{    my \%$data_source;\n};
+        print $filehandle <<"HEADER";
+## Starting dump of $data_source ($num_keys entries)
+## $time
+    my \%$data_source;
+HEADER
 
-        my $untracked = q{};
         foreach my $queueid (sort keys %{$self->{$data_source}}) {
             my $connection = $self->{$data_source}->{$queueid};
             if (exists $connection->{tracked}) {
                 $tracked{$queueid} = $connection;
             } else {
-                # This is pretty ugly looking, but should result in 
-                #   $queueids{q{38C1F4493}}
-                # or similar.
-                my $var = qq{\$${data_source}{q{$queueid}}};
-                $untracked .= qq(## $var {{{\n);
-                $untracked .= Data::Dumper->Dump([$connection], [$var]);
-                $untracked .= qq(## }}}\n);
+                $untracked{$queueid} = $connection;
             }
         }
-        $state .= qq{## Starting dump of tracked $data_source data\n};
-        $state .= qq{## } . localtime() . qq( {{{\n);
-        $state .= Data::Dumper->Dump([\%tracked], [qq{*$data_source}]);
-        $state .= qq(## }}}\n);
-        $state .= qq{## Appending dump of untracked $data_source data\n};
-        $state .= qq{## } . localtime() . qq{\n};
-        $state .= $untracked;
+
+        # Print the tracked members
+        $time = localtime;
+        print $filehandle <<"TRACKED_HEADER";
+## Starting dump of tracked $data_source data
+## $time
+TRACKED_HEADER
+        print $filehandle Data::Dumper->Dump([\%tracked], [qq{*$data_source}]);
+        print $filehandle qq(## }}}\n);
+
+        # Append the untracked members (usually the majority).
+        $time = localtime;
+        print $filehandle <<"TRACKED_HEADER";
+## Appending dump of untracked $data_source data
+## $time
+TRACKED_HEADER
+        foreach my $untracked_queueid (sort keys %untracked) {
+            # This is pretty ugly looking, but should result in 
+            #   $queueids{q{38C1F4493}}
+            # or similar.
+            my $var = qq{\$${data_source}{q{$untracked_queueid}}};
+            my $connection = $self->{$data_source}->{$untracked_queueid};
+            print $filehandle qq(## $var {{{\n);
+            print $filehandle Data::Dumper->Dump([$connection], [$var]);
+            print $filehandle qq(## }}}\n);
+        }
+
+        $time = localtime;
+        print $filehandle <<"FOOTER";
+## Finished dumping $data_source data
+## $time
+
+
+
+FOOTER
     }
 
     my $results = join q{, },
         map { qq{q($_) => \\\%$_} }
             @{$self->{data_to_dump}};
-    $state .= <<"POSTAMBLE";
+    print $filehandle <<"POSTAMBLE";
 
     return ($results);
 }
@@ -1767,7 +1792,6 @@ use warnings q{redefine};
 
 1;
 POSTAMBLE
-    return $state;
 }
 
 =over 4

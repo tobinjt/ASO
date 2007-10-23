@@ -73,7 +73,7 @@ foreach my $logfile (@logs) {
 
     my $statefile = IO::File->new(q{>} . $Options->{q{out-statefile}})
         or die qq{Failed to open $Options->{q{out-statefile}}: $!\n};
-    print $statefile $parser->dump_state();
+    $parser->dump_state($statefile);
     my $dump_finished = [gettimeofday()];
     print_timing(qq{Dumped state}, $logfile,
         tv_interval($parse_finished, $dump_finished));
