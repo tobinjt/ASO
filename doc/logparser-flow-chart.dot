@@ -49,7 +49,11 @@ digraph logparser {
     save_by_queueid                 -> { track } [minlen = 5]
     track                           -> { save_by_queueid }
     save_by_queueid                 -> { save_by_queueid } [dir = back, headport = s, tailport = nw]
-    save_by_queueid                 -> { commit }
+    save_by_queueid                 -> { commit } [weight = 10]
+
+    /* Expired mails */
+    save_by_queueid                 -> { expiry }
+    expiry                          -> { commit } [weight = 0]
 
     /* Commit is complicated */
     /* Neither parent nor child. */
@@ -95,30 +99,33 @@ digraph logparser {
     save_by_queueid                 [label = "10: Save by queueid"]
     track                           [label = "11: Track child of this mail\n(usually due to aliases)"]
 
+    /* Expiry */
+    expiry                          [label = "12: Mark mail as expired"]
+
     /* Commit is complicated */
     /* Neither parent nor child. */
-    commit                          [label = "12: Mail has been delivered, bounced or deleted"]
-    if_neither_parent_nor_child     [label = "13: If not a tracked mail:", shape = diamond]
-    fixup_enter_in_db_npc           [label = "14: Fixup, enter in db"]
-    delete_npc                      [label = "15: Delete from state tables by queueid"]
+    commit                          [label = "13: Mail has been delivered, bounced or deleted"]
+    if_neither_parent_nor_child     [label = "14: If not a tracked mail:", shape = diamond]
+    fixup_enter_in_db_npc           [label = "15: Fixup, enter in db"]
+    delete_npc                      [label = "16: Delete from state tables by queueid"]
 
     /* Untracked child */
-    if_untracked_child              [label = "16: If a child mail waiting\nto be tracked:", shape = diamond]
-    mark_for_commit                 [label = "17: Mark for later entry in db"]
-    wait_for_parent_to_commit_me    [label = "18: Wait for parent to track and enter in db"]
+    if_untracked_child              [label = "17: If a child mail waiting\nto be tracked:", shape = diamond]
+    mark_for_commit                 [label = "18: Mark for later entry in db"]
+    wait_for_parent_to_commit_me    [label = "19: Wait for parent to track and enter in db"]
 
     /* Tracked child */
-    if_tracked_child                [label = "19: If tracked child:", shape = diamond]
-    fixup_enter_in_db_tc            [label = "20: Fixup, enter in db"]
-    delete_tc                       [label = "21: Delete from state tables by queueid"]
-    maybe_delete_parent             [label = "22: Inform parent child\lhas finished"]
+    if_tracked_child                [label = "20: If tracked child:", shape = diamond]
+    fixup_enter_in_db_tc            [label = "21: Fixup, enter in db"]
+    delete_tc                       [label = "22: Delete from state tables by queueid"]
+    maybe_delete_parent             [label = "23: Inform parent child\lhas finished"]
 
     /* Parent */
-    parent                          [label = "23: Parent"]
-    fixup_enter_in_db_parent        [label = "24: Fixup, enter in db"]
-    commit_children                 [label = "25: foreach child waiting for parent:\l          fixup and enter child in db\l          delete child by queueid\l", labeljust = l]
-    wait_for_children_to_be_deleted [label = "26: Wait for any remaining \nchildren to be deleted"]
-    delete_parent                   [label = "27: Delete from state tables by queueid"]
+    parent                          [label = "24: Parent"]
+    fixup_enter_in_db_parent        [label = "25: Fixup, enter in db"]
+    commit_children                 [label = "26: foreach child waiting for parent:\l          fixup and enter child in db\l          delete child by queueid\l", labeljust = l]
+    wait_for_children_to_be_deleted [label = "27: Wait for any remaining \nchildren to be deleted"]
+    delete_parent                   [label = "28: Delete from state tables by queueid"]
 
     /* SUB-GRAPHS */
     subgraph sources {
@@ -142,6 +149,7 @@ digraph logparser {
         rank = same
         track
         save_by_queueid
+        expiry
     }
     subgraph not_tracked {
         rank = same

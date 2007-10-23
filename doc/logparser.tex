@@ -1543,12 +1543,12 @@ All four are handled in exactly the same way:
         detail.
 
     \item Eventually the mail will be delivered, bounced, or deleted by the
-        administrator (action: commit; flowchart:~12).  This is the last
+        administrator (action: commit; flowchart:~13).  This is the last
         log line for this particular mail (though it may be indirectly
         referred to if it was re-injected).  If it is neither parent nor
         child of re-injection the data is cleaned up and entered in the
-        database (flowchart:~14), then deleted from the state tables
-        (flowchart:~15).  Re-injected mails are described in
+        database (flowchart:~15), then deleted from the state tables
+        (flowchart:~16).  Re-injected mails are described in
         section~\refwithpage{tracking re-injected mail}.
 
 \end{enumerate}
@@ -1608,31 +1608,31 @@ finally be described:
 
     \item If the mail is of unknown origin it is assumed to be a child mail
         whose parent hasn't yet been identified (action: commit;
-        flowchart:~16).  Mark the mail as ready for entry in the database
-        (flowchart:~17), and wait for the parent to deal with it
-        (flowchart:~18).  The mail should not have subsequent log entries;
+        flowchart:~17).  Mark the mail as ready for entry in the database
+        (flowchart:~18), and wait for the parent to deal with it
+        (flowchart:~19).  The mail should not have subsequent log entries;
         only its parent should refer to it.
 
     \item If the mail is a child mail then it has already been tracked
-        (action: commit; flowchart:~19): the data is cleaned up, missing
+        (action: commit; flowchart:~20): the data is cleaned up, missing
         data is copied from its parent if necessary, and the child is
-        entered in the database (flowchart:~20), then deleted from the
-        state tables (flowchart:~21).  The child mail will be removed from
-        the parent mail's list of children (flowchart:~22); if this is the
+        entered in the database (flowchart:~21), then deleted from the
+        state tables (flowchart:~22).  The child mail will be removed from
+        the parent mail's list of children (flowchart:~23); if this is the
         last child and the parent has also been entered in the database the
         parent will be deleted from the state tables.
 
     \item The last alternative is that the mail is a parent mail (action:
-        commit; flowchart:~23).  Regardless of the state of its children
-        the data is cleaned up and entered in the database (flowchart:~24).
+        commit; flowchart:~24).  Regardless of the state of its children
+        the data is cleaned up and entered in the database (flowchart:~25).
         The parent may have children which are waiting to be entered in the
-        database (flowchart:~25); each of those children's data is cleaned
+        database (flowchart:~26); each of those children's data is cleaned
         up and entered in the database, then deleted from the state tables.
         The parent may also have outstanding children which are not yet
-        delivered, in which case (flowchart:~26) the parent must wait for
+        delivered, in which case (flowchart:~27) the parent must wait for
         those children to be finished with.  As soon as the last child is
         deleted from the state tables the parent will also be finished with
-        (flowchart:~27), and deleted from the state tables.
+        (flowchart:~28), and deleted from the state tables.
 
 \end{itemize}
 
@@ -1690,6 +1690,15 @@ The actions:
     \item [REJECTION] Deal with postfix rejecting an SMTP command from the
         remote client: log the rejection with a mail if there is a queueid
         in the log line, or with the connection if not.
+
+    \item [EXPIRY] If Postfix has not managed to deliver a mail after
+        trying for five days it will give up and return the mail to the
+        sender.  When this happens the mail will not have a combination of
+        Postfix programs which passes the valid combinations check (see
+        section~\refwithpage{out of order log lines}).  To ensure that the
+        mail can be committed the EXPIRY action sets a flag marking the
+        mail as expired; the flag later causes the valid combinations check
+        to be skipped, so the mail will be committed.
 
     \item [MAIL\_PICKED\_FOR\_DELIVERY] This action represents Postfix
         picking a mail from the queue to deliver. This action is used for
