@@ -19,6 +19,7 @@ my $COUNT_STRING = q{__COUNT__};
 # Read all the input files, replacing known regexs in each line.
 debug(qq{$0: starting replace_regexs()\n});
 my ($filtered_file, $number_of_lines) = replace_regexs(@ARGV);
+#$filtered_file->unlink_on_destroy(0);
 
 my $filename = $filtered_file->filename();
 debug(qq{$0: Temporary file: $filename\n});
@@ -76,10 +77,13 @@ sub replace_regexs {
     #   \/ will be replaced with /
     #   \\ will be replaced with \
     # This means that every \ you want in the string needs to be doubled.
-    my @regexs = (
+    # early_regexs are applied before the line is escaped.
+    my @early_regexs = (
         q/^__RESTRICTION_START__/,
+    );
+    my @regexs = (
         q/from=<(__SENDER__)>/,
-        # XXX how do these two rules interace?  I think the second rule will
+        # XXX how do these two rules interact?  I think the second rule will
         # clobber the result of the first line.  Maybe the space at the end of
         # the second rule will sort it.
         q/to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)?/,
@@ -89,36 +93,35 @@ sub replace_regexs {
         q/<__SENDER__>: Sender address rejected:/,
         q/<__HELO__>: Helo command rejected:/,
         q/<__RECIPIENT__>: Relay access denied:/,
-        # Ideally I'd use /g to substitute as many times as necessary, but that 
-        # won't work.
         # In the input [] will be replaced by \[\], so I need to match \\\[, 
         # and every \ needs to be doubled.
         [q/(__HOSTNAME__)\\\\\\[(__IP__)\\\\\\]/, q/(__HOSTNAME__)\[(__IP__)\]/],
-        q/(__IPv4__|__IPv6__)/,
+        [q/(__IPv4__|__IPv6__)/, q/(__IP__)/],
         q/hostname (__HOSTNAME__) verification failed:/,
         q/(__HOSTNAME__): Host not found(?:, try again)?/,
         # This won't catch every queueid, but it's a start.
         q/^(__QUEUEID__)/,
         q/(?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?/,
         q/proto=E?SMTP/,
+        q/(?:resent-)?message-id=(__MESSAGE_ID__)$/,
     );
     
-    my @regex_pairs;
-    foreach my $regex (@regexs) {
-        if (ref $regex) {
-            my ($unfiltered_regex, $replacement) = @$regex;
-            my $filtered_regex = ASO::Parser::filter_regex(undef, $unfiltered_regex);
-            push @regex_pairs, [$replacement, qr/$filtered_regex/];
-        } else {
-            my $filtered_regex = ASO::Parser::filter_regex(undef, $regex);
-            push @regex_pairs, [$regex, qr/$filtered_regex/];
-        }
-    }
+    my @early_regex_pairs = compile_regexs(@early_regexs);
+    my @regex_pairs = compile_regexs(@regexs);
 
     my ($num_lines) = 0;
     local @ARGV = @files;
     while (<>) {
         $num_lines++;
+
+        # Early regexs are attempted before the escaping of input lines, 
+        # because otherwise __RESTRICTION_START__ and possibly others would
+        # never match.
+        foreach my $early_pair (@early_regex_pairs) {
+            my ($replacement, $pattern) = @$early_pair;
+            s/$pattern/$replacement/g;
+        }
+
         # These need to be escaped in the input lines, and the regexs above
         # need to take the escaping into account.
         s/\[/\\[/g;
@@ -140,6 +143,24 @@ sub replace_regexs {
     return ($tempfile, $num_lines);
 }
 
+sub compile_regexs {
+    my (@regexs) = @_;
+
+    my @regex_pairs;
+    foreach my $regex (@regexs) {
+        if (ref $regex) {
+            my ($unfiltered_regex, $replacement) = @$regex;
+            my $filtered_regex = ASO::Parser::filter_regex(undef, $unfiltered_regex);
+            push @regex_pairs, [$replacement, qr/$filtered_regex/];
+        } else {
+            my $filtered_regex = ASO::Parser::filter_regex(undef, $regex);
+            push @regex_pairs, [$regex, qr/$filtered_regex/];
+        }
+    }
+
+    return @regex_pairs;
+}
+
 sub build_pattern_hashes {
     my ($input, $frequency_table, $num_lines) = @_;
     seek $input, 0, 0;
@@ -147,7 +168,7 @@ sub build_pattern_hashes {
     my %patterns;
     # Only use words which are present in 0.05% or more of lines.
     my $minimum_frequency = int $num_lines / 2000;
-    $minimum_frequency = 50;
+#    $minimum_frequency = 50;
 
     while (<$input>) {
         my @words = split /\s+/, $_;
@@ -191,6 +212,8 @@ sub build_regexs {
     REGEX:
     foreach my $regex (keys %no_dupes) {
         if ($no_dupes{$regex} < $min_matches) {
+            my $percent = sprintf q{%.4f}, $no_dupes{$regex} * 100 / $num_lines;
+            debug(qq{discarding regex: $no_dupes{$regex}/$num_lines ($percent\%): $regex\n});
             next REGEX;
         }
         my $count = $no_dupes{$regex};
