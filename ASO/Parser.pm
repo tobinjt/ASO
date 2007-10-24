@@ -1746,8 +1746,9 @@ HEADER
 
         # Print the tracked members
         $time = localtime;
+        $num_keys = keys %tracked;
         print $filehandle <<"TRACKED_HEADER";
-## Starting dump of tracked $data_source data
+## Starting dump of tracked $data_source data ($num_keys entries) {{{
 ## $time
 TRACKED_HEADER
         print $filehandle Data::Dumper->Dump([\%tracked], [qq{*$data_source}]);
@@ -1755,8 +1756,9 @@ TRACKED_HEADER
 
         # Append the untracked members (usually the majority).
         $time = localtime;
+        $num_keys = keys %tracked;
         print $filehandle <<"TRACKED_HEADER";
-## Appending dump of untracked $data_source data
+## Appending dump of untracked $data_source data ($num_keys entries)
 ## $time
 TRACKED_HEADER
         foreach my $untracked_queueid (sort keys %untracked) {
