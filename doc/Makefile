@@ -51,7 +51,7 @@ all: logparser.pdf
 	[ -f "$@" ]
 	cat "$@.out"
 	# Finally done.
-	chktex -q "$<"
+	chktex -I0 -q "$<"
 
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.

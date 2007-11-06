@@ -15,10 +15,6 @@
 \usepackage[section,numbib]{tocbibind}
 
 \usepackage[acronym=true,style=altlist,number=none,toc=true]{glossary}
-% Redefine the command used to produce the glossary title, because the
-% default command produces an unnumbered section whereas I want a numbered
-% section.
-\renewcommand{\glossarytitle}{\section{Glossary}\label{Glossary}}
 \makeglossary{}
 \makeacronym{}
 
@@ -42,6 +38,14 @@
         \caption{#2}\label{#3}
         \includegraphics{#1}
     \end{figure}
+}
+
+%\showtable{filename}{caption}{label}
+\newcommand{\showtable}[3]{
+    \begin{table}[ht]
+        \caption{#2}\label{#3}
+        \input{#1}
+    \end{table}
 }
 
 % Replacement for \ref{}, adds the page number too.
@@ -81,6 +85,7 @@ REVIEWED
 \newpage
 \tableofcontents
 \listoffigures
+\listoftables
 
 \newpage
 \section{Introduction}
@@ -164,8 +169,8 @@ deemed unsuitable for the task.
 
 The bibliography contains references to the resources used in developing
 the algorithm, writing the program and preparing this paper.  Also listed
-are some additional resources expected to be helpful in understanding SMTP,
-Postfix, anti-spam techniques, or the paper.
+are some additional resources expected to be helpful in understanding
+\SMTP{}, Postfix, anti-spam techniques, or the paper.
 
 Appendix~\ref{graphs} contains graphs illustrating the topics previously
 discussed in section~\ref{rule efficiency}, rule efficiency, and explains
@@ -343,9 +348,9 @@ properly, so requiring strict adherence to the protocol specification is
 beneficial in protecting against spam and viruses.\footnote{This violates
 the principle of \textit{Be liberal in what you accept, and conservative in
 what you send\/} from \RFC{} 760~\cite{rfc760}, but unfortunately that
-principle was written in a friendlier time.}  A typical SMTP conversation
-resembles the following (the lines starting with a three digit number are
-sent by the server, all other lines are sent by the client):
+principle was written in a friendlier time.}  A typical \SMTP{}
+conversation resembles the following (the lines starting with a three digit
+number are sent by the server, all other lines are sent by the client):
 
 \begin{verbatim}
 220 smtp.example.com ESMTP
@@ -364,7 +369,7 @@ QUIT
 221 2.0.0 Bye
 \end{verbatim}
 
-A detailed description of SMTP is beyond the scope of this document:
+A detailed description of \SMTP{} is beyond the scope of this document:
 introductory guides can be found at~\cite{smtp-intro-01, smtp-intro-02}.
 
 \subsection{Postfix background}
@@ -405,10 +410,10 @@ Postfix restrictions are documented fully in~\cite{smtpd_access_readme,
 smtpd_per_user_control, policy-servers}, the following is a brief overview.
 
 Postfix uses several restriction lists (each containing zero or more
-restrictions) to decide the fate of an SMTP command, one list for each
-stage of the SMTP conversation: client connection, HELO command, MAIL FROM
-command, RCPT TO command (possibly multiple times), DATA command, and end
-of data.  By default restriction lists will not be evaluated until the
+restrictions) to decide the fate of an \SMTP{} command, one list for each
+stage of the \SMTP{} conversation: client connection, HELO command, MAIL
+FROM command, RCPT TO command (possibly multiple times), DATA command, and
+end of data.  By default restriction lists will not be evaluated until the
 first RCPT TO command is received, because some clients don't deal with
 earlier rejections properly; a side benefit of this delay is that Postfix
 has more information available when logging the rejection.\footnote{The
@@ -443,7 +448,7 @@ see~\cite{smtpd_access_readme, smtpd_per_user_control, policy-servers}.
 \subsubsection{Policy servers}
 
 A policy server~\cite{policy-servers} is an external program that accepts
-state information from Postfix for each SMTP command not rejected by an
+state information from Postfix for each \SMTP{} command not rejected by an
 earlier restriction; the policy server can utilise that state information
 to implement whatever logic is required.  E.g.\ some users can be
 restricted to sending mail on the third Tuesday after pay day only --- this
@@ -460,7 +465,7 @@ encountered scenarios are:
         backscatter~\cite{postfix-backscatter} and
         joe-jobs~\cite{wikipedia-joe-job}; however there has been a lot of
         resistance to the proposal because it breaks or vastly complicates
-        some features of SMTP\@.
+        some features of \SMTP{}\@.
 
     \item Greylisting~\cite{greylisting} is a technique that temporarily
         rejects mail when the triple of (sender, recipient, remote IP
@@ -469,7 +474,7 @@ encountered scenarios are:
         retrying after a temporary failure is uneconomical for a spammer,
         but that a legitimate mail server must retry.  Sadly spammers are
         using increasingly complex and well written programs to distribute
-        spam, frequently using an ISP provided SMTP server from a
+        spam, frequently using an ISP provided \SMTP{} server from a
         compromised machine on the ISP's network.  Greylisting is slowly
         becoming less useful, but it does block a large percentage of spam
         mail at the moment.
@@ -598,8 +603,8 @@ provide some queries: IP-STORY, FROM-STORY, DAILY-EMAIL and DAILY-REJECT\@.
 Berkeley DB appears to be the least useful of the three output formats
 
 The data stored is limited to time and date, hostname and IP address of
-client, sender and recipient addresses, and the SMTP code.  Handling of
-multiple recipients, SMTP codes or remote servers\footnote{A single mail
+client, sender and recipient addresses, and the \SMTP{} code.  Handling of
+multiple recipients, \SMTP{} codes or remote servers\footnote{A single mail
 may be sent to multiple remote servers if it was addressed to recipients in
 different domains, or Postfix needs to try multiple servers for one or more
 recipients.} is not explained in the paper, but the options appear to be:
@@ -682,7 +687,7 @@ project, continuing with explanations of:
 
     \item Using a database as an application programming interface.
 
-    \item The SMTP protocol.
+    \item The \SMTP{} protocol.
 
     \item Postfix restrictions and policy servers.
 
@@ -878,8 +883,8 @@ fields:
     \item [helo] The hostname used in the HELO command.  The HELO
         occasionally changes during a connection, presumably because spam
         or virus senders think it's a good idea.  By default Postfix only
-        logs the HELO when it rejects an SMTP command, but it is quite easy
-        to rectify this: 
+        logs the HELO when it rejects an \SMTP{} command, but it is quite
+        easy to rectify this: 
 
 \label{logging helo}
 
@@ -920,7 +925,7 @@ fields:
 
 Every log line corresponding to Postfix performing an action other than
 INFO or IGNORED will have an entry in the results table, e.g.\ rejecting an
-SMTP command, delivering a mail, or bouncing a mail.  Any log line where
+\SMTP{} command, delivering a mail, or bouncing a mail.  Any log line where
 the Postfix action is INFO is not interesting in and of itself, but
 provides additional information which will be saved with other results;
 IGNORED log lines don't even provide useful information.  Each row is
@@ -936,17 +941,18 @@ connection.
         matched the log line and created this result.
 
     \item [warning] Postfix can be configured to log a warning instead of
-        enforcing a restriction that would reject an SMTP command --- a
+        enforcing a restriction that would reject an \SMTP{} command --- a
         facility that is quite useful for testing new restrictions.  This
         field will be 1 if the log line parsed was a warning rather than a
         real rejection, or 0 for a real rejection or any other result.
 
-    \item [smtp\_code] The SMTP code associated with the log line.  In
-        general an SMTP code is only present for a rejection or final
-        delivery; results missing an SMTP code will duplicate the SMTP code
-        of other results in the connection.  Some final delivery log lines
-        don't contain an SMTP code: in those cases the code is faked based
-        on the success or failure represented by the log line.
+    \item [smtp\_code] The \SMTP{} code associated with the log line.  In
+        general an \SMTP{} code is only present for a rejection or final
+        delivery; results missing an \SMTP{} code will duplicate the
+        \SMTP{} code of other results in the connection.  Some final
+        delivery log lines don't contain an \SMTP{} code: in those cases
+        the code is faked based on the success or failure represented by
+        the log line.
 
     \item [sender] The sender's email address.  This can change during one
         single connection, when the connection is reused to send multiple
@@ -1057,12 +1063,12 @@ overlapping rules lead to inconsistent parsing and data extraction because
 the order in which rules are tried against each line determines which rule
 matches.  Overlapping rules are frequently a requirement, allowing a more
 specific rule to match some lines and a more general rule to match the
-majority, e.g.\ separating smtp delivery to a filtering proxy from smtp
-delivery to the rest of the world.  The algorithm provides a facility for
-ordering overlapping rules: the priority field in each rule (defaults to
-zero).  Rules are tried in order of priority, highest first, overriding the
-hits field maintained by the parser.  Negative priorities may also be
-useful for catchall rules.
+majority, e.g.\ separating \SMTP{} delivery to a filtering proxy from
+\SMTP{} delivery to the rest of the world.  The algorithm provides a
+facility for ordering overlapping rules: the priority field in each rule
+(defaults to zero).  Rules are tried in order of priority, highest first,
+overriding the hits field maintained by the parser.  Negative priorities
+may also be useful for catchall rules.
 
 Detecting overlapping rules is difficult, but the following may be helpful:
 
@@ -1335,7 +1341,7 @@ A high level view of the algorithm could be expressed as:
 
 \begin{enumerate}
 
-    \item Mail enters the system via SMTP or local submission.
+    \item Mail enters the system via \SMTP{} or local submission.
 
     \item If the mail is rejected, log all data and finish.
 
@@ -1509,12 +1515,12 @@ covered therein.
 \label{mail-enters-the-system}
 
 Everything starts off with a mail entering the system, whether by local
-submission via postdrop/sendmail, by SMTP, by re-injection due to
+submission via postdrop/sendmail, by \SMTP{}, by re-injection due to
 forwarding, or internally generated by Postfix.  Local submission is the
 simplest case: a queueid is assigned immediately and the sender address is
 logged (action: pickup; flowchart:~2).
 
-SMTP is more complicated: 
+\SMTP{} is more complicated: 
 
 \begin{enumerate}
         
@@ -1527,7 +1533,7 @@ SMTP is more complicated:
         flowchart:~5); or some interleaving of both.
         
     \item The client disconnects (action: disconnect; flowchart:~6).  If
-        Postfix has rejected any SMTP commands the data will be saved to
+        Postfix has rejected any \SMTP{} commands the data will be saved to
         the database; if not there won't be any data to save (any mails
         accepted will already have been cloned so their data is in another
         data structure).
@@ -1608,7 +1614,7 @@ indications:
     \item Local delivery re-injects the mail and logs a relayed delivery
         rather than delivering directly to a mailbox or program as it
         usually would (action: track; flowchart:~11).\footnote{Relayed
-        delivery is performed by the SMTP client; local delivery means
+        delivery is performed by the \SMTP{} client; local delivery means
         local to the server, i.e.\ an address the server is final
         destination for.} In this case the mail may already have been
         created (action: qmgr\_chooses\_mail; flowchart:~3; described
@@ -1712,9 +1718,9 @@ The actions:
         or by another parent, and issues appropriate warnings in either
         case.
 
-    \item [REJECTION] Deal with postfix rejecting an SMTP command from the
-        remote client: log the rejection with a mail if there is a queueid
-        in the log line, or with the connection if not.
+    \item [REJECTION] Deal with postfix rejecting an \SMTP{} command from
+        the remote client: log the rejection with a mail if there is a
+        queueid in the log line, or with the connection if not.
 
     \item [EXPIRY] If Postfix has not managed to deliver a mail after
         trying for five days it will give up and return the mail to the
@@ -1807,7 +1813,7 @@ those heuristics are:
 
     \item Neither smtpd nor pickup have logged any messages associated with
         the mail, indicating it was generated internally by Postfix, not
-        accepted via SMTP or submitted locally by sendmail.
+        accepted via \SMTP{} or submitted locally by sendmail.
 
     \item The message-id has a specific format: \newline
         \texttt{YYYYMMDDhhmmss.queueid@server.hostname} \newline
@@ -1860,7 +1866,7 @@ This check is performed during the COMMIT action.
 \label{aborted-delivery-attempts}
 
 Some mail clients appear to send the following sequence of commands during
-the SMTP session:
+the \SMTP{} session:
 
 \begin{verbatim}
     EHLO client.hostname
@@ -1940,9 +1946,9 @@ reused.
 
 \label{timeouts-during-data-phase}
 
-The DATA phase of the SMTP conversation is where the headers and body of the
-mail are transferred.  Sometimes there is a timeout or the connection is
-lost\footnote{For brevity's sake timeout will be used throughout this
+The DATA phase of the \SMTP{} conversation is where the headers and body of
+the mail are transferred.  Sometimes there is a timeout or the connection
+is lost\footnote{For brevity's sake timeout will be used throughout this
 section, but everything applies equally to lost connections.} during the
 DATA phase; when this occurs Postfix will discard the mail and the parser
 needs to discard the data associated with that mail.  It seems more
@@ -2701,7 +2707,7 @@ program with \parsername{}.
             \item For mail sent and received: from address, size, and time
                 and date.
 
-            \item For mail sent: to addresses, SMTP code, and delay.
+            \item For mail sent: to addresses, \SMTP{} code, and delay.
 
             \item For mail received: the hostname of the sender.
                 
@@ -2807,7 +2813,9 @@ The Y axis in the graph above represents the following:
 size and number of lines to execution time}{execution time vs file size vs
 number lines factor}
 
-\input{build/stats-normal-filesize-line-count-include}
+\showtable{build/stats-normal-filesize-line-count-include}{Ratio of file
+size \& number of lines to execution time: statistics}{execution time vs
+file size vs number lines factor table}
 
 \clearpage
 
@@ -2915,11 +2923,12 @@ varies between the optimum and nadir, and the performance varies
 proportionally.
 
 The difference between logs with a mail loop and logs without can be seen
-in this table showing the increases for the different rule orderings and
-combinations of log files:
+in table~\refwithpage{Rule ordering with and without a mail loop} showing
+the increases for the different rule orderings and combinations of log
+files:
 
-\noindent\input{build/stats-normal-shuffle-reverse-include.tex}
-
+\showtable{build/stats-normal-shuffle-reverse-include}{Rule ordering with
+and without a mail loop}{Rule ordering with and without a mail loop}
 
 
 
@@ -2936,7 +2945,7 @@ implementation.
 \showgraph{build/plot-cached-discarded.ps}{Regex: cached vs
 discarded}{normal regex vs discard regex}
 
-\showgraph{build/plot-cached-discarded-factor.ps}{Regex: percentage
+\showgraph{build/plot-cached-discarded-factor.ps}{Regex caching: percentage
 execution time increase}{normal regex vs discarded regex factor}
 
 Two large dips can be seen in graph~\refwithpage{normal regex vs discarded
@@ -2953,7 +2962,9 @@ when there isn't a mail loop, and a correspondingly decreased execution
 time.  The increases in execution time when not caching regexs for
 different combinations of log files are summarised in the table below:
 
-\input{build/stats-cached-discarded-include-for-graph}
+\showtable{build/stats-cached-discarded-include-for-graph}
+{Regex caching/discarding with different groups of log files}
+{Regex caching/discarding with different groups of log files}
 
 
 \subsection{Rule hits}
@@ -2996,9 +3007,24 @@ concluded with a breakdown of the rule hits accumulated during a single
 test run of the parser.
 
 
-% The appropriate command has been redefined so this will produce a section
-% and label called glossary.
+% This fools the syntax highlighting so we get a new fold here, but it
+% doesn't create a new section.
+\ifacronymfirstuse{SMTP}{
+\section{Glossary}
+}{}
+% Redefine the command used to produce the glossary title, because the
+% default command produces an unnumbered section whereas I want a numbered
+% section.
+\renewcommand{\glossarytitle}{\section{Glossary}\label{Glossary}}
 \printglossary{}
+% Redefine the command a second time to produce acronyms instead of a
+% glossary.
+\renewcommand{\glossarytitle}{\section{Acronyms}\label{Acronyms}}
 \printacronym{}
+
+% The contents of the glossary.
+\glossary{name={ESMTP},description={
+    ESMTP is Extended \SMTP{}, defined in \RFC{}~1869~\cite{RFC1869}.
+}}
 
 \end{document}
