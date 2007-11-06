@@ -5,8 +5,6 @@
 \usepackage{amstext}
 % Wrapping of URLs.  This is used in the bibliography instead of \url{}.
 \usepackage{url}
-%\DeclareUrlCommand\urlwrap{}
-%\newcommand{\urlwrapfill}[1]{\urlwrap{#1}\hfill}
 \newcommand{\parsername}{ASO}
 % Include images
 \usepackage[final]{graphicx}
@@ -15,6 +13,15 @@
 \renewcommand{\refname}{Bibliography}
 % Add the bibliography into the table of contents.
 \usepackage[section,numbib]{tocbibind}
+
+\usepackage[acronym=true,style=altlist,number=none,toc=true]{glossary}
+% Redefine the command used to produce the glossary title, because the
+% default command produces an unnumbered section whereas I want a numbered
+% section.
+\renewcommand{\glossarytitle}{\section{Glossary}\label{Glossary}}
+\makeglossary{}
+\makeacronym{}
+
 % When creating a PDF make the table of contents into links to the pages
 % (without horrible red borders) and include bookmarks.  The title and
 % author don't work - I think either gnuplot or graphviz clobbers it.
@@ -39,15 +46,17 @@
 
 % Replacement for \ref{}, adds the page number too.
 \newcommand{\refwithpage}[1]{%
-    \empty{}\ref{#1} (page~\pageref{#1})%
+    \empty{}\ref{#1} [page~\pageref{#1}]%
 }
     
 \begin{document}
 
+% Pull in the acronyms early, so they can be used throughout the text.
+\input{logparser-acronyms.tex}
+
 \title{Parsing Postfix log files}
 \author{John Tobin \\ School of Computer Science and Statistics \\ 
 Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
-\date{}
 \maketitle
 
 \begin{abstract}
@@ -91,24 +100,28 @@ parsing must correlate the log lines per-connection or per-queueid rather
 than processing lines independently.  One of the barriers to this type of
 processing is the unstructured nature of Postfix logs, where each log line
 was added on an ad hoc basis as a requirement was discovered or new
-functionality was added.  Further complication arises because the set of
-rejection messages is not fixed: new messages can be added by the
-administrator with custom checks; every Real-time Black List returns a
-different explanatory message; policy servers may log different messages
-depending on the characteristics of the connection; there are many ways in
-which the log lines may differ between servers.  This paper documents the
-difficult process of parsing Postfix logs, presenting a program which
-parses logs and places the resulting data into a database.  The gathered
-data can then be used to optimise current anti-spam measures, provide a
-baseline to test new anti-spam measures against, or to produce statistics
-showing how effective those measures are.  There are numerous other uses
-for such data: improving server performance by identifying troublesome
-destinations and reconfiguring appropriately or dedicating transports to
-those destinations; identifying regular high volume uses (e.g.\ customer
-newsletters) and restricting those uses to off-peak times; detecting virus
-outbreaks which propagate via email; as a base for billing customers on a
-shared server.  Preserving the raw data enables users to develop a
-multitude of uses far beyond those conceived of by the author.
+functionality was added.\footnote{A history of all changes made to Postfix
+is distributed with the source code, available from
+\url{http://www.postfix.org/}} Further complication arises because the set
+of rejection messages is not fixed: new messages can be added by the
+administrator with custom checks; every \RBL{} returns a different
+explanatory message; policy servers may log different messages depending on
+the characteristics of the connection; there are many ways in which the log
+lines may differ between servers, even within the same organisation when
+servers are configured differently, or are running different version of
+Postfix.  This paper documents the difficult process of parsing Postfix
+logs, presenting a program which parses logs and places the resulting data
+into a database.  The gathered data can then be used to optimise current
+anti-spam measures, provide a baseline to test new anti-spam measures
+against, or to produce statistics showing how effective those measures are.
+There are numerous other uses for such data: improving server performance
+by identifying troublesome destinations and reconfiguring appropriately or
+dedicating transports to those destinations; identifying regular high
+volume uses (e.g.\ customer newsletters) and restricting those uses to
+off-peak times; detecting virus outbreaks which propagate via email; as a
+base for billing customers on a shared server.  Preserving the raw data
+enables users to develop a multitude of uses far beyond those conceived of
+by the author.
 
 \vspace{1em}\noindent\textbf{Layout of the paper:}
 
@@ -121,9 +134,9 @@ resulting data.  The remainder of the schema is laid out in
 section~\ref{rule attributes}.
 
 Section~\ref{rules} discusses the parsing rules in detail, describing the
-table used to hold the rules and explaining their structure, using an
-example rule and sample data it matches successfully against, followed by a
-discussion of rule efficiency concerns.
+table in the database used to hold the rules and explaining their
+structure, referring to an example rule and sample data it matches
+successfully against, followed by a discussion of rule efficiency concerns.
 
 Section~\ref{parsing-algorithm} contains the meat of the paper, describing
 a naive parsing algorithm and the complications encountered which shaped
@@ -146,7 +159,7 @@ journey a mail takes through Postfix.
 Section~\ref{conclusion} describes the results of the project to date and
 contains the paper's conclusion.
 
-Section~\ref{other-parsers} discusses other parsers and why they were
+Appendix~\ref{other-parsers} discusses other parsers and why they were
 deemed unsuitable for the task.
 
 The bibliography contains references to the resources used in developing
@@ -154,8 +167,11 @@ the algorithm, writing the program and preparing this paper.  Also listed
 are some additional resources expected to be helpful in understanding SMTP,
 Postfix, anti-spam techniques, or the paper.
 
-Section~\ref{graphs} contains graphs illustrating the topics discussed in
-section~\ref{rule efficiency}, rule efficiency.
+Appendix~\ref{graphs} contains graphs illustrating the topics previously
+discussed in section~\ref{rule efficiency}, rule efficiency, and explains
+the irregularities observed in the graphs.
+
+Appendix~\ref{Glossary} provides a glossary of terms used in the paper.
 
 \section{Background}
 
@@ -166,12 +182,13 @@ section~\ref{rule efficiency}, rule efficiency.
 This section provides background information helpful in understanding the
 remainder of the paper.  It begins with a discussion of the motivation
 underlying the project, followed by some technical information: the use of
-a database as an API\@; a brief introduction to the SMTP protocol; and a
-longer introduction to Postfix, concentrating on the topics most relevant
-to this paper, namely Postfix restrictions and policy servers.  The
-assumptions made in designing and implementing the parser are explained, as
-are the conventions used in this paper.  Other projects which attempt to
-parse Postfix logs are summarised (full details are available in
+a database as an \API\@; a brief introduction to
+\ifacronymfirstuse{SMTP}{the}{} \SMTP\@; and a longer introduction to
+Postfix, concentrating on the topics most relevant to this paper, namely
+Postfix restrictions and policy servers.  The assumptions made in designing
+and implementing the parser are explained, as are the conventions used in
+this paper.  Other projects which attempt to parse Postfix logs are
+summarised (full details are available in
 section~\refwithpage{other-parsers}), plus a review of previously published
 research in this area.
 
@@ -237,6 +254,11 @@ SELECT name, description, restriction_name, hits,
         AND hits < 100
     ORDER BY hits ASC;
 \end{verbatim}
+
+These database queries yield summary statistics about the efficiency of
+spam avoidance techniques that is far less feasible to assess directly from
+log files without prior pre-processing into a database along the lines
+proposed, implemented and tested herein.
 
 \subsection{Database as Application Programming Interface}
 
@@ -310,21 +332,20 @@ CREATE TRIGGER ON INSERT INTO results
 
 
 \subsection{SMTP background}
-\label{smtp background}
+\label{SMTP background}
 
-The Simple Mail Transfer Protocol, originally defined in RFC
-821~\cite{RFC821} and updated in RFC 2821~\cite{RFC2821}, is used for
-transferring mail between Mail Transport Agents (MTAs).  It is a simple,
-human readable, plain text protocol, making it quite easy to test and debug
-problems with it.  Despite the simplicity many virus and/or spam sending
-programs fail to implement it properly, so requiring strict adherence to
-the protocol specification is beneficial in protecting against spam and
-viruses.\footnote{This violates the principle of \textit{Be liberal in what
-you accept, and conservative in what you send\/} from RFC
-760~\cite{rfc760}, but unfortunately that principle was written in a
-friendlier time.}  A typical SMTP conversation resembles the following (the
-lines starting with a three digit number are sent by the server, all other
-lines are sent by the client):
+The \SMTPlong, originally defined in \RFC{} 821~\cite{RFC821} and updated
+in \RFC{} 2821~\cite{RFC2821}, is used for transferring mail between the
+sending and receiving \MTA\@.  It is a simple, human readable, plain text
+protocol, making it quite easy to test and debug problems with it.  Despite
+the simplicity many virus and/or spam sending programs fail to implement it
+properly, so requiring strict adherence to the protocol specification is
+beneficial in protecting against spam and viruses.\footnote{This violates
+the principle of \textit{Be liberal in what you accept, and conservative in
+what you send\/} from \RFC{} 760~\cite{rfc760}, but unfortunately that
+principle was written in a friendlier time.}  A typical SMTP conversation
+resembles the following (the lines starting with a three digit number are
+sent by the server, all other lines are sent by the client):
 
 \begin{verbatim}
 220 smtp.example.com ESMTP
@@ -868,15 +889,19 @@ fields:
                 containing:\newline
                 \hspace*{2em}\texttt{/./~~~~WARN~Logging~HELO}
 
-            \item Modify \texttt{smtpd\_helo\_restrictions} in
+            \item Modify \texttt{smtpd\_data\_restrictions} in
                 \texttt{/etc/postfix/main.cf} to contain\newline
                 \hspace*{2em}\texttt{check\_helo\_access~/etc/postfix/log\_helo.pcre}
 
         \end{enumerate}
 
-        The purpose of logging the HELO in
-        \texttt{smtpd\_helo\_restrictions} is to log only once per mail; it
-        also seems like the natural place.
+        Although \texttt{smtpd\_helo\_restrictions} seems like the natural
+        place to log the HELO hostname, there won't be a queueid associated
+        with the mail for the first recipient, so that log line cannot be
+        associated with the correct mail.  There is guaranteed to be
+        queueid when the DATA command has been reached, and thus it will be
+        logged by any restrictions taking effect in
+        \texttt{smtpd\_data\_restrictions}.
 
     \item [queueid] The queueid of the mail if the conection represents an
         accepted mail, or \textit{NOQUEUE\/} otherwise.
@@ -2969,5 +2994,11 @@ compiled regexs is attested to by the third group of graphs, where the
 difference between caching and discarding is staggering.  This section
 concluded with a breakdown of the rule hits accumulated during a single
 test run of the parser.
+
+
+% The appropriate command has been redefined so this will produce a section
+% and label called glossary.
+\printglossary{}
+\printacronym{}
 
 \end{document}

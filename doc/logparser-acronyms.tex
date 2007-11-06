@@ -1,0 +1,38 @@
+% Warning: don't use acronyms within definitions, they don't work properly.
+
+\newacronym{RBL}{Real-time Black List}{description={
+    Real-time Black Lists are a simple collaborative anti-spam technique
+    used to reject or penalise email sent from mail servers reported to
+    have sent large volumes of spam.  To use an RBL the mail server makes a
+    DNS request incorporating the IP address of the currently connected
+    client; if the requested hostname exists the client is on the RBL, and
+    the mail server can decide what course of action to take.
+}}
+
+\newacronym{API}{Application Programming Interface}{description={
+    One of the fundamental concepts when writing programs is the reuse of
+    existing code, so that each program does not reinvent the wheel.  When
+    a body of code is intended to be reused repeatedly, the user of this
+    code needs to be informed of the functionality provided by the code.
+    An API defines the interface provided to the user, and acts a contract
+    between the user and the provider: if the user adheres to the API the
+    provider guarantees it will work, while the provider is free to change
+    the implementation as long as the API is preserved.
+}}
+
+\newacronym{SMTP}{Simple Mail Transfer Protocol}{description={
+    SMTP is the protocol which transfers mail from the sender to the
+    recipient across the Internet.  A brief introduction to SMTP is
+    provided in section~\refwithpage{SMTP background}.
+}}
+
+\newacronym{MTA}{Mail Transfer Agent}{description={
+    A Mail Transfer Agent sends and/or receives mail via SMTP\@.
+}}
+
+\newacronym{RFC}{Request For Comments}{description={
+    The Request For Comments series is a series of proposals defining
+    various protocols and file formats, e.g. SMTP\@.  The name is somewhat
+    misleading: initially the authors were asking for peer review, but
+    these documents are now the de facto standards the Internet runs on.
+}}

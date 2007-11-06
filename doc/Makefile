@@ -11,6 +11,17 @@ all: logparser.pdf
 	# logparser.aux.
 	(latex -interaction=nonstopmode "$<" || rm -f "$@") | tee "$@.out"
 	[ -f "$@" ]
+	# Rebuild the glossary
+	BASE=$$( basename "$@" .dvi ); \
+	makeindex -s "$$BASE.ist" -t "$$BASE.glg" -o "$$BASE.gls" "$$BASE.glo"
+	# Rebuild to acronym list
+	BASE=$$( basename "$@" .dvi ); \
+	makeindex -s "$$BASE.ist" -t "$$BASE.alg" -o "$$BASE.acn" "$$BASE.acr"
+	# Include the new glossary
+	(latex -interaction=nonstopmode "$<" || rm -f "$@") | tee "$@.out"
+	[ -f "$@" ]
+	# Rebuild the index, if there is one; note this is done after the glossary 
+	# and acronym lists are pulled in so that they can have index entries too.
 	# Run bibtex to extract the right entries from logparser-bibliography.bib
 	# into logparser-bibliography.bbl
 	# Run latex again to pull in logparser-bibliography.bbl.
@@ -33,13 +44,18 @@ all: logparser.pdf
 		( latex -interaction=nonstopmode "$<" || rm -f "$@" ) | tee "$@.out"; \
 	fi
 	[ -f "$@" ]
+	# Run latex for a fifth time in case tables lengths have changed.
+	if grep -q "Package longtable Warning: Column widths have changed" "$@.out"; then \
+		( latex -interaction=nonstopmode "$<" || rm -f "$@" ) | tee "$@.out"; \
+	fi
+	[ -f "$@" ]
 	cat "$@.out"
 	# Finally done.
 	chktex -q "$<"
 
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
-logparser.dvi: logparser.deps logparser.bbl
+logparser.dvi: logparser.deps logparser.bbl logparser-acronyms.tex
 logparser.deps: build/logparser-flow-chart.ps \
 				build/plot-cached-discarded.ps build/plot-cached-discarded-factor.ps  \
 				build/plot-normal-shuffle-reverse.ps build/plot-normal-shuffle-factor.ps  \
@@ -217,7 +233,7 @@ extract-stats:
 
 # Cleanup.
 clean:
-	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out
+	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out *.ist *.glg *.gls *.glo *.cbk *.cit *.lof *.idx
 
 veryclean: clean
 	rm -f build/*
