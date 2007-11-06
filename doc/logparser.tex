@@ -112,60 +112,60 @@ of rejection messages is not fixed: new messages can be added by the
 administrator with custom checks; every \RBL{} returns a different
 explanatory message; policy servers may log different messages depending on
 the characteristics of the connection; there are many ways in which the log
-lines may differ between servers, even within the same organisation when
-servers are configured differently, or are running different version of
+lines may differ between servers, even within the same organisation:
+servers may be configured differently, or running different version of
 Postfix.  This paper documents the difficult process of parsing Postfix
 logs, presenting a program which parses logs and places the resulting data
-into a database.  The gathered data can then be used to optimise current
-anti-spam measures, provide a baseline to test new anti-spam measures
-against, or to produce statistics showing how effective those measures are.
-There are numerous other uses for such data: improving server performance
-by identifying troublesome destinations and reconfiguring appropriately or
-dedicating transports to those destinations; identifying regular high
-volume uses (e.g.\ customer newsletters) and restricting those uses to
-off-peak times; detecting virus outbreaks which propagate via email; as a
-base for billing customers on a shared server.  Preserving the raw data
-enables users to develop a multitude of uses far beyond those conceived of
-by the author.
+into a database for later use.  The gathered data can then be used to
+optimise current anti-spam measures, provide a baseline to test new
+anti-spam measures against, or to produce statistics showing how effective
+those measures are.  There are numerous other uses for such data: improving
+server performance by identifying troublesome destinations and
+reconfiguring appropriately or dedicating transports to those destinations;
+identifying regular high volume uses (e.g.\ customer newsletters) and
+restricting those uses to off-peak times; detecting virus outbreaks which
+propagate via email; as a base for billing customers on a shared server.
+Preserving the raw data enables users to develop a multitude of uses far
+beyond those conceived of by the author.
 
 \vspace{1em}\noindent\textbf{Layout of the paper:}
 
 Section~\ref{background} provides background information useful in
 understanding the paper, parser and algorithm.
 
-Section~\ref{database schema} partially describes the database schema used
-by the parser, explaining in detail the tables used for storing the
-resulting data.  The remainder of the schema is laid out in
-section~\ref{rule attributes}.
+Section~\ref{database schema} describes the database schema used by the
+parser, explaining in detail the tables used for storing the data gleaned
+from the logs and the table that stores the rules.
 
 Section~\ref{rules} discusses the parsing rules in detail, describing the
 table in the database used to hold the rules and explaining their
 structure, referring to an example rule and sample data it matches
-successfully against, followed by a discussion of rule efficiency concerns.
+successfully against.  This section concludes with a discussion of rule
+efficiency concerns.
 
 Section~\ref{parsing-algorithm} contains the meat of the paper, describing
 a naive parsing algorithm and the complications encountered which shaped
 the full algorithm, followed by a comprehensive explanation of the
-different stages of the algorithm, the actions taken during the execution
-of the algorithm, and further complications whose solution completes the
+different stages of the algorithm, the actions taken during execution of
+the algorithm, and further complications whose solution completes the
 algorithm.
 
 Section~\ref{parsing coverage} analyses the coverage the parser achieves
 over a set of 93 log files taken from a mail server handling mail for over
 1000 users.  Coverage is described both in terms of the fraction of lines
-parsed and the fraction of mails and connections successfully handled by
-the parsing algorithm.
+parsed and the fraction of mails and connections successfully reconstructed
+by the parsing algorithm.
 
-Section~\ref{limitations-improvements} lists the limitations of the program
-and/or the algorithm, then suggests some ways of dealing with the
-limitations, with the goal of improving parsing and reproduction of the
-journey a mail takes through Postfix.
+Section~\ref{limitations-improvements} lists the limitations of the
+algorithm, then suggests some ways of dealing with the limitations, with
+the goal of improving parsing and reproduction of the journey a mail takes
+through Postfix.
 
-Section~\ref{conclusion} describes the results of the project to date and
-contains the paper's conclusion.
+Section~\ref{conclusion} is contains the paper's conclusion.
 
 Appendix~\ref{other-parsers} discusses other parsers and why they were
-deemed unsuitable for the task.
+deemed unsuitable for the task, including why they could not be improved or
+expanded upon.
 
 The bibliography contains references to the resources used in developing
 the algorithm, writing the program and preparing this paper.  Also listed
@@ -175,6 +175,8 @@ are some additional resources expected to be helpful in understanding
 Appendix~\ref{graphs} contains graphs illustrating the topics previously
 discussed in section~\ref{rule efficiency}, rule efficiency, and explains
 the irregularities observed in the graphs.
+
+Appendix~\ref{Acronyms} provides a list of acronyms used in the paper.
 
 Appendix~\ref{Glossary} provides a glossary of terms used in the paper.
 
@@ -190,12 +192,12 @@ underlying the project, followed by some technical information: the use of
 a database as an \API\@; a brief introduction to
 \ifacronymfirstuse{SMTP}{the}{} \SMTP\@; and a longer introduction to
 Postfix, concentrating on the topics most relevant to this paper, namely
-Postfix restrictions and policy servers.  The assumptions made in designing
-and implementing the parser are explained, as are the conventions used in
-this paper.  Other projects which attempt to parse Postfix logs are
+Postfix anti-spam restrictions and policy servers.  The assumptions made in
+designing and implementing the parser are explained, as are the conventions
+used in this paper.  Other projects which attempt to parse Postfix logs are
 summarised (full details are available in
-section~\refwithpage{other-parsers}), plus a review of previously published
-research in this area.
+appendix~\refwithpage{other-parsers}), finishing with a review of
+previously published research in this area.
 
 \subsection{Motivation}
 
@@ -237,14 +239,14 @@ SELECT name, description, restriction_name, hits_total,
     ORDER BY hits_total DESC;
 \end{verbatim}
 
-SQL note: $||$ is the concatenation operator in SQLite3; if the database
+\SQL{} note: $||$ is the concatenation operator in SQLite3; if the database
 containing the extracted data does not support this syntax, then simply
 remove `` $||$ '$\%$'\hspace{1ex}'' from the query --- the results will be
 the same, just slightly less visually pleasing.
 
 Another example is determining which restrictions are not effective: this
-example shows which rules had less than 100 hits on the last log file
-parsed.
+example shows which restrictions had fewer than 100 hits on the last log
+file parsed.
 
 \begin{verbatim}
 SELECT name, description, restriction_name, hits,
@@ -269,22 +271,30 @@ proposed, implemented and tested herein.
 
 The database populated by this program provides a simple interface to
 Postfix logs.  Although the interface is a database schema, it is in effect
-quite similar to the API provided by a library: it insulates both user and
-provider of the API from changes in the implementation of the API\@.  The
-algorithm implemented by the parser can be improved; support can be added
-for earlier or later releases of Postfix; bugs can be fixed or limitations
-removed from the parser.  Statistics and/or graphs can be generated from
-the database; new restrictions can be tested and the results inspected;
-trends in the fight against spam can emerge from historical data saved in
-the database.  Using a database simplifies writing programs which need to
-interact with the data in several ways:
+quite similar to any other \API{} provided by shared code: it insulates
+both user and provider of the \API{} from changes in the implementation of
+the \API{}\@.  The algorithm implemented by the parser can be improved;
+support can be added for earlier or later releases of Postfix; bugs can be
+fixed or limitations removed from the parser; these changes will not cause
+the user to be negatively impacted.  Statistics and/or graphs can be
+generated from the database; new restrictions can be tested and the results
+inspected; trends in the fight against spam can emerge from historical data
+saved in the database; the parser remains the same as the usage adapts.
+Using a database simplifies writing programs which need to interact with
+the data in several ways:
 
 \begin{enumerate}
 
-    \item Libraries exist for the majority of programming languages
-        allowing access to databases, whereas if this parser was written as
-        a shared library a new interface layer would need to be written for
-        every programming language using the API\@.
+    \item The majority of programming languages have existing code
+        available allowing access to databases, so the majority of
+        languages will be able to access the results obtained by running
+        the parser.  If this parser was written to be utilised as shared
+        code there would be little or no difficulty in using it when
+        writing in the programing language it is implemented in, but every
+        other programing language wishing to utilise it would require an
+        interface layer to be written.  This requirement would drastically
+        reduce the viability of any project wishing to build upon the work
+        of this project.
 
     \item Databases provide complex querying and sorting functionality to
         the user without requiring large amounts of programming.  All
@@ -301,7 +311,9 @@ interact with the data in several ways:
 
             \item New columns can be added to the tables used by the
                 program, with sufficient DEFAULT clauses or a clever
-                TRIGGER or two.
+                TRIGGER or two.\footnote{Please refer to an \SQL{} guide
+                for explanations of these terms, e.g.~\cite{wikipedia-sql}
+                XXX IMPROVE.}
 
             \item A VIEW gives a custom arrangement of data with very
                 little effort.
@@ -329,10 +341,15 @@ CREATE TRIGGER ON INSERT INTO results
         familiar with it; for those unfamiliar with it there are lots of
         readily available resources from which to learn.  Although every
         vendor implements a different dialect of SQL, the basics are the
-        same everywhere.
+        same everywhere (analogous to the overall similarities and minor
+        differences between British English, American English and
+        Australian English).  XXX CITE SOME RESOURCES\@.
 
 \end{enumerate}
 
+Storing the results in a database will also increase the efficiency of
+using those results, as the logs need only be parsed once; indeed the
+results may be used by someone with no access to the original logs.
 
 
 
@@ -384,25 +401,26 @@ or per-sender basis, allowing varying levels of severity and/or
 permissiveness.  Postfix leverages simple lookup tables to support
 arbitrarily complicated user-defined sequences of restrictions and
 exceptions, with policy servers\footnote{Policy servers will be explained
-shortly.} as the ultimate in flexibility.  Administrators can also supply
-their own rejection messages to make it clear to senders why exactly their
-mail was rejected.  Unfortunately this flexibility has a cost: complexity
-in the logs generated.  While it is easy to use \texttt{grep(1)} to
-determine the fate of an individual email, following the journey an email
-takes through Postfix can be quite difficult.  The logs tend to follow a
-90\%-10\% pattern: 90\% of the time the journey is simple, but the other
-10\% of the time requires 90\% of the code.\footnote{These numbers don't
-have a solid scientific basis, they're based on gut feeling from writing
-and debugging the software.}
+in section~\refwithpage{policy servers}.} as the ultimate in flexibility.
+Administrators can also supply their own rejection messages to make it
+clear to senders why exactly their mail was rejected.  Unfortunately this
+flexibility has a cost: complexity in the logs generated.  While it is easy
+to use standard Unix text processing utilities to determine the fate of an
+individual email, following the journey an email takes through Postfix can
+be quite difficult.  The logs tend to follow a 90\%-10\% pattern: 90\% of
+the time the journey is simple, but the other 10\% of the time requires
+90\% of the code.\footnote{These numbers don't have a solid scientific
+basis, they're based on gut feeling from writing and debugging the
+software.}
 
 Postfix's design follows the Unix philosophy of \textit{Write programs that
 do one thing and do it well\/}~\cite{unix-philosophy}, and is separated
 into various component programs to perform the tasks required of an MTA\@:
 receive mail, send mail, local delivery of mail, etc. --- full details can
 be found at~\cite{postfix-overview}.  Each log line contains the name of
-the Postfix program which produced the log line, and this information is
-used when determining which rules should be used to parse each log line
-(see section~\refwithpage{rule characteristics} for details.)
+the Postfix program which produced it, and this information is used when
+determining which rules should be used to parse each log line (see
+section~\refwithpage{rule characteristics} for details.)
 
 \subsubsection{Mixing and matching Postfix restrictions}
 
@@ -417,10 +435,11 @@ end of data.  By default restriction lists will not be evaluated until the
 first RCPT TO command is received, because some clients don't deal with
 earlier rejections properly; a side benefit of this delay is that Postfix
 has more information available when logging the rejection.\footnote{The
-\texttt{smtpd\_delay\_reject} parameter controls this behaviour.}  Postfix
-uses simple lookup tables as the deciding factor for some restrictions,
-e.g.\ \texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
-\footnote{\texttt{cidr} is the type of the lookup table~\cite{cidr_table}}
+\texttt{smtpd\_delay\_reject} parameter in Postfix's configuration controls
+this behaviour.}  Postfix uses simple lookup tables as the deciding factor
+for some restrictions, e.g.\
+\texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
+\footnote{\texttt{cidr}~\cite{cidr_table} is the type of the lookup table.}
 will check whether the IP address of the connected client matches the left
 hand side of each line in the file and will return the right hand side of
 the first matching line.  Other restrictions determine their result in
@@ -434,18 +453,20 @@ see~\cite{smtpd_access_readme, smtpd_per_user_control, policy-servers}.}
 The meaning of \textit{permit\/} and \textit{reject\/} is fairly obvious;
 \textit{dunno\/} means to stop evaluating the current restriction and
 continue with the next restriction in the list, allowing more specific
-cases to be handled differently from more general cases.  When the result
-is another restriction Postfix will evaluate the new restriction, allowing
-restrictions to be chosen based on the client IP address, HELO hostname,
-sender address, recipient address, etc.  The administrator can define new
-restrictions as a list of existing restrictions, allowing arbitrarily long
-and complex sequences of lookups and restrictions.
+cases to be used as exceptions to more general cases.  When the result is
+the name of another restriction Postfix will evaluate the new restriction,
+allowing restrictions to be chosen based on the client IP address, HELO
+hostname, sender address, recipient address, etc.  The administrator can
+define new restrictions as a list of existing restrictions, allowing
+arbitrarily long and complex sequences of lookups and restrictions.
 
 This description is necessarily brief, for further details
 see~\cite{smtpd_access_readme, smtpd_per_user_control, policy-servers}.
 
 
 \subsubsection{Policy servers}
+
+\label{policy servers}
 
 A policy server~\cite{policy-servers} is an external program that accepts
 state information from Postfix for each \SMTP{} command not rejected by an
@@ -458,24 +479,25 @@ encountered scenarios are:
 
 \begin{itemize}
 
-    \item Checking Sender Policy Framework records~\cite{openspf,
-        wikipedia-spf}.  SPF records specify which mail servers are allowed
+    \item Checking \SPF{} records~\cite{openspf,
+        wikipedia-spf}.  \SPF{} records specify which mail servers are allowed
         to send mail claiming to be from a particular domain.  The
         intention is to reduce spam from faked sender addresses,
         backscatter~\cite{postfix-backscatter} and
-        joe-jobs~\cite{wikipedia-joe-job}; however there has been a lot of
+        joe jobs~\cite{wikipedia-joe-job}; however there has been a lot of
         resistance to the proposal because it breaks or vastly complicates
         some features of \SMTP{}\@.
 
     \item Greylisting~\cite{greylisting} is a technique that temporarily
         rejects mail when the triple of (sender, recipient, remote IP
-        address) is unknown; on the second and subsequent delivery attempts
+        address) is unknown; on second and subsequent delivery attempts
         from that triple the mail will be accepted.  The assumption is that
-        retrying after a temporary failure is uneconomical for a spammer,
-        but that a legitimate mail server must retry.  Sadly spammers are
-        using increasingly complex and well written programs to distribute
-        spam, frequently using an ISP provided \SMTP{} server from a
-        compromised machine on the ISP's network.  Greylisting is slowly
+        maintaining a list of failed addresses and retrying after a
+        temporary failure is uneconomical for a spammer, but that a
+        legitimate mail server must retry.  Sadly spammers are using
+        increasingly complex and well written programs to distribute spam,
+        frequently using an \ISP{} provided \SMTP{} server from a
+        compromised machine on the \ISP{}'s network.  Greylisting is slowly
         becoming less useful, but it does block a large percentage of spam
         mail at the moment.
 
@@ -520,7 +542,9 @@ of (hopefully safe and reasonable) assumptions:
     \item The logs are whole and complete: nothing has been removed, either
         deliberately or accidentally (e.g.\ log rotation gone awry, file
         system filling up, logging system unable to cope with the volume of
-        logs).
+        logs).  On a well run system it is extremely unlikely that any of
+        these problems will arise, though it is of course possible,
+        particularly when undergoing a deluge of spam.
 
     \item Postfix logs sufficient information to make it possible to
         accurately reconstruct the actions it has taken.
@@ -554,19 +578,20 @@ the context it appears in.
 
 \subsection{Other parsers}
 
-10 other parsers have been reviewed in Appendix~\refwithpage{other-parsers}
-as part of the background research for this project.  None of the reviewed
-parsers perform the type of advanced parsing and log correlation described
-here; all are intended to perform a specific parsing and reporting task,
-rather than be a generic parser, extracting data and leaving generation of
-reports from the data to other programs.  Some parsers save the data
-extracted to a database but the majority discard all data once they have
-finished running, making historical analysis impossible.  The other parsers
-reviewed all produce a report of greater or lesser complexity and detail,
-whereas the program described here doesn't attempt to produce a report at
-all; that responsibility is deferred to a separate program, to be developed
-later.  The parsing algorithm and program described here are designed to
-enable much more detailed log analysis by providing a stable platform for
+Ten other parsers have been reviewed in
+appendix~\refwithpage{other-parsers} as part of the background research for
+this project.  None of the reviewed parsers perform the type of advanced
+parsing and log correlation described here; all are intended to perform a
+specific parsing and reporting task, rather than be a generic parser,
+extracting data and leaving generation of reports from the data to other
+programs.  Some parsers save the data extracted to a data store but the
+majority discard all data once they have finished running, making
+historical analysis impossible.  The other parsers reviewed all produce a
+report of greater or lesser complexity and detail, whereas the program
+described here doesn't attempt to produce a report at all; that
+responsibility is deferred to a separate program, to be developed later.
+The parsing algorithm and program described here are designed to enable
+much more detailed log analysis by providing a stable platform for
 subsequent programs to develop upon.
 
 
@@ -577,30 +602,31 @@ subsequent programs to develop upon.
 
 There only appears to be one prior paper published about parsing Postfix
 log files: \textit{Log Mail Analyzer: Architecture and Practical
-Utilizations\/}~\cite{log-mail-analyser}.  The aim of Log Mail Analyzer is
-quite different from this parser: it attempts to present correlated log
-data in a form suitable for a systems administrator to search using
-grep(1), awk(1) and the myriad of other standard Unix text processing
-utilities already available, producing a CSV file which can subsequently be
-imported into a MySQL or Berkeley DB database.  The decision to support
-both CSV and Berkeley DB appears to have been a limiting factor:
-Comma-Separated Value is a very simple format where a record is stored in a
-single line, with fields separated by a comma or other punctuation symbol.
-Problems with CSV files include the difficulty in escaping separators,
-providing multiple values for a field (e.g.\ multiple recipients), adding
-new fields, and lack of a bundled schema describing the fields.
+Utilizations\/}~\cite{log-mail-analyser}.  The aim of \LMA{} is quite
+different from this parser: it attempts to present correlated log data in a
+form suitable for a systems administrator to search using grep(1), awk(1)
+and the myriad of other standard Unix text processing utilities already
+available, producing a \CSV{} file which can subsequently be imported into
+a MySQL or Berkeley DB database.  The decision to support both \CSV{} and
+Berkeley DB appears to have been a limiting factor: \CSV{} is a very simple
+format where a record is stored in a single line, with fields separated by
+a comma or other punctuation symbol.  Problems with CSV files include the
+difficulty in escaping separators, providing multiple values for a field
+(e.g.\ multiple recipients), adding new fields, and lack of a bundled
+schema describing the fields.
 
-Berkeley DB is not an SQL database, supporting only (key, value) pairs; in
-the main table the key is an integer referred to by secondary tables and
-the value used is a CSV line containing all the data for that row.  The
-secondary by-sender, by-recipient, by-date and by-IP tables use the
-sender/recipient/date/IP as the key, and a CSV list of integers referring
-to the main table is the value.  In effect this re-implements SQL foreign
-keys, but without the functionality offered by even the most basic of SQL
-databases (joins, ordering, searches, etc.).  It also requires custom code
-to search on some combination of the above, though the authors of LMA did
-provide some queries: IP-STORY, FROM-STORY, DAILY-EMAIL and DAILY-REJECT\@.
-Berkeley DB appears to be the least useful of the three output formats
+Berkeley DB is not an \SQL{} database, supporting only \textbf{(key,
+value)} pairs; in the main table the key is an integer referred to by
+secondary tables and the value used is a \CSV{} line containing all the
+data for that row.  The secondary by-sender, by-recipient, by-date and
+by-IP tables use the sender/recipient/date/IP as the key, and a \CSV{} list
+of integers referring to the main table is the value.  In effect this
+re-implements \SQL{} foreign keys, but without the functionality offered by
+even the most basic of \SQL{} databases (joins, ordering, searches, etc.).
+It also requires custom code to search on some combination of the above,
+though the authors of \LMA{} did provide some queries: IP-STORY,
+FROM-STORY, DAILY-EMAIL and DAILY-REJECT\@.  Berkeley DB appears to be the
+least useful of the three output formats
 
 The data stored is limited to time and date, hostname and IP address of
 client, sender and recipient addresses, and the \SMTP{} code.  Handling of
@@ -622,7 +648,11 @@ recipients.} is not explained in the paper, but the options appear to be:
 
 The schema used with the MySQL database is undocumented, but at least it's
 possible to discover the schema with an SQL database, unlike with Berkeley
-DB\@.
+DB\@; all \SQL{} databases embed the database schema into the database and
+provide commands for displaying it.  Berkeley DB does not embed a schema,
+as there is neither requirement nor benefit; it provides \textbf{(key,
+value)} pairs, so any additional structuring of the data is imposed by the
+application, thus it behoves the application to document this structure.
 
 \parsername{} is bundled with extensive documentation, including an
 in-depth explanation of the database schema.  It supports multiple values
@@ -633,7 +663,7 @@ most standard SQL features (its lacks full foreign key support), has
 libraries available for most common programming languages, and a simple
 text based client allowing ad-hoc queries with minimal effort.
 
-Parsing in LMA is hand-coded and requires major changes to the code to
+Parsing in \LMA{} is hand-coded and requires major changes to the code to
 parse new log lines or extract additional data.  It does not appear to deal
 with any of the complications discussed in
 sections~\refwithpage{complications} and~\refwithpage{additional
@@ -647,15 +677,16 @@ a new rule, but code changes may be required if new complications
 complications}) must be dealt with or a new action is required
 (section~\refwithpage{actions-in-detail}).
 
-LMA does provide some simple reports (IP-STORY, FROM-STORY, DAILY-EMAIL and
-DAILY-REJECT); the author was unable to parse any logs with LMA, so didn't
-have an opportunity to review the reports.  \parsername{} does not have any
-bundled reports, it delegates that task to a separate, dedicated program.
+\LMA{} does provide some simple reports (IP-STORY, FROM-STORY, DAILY-EMAIL
+and DAILY-REJECT); the author was unable to parse any logs with \LMA{}, so
+didn't have an opportunity to review the reports.  \parsername{} does not
+have any bundled reports, it delegates that task to a separate, dedicated
+program.
 
-In summary Log Mail Analyser appears to be a proof of concept, written to
-demonstrate the point of the paper (that having this information in an
-accessible fashion is useful to systems administrators), rather than a
-program designed to be extensible and useful in a production environment.
+In summary \LMA{} appears to be a proof of concept, written to demonstrate
+the point of the paper (that having this information in an accessible
+fashion is useful to systems administrators), rather than a program
+designed to be extensible and useful in a production environment.
 
 % Literature review notes:
 %
@@ -685,9 +716,9 @@ project, continuing with explanations of:
 
 \begin{itemize}
 
-    \item Using a database as an application programming interface.
+    \item Using a database as an \API{}.
 
-    \item The \SMTP{} protocol.
+    \item \SMTP{}.
 
     \item Postfix restrictions and policy servers.
 
@@ -3025,6 +3056,33 @@ test run of the parser.
 % The contents of the glossary.
 \glossary{name={ESMTP},description={
     ESMTP is Extended \SMTP{}, defined in \RFC{}~1869~\cite{RFC1869}.
+}}
+
+\glossary{name={SQLite3},description={
+    \textit{SQLite is a small C library that implements a self-contained,
+    embeddable, zero-configuration SQL database engine.\/} SQLite3 is an
+    \SQL{} implementation focusing on correctness, simplicity and speed.
+    Unlike other \SQL{} implementations it does not require a separate
+    server process, greatly simplifying deployment of an application
+    utilising it.  More details can be found at~\cite{sqlite-features} or
+    \url{http://www.sqlite.org/}.
+}}
+
+\glossary{name={Phishing},description={
+    Phishing~\cite{wikipedia-phishing} is an attempt to acquire information
+    by masquerading as an entity trusted by the user, e.g.\ a bank.
+}}
+
+\glossary{name={Backscatter},description={
+    When a spammer or worm sends mail with forged sender addresses,
+    innocent sites are flooded with undeliverable mail notifications; this
+    is called backscatter mail.
+}}
+
+\glossary{name={Joe job},description={
+    A joe job is when spam mail is sent with a faked sender address with
+    the intention of sullying the good name of the owner of the address.
+    Joe jobs are a cause of backscatter, though by no means the only cause.
 }}
 
 \end{document}
