@@ -497,9 +497,28 @@ encountered scenarios are:
         legitimate mail server must retry.  Sadly spammers are using
         increasingly complex and well written programs to distribute spam,
         frequently using an \ISP{} provided \SMTP{} server from a
-        compromised machine on the \ISP{}'s network.  Greylisting is slowly
-        becoming less useful, but it does block a large percentage of spam
-        mail at the moment.
+        compromised machine on the \ISP{}'s network.  Greylisting will
+        slowly become less useful, but it does block a large percentage of
+        spam mail at the moment; the most effective restrictions over the
+        93 log files used in testing the parser are shown in
+        table~\refwithpage{Summary of rejections}.  Greylisting is
+        obviously worth using, at least at the moment, particularly when
+        you factor in Greylisting's position as the final restriction which
+        a mail must overcome: Greylisting only takes effect for mails which
+        have passed every other restriction.
+
+        \begin{table}[ht]
+            \caption{Summary of rejections}\label{Summary of rejections}
+            \begin{tabular}[]{lr}
+                Restriction type    & Total rejections  \\
+                Total rejections    & 5283739           \\
+                Unknown recipient   & 2338000           \\
+                Unknown sender      & 864148            \\
+                \RBL{}s             & 807185            \\
+                Greylisting         & 497244            \\
+                Non-\FQDN{} HELO    & 403652            \\
+            \end{tabular}
+        \end{table}
 
     \item Using a scoring system such as
         Policyd-weight~\cite{policyd-weight} where tests accumulate points
@@ -733,10 +752,10 @@ followed by a review of the previously published literature.
 \label{database schema}
 
 The database is an integral part of the parser: it stores the rules and the
-results of applying those rules to Postfix log files.  Understanding the
-database schema is important in understanding the actions of the parser,
-and essential to developing further applications which utilise the data
-gathered.
+data gleaned by applying those rules to Postfix log files.  Understanding
+the database schema is important in understanding the actions of the
+parser, and essential to developing further applications which utilise the
+data gathered.
 
 \subsection{Introduction}
 
@@ -746,7 +765,7 @@ Rules have the fields required to parse the log lines, extract data to be
 saved, and the action to be executed; they also have several fields which
 aid the user in understanding what each rule parses.  The rules are
 described in detail in section~\refwithpage{rules} but the fields are
-covered in section~\refwithpage{rule attributes}.
+covered here.
 
 The data saved from parsing the logs is also divided into two tables as
 described below: connections and results.  The connections table contains a
@@ -785,7 +804,7 @@ Each rule defines the following:
     \item [postfix\_action] This is the action Postfix must have taken to
         generate this line, with two exceptions:
 
-        \begin{itemize}
+        \begin{description}
 
             \item [INFO] Represents an unspecified intermediate action that
                 the parser is not interested in per se, but which does log
@@ -794,7 +813,7 @@ Each rule defines the following:
             \item [IGNORED] An action which is not only uninteresting in
                 itself, but which also provides no useful data.
 
-        \end{itemize}
+        \end{description}
 
         Uninteresting lines are parsed so that any lines the parser isn't
         capable of handling become immediately obvious errors.
@@ -806,7 +825,7 @@ Each rule defines the following:
         \texttt{*} will be tried against any lines which aren't parsed by
         program specific rules.
 
-    \item [regex] The regular expression\cite{wikipedia-regex, perlre} to
+    \item [regex] The regular expression~\cite{wikipedia-regex, perlre} to
         match the log line against.  The regex will first have several
         keywords expanded: this simplifies reading and writing rules;
         avoids needless repetition of complex regex components; allows the
@@ -841,9 +860,9 @@ Each rule defines the following:
         the right hand side.  The list of acceptable variable names is:
 
         \texttt{connection\_cols: client\_hostname, client\_ip, server\_ip,
-        \newline \hspace*{2em} server\_hostname and helo.\newline}
+        \newline \hspace*{2em} server\_hostname} and \texttt{helo.\newline}
         \texttt{result\_cols: sender, recipient, smtp\_code, message\_id,
-        \newline \hspace*{2em} pid\_regex, data and child.}
+        \newline \hspace*{2em} pid\_regex, data} and \texttt{child.}
 
     \item [result\_data, connection\_data] Sometimes rules need to supply a
         piece of data which isn't present in the log line: e.g.\ setting
@@ -852,8 +871,8 @@ Each rule defines the following:
         \texttt{connection\_cols}, except that arbitrary
         data\footnote{Commas and semi-colons cannot be escaped and thus
         cannot be used.  This is intended for use with small amounts of
-        data rather than large, so dealing with escape sequences seemed
-        unnecessary.} is permitted on the right hand side of the
+        data rather than large amounts, so dealing with escape sequences
+        seemed unnecessary.} is permitted on the right hand side of the
         assignment.
 
     \item [action] The action the algorithm will take; a full list can be
@@ -901,14 +920,14 @@ fields:
         mail.
 
     \item [server\_hostname] The hostname of the server, it will be
-        \textit{unknown\/} if the IP address could not be resolved to a
+        \texttt{unknown} if the IP address could not be resolved to a
         hostname via DNS\@.
 
     \item [client\_ip] The client IP address (IPv4 or IPv6): the remote
         server when receiving mail, the local server when sending mail.
 
     \item [client\_hostname] The hostname of the client, it will be
-        \textit{unknown\/} if the IP address could not be resolved to a
+        \texttt{unknown} if the IP address could not be resolved to a
         hostname via DNS\@.
 
     \item [helo] The hostname used in the HELO command.  The HELO
@@ -937,10 +956,13 @@ fields:
         associated with the correct mail.  There is guaranteed to be
         queueid when the DATA command has been reached, and thus it will be
         logged by any restrictions taking effect in
-        \texttt{smtpd\_data\_restrictions}.
+        \texttt{smtpd\_data\_restrictions}.  There is no difficulty in
+        specifying a HELO-based restriction in
+        \texttt{smtpd\_data\_restrictions}, Postfix will perform the check
+        correctly.
 
-    \item [queueid] The queueid of the mail if the conection represents an
-        accepted mail, or \textit{NOQUEUE\/} otherwise.
+    \item [queueid] The queueid of the mail if the connection represents an
+        accepted mail, or \texttt{NOQUEUE} otherwise.
 
     \item [start] The timestamp of the first log line, in seconds since the
         epoch.
@@ -965,8 +987,8 @@ connection.
 
 \begin{description}
 
-    \item [connection\_id] A reference to the entry in the connections
-        table this results table entry belongs to.
+    \item [connection\_id] A reference to the row in the connections table
+        this result's table row belongs to.
 
     \item [rule\_id] A reference to the entry in the rules table which
         matched the log line and created this result.
@@ -991,8 +1013,8 @@ connection.
 
     \item [recipient] The recipient address.
 
-    \item [message\_id] The message-id of the accepted mail, or NULL if no
-        mail was accepted.
+    \item [message\_id] The message-id of the accepted mail, or
+        \texttt{NULL} if no mail was accepted.
 
     \item [data] A field available for anything not covered by other
         fields, e.g.\ the rejection message from an RBL\@.
@@ -1004,16 +1026,16 @@ connection.
 
 \subsection{Conclusion}
 
-The table containing the rules used by the parser, and the two tables
+The table containing the rules used by the parser, and both tables
 containing the data extracted from the Postfix logs were described, with
 the purpose of each field discussed in detail.  A clear, comprehensible
-schema is essential in using the extracted data; it's more important for
-using the data than storing the data, because storing the data is a
+schema is essential when using the extracted data; it's more important when
+using the data than when storing it, because storing the data is a
 write-once operation, whereas utilising the data requires frequent
 searching, sorting and manipulation of the data to produce customised
 reports and/or statistics.
 
-\section{Adaptable parsing: user defined rules}
+\section{Parsing rules}
 
 \label{rules}
 
@@ -1034,17 +1056,18 @@ section~\refwithpage{graphs}.
 
 \label{rule characteristics}
 
-The parser is split into two parts: the parsing algorithm and the rules
-which are applied to the lines.  The complexity and variation in Postfix's
-logs requires similar flexibility in the parser; decoupling the parsing
-rules from the associated actions allows new rules to be written and tested
+The complexity and variation in Postfix's logs requires similar flexibility
+in the parser, which is split into two parts: the parsing algorithm and the
+parsing rules which are applied to the lines.  Decoupling the parsing rules
+from the associated actions allows new rules to be written and tested
 without requiring modifications to the algorithm source code (significantly
-lowering the barrier to entry for new or casual users), and greatly
-simplifies both algorithm and rules.  It also creates a clear separation of
-functionality: rules handle low level details of identifying log lines and
-extracting data from a line, whereas the algorithm handles the higher level
-details of following the path a mail takes through Postfix, assembling the
-required data, etc.
+lowering the barrier to entry for new or casual users who need to parse new
+log lines), and greatly simplifies both algorithm and rules.  Decoupling
+also creates a clear separation of functionality: rules handle low level
+details of identifying log lines and extracting data from a line, whereas
+the algorithm handles the higher level details of following the path a mail
+takes through Postfix, assembling the required data before storing it,
+dealing with complications arising, etc.
 
 Rule have certain characteristics which may help in understanding the
 parser:
@@ -1056,9 +1079,9 @@ parser:
         program.\footnote{There are also generic rules which are used when
         parsing log lines produced by any Postfix program, but only if
         there are also rules specific to that program, and those rules must
-        already have been tried and failed.}  Any given rule will only be
-        used to parse a subset of the log lines, and any given log line
-        will only be parsed by a subset of the rules.
+        already have been tried and failed on the current line.}  Any given
+        rule will only be used to parse a subset of the log lines, and any
+        given log line will only be parsed by a subset of the rules.
 
     \item The first matching rule wins: no further rules are tried against
         that line, but there is a facility for specifying the order of
@@ -1085,21 +1108,23 @@ $\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
 \label{overlapping rules}
 
 The parser does not try to detect overlapping rules;\footnote{It may be
-possible to parse each rule's regex, generate an NFA, and compare all NFAs
-to determine if any overlap.  The author has not attempted to do this: such
-a project would probably qualify for a PhD, and may involve solving the
-Halting Problem and circumventing the Church-Turing Thesis.} that
+possible to parse each rule's regex, generate a \DFA{} from it, and examine
+every \DFA{} to determine if any overlap.  The author has not attempted to
+do this: such a project by itself would probably qualify for a PhD, and may
+involve solving the Halting Problem and circumventing the Church-Turing
+Thesis.  XXX REFERENCES FOR HALTING PROBLEM AND CHURCH-TURING\@.} that
 responsibility is left to the author of the rules.  Unintentionally
 overlapping rules lead to inconsistent parsing and data extraction because
-the order in which rules are tried against each line determines which rule
-matches.  Overlapping rules are frequently a requirement, allowing a more
-specific rule to match some lines and a more general rule to match the
-majority, e.g.\ separating \SMTP{} delivery to a filtering proxy from
-\SMTP{} delivery to the rest of the world.  The algorithm provides a
-facility for ordering overlapping rules: the priority field in each rule
-(defaults to zero).  Rules are tried in order of priority, highest first,
-overriding the hits field maintained by the parser.  Negative priorities
-may also be useful for catchall rules.
+the order in which rules are tried against each line is unspecified, and
+the first matching rule wins.  Overlapping rules are frequently a
+requirement, allowing a more specific rule to match some lines and a more
+general rule to match the majority, e.g.\ separating \SMTP{} delivery to a
+specific sites from \SMTP{} delivery to the rest of the world.  The
+algorithm provides a facility for ordering overlapping rules: the priority
+field in each rule (defaults to zero).  Rules are sorted by priority,
+highest first, and then rules with the same priority are sorted by the
+number of successful matches when parsing the previous log file.  Negative
+priorities may be useful for catchall rules.
 
 Detecting overlapping rules is difficult, but the following may be helpful:
 
@@ -1115,20 +1140,23 @@ Detecting overlapping rules is difficult, but the following may be helpful:
         connections and results tables, and delete everything from those
         tables.  Repeat with shuffled and reversed sorting.  If there are
         no overlapping rules the tables from each run will be identical;
-        differences indicate overlapping rules, and the rule\_ids which
-        differ determine which rules overlap.  Unfortunately this method
-        cannot prove the absence of overlapping rules; it can detect
-        overlapping rules --- but only if there are log lines in the input
-        files which match more than one rule.
+        differences indicate overlapping rules.  Which rules overlap can be
+        determined by examining the differences in the tables: each result
+        contains the id of the rule which created it, so the rule
+        referenced in the normal table overlaps with the rule referenced in
+        the reversed table.  Unfortunately this method cannot prove the
+        absence of overlapping rules; it can detect overlapping rules, but
+        only if there are log lines in the input files which match more
+        than one rule.
 
 \end{itemize}
 
 \subsection{Example rule}
 
 This example rule matches the message logged by Postfix when it rejects
-mail from a sender address where the domain has neither an MX record nor an
-A record, i.e.\ mail could not be delivered to the sender's address --- for
-full details see~\cite{reject-unknown-sender-domain}.
+mail from a sender address because the appropriate \DNS{} entries are
+missing, i.e.\ mail could not be delivered to the sender's address (for
+full details see~\cite{reject-unknown-sender-domain}).
 
 This rule would match the following log line:
 
@@ -1176,11 +1204,11 @@ The various fields are used as follows;
         for the user's benefit.
 
     \item [program and regex:] If the program in the rule equals the
-        program which logged the line the regex will be matched against the
-        line; if the match is successful the action will be executed, if not
-        the next rule will be tried.  If the program-specific rules don't
-        match the log line, the generic rules will be tried in the same
-        way.
+        program which logged the line the regex will be tried against the
+        line; if the match is successful the action will be executed, if
+        not the next rule will be tried.  If the program-specific rules
+        don't match the log line, the generic rules will be tried in the
+        same way.
 
     \item [action:] will be executed if the regex matches successfully (see
         section~\refwithpage{actions-in-detail} for full details).
@@ -1189,14 +1217,16 @@ The various fields are used as follows;
         connection\_data:] are \newline used by the action to extract and
         save data matched by the regex.
 
-    \item [queueid:] is used the extract the queueid matched by the regex,
-        so that the correct mail can be found by queueid and actions
+    \item [queueid:] The index of the field in the regex which captured the
+        queueid, or zero if the line does not contain a queueid.  This
+        allows the correct mail can be found by queueid and actions
         performed on it.
 
     \item [hits, hits\_total and priority:] hits and priority are used in
         ordering the rules (see section~\refwithpage{rule ordering for
-        efficiency}); hits\_total is updated at the end of each run but is
-        otherwise unused.
+        efficiency}); hits is set to the number of successful matches at
+        the end of the parsing run, and hits\_total has hits added to it,
+        but is otherwise unused by the algorithm.
 
 \end{description}
 
@@ -1212,8 +1242,8 @@ Parsing efficiency is an obvious concern when the parser routinely needs to
 deal with 75 MB log files containing 300,000 log lines (for a small mail
 server --- large scale mail servers would have much larger log files on a
 daily basis).  When generating the data for the graphs included in
-section~\refwithpage{graphs}, 93 log files (totaling 10.08 GB, 60.72
-million lines) were each parsed 10 times, the first run discarded and the
+appendix~\refwithpage{graphs}, 93 log files (totaling 10.08 GB, 60.72
+million lines) were each parsed 10 times, the first run discarded, and the
 remaining 9 runs averaged.  The first run is discarded for two reasons:
 
 \begin{enumerate}
@@ -1258,8 +1288,8 @@ Rule ordering was mentioned in section~\refwithpage{rule attributes} and
 will be covered in greater detail in this section.  At the time of writing
 there are 139 different rules, with the top 10\% matching the vast majority
 of the log lines, and the remaining log lines split across the other 90\%
-of the rules (as shown in graph~\refwithpage{rule hits}).  Assuming that
-the distribution of log lines is reasonably steady over time, program
+of the rules (as shown in graph~\refwithpage{rule hits graph}).  Assuming
+that the distribution of log lines is reasonably steady over time, program
 efficiency should benefit from trying more frequently matching rules before
 those which match less frequently.  To test this hypothesis three full test
 runs were performed with different rule orderings:
@@ -1284,7 +1314,8 @@ runs were performed with different rule orderings:
 Graphs~\refwithpage{percentage increase of shuffled over normal}
 and~\refwithpage{percentage increase of reversed over normal} show the
 percentage increase of execution times (mean and standard deviation are
-shown after the graph).  Overall this provides a modest but worthwhile
+shown in table~\refwithpage{Regex caching/discarding with different groups
+of log files}).  Overall this provides a modest but worthwhile
 performance increase.
 
 \subsubsection{Caching each regex}
@@ -1300,7 +1331,7 @@ regex factor} shows the percentage execution time increase when not caching
 each regex.
 
 Caching the compiled regexs is quite simple, and is the single most
-effective optimisation tried in the parser.
+effective optimisation implemented in the parser.
 
 \subsection{Conclusion}
 
@@ -1314,9 +1345,9 @@ This section dealt with the rules used in parsing Postfix log files:
         can cause was covered, including a discussion of why overlapping
         rules can be helpful as well as harmful.
 
-    \item An example log line and the rule matching it was given, followed
-        by a description of how the fields in the rule are used both in the
-        matching and the subsequent action that is executed.
+    \item An example log line and the rule matching it illustrated a
+        description of how the fields in the rule are used both in the
+        matching phase and the subsequent action that is executed.
 
     \item The database table containing the rules is dealt with in
         section~\refwithpage{rule attributes}, and is not duplicated in
@@ -1324,8 +1355,8 @@ This section dealt with the rules used in parsing Postfix log files:
 
     \item The final part of this section discusses rule efficiency,
         covering the effects of caching compiled regexs and optimal
-        ordering ordering of rules, with reference to the graphs in
-        section~\refwithpage{graphs}.
+        ordering of rules, with reference to the graphs in
+        appendix~\refwithpage{graphs}.
 
 \end{itemize}
 
@@ -1353,16 +1384,17 @@ This section covers the following topics:
     \item The first set of complications encountered: initially obvious
         difficulties which had to be overcome.
 
-    \item A flow chart showing the paths a mail can take through the
+    \item A flow chart showing common paths a mail can take through the
         algorithm.
 
-    \item A description of the full algorithm.
+    \item An explanation of the paths shown in the flow chart.
 
-    \item The actions which can be taken by the parser are described in
+    \item The actions the parser makes available to rules are covered in
         detail.
 
     \item Additional complications which have arisen during the development
-        of this parser are described.
+        of this parser are documented, including their solutions and where
+        those solutions are implemented in the algorithm
 
 \end{itemize}
 
@@ -3084,5 +3116,19 @@ test run of the parser.
     the intention of sullying the good name of the owner of the address.
     Joe jobs are a cause of backscatter, though by no means the only cause.
 }}
+
+\glossary{name={Epoch},description={
+    Most operating systems store the current time and timestamps of files
+    etc.\ as seconds elapsed since the epoch, the beginning of time as far
+    as the operating system is concerned.  On Unix and Unix-derived systems
+    the epoch is 1970/01/01 00:00:00; on other operating systems it may be
+    different.
+}}
+
+\glossary{name={NULL},description={
+    NULL is a special term used in \SQL{} databases indicating the absence
+    of data for the field.
+}}
+
 
 \end{document}
