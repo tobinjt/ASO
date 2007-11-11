@@ -52,6 +52,11 @@
 \newcommand{\refwithpage}[1]{%
     \empty{}\ref{#1} [page~\pageref{#1}]%
 }
+
+% A command to format a Postfix daemon's name
+\newcommand{\daemon}[1]{%
+    \texttt{postfix/#1}%
+}
     
 \begin{document}
 
@@ -818,12 +823,11 @@ Each rule defines the following:
         Uninteresting lines are parsed so that any lines the parser isn't
         capable of handling become immediately obvious errors.
 
-    \item [program] The program (\texttt{postfix/smtpd},
-        \texttt{postfix/qmgr}, etc.) whose log lines the rule applies to.
-        This avoids needlessly trying rules which won't match the line, or
-        worse, might match unintentionally.  Rules whose program is
-        \texttt{*} will be tried against any lines which aren't parsed by
-        program specific rules.
+    \item [program] The program (\daemon{smtpd}, \daemon{qmgr}, etc.) whose
+        log lines the rule applies to.  This avoids needlessly trying rules
+        which won't match the line, or worse, might match unintentionally.
+        Rules whose program is \texttt{*} will be tried against any lines
+        which aren't parsed by program specific rules.
 
     \item [regex] The regular expression~\cite{wikipedia-regex, perlre} to
         match the log line against.  The regex will first have several
@@ -1176,7 +1180,7 @@ name                & Unknown sender domain                             \\
 description         & We do not accept mail from unknown domains        \\
 restriction\_name   & reject\_unknown\_sender\_domain                   \\
 postfix\_action     & REJECTED                                          \\
-program             & postfix/smtpd                                     \\
+program             & \daemon{smtpd}                                    \\
 regex               & \verb!^__RESTRICTION_START__ <(__SENDER__)>: !    \\
                     & \verb!Sender address rejected: Domain not found;! \\
                     & \verb!from=<\5> to=<(__RECIPIENT__)> !            \\
@@ -1404,12 +1408,13 @@ A high level view of the algorithm could be expressed as:
 
 \begin{enumerate}
 
-    \item Mail enters the system via \SMTP{} or local submission.
+    \item Mail enters the system via \SMTP{} or local submission; and new
+        data structure is created for it.
 
     \item If the mail is rejected, log all data and finish.
 
     \item Follow the progress of the accepted mail until it's either
-        delivered, bounced or deleted, log all data, and finish.
+        delivered, bounced or deleted, then log all data, and finish.
 
 \end{enumerate}
 
@@ -1478,14 +1483,14 @@ from the above sequence, but currently there will only be one.
 
 The most difficult complication initially encountered is that locally
 addressed mails are not always delivered directly to a mailbox: sometimes
-they are accepted for a local address but need to be delivered to one or
-more remote addresses due to aliases.  When this occurs a child mail will
-be injected into the postfix queue, but without the explicit logging smtpd
-or sendmail injected mails have.  Thus the source is not immediately
-discernible from the log line in which the mail first appears; from a
-strictly chronological reading of the logs it \textit{usually\/} appears as
-if the child mail has appeared from thin air.  Subsequently the parent mail
-will log the creation of the child mail:
+they are addressed to and accepted for a local address but need to be
+delivered to one or more remote addresses due to aliases.  When this occurs
+a child mail will be injected into the Postfix queue, but without the
+explicit logging smtpd or postdrop injected mails have.  Thus the source is
+not immediately discernible from the log line in which the mail first
+appears; from a strictly chronological reading of the logs it
+\textit{usually\/} appears as if the child mail has appeared from thin air.
+Subsequently the parent mail will log the creation of the child mail:
 
 \texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline
 delay=0, status=sent (forwarded as 56F5B43FD)}
@@ -1498,7 +1503,7 @@ above properly belongs to the parent mail) is logged by qmgr,\footnote{Qmgr
 is the Postfix daemon which manages the mail queue, determining which mails
 will have delivery attempted next.} so the order also depends on how busy
 qmgr is.\footnote{Postfix is quite paranoid about mail delivery, an
-excellent characteristic for an MTA to possess, so it won't log that the
+excellent characteristic for an \MTA{} to possess, so it won't log that the
 child has been created until it is absolutely certain that the mail has
 been written to disk.}
 
@@ -1507,7 +1512,8 @@ from qmgr for a previously unseen mail; it must flag the mail as coming
 from an unknown origin, and subsequently clear the flag if and when the
 origin of the mail becomes clear.  Obviously the parser could omit checking
 of where mails originate from, but the author believes that it is better to
-require an explicit source, as bugs are more likely to be exposed.
+require an explicit source, as bugs in the parser are more likely to be
+exposed.
 
 Process scheduling can have a still more confusing effect: quite often the
 child mail will be created, delivered and entirely finished with
@@ -1519,9 +1525,10 @@ identified.  Quite apart from identifying mail injected in an unknown
 fashion, or bugs in the parser, unknown origin mails need to be marked as
 such because they lack some data present in the parent mail; they must copy
 that data from their parent before being entered in the database.  The
-effect of this complication upon the algorithm is discussed in
+effect of this complication upon the algorithm is discussed more fully in
 section~\refwithpage{tracking re-injected mail}.
 
+XXX FIGURE OUT IF I NEED TO COPY DATA ANY MORE, AND DOCUMENT IT IF SO\@.
 
 
 \newpage
@@ -1564,24 +1571,27 @@ of the rule which matched the log line, executing the code in the function
 named by the action.
 
 Section~\refwithpage{actions-in-detail} explains the actions in substantive
-detail; this section will omit such detail because it would clutter and
-confuse the algorithm description.  The data flow chart in
+detail; this section omits such detail because it would clutter and confuse
+the algorithm description.  The flow chart in
 section~\refwithpage{flow-chart} should also be consulted while reading
-this section.  For the sake of clarity this description covers the most
-common paths through the algorithm, as including every path would hinder
-understanding.  The more uncommon paths are caused by the complications
-described in section~\refwithpage{additional complications}, and are
-covered therein.
+this section.  For the sake of clarity this description covers only the
+most common paths through the algorithm, as including every path would
+hinder understanding; the more uncommon paths are caused by the
+complications described in section~\refwithpage{additional complications},
+and are covered therein.
 
 \subsubsection{Mail enters the system}
 
 \label{mail-enters-the-system}
 
 Everything starts off with a mail entering the system, whether by local
-submission via postdrop/sendmail, by \SMTP{}, by re-injection due to
-forwarding, or internally generated by Postfix.  Local submission is the
-simplest case: a queueid is assigned immediately and the sender address is
-logged (action: pickup; flowchart:~2).
+submission via postdrop/sendmail,\footnote{Postfix provides a command that
+is compatible with the Sendmail (\url{http://www.sendmail.org/ XXX CHECK})
+mail submission program which all Unix commands which send mail depend on.}
+by \SMTP{}, by re-injection due to forwarding, or internally generated by
+Postfix.  Local submission is the simplest case: a queueid is assigned
+immediately and the sender address is logged (action: pickup;
+flowchart:~2).
 
 \SMTP{} is more complicated: 
 
@@ -1623,12 +1633,12 @@ though there may be other types.
 \label{mail-delivery}
 
 The obvious counterpart to mail entering the system is mail leaving the
-system, whether it is by deletion, bouncing, or local or remote delivery.
+system, whether by deletion, bouncing, local delivery, or remote delivery.
 All four are handled in exactly the same way:
 
 \begin{enumerate}
 
-    \item The sender and recipient addresses will be logged separately
+    \item Postfix will log the sender and recipient addresses separately
         (action: save\_by\_queueid; flowchart:~10).
 
     \item Sometimes mail is re-injected and the child mail needs to be
@@ -1651,8 +1661,8 @@ It should be reiterated that the actions above happen whether the mail is
 delivered to a mailbox, piped to a command, delivered to a remote server,
 bounced (due to a mail loop, delivery failure, or five day timeout), or
 deleted by the administrator.  The exception is what happens after delivery
-to the parent or children of mail re-injected due to forwarding, and that
-is explained in section~\refwithpage{tracking re-injected mail}.
+to the parent or children of mail re-injected due to forwarding, as
+explained in section~\refwithpage{tracking re-injected mail}.
 
 \subsubsection{Tracking re-injected mail}
 
@@ -1665,7 +1675,7 @@ indications:
 \begin{enumerate}
 
     \item The indicator which more commonly introduces re-injection is when
-        \texttt{postfix/qmgr} selects a mail with a previously unseen
+        \daemon{qmgr} selects a mail with a previously unseen
         queueid for delivery (action: mail\_picked\_for\_delivery;
         flowchart:~3), in which case a new data structure will be created.
         The mail will be flagged as having unknown origins; this flag
@@ -1680,16 +1690,16 @@ indications:
         delivery is performed by the \SMTP{} client; local delivery means
         local to the server, i.e.\ an address the server is final
         destination for.} In this case the mail may already have been
-        created (action: qmgr\_chooses\_mail; flowchart:~3; described
-        above) and the unknown origin flag will be cleared; if not a new
-        data structure will be created.  In both cases the new mail is
-        marked as a child of the parent.  The log line in question is:
+        created (described above) and the unknown origin flag will be
+        cleared; if not a new data structure will be created.  In both
+        cases the new mail is marked as a child of the parent.  The log
+        line in question is:
 
         \texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline 
         delay=0, status=sent (forwarded as 56F5B43FD)}
 
         This second indicator always occurs for re-injected mail but
-        typically after the first indicator explained above.  This
+        typically occurs after the first indicator explained above.  This
         indicator is required to tie the parent and child mails together
         and so is central to the process of tracking re-injected mails.
 
@@ -1781,7 +1791,7 @@ The actions:
         or by another parent, and issues appropriate warnings in either
         case.
 
-    \item [REJECTION] Deal with postfix rejecting an \SMTP{} command from
+    \item [REJECTION] Deal with Postfix rejecting an \SMTP{} command from
         the remote client: log the rejection with a mail if there is a
         queueid in the log line, or with the connection if not.
 
@@ -2169,12 +2179,12 @@ lines}~and~\refwithpage{pickup logging after cleanup}.  In the 93 log files
 used for testing this occurs only five times in 60,721,709 log lines, but
 for completeness of the algorithm it should be dealt with.  The five
 occurrences in the test log files have the same characteristics: the
-\texttt{postfix/local} log line showing delivery to a local mailbox occurs
-after the \texttt{postfix/qmgr} log line showing removal of the mail from
-the queue because delivery is completed.  This causes problems: the mail is
-not complete, so entry into the database fails; a new mail is created when
-the \texttt{postfix/local} line is parsed and remains in the state tables;
-four warnings are issued per pair of out of order log lines.
+\daemon{local} log line showing delivery to a local mailbox occurs after
+the \daemon{qmgr} log line showing removal of the mail from the queue
+because delivery is completed.  This causes problems: the mail is not
+complete, so entry into the database fails; a new mail is created when the
+\daemon{local} line is parsed and remains in the state tables; four
+warnings are issued per pair of out of order log lines.
 
 The solution to this problem is to examine the list of programs which have
 logged messages for each mail, comparing the list against a table of
@@ -2187,35 +2197,35 @@ lines have caused the mail to reach a valid combination entry will succeed,
 otherwise it must be postponed once more.
 
 The list of valid combinations is given below.  Every mail will
-additionally have log entries from \texttt{postfix/cleanup} and
-\texttt{postfix/qmgr}; any mail may also have log entries from
-\texttt{postfix/bounce}, \texttt{postfix/postsuper}, or both.
+additionally have log entries from \daemon{cleanup} and \daemon{qmgr}; any
+mail may also have log entries from \daemon{bounce}, \daemon{postsuper}, or
+both.
 
 \begin{description}
 
-    \item [postfix/local:] Local delivery of bounce notification, or local
+    \item [\daemon{local}:] Local delivery of bounce notification, or local
         delivery of forwarded/tracked mail.
 
-    \item [postfix/local, postfix/pickup:] Locally submitted mail, locally
-        delivered.
+    \item [\daemon{local}, \daemon{pickup}:] Mail submitted locally on the
+        server, delivered locally on the server.
+        
+    \item [\daemon{local}, \daemon{pickup}, \daemon{smtp}:] Locally
+        submitted mail, \newline both local and remote delivery.
 
-    \item [postfix/local, postfix/pickup, postfix/smtp:] Locally submitted
-        mail, \newline both local and remote delivery.
+    \item [\daemon{local}, \daemon{smtp}, \daemon{smtpd}:] Mail accepted
+        from a remote client, both local and remote delivery.
 
-    \item [postfix/local, postfix/smtp, postfix/smtpd:] Mail accepted from
-        a remote client, both local and remote delivery.
-
-    \item [postfix/local, postfix/smtpd:] Mail accepted from a remote
+    \item [\daemon{local}, \daemon{smtpd}:] Mail accepted from a remote
         client, local delivery.
 
-    \item [postfix/pickup, postfix/smtp:] Locally submitted mail, remote
+    \item [\daemon{pickup}, \daemon{smtp}:] Locally submitted mail, remote
         delivery.
 
-    \item [postfix/smtp:] Remote delivery of forwarded/tracked mail.
+    \item [\daemon{smtp}:] Remote delivery of forwarded/tracked mail.
 
-    \item [postfix/smtp, postfix/smtpd:] Mail accepted from a remote
-        client, remotely delivered (relaying mail for clients on the local
-        network).
+    \item [\daemon{smtp}, \daemon{smtpd}:] Mail accepted from a remote
+        client, then remotely delivered (typically relaying mail for
+        clients on the local network).
 
 \end{description}
 
@@ -2230,20 +2240,18 @@ section~\refwithpage{aborted-delivery-attempts} occur frequently, but the
 aborted delivery attempts described in this section only occur four times
 in the 93 log files used for testing.  The symptoms are the same as in
 section~\refwithpage{aborted-delivery-attempts}, except that there
-\textit{is\/} a \texttt{postfix/cleanup} log line; there does not appear to
-be anything in the log file to explain why there are no further log
-messages.  The only way to detect these mails is to periodically scan all
-mails in the state tables, deleting any mails displaying the following
-characteristics:
+\textit{is\/} a \daemon{cleanup} log line; there does not appear to be
+anything in the log file to explain why there are no further log messages.
+The only way to detect these mails is to periodically scan all mails in the
+state tables, deleting any mails displaying the following characteristics:
 
 \begin{itemize}
 
     \item The timestamp of the last log line for the mail must be 12 hours
         or more earlier than the last log line parsed.
 
-    \item There must be exactly two \texttt{postfix/smtpd} and one
-        \texttt{postfix/cleanup} log entries for the mail, with no
-        additional log entries.
+    \item There must be exactly two \daemon{smtpd} and one \daemon{cleanup}
+        log entries for the mail, with no additional log entries.
 
 \end{itemize}
 
@@ -2927,31 +2935,30 @@ caught by Postfix as described below.
         instructions. The forwarded mail has a
         \texttt{Delivered-To:~username@domain} header added, and the
         envelope sender address is username@domain.  Log lines are added by
-        \textit{postfix/local}, \textit{postfix/qmgr\/} (twice),
-        \textit{postfix/cleanup\/} and finally \textit{postfix/pickup}.
+        \daemon{local}, \daemon{qmgr} (twice), \daemon{cleanup} and finally
+        \daemon{pickup}.
 
     \item Postfix accepts the mail for username@domain, but while
         delivering it notices that the \texttt{Delivered-To} header already
         contains the address it's currently delivering to, and therefore
         sends a bounce notification with sender address \textit{$<>$\/} to
         the original sender: username@domain.  Log lines are added by
-        \textit{postfix/local}, \textit{postfix/qmgr\/} (twice) and
-        \textit{postfix/cleanup}.
+        \daemon{local}, \daemon{qmgr} (twice) and \daemon{cleanup}.
 
     \item Postfix delivers the bounce notification to both the local
         mailbox and to username@domain, as instructed by the user's
         forwarding instructions.  A \texttt{Delivered-To:~username@domain}
-        header is added to the forwarded bounce notification, and the
-        envelope sender address is now username@domain.  Log lines are
-        added by \textit{postfix/local}, \textit{postfix/qmgr\/} (twice),
-        \textit{postfix/cleanup}, and finally \textit{postfix/pickup}.
+        header is added to the forwarded bounce notification, which now has
+        an envelope sender address of username@domain.  Log lines are added
+        by \daemon{local}, \daemon{qmgr} (twice), \daemon{cleanup}, and
+        finally \daemon{pickup}.
 
     \item Postfix accepts the forwarded bounce notification but while
-        delivering it notices that the \texttt{Delivered-To} header already
-        contains the address currently being delivered to, and sends a
-        bounce notification to the sender: username@domain.  Log lines are
-        added by \textit{postfix/local}, \textit{postfix/qmgr\/} (twice)
-        and \textit{postfix/cleanup}.
+        delivering the mail it notices that the \texttt{Delivered-To}
+        header already contains the address currently being delivered to,
+        and sends a bounce notification to the sender: username@domain.
+        Log lines are added by \daemon{local}, \daemon{qmgr} (twice) and
+        \daemon{cleanup}.
 
     \item GOTO 2.
 
@@ -2964,16 +2971,15 @@ volume of logs.
 
 The vast majority of log lines when a mail loop occurs are from Postfix
 components which have a small number of rules associated with them, whereas
-in general the most common log lines are logged by \textit{postfix/smtpd},
-which also has the highest number of rules.  \textit{postfix/smtpd\/} log
-lines are distributed across rules much more evenly that
-\textit{postfix/qmgr}, \textit{postfix/local}, \textit{postfix/cleanup\/}
-or \textit{postfix/pickup}, so the average number of rules required to
-parse a \textit{postfix/smtpd\/} log line is much higher that the average
-number required to parse other log lines.  Thus the average number of rules
-required to parse a random line from logs containing a mail loop is much
-lower than the average number required to parse a random log line from logs
-without a mail loop, as can be seen in the peaks in
+in general the most common log lines are logged by \daemon{smtpd}, which
+also has the highest number of rules.  \daemon{smtpd} log lines are
+distributed across rules much more evenly that \daemon{qmgr},
+\daemon{local}, \daemon{cleanup} or \daemon{pickup}, so the average number
+of rules required to parse a \daemon{smtpd} log line is much higher that
+the average number required to parse other log lines.  Thus the average
+number of rules required to parse a random line from logs containing a mail
+loop is much lower than the average number required to parse a random log
+line from logs without a mail loop, as can be seen in the peaks in
 graphs~\refwithpage{execution time vs file size vs number lines
 factor},~\refwithpage{percentage increase of shuffled over normal}
 and~\refwithpage{percentage increase of reversed over normal}.  The

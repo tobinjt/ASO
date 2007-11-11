@@ -81,7 +81,7 @@ digraph logparser {
     /* NODE LABELS */
     rejection                       [label = "4: Postfix rejects SMTP command"]
     connect                         [label = "1: Connection from remote host"]
-    clone                           [label = "5: Clone when multiple mails\n(not recipients) are delivered\non one connection"]
+    clone                           [label = "5: Clone when multiple mails\n(not recipients) are delivered\nduring one connection"]
 
     /* Disconnect without queueid */
     disconnect                      [label = "6: Disconnection or timeout by client"]
@@ -93,7 +93,7 @@ digraph logparser {
 
     /* Misc entry */
     pickup                          [label = "2: Mail submitted\nvia sendmail"]
-    qmgr_chooses_mail               [label = "3: Mail picked \nfor delivery"]
+    qmgr_chooses_mail               [label = "3: Mail picked \nfor delivery\nby qmgr"]
 
     /* Save results by queueid */
     save_by_queueid                 [label = "10: Save by queueid"]
@@ -123,7 +123,7 @@ digraph logparser {
     /* Parent */
     parent                          [label = "24: Parent"]
     fixup_enter_in_db_parent        [label = "25: Fixup, enter in db"]
-    commit_children                 [label = "26: foreach child waiting for parent:\l          fixup and enter child in db\l          delete child by queueid\l", labeljust = l]
+    commit_children                 [label = "26: for each child waiting for parent:\l          fixup and enter child in db\l          delete child by queueid\l", labeljust = l]
     wait_for_children_to_be_deleted [label = "27: Wait for any remaining \nchildren to be deleted"]
     delete_parent                   [label = "28: Delete from state tables by queueid"]
 
