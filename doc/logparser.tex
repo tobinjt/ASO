@@ -57,7 +57,12 @@
 \newcommand{\daemon}[1]{%
     \texttt{postfix/#1}%
 }
-    
+
+% This is ridiculous, but I can't put @ in glossary entries, so . . .
+\newcommand{\at}[0]{%
+    @%
+}
+
 \begin{document}
 
 % Pull in the acronyms early, so they can be used throughout the text.
@@ -308,7 +313,7 @@ the data in several ways:
         investment of time.
 
     \item Databases are easily extensible, e.g.:
-        
+
         \begin{itemize}
 
             \item Other tables can be added to the database, e.g.\ to cache
@@ -484,12 +489,12 @@ encountered scenarios are:
 
 \begin{itemize}
 
-    \item Checking \SPF{} records~\cite{openspf,
-        wikipedia-spf}.  \SPF{} records specify which mail servers are allowed
-        to send mail claiming to be from a particular domain.  The
-        intention is to reduce spam from faked sender addresses,
-        backscatter~\cite{postfix-backscatter} and
-        joe jobs~\cite{wikipedia-joe-job}; however there has been a lot of
+    \item Checking \SPF{} records~\cite{openspf, wikipedia-spf}.  \SPF{}
+        records specify which mail servers are allowed to send mail
+        claiming to be from a particular domain.  The intention is to
+        reduce spam from faked sender addresses,
+        backscatter~\cite{postfix-backscatter} and joe
+        jobs~\cite{wikipedia-joe-job}; however there has been a lot of
         resistance to the proposal because it breaks or vastly complicates
         some features of \SMTP{}\@.
 
@@ -529,7 +534,7 @@ encountered scenarios are:
         Policyd-weight~\cite{policyd-weight} where tests accumulate points
         against the sending system --- if the eventual score is too high
         the mail is rejected.
-        
+
     \item Rate limiting or throttling on a per-sender, per-client or
         per-recipient basis as performed by Policyd~\cite{policyd}.
 
@@ -829,13 +834,12 @@ Each rule defines the following:
         Rules whose program is \texttt{*} will be tried against any lines
         which aren't parsed by program specific rules.
 
-    \item [regex] The regular expression~\cite{wikipedia-regex, perlre} to
-        match the log line against.  The regex will first have several
-        keywords expanded: this simplifies reading and writing rules;
-        avoids needless repetition of complex regex components; allows the
-        components to be corrected and/or improved in one location; and
-        makes each regex largely self-documenting.
-        
+    \item [regex] The \regex{} to match the log line against.  The \regex{}
+        will first have several keywords expanded: this simplifies reading
+        and writing rules; avoids needless repetition of complex \regex{}
+        components; allows the components to be corrected and/or improved
+        in one location; and makes each \regex{} largely self-documenting.
+
         The following keywords are expanded (full explanations can be found
         in the source code):
 
@@ -850,18 +854,18 @@ Each rule defines the following:
         rules using it will start the fields in result\_cols,
         connection\_cols, etc.\ at 5.
 
-        For efficiency the keywords are expanded and every rule's regex is
-        compiled before attempting to parse the log file --- otherwise each
-        regex would be recompiled each time it was used, resulting in a
-        large, data dependent slowdown.  Rule efficiency concerns are
+        For efficiency the keywords are expanded and every rule's \regex{}
+        is compiled before attempting to parse the log file --- otherwise
+        each \regex{} would be recompiled each time it was used, resulting
+        in a large, data dependent slowdown.  Rule efficiency concerns are
         discussed in section~\refwithpage{rule efficiency}.
 
     \item [result\_cols, connection\_cols] Specifies how the fields in the
         log line will be extracted.  The format is: \newline
         \texttt{smtp\_code = 1; recipient = 2, sender = 4;} \newline i.e.\
         semi-colon or comma separated assignment statements, with the
-        variable name on the left and the matching field from the regex on
-        the right hand side.  The list of acceptable variable names is:
+        variable name on the left and the matching field from the \regex{}
+        on the right hand side.  The list of acceptable variable names is:
 
         \texttt{connection\_cols: client\_hostname, client\_ip, server\_ip,
         \newline \hspace*{2em} server\_hostname} and \texttt{helo.\newline}
@@ -882,8 +886,9 @@ Each rule defines the following:
     \item [action] The action the algorithm will take; a full list can be
         found in Section~\refwithpage{actions-in-detail}.
 
-    \item [queueid] Specifies the matching field from the regex which gives
-        the queueid, or zero if the log line doesn't contain a queueid.
+    \item [queueid] Specifies the matching field from the \regex{} which
+        gives the queueid, or zero if the log line doesn't contain a
+        queueid.
 
     \item [hits] is an efficiency measure.  This counter is maintained for
         every rule and incremented each time the rule successfully matches.
@@ -1112,29 +1117,29 @@ $\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
 \label{overlapping rules}
 
 The parser does not try to detect overlapping rules;\footnote{It may be
-possible to parse each rule's regex, generate a \DFA{} from it, and examine
-every \DFA{} to determine if any overlap.  The author has not attempted to
-do this: such a project by itself would probably qualify for a PhD, and may
-involve solving the Halting Problem and circumventing the Church-Turing
-Thesis.  XXX REFERENCES FOR HALTING PROBLEM AND CHURCH-TURING\@.} that
-responsibility is left to the author of the rules.  Unintentionally
-overlapping rules lead to inconsistent parsing and data extraction because
-the order in which rules are tried against each line is unspecified, and
-the first matching rule wins.  Overlapping rules are frequently a
-requirement, allowing a more specific rule to match some lines and a more
-general rule to match the majority, e.g.\ separating \SMTP{} delivery to a
-specific sites from \SMTP{} delivery to the rest of the world.  The
-algorithm provides a facility for ordering overlapping rules: the priority
-field in each rule (defaults to zero).  Rules are sorted by priority,
-highest first, and then rules with the same priority are sorted by the
-number of successful matches when parsing the previous log file.  Negative
-priorities may be useful for catchall rules.
+possible to parse each rule's \regex{}, generate a \DFA{} from it, and
+examine every \DFA{} to determine if any overlap.  The author has not
+attempted to do this: such a project by itself would probably qualify for a
+PhD, and may involve solving the Halting Problem and circumventing the
+Church-Turing Thesis.  XXX REFERENCES FOR HALTING PROBLEM AND
+CHURCH-TURING\@.} that responsibility is left to the author of the rules.
+Unintentionally overlapping rules lead to inconsistent parsing and data
+extraction because the order in which rules are tried against each line is
+unspecified, and the first matching rule wins.  Overlapping rules are
+frequently a requirement, allowing a more specific rule to match some lines
+and a more general rule to match the majority, e.g.\ separating \SMTP{}
+delivery to a specific sites from \SMTP{} delivery to the rest of the
+world.  The algorithm provides a facility for ordering overlapping rules:
+the priority field in each rule (defaults to zero).  Rules are sorted by
+priority, highest first, and then rules with the same priority are sorted
+by the number of successful matches when parsing the previous log file.
+Negative priorities may be useful for catchall rules.
 
 Detecting overlapping rules is difficult, but the following may be helpful:
 
 \begin{itemize}
 
-    \item Sort the regexs and visually inspect the list, e.g.\ with SQL
+    \item Sort by regex and visually inspect the list, e.g.\ with SQL
         similar to: \textbf{select regex from rules order by regex;}
 
     \item Compare the results of parsing using sorted, shuffled and
@@ -1208,21 +1213,21 @@ The various fields are used as follows;
         for the user's benefit.
 
     \item [program and regex:] If the program in the rule equals the
-        program which logged the line the regex will be tried against the
-        line; if the match is successful the action will be executed, if
-        not the next rule will be tried.  If the program-specific rules
+        program which logged the line the \regex{} will be tried against
+        the line; if the match is successful the action will be executed,
+        if not the next rule will be tried.  If the program-specific rules
         don't match the log line, the generic rules will be tried in the
         same way.
 
-    \item [action:] will be executed if the regex matches successfully (see
-        section~\refwithpage{actions-in-detail} for full details).
+    \item [action:] will be executed if the \regex{} matches successfully
+        (see section~\refwithpage{actions-in-detail} for full details).
 
     \item [result\_cols, connection\_cols, result\_data and
         connection\_data:] are \newline used by the action to extract and
         save data matched by the regex.
 
-    \item [queueid:] The index of the field in the regex which captured the
-        queueid, or zero if the line does not contain a queueid.  This
+    \item [queueid:] The index of the field in the \regex{} which captured
+        the queueid, or zero if the line does not contain a queueid.  This
         allows the correct mail can be found by queueid and actions
         performed on it.
 
@@ -1237,7 +1242,7 @@ The various fields are used as follows;
 Additional fields are captured by \_\_RESTRICTION\_START\_\_, hence the
 fields in result\_cols and connection\_cols start at 5 in the example.
 
-        
+
 \subsection{Rule efficiency}
 
 \label{rule efficiency}
@@ -1324,17 +1329,17 @@ performance increase.
 
 \subsubsection{Caching each regex}
 
-Perl compiles the original regex into an internal representation,
-optimising the regex to improve the speed of matching, but this compilation
-and optimisation takes CPU time.  Perl automatically caches static regexs,
-but dynamic regexs need to be explicitly compiled and cached.
-Graph~\refwithpage{normal regex vs discard regex} shows execution times
-with and without caching the regex.  Caching the compiled regexs is
-obviously far more efficient; graph~\refwithpage{normal regex vs discarded
-regex factor} shows the percentage execution time increase when not caching
-each regex.
+Perl compiles the original \regex{} into an internal representation,
+optimising the \regex{} to improve the speed of matching, but this
+compilation and optimisation takes CPU time.  Perl automatically caches
+static \regexs{}, but dynamic \regexs{} need to be explicitly compiled and
+cached.  Graph~\refwithpage{normal regex vs discard regex} shows execution
+times with and without caching the regex.  Caching the compiled \regexs{}
+is obviously far more efficient; graph~\refwithpage{normal regex vs
+discarded regex factor} shows the percentage execution time increase when
+not caching each regex.
 
-Caching the compiled regexs is quite simple, and is the single most
+Caching the compiled \regexs{} is quite simple, and is the single most
 effective optimisation implemented in the parser.
 
 \subsection{Conclusion}
@@ -1358,7 +1363,7 @@ This section dealt with the rules used in parsing Postfix log files:
         this section.
 
     \item The final part of this section discusses rule efficiency,
-        covering the effects of caching compiled regexs and optimal
+        covering the effects of caching compiled \regexs{} and optimal
         ordering of rules, with reference to the graphs in
         appendix~\refwithpage{graphs}.
 
@@ -1429,8 +1434,8 @@ Unfortunately that ignores the many complications encountered.
 \subsubsection{Queueid vs pid}
 
 The mail lacks a queueid until it has been accepted, so log lines must
-first be correlated by the smtpd pid, then transition to being correlated
-by the queueid.  This is relatively minor, but does require:
+first be correlated by the \daemon{smtpd} \pid{}, then transition to being
+correlated by the queueid.  This is relatively minor, but does require:
 
 \begin{itemize}
 
@@ -1440,7 +1445,7 @@ by the queueid.  This is relatively minor, but does require:
     \item Two state tables to hold the data structure for each connection.
 
     \item Most importantly: every section of code must know whether it
-        needs to lookup the data structures by pid or queueid.
+        needs to lookup the data structures by \pid{} or queueid.
 
 \end{itemize}
 
@@ -1453,7 +1458,7 @@ every time a mail is accepted, as it's impossible to tell in advance which
 connections will accept multiple mails.  It is quite easy to overlook this
 complication because only a small minority of connections accept more than
 one mail. Happily once the mail has been accepted log entries won't be
-correlated by pid for that mail any more (its queueid will be used
+correlated by \pid{} for that mail any more (its queueid will be used
 instead), so there isn't any ambiguity about which mail a given log line
 belongs to.\footnote{Unfortunately this statement is not completely
 accurate: see section~\refwithpage{timeouts-during-data-phase} for details.
@@ -1486,11 +1491,11 @@ addressed mails are not always delivered directly to a mailbox: sometimes
 they are addressed to and accepted for a local address but need to be
 delivered to one or more remote addresses due to aliases.  When this occurs
 a child mail will be injected into the Postfix queue, but without the
-explicit logging smtpd or postdrop injected mails have.  Thus the source is
-not immediately discernible from the log line in which the mail first
-appears; from a strictly chronological reading of the logs it
-\textit{usually\/} appears as if the child mail has appeared from thin air.
-Subsequently the parent mail will log the creation of the child mail:
+explicit logging \daemon{smtpd} or \daemon{postdrop} injected mails have.
+Thus the source is not immediately discernible from the log line in which
+the mail first appears; from a strictly chronological reading of the logs
+it \textit{usually\/} appears as if the child mail has appeared from thin
+air.  Subsequently the parent mail will log the creation of the child mail:
 
 \texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline
 delay=0, status=sent (forwarded as 56F5B43FD)}
@@ -1499,21 +1504,19 @@ Unfortunately while all log lines from an individual process appear in
 chronological order, the order in which log lines from different processes
 are interleaved is subject to the vagaries of process scheduling.  In
 addition the first log line belonging to the child mail (the log line cited
-above properly belongs to the parent mail) is logged by qmgr,\footnote{Qmgr
-is the Postfix daemon which manages the mail queue, determining which mails
-will have delivery attempted next.} so the order also depends on how busy
-qmgr is.\footnote{Postfix is quite paranoid about mail delivery, an
-excellent characteristic for an \MTA{} to possess, so it won't log that the
-child has been created until it is absolutely certain that the mail has
-been written to disk.}
+above properly belongs to the parent mail) is logged by \daemon{qmgr}, so
+the order also depends on how busy \daemon{qmgr} is.\footnote{Postfix is
+quite paranoid about mail delivery, an excellent characteristic for an
+\MTA{} to possess, so it won't log that the child has been created until it
+is absolutely certain that the mail has been written to disk.}
 
 Because of this the parser cannot complain when it encounters a log line
-from qmgr for a previously unseen mail; it must flag the mail as coming
-from an unknown origin, and subsequently clear the flag if and when the
-origin of the mail becomes clear.  Obviously the parser could omit checking
-of where mails originate from, but the author believes that it is better to
-require an explicit source, as bugs in the parser are more likely to be
-exposed.
+from \daemon{qmgr} for a previously unseen mail; it must flag the mail as
+coming from an unknown origin, and subsequently clear the flag if and when
+the origin of the mail becomes clear.  Obviously the parser could omit
+checking of where mails originate from, but the author believes that it is
+better to require an explicit source, as bugs in the parser are more likely
+to be exposed.
 
 Process scheduling can have a still more confusing effect: quite often the
 child mail will be created, delivered and entirely finished with
@@ -1564,11 +1567,11 @@ The best way to implement this is to maintain state information for every
 unfinished mail and manipulate the appropriate mail correctly for each log
 line encountered.  The parser thus requires both a method of mapping log
 lines to the correct mail and a method of specifying the action the log
-line represents.  The former is achieved by using the smtpd process id to
-identify the correct mail during the initial phase, then switching to the
-queueid once the mail has been accepted.  The latter uses the action field
-of the rule which matched the log line, executing the code in the function
-named by the action.
+line represents.  The former is achieved by using the \daemon{smtpd}
+process id to identify the correct mail during the initial phase, then
+switching to the queueid once the mail has been accepted.  The latter uses
+the action field of the rule which matched the log line, executing the code
+in the function named by the action.
 
 Section~\refwithpage{actions-in-detail} explains the actions in substantive
 detail; this section omits such detail because it would clutter and confuse
@@ -1585,18 +1588,15 @@ and are covered therein.
 \label{mail-enters-the-system}
 
 Everything starts off with a mail entering the system, whether by local
-submission via postdrop/sendmail,\footnote{Postfix provides a command that
-is compatible with the Sendmail (\url{http://www.sendmail.org/ XXX CHECK})
-mail submission program which all Unix commands which send mail depend on.}
-by \SMTP{}, by re-injection due to forwarding, or internally generated by
-Postfix.  Local submission is the simplest case: a queueid is assigned
-immediately and the sender address is logged (action: pickup;
-flowchart:~2).
+submission via \daemon{postdrop} or sendmail, by \SMTP{}, by re-injection
+due to forwarding, or internally generated by Postfix.  Local submission is
+the simplest case: a queueid is assigned immediately and the sender address
+is logged (action: pickup; flowchart:~2).
 
 \SMTP{} is more complicated: 
 
 \begin{enumerate}
-        
+
     \item First there is a connection from the remote client
         (action: connect; flowchart:~1).
 
@@ -1604,7 +1604,7 @@ flowchart:~2).
         addresses, client IP address or hostname, etc. (action: rejection;
         flowchart:~4); acceptance of one or more mails (action: clone;
         flowchart:~5); or some interleaving of both.
-        
+
     \item The client disconnects (action: disconnect; flowchart:~6).  If
         Postfix has rejected any \SMTP{} commands the data will be saved to
         the database; if not there won't be any data to save (any mails
@@ -1728,7 +1728,7 @@ finally be described:
 
     \item The last alternative is that the mail is a parent mail (action:
         commit; flowchart:~24).  Regardless of the state of its children
-        the data is cleaned up and entered in the database (flowchart:~25).
+        its data is cleaned up and entered in the database (flowchart:~25).
         The parent may have children which are waiting to be entered in the
         database (flowchart:~26); each of those children's data is cleaned
         up and entered in the database, then deleted from the state tables.
@@ -1751,12 +1751,25 @@ Each action is passed the same arguments:
 
 \begin{description}
 
-    \item [\$line] The log line, with the standard syslog(3) fields parsed,
-        removed and made available.
-        
-    \item [\$rule] The matching rule.
-        
-    \item [@matches] The fields in the line captured by \$rule's regex.
+    \item [line] The log line, separated into fields:
+
+        \begin{description}
+
+            \item [timestamp] The time the line was logged at.
+
+            \item [host] The hostname of the server which logged the line.
+
+            \item [program] The name of the program which logged the line.
+
+            \item [pid] The \pid{} of the program which logged the line.
+
+            \item [text] The remainder of the line.
+
+        \end{description}
+
+    \item [rule] The matching rule.
+
+    \item [matches] The fields in the line captured by the rule's regex.
 
 \end{description}
 
@@ -1769,15 +1782,15 @@ The actions:
         any useful data or require anything to be done.
 
     \item [CONNECT] Handle a remote client connecting: create a new state
-        table entry (indexed by smtpd pid) and save both the client
-        hostname and IP address.
+        table entry (indexed by \daemon{smtpd} \pid{}) and save both the
+        client hostname and IP address.
 
     \item [DISCONNECT] Deal with the remote client disconnecting: enter the
         connection in the database, perform any required cleanup, and
         delete the connection from the state tables.
 
     \item [SAVE\_BY\_QUEUEID] Find the correct mail based on the queueid in
-        the log line, and save the data extracted by the regex to it.
+        the log line, and save the data extracted by the \regex{} to it.
 
     \item [COMMIT] Enter the data from the mail into the database. Entry
         will be postponed if the mail is a child waiting to be tracked.
@@ -1806,17 +1819,16 @@ The actions:
 
     \item [MAIL\_PICKED\_FOR\_DELIVERY] This action represents Postfix
         picking a mail from the queue to deliver. This action is used for
-        both qmgr and cleanup as it needs to deal with out of order log
-        lines; see section~\refwithpage{discarding cleanup lines} for
-        details.
+        both \daemon{qmgr} and \daemon{cleanup} as it needs to deal with
+        out of order log lines; see section~\refwithpage{discarding cleanup
+        lines} for details.
 
-    \item [PICKUP] Pickup is the service which deals with mail submitted
-        locally via /usr/sbin/sendmail. 
-
-        Out of order log entries may have caused the state table entry to
-        already exist (see section~\refwithpage{pickup logging after
-        cleanup}); otherwise it is created.  The data from the log line is
-        then saved to the state table entry.
+    \item [PICKUP] The PICKUP action corresponds to the \daemon{pickup}
+        service dealing with a locally submitted mail.  Out of order log
+        entries may have caused the state table entry to already exist (see
+        section~\refwithpage{pickup logging after cleanup}); otherwise it
+        is created.  The data from the log line is then saved to the state
+        table entry.
 
     \item [CLONE] Multiple mails may be accepted on a single connection, so
         each time a mail is accepted the connection's state table entry
@@ -1824,9 +1836,9 @@ The actions:
         and subsequent mails would overwrite one another's data.
 
     \item [MAIL\_TOO\_LARGE] When the client tries to send a message larger
-        than the local server accepts the mail will be discarded.  See
-        TIMEOUT for further discussion; the two are handled in exactly the
-        same way.
+        than the local server accepts, the mail will be discarded, and the
+        client informed.  See TIMEOUT for further discussion; the two are
+        handled in exactly the same way.
 
     \item [TIMEOUT] The connection timed out so the mail currently being
         transferred must be discarded. The mail may have been accepted, in
@@ -1836,30 +1848,35 @@ The actions:
         details.
 
     \item [POSTFIX\_RELOAD] When Postfix stops or reloads its configuration
-        it kills all smtpds,\footnote{Possibly other programs are killed
-        also, but the parser is only affected by and interested in smtpds
-        exiting.} requiring any active connections to be committed and
+        it kills all \daemon{smtpd} processes,\footnote{Possibly other
+        programs are killed also, but the parser is only affected by and
+        interested in \daemon{smtpd} processes exiting.} requiring any
+        active connections to be cleaned up, entered in the database, and
         deleted from the state tables.
 
-    \item [SMTPD\_KILLED] Sometimes Postfix needs to forcefully kill an
-        smtpd; the active connection for that smtpd must be committed and
+    \item [SMTPD\_KILLED] Sometimes an event occurs which requires Postfix
+        to forcefully kill a \daemon{smtpd}; that \daemon{smtpd} processes'
+        active connection must be cleaned up, entered in the database, and
         deleted from the state tables.
 
-    \item [SMTPD\_DIED] Sometimes an smtpd dies or exits unsuccessfully;
-        the active connection for that smtpd must be committed and deleted
-        from the state tables.
+    \item [SMTPD\_DIED] Sometimes a \daemon{smtpd} dies or exits
+        unsuccessfully; the active connection for that \daemon{smtpd} must
+        be cleaned up, entered in the database, and deleted from the state
+        tables.
 
-    \item [SMTPD\_WATCHDOG] Smtpds have a watchdog timer to deal with
-        unusual situations --- after five hours the timer will expire and
-        the smtpd will exit.  This occurs very infrequently, as there are
-        many other timeouts which should occur in the intervening hours:
-        DNS timeouts, timeouts reading data, etc.  The active connection
-        for that smtpd must be committed and deleted from the state tables.
+    \item [SMTPD\_WATCHDOG] \daemon{smtpd} processes have a watchdog timer
+        to deal with unusual situations --- after five hours the timer will
+        expire and the \daemon{smtpd} will exit.  This occurs very
+        infrequently, as there are many other timeouts which should occur
+        in the intervening hours: \DNS{} timeouts, timeouts reading data
+        from the client, etc.  The active connection for that
+        \daemon{smtpd} must be cleaned up, entered in the database, and
+        deleted from the state tables.
 
     \item [BOUNCE] Postfix 2.3 (and hopefully subsequent versions) logs the
         creation of bounce messages.  This action creates a new mail if
         necessary, marking it as a bounce notification and removing the
-        unknown origin flag if it already exists.
+        unknown origin flag if it exists.
 
 \end{description}
 
@@ -1884,9 +1901,10 @@ those heuristics are:
 
     \item The sender address is $<>$.
 
-    \item Neither smtpd nor pickup have logged any messages associated with
-        the mail, indicating it was generated internally by Postfix, not
-        accepted via \SMTP{} or submitted locally by sendmail.
+    \item Neither \daemon{smtpd} nor \daemon{pickup} have logged any
+        messages associated with the mail, indicating it was generated
+        internally by Postfix, not accepted via \SMTP{} or submitted
+        locally by \daemon{postdrop} or sendmail.
 
     \item The message-id has a specific format: \newline
         \texttt{YYYYMMDDhhmmss.queueid@server.hostname} \newline
@@ -1895,7 +1913,7 @@ those heuristics are:
     \item The queueid in the message-id must be the same as the queueid of
         the mail: this is what distinguishes bounce notifications generated
         locally from bounce notifications which are being re-injected as a
-        result of aliasing.  In the later case the message-id will be
+        result of aliasing.  In the latter case the message-id will be
         unchanged from the original bounce notification, and so even if it
         happens to be in the correct format (e.g.\ if it was generated by
         Postfix on another server) the queueid in the message-id will not
@@ -1904,7 +1922,7 @@ those heuristics are:
 \end{enumerate}
 
 Once a mail has been identified as a bounce notification the unknown origin
-flag is cleared and the mail can be entered in the database.
+flag is cleared and the mail can be cleaned up and entered in the database.
 
 There is a small chance that a mail will be incorrectly identified as a
 bounce notification, as the heuristics used may be too broad.  For this to
@@ -1926,7 +1944,7 @@ occur the following conditions would have to be met:
 The most likely cause of mis-identification is if a mail generated
 internally by Postfix is identified as a bounce notification when it is a
 different type of message; arguably this is a benefit rather than a
-drawback, as future mails generated internally by Postfix will be handled
+drawback, as other mails generated internally by Postfix will be handled
 correctly.
 
 Postfix 2.3 (and hopefully subsequent versions) log the creation of a
@@ -1964,12 +1982,13 @@ executed.  Each mail is checked for the following characteristics:
 
 \begin{itemize}
 
-    \item Is the mail missing its cleanup log message?  Every mail which
-        passes through Postfix will have a cleanup line; lack of a cleanup
-        line is a sure sign the mail didn't make it too far.
+    \item Is the mail missing its \daemon{cleanup} log message?  Every mail
+        which passes through Postfix will have a \daemon{cleanup} line;
+        lack of a \daemon{cleanup} line is a sure sign the mail didn't make
+        it too far.
 
-    \item Were there exactly two smtpd log lines for the mail?  There
-        should be a connection line and a mail accepted line.
+    \item Were there exactly two \daemon{smtpd} log lines for the mail?
+        There should be a connection line and a mail accepted line.
 
 \end{itemize}
 
@@ -1996,15 +2015,16 @@ be expected by now.  The checks to identify this happening are:
 
 \begin{itemize}
 
-    \item Is the mail missing its cleanup log message?  Every mail which
-        passes through Postfix will have a cleanup line; lack of a cleanup
-        line is a sure sign the mail didn't make it too far.
+    \item Is the mail missing its \daemon{cleanup} log message?  Every mail
+        which passes through Postfix will have a \daemon{cleanup} line;
+        lack of a \daemon{cleanup} line is a sure sign the mail didn't make
+        it too far.
 
-    \item Were there three or more smtpd log lines for the mail?  There
-        should be a connection line and a mail accepted line, followed by
-        one or more rejection lines.
+    \item Were there three or more \daemon{smtpd} log lines for the mail?
+        There should be a connection line and a mail accepted line,
+        followed by one or more rejection lines.
 
-    \item Is the last smtpd log line a rejection line?
+    \item Is the last \daemon{smtpd} log line a rejection line?
 
 \end{itemize}
 
@@ -2052,17 +2072,18 @@ following in the TIMEOUT action:
         A timeout may thus apply either to an accepted mail or a rejected
         mail.  To distinguish between the two cases the algorithm compares
         the timestamp of the last accepted mail against the timestamp of
-        the last line logged by smtpd for that connection.  If the smtpd
-        timestamp is later there was a rejection between the accepted mail
-        and the timeout, therefore the timeout applies to a rejected mail;
-        the timeout has already been recorded so the timeout action
-        finishes.  If the mail acceptance timestamp is greater then the
-        timeout applies to the just-accepted mail, which will be discarded.
+        the last line logged by \daemon{smtpd} for that connection.  If the
+        \daemon{smtpd} timestamp is later there was a rejection between the
+        accepted mail and the timeout, therefore the timeout applies to a
+        rejected mail; the timeout has already been recorded so the timeout
+        action finishes.  If the mail acceptance timestamp is greater then
+        the timeout applies to the just-accepted mail, which will be
+        discarded.
 
 \end{enumerate}
 
-This complication is further complicated by out of order cleanup lines: see
-section~\refwithpage{discarding cleanup lines} for details.
+This complication is further complicated by the presence of out of order \daemon{cleanup}
+lines: see section~\refwithpage{discarding cleanup lines} for details.
 
 \subsubsection{Discarding cleanup lines}
 
@@ -2070,63 +2091,67 @@ section~\refwithpage{discarding cleanup lines} for details.
 
 The author has only observed this complication occurring after a timeout,
 though there may be other circumstances which trigger it.  Sometimes the
-cleanup line is logged after the timeout line; parsing this line causes the
-creation of a new state table entry for the queueid in the log line.  This
-is incorrect because the line actually belongs to the mail which has just
-been discarded, and the next log line for that queueid will be seen when
-the queueid is reused, causing a queueid clash and the appropriate warning.
+\daemon{cleanup} line is logged after the timeout line; parsing this line
+causes the creation of a new state table entry for the queueid in the log
+line.  This is incorrect because the line actually belongs to the mail
+which has just been discarded, and the next log line for that queueid will
+be seen when the queueid is reused, causing a queueid clash and the
+appropriate warning.
 
-In the case where the cleanup line is still pending the algorithm updates a
-global cache of queueids, adding the queueid and the timestamp from the
-timeout line.  When the next cleanup line is parsed for that queueid the
-cache will be checked, and the line will be deemed part of the discarded
-mail and discarded if it meets the following requirements:
+In the case where the \daemon{cleanup} line is still pending the algorithm
+updates a global cache of queueids, adding the queueid and the timestamp
+from the timeout line.  When the next \daemon{cleanup} line is parsed for
+that queueid the cache will be checked, and the line will be deemed part of
+the discarded mail and discarded if it meets the following requirements:
 
 \begin{itemize}
 
     \item The queueid must not have been reused yet, i.e.\ there isn't an
         entry in the state tables for the queueid.
 
-    \item The timestamp of the cleanup line must be within ten minutes of
-        the mail acceptance timestamp.  Timeouts happen after five minutes,
-        but some data may have been transferred slowly, and empirical
-        evidence shows that ten minutes is not unreasonable; hopefully it
-        is a good compromise between false positives and false negatives.
+    \item The timestamp of the \daemon{cleanup} line must be within ten
+        minutes of the mail acceptance timestamp.  Timeouts happen after
+        five minutes, but some data may have been transferred slowly, and
+        empirical evidence shows that ten minutes is not unreasonable;
+        hopefully it is a good compromise between false positives and false
+        negatives.
 
 \end{itemize}
 
-The next cleanup line must meet the criteria above for it to be discarded
-because not every connection where a timeout occurs will have a cleanup
-line logged for it; if the algorithm blindly discarded the next cleanup
-line it would in some cases be mistaken.  Whether or not the next cleanup
-line is discarded the queueid will be removed from the cache of timeout
-queueids when the next pickup line containing that queueid is parsed.
+The next \daemon{cleanup} line must meet the criteria above for it to be
+discarded because not every connection where a timeout occurs will have a
+\daemon{cleanup} line logged for it; if the algorithm blindly discarded the
+next \daemon{cleanup} line it would in some cases be mistaken.  Whether or
+not the next \daemon{cleanup} line is discarded the queueid will be removed
+from the cache of timeout queueids when the next \daemon{pickup} line
+containing that queueid is parsed.
 
-During the TIMEOUT action if the mail lacks a cleanup line, the queueid and
-other data about the mail, particularly the timestamp of the last log line,
-are added to a global cache of timeout queueids.  This cache is
-subsequently consulted during the MAIL\_PICKED\_FOR\_DELIVERY action, and
-if the queueid exists and the cleanup line passes the checks listed above
-it will be discarded.
+During the TIMEOUT action if the mail lacks a \daemon{cleanup} line, the
+queueid and other data about the mail, particularly the timestamp of the
+last log line, are added to a global cache of timeout queueids.  This cache
+is subsequently consulted during the MAIL\_PICKED\_FOR\_DELIVERY action,
+and if the queueid exists and the \daemon{cleanup} line passes the checks
+listed above it will be discarded.
 
 \subsubsection{Pickup logging after cleanup}
 
 \label{pickup logging after cleanup}
 
-Occasionally the pickup line logged when mail is submitted locally via
-sendmail appears later in the logfile than the cleanup line for that mail.
-This seems to occur during periods of particularly heavy load, so is most
-likely due to process scheduling vagaries.  Normally if the queueid given
-in the pickup line exists a warning is generated by the pickup action, but
-if the following conditions are met it is assumed that the lines are out of
-order:
+Occasionally the \daemon{pickup} line logged when mail is submitted locally
+via sendmail appears later in the logfile than the \daemon{cleanup} line
+for that mail.  This seems to occur during periods of particularly heavy
+load, so is most likely due to process scheduling vagaries.  Normally if
+the queueid given in the \daemon{pickup} line exists a warning is generated
+by the \daemon{pickup} action, but if the following conditions are met it
+is assumed that the lines are out of order:
 
 \begin{itemize}
 
-    \item The only program which logged anything for the mail is cleanup.
+    \item The only program which has logged anything thus far for the mail
+        is \daemon{cleanup}.
 
     \item There is less than a five second difference in the timestamps of
-        the cleanup and pickup lines.
+        the \daemon{cleanup} and \daemon{pickup} lines.
 
 \end{itemize}
 
@@ -2139,30 +2164,30 @@ This complication is dealt with during the PICKUP action.
 
 \label{smtpd stops logging}
 
-Occasionally an smtpd will just stop logging, without an immediately
-obvious reason.  After poring over logs for some time there are several
-reasons for this infrequent occurrence:
+Occasionally a \daemon{smtpd} will just stop logging, without an
+immediately obvious reason.  After poring over logs for some time there are
+several reasons for this infrequent occurrence:
 
 \begin{enumerate}
 
     \item Postfix is stopped or its configuration is reloaded.  When this
-        happens all smtpds exit, and all entries in the connections state
-        table must be committed and deleted from the state table.  The
-        queueid state table is untouched.
+        happens all \daemon{smtpd} processes exit, and all entries in the
+        connections state table must be committed and deleted from the
+        state table.  The queueid state table is untouched.
 
-    \item Postfix sometimes forcibly kills an smtpd, so the active
+    \item Postfix sometimes forcibly kills a \daemon{smtpd}, so the active
         connection must be committed and deleted from the connections state
         table.
 
-    \item Occasionally an smtpd will die or exit uncleanly, so the active
-        connection must be committed and deleted from the connections state
-        table.
+    \item Occasionally a \daemon{smtpd} will die or exit uncleanly, so the
+        active connection must be committed and deleted from the
+        connections state table.
 
 \end{enumerate}
 
-The above appear to cover all situations where an smtpd suddenly stops
-logging.  In addition to removing an active connection the last accepted
-mail may need to be discarded, as detailed in
+The above appear to cover all situations where a \daemon{smtpd} suddenly
+stops logging.  In addition to removing an active connection the last
+accepted mail may need to be discarded, as detailed in
 section~\refwithpage{timeouts-during-data-phase}.
 
 These occurrences are handled by the three actions POSTFIX\_RELOAD,
@@ -2208,7 +2233,7 @@ both.
 
     \item [\daemon{local}, \daemon{pickup}:] Mail submitted locally on the
         server, delivered locally on the server.
-        
+
     \item [\daemon{local}, \daemon{pickup}, \daemon{smtp}:] Locally
         submitted mail, \newline both local and remote delivery.
 
@@ -2356,8 +2381,8 @@ complications discussed in section~\refwithpage{additional complications}
 were detected in this way).  The parser issues warnings when it detects any
 errors, some of which may alert the user to a problem, e.g.\ when a queueid
 is reused before the previous mail is fully dealt with, when a queueid or
-pid is not found,\footnote{There will often be warnings about missing
-queueids or pids in the first few hundred or thousand log lines because the
+\pid{} is not found,\footnote{There will often be warnings about a missing
+queueid or \pid{} in the first few hundred or thousand log lines because the
 earlier log lines for those connections or mails are in the previous log
 file; loading the saved state from the previous log file will solve this
 problem.} or when there are problems tracking a child mail (see
@@ -2502,7 +2527,7 @@ program with \parsername{}.
         extracting only the data required to produce the report.  Both the
         parsing and reporting are difficult to extend, as it is a
         specialised tool.  It does not attempt to correlate log lines by
-        queueid or pid, nor does it need to deal with the complications
+        queueid or \pid{}, nor does it need to deal with the complications
         encountered during this project.  Pflogsumm produces a useful
         report, and successfully dealt with all the Postfix logs tested
         with.
@@ -2592,9 +2617,9 @@ program with \parsername{}.
         tools to utilise the Splunk database.  Splunk is a generic tool, so
         it lacks any Postfix specific support over and above extracting the
         \texttt{key=<value>} fields; most importantly it makes no attempt
-        to correlate log lines by queueid or pid, nor to handle any of the
-        myriad complications discussed in this document.  Correlation of
-        log lines is left up to the user, and Splunk certainly makes the
+        to correlate log lines by queueid or \pid{}, nor to handle any of
+        the myriad complications discussed in this document.  Correlation
+        of log lines is left up to the user, and Splunk certainly makes the
         job easier than using grep, awk and similar Unix tools unless the
         user has a very high proficiency with those tools.
 
@@ -2627,7 +2652,7 @@ program with \parsername{}.
         files (NCSA combined/XLF/ELF log format or common/CLF log format),
         WebStar, IIS (W3C log format) and a lot of other web, proxy, wap,
         streaming servers, mail servers and some ftp servers.\/}
-        
+
         AWStats will produce simple graphs for many different services, but
         that restricts it to supporting the Lowest Common Denominator.  The
         data it will extract from an MTA log file is limited to: \newline
@@ -2676,7 +2701,7 @@ program with \parsername{}.
         updated.  As it neither ran successfully nor has documentation the
         author can read it is difficult to comment on the features it
         provides.
-        
+
         \url{http://anteater.drzoom.ch/} \newline (Last checked
         2007/08/13.)
 
@@ -2749,17 +2774,17 @@ program with \parsername{}.
         time, to access the data.
 
         Unlike other parsers reviewed, Lire does attempt to correlate log
-        lines by queueid, but not by pid, so e.g.\ the complete list of
+        lines by queueid, but not by \pid{}, so e.g.\ the complete list of
         recipients for a mail should be available.
 
-        Lire does attempt to correlate log lines by queueid, not pid, but
-        its hard coded parsing extracts only part of the available data and
-        makes no attempt to deal with the other complications described in
-        sections~\refwithpage{complications} and~\refwithpage{additional
+        Lire does attempt to correlate log lines by queueid, not \pid{},
+        but its hard coded parsing extracts only part of the available data
+        and makes no attempt to deal with the other complications described
+        in sections~\refwithpage{complications} and~\refwithpage{additional
         complications}.  It stores data, but not in an easily accessible
         format.  It generates reports in multiple formats, but those
         reports do not appear to be customisable.
-        
+
         \url{http://logreport.org/lire.html} \newline (Last checked
         2007/10/09.)
 
@@ -2781,20 +2806,20 @@ program with \parsername{}.
             \item For mail sent: to addresses, \SMTP{} code, and delay.
 
             \item For mail received: the hostname of the sender.
-                
+
         \end{itemize}
-        
+
         Fields are correlated based on the queueid (referred to as
-        sessionname within Logrep), but not by pid.  The parsing is hard
-        coded, hard to extend, and error prone: empty fields are saved when
-        the log line doesn't match the regex, though it appears that they
-        will not overwrite existing data.  It also counts the number of log
-        lines parsed and skipped.  Most notably rejections are completely
-        ignored, making it unsuitable for the purposes of this project.
-        Needless to say it doesn't attempt to address any of the
-        complications in sections~\refwithpage{complications}
-        and~\refwithpage{additional complications} except for correlating
-        by queueid.
+        sessionname [sic] within Logrep), but not by \pid{}.  The parsing
+        is hard coded, hard to extend, and error prone: empty fields are
+        saved when the log line doesn't match the \regex{}, though it
+        appears that they will not overwrite existing data.  It also counts
+        the number of log lines parsed and skipped.  Most notably
+        rejections are completely ignored, making it unsuitable for the
+        purposes of this project.  Needless to say it doesn't attempt to
+        address any of the complications in
+        sections~\refwithpage{complications} and~\refwithpage{additional
+        complications} except for correlating by queueid.
 
         Logrep does not come with any documentation, though some scanty
         documentation is available on its website.  It requires a web
@@ -2823,9 +2848,9 @@ program with \parsername{}.
 \subsection{Conclusion}
 
 While there are other programs available which perform basic Postfix log
-parsing (some to a greater level of detail than others), few
-attempt to correlate log lines queueid (none correlate by pid) to produce
-an overall record of the journey each mail traverses through Postfix.  No
+parsing (some to a greater level of detail than others), few attempt to
+correlate log lines queueid (none correlate by \pid{}) to produce an
+overall record of the journey each mail traverses through Postfix.  No
 other parser collects the breadth of information gathered by \parsername{},
 nor makes it as easy to add new parsing rules.  Most other parsers
 immediately generate a report and discard the data extracted from the logs;
@@ -2859,14 +2884,16 @@ The graphs in the first section cover parser scalability, demonstrating
 that performance scales linearly with input size.  The impact of rule
 ordering is shown in section~\refwithpage{rule ordering graphs}, and the
 anomalous dips and peaks apparent in some graphs are explained.  The next
-group of graphs vividly shows the huge impact that caching compiled regexs
-has on parser performance.  This section concludes with a breakdown of the
-rule hits accumulated during a single test run of the parser.
+group of graphs vividly shows the huge impact that caching compiled
+\regexs{} has on parser performance.  This section concludes with a
+breakdown of the rule hits accumulated during a single test run of the
+parser.
 
 \subsection{Parser scalability}
 
 \showgraph{build/plot-normal-filesize-numlines.ps}{Execution time vs file
-size vs number of lines}{execution time vs file size vs number of lines graph}
+size vs number of lines}{execution time vs file size vs number of lines
+graph}
 
 The Y axis in the graph above represents the following:
 
@@ -3003,12 +3030,12 @@ and without a mail loop}{Rule ordering with and without a mail loop}
 
 \subsection{Caching regexs}
 
-The following graphs show the impact that not caching compiled regexs has
-on parser performance: on typical log files the execution time when not
-caching compiled regexs is 500--600\% of the execution time when caching;
-reversing the perspective shows that cached execution time is merely
-17--20\% of non-cached execution time.  Caching compiled regexs is probably
-the single most effective optimisation possible in the parser's
+The following graphs show the impact that not caching compiled \regexs{}
+has on parser performance: on typical log files the execution time when not
+caching compiled \regexs{} is 500--600\% of the execution time when
+caching; reversing the perspective shows that cached execution time is
+merely 17--20\% of non-cached execution time.  Caching compiled \regexs{}
+is probably the single most effective optimisation possible in the parser's
 implementation.
 
 \showgraph{build/plot-cached-discarded.ps}{Regex: cached vs
@@ -3026,9 +3053,9 @@ section~\refwithpage{Why are there dips in the graphs?}.
 
 The distribution of log lines across rules is much different and the
 average number of rules consulted per log line is much lower when there is
-a mail loop; this results in far fewer regex compilations per line than
+a mail loop; this results in far fewer \regex{} compilations per line than
 when there isn't a mail loop, and a correspondingly decreased execution
-time.  The increases in execution time when not caching regexs for
+time.  The increases in execution time when not caching \regexs{} for
 different combinations of log files are summarised in the table below:
 
 \showtable{build/stats-cached-discarded-include-for-graph}
@@ -3070,7 +3097,7 @@ about parser scalability, showing the linearly relationship between
 execution time and input size.  Section~\refwithpage{rule ordering graphs}
 relates to the effect of rule ordering on execution time, and the
 unexpected consequences of specific inputs.  The necessity of caching
-compiled regexs is attested to by the third group of graphs, where the
+compiled \regexs{} is attested to by the third group of graphs, where the
 difference between caching and discarding is staggering.  This section
 concluded with a breakdown of the rule hits accumulated during a single
 test run of the parser.
@@ -3136,5 +3163,89 @@ test run of the parser.
     of data for the field.
 }}
 
+% Postfix components
+\glossary{name={bounce},description={
+    The definitive documentation is \url{http://www.postfix.org/bounce.8.html}.
+}}
+
+\glossary{name={cleanup},description={
+    Cleanup processes all incoming mail, sitting between qmgr and the
+    programs which accept mail (smtpd and pickup).  It removes duplicate
+    recipient addresses, inserts missing headers, and optionally rewrites
+    addresses if configured to do so.  The definitive
+    documentation is \url{http://www.postfix.org/cleanup.8.html}.
+}}
+
+\glossary{name={local},description={
+    The definitive documentation is \url{http://www.postfix.org/local.8.html}.
+}}
+
+\glossary{name={pickup},description={
+    Pickup is the service which deals with mail submitted locally via
+    postdrop and sendmail; it passes all submitted mail to cleanup.  The
+    definitive documentation is \url{http://www.postfix.org/pickup.8.html}.
+}}
+
+\glossary{name={postdrop},description={
+    The definitive documentation is \url{http://www.postfix.org/postdrop.1.html}.
+}}
+
+\glossary{name={postsuper},description={
+    The definitive documentation is available at \url{http://www.postfix.org/postsuper.1.html}.
+}}
+
+\glossary{name={qmgr},description={
+    Qmgr is the Postfix daemon which manages the mail queue, determining
+    which mails will be delivered next.  Qmgr orders the mails based on the
+    recipient for local mails and the destination server for remote
+    addresses, ensuring that it balances the aims of achieving maximum
+    concurrency while avoiding overwhelming destinations or wasting time
+    and resources on non-responsive destinations.  The definitive
+    documentation is \url{http://www.postfix.org/qmgr.8.html}.
+}}
+
+\glossary{name={sendmail},description={
+    Postfix provides a command that is compatible with the Sendmail
+    (\url{http://www.sendmail.org/}) mail submission program
+    that all Unix commands which send mail depend on.  The definitive
+    documentation is \url{http://www.postfix.org/sendmail.1.html}.
+}}
+
+\glossary{name={smtp},description={
+    The definitive documentation is \url{http://www.postfix.org/smtp.8.html}.
+}}
+
+\glossary{name={smtpd},description={
+    Smtpd is the Postfix program which accepts mail via \SMTP{}, and
+    implements all the anti-spam restrictions Postfix provides.  The
+    definitive documentation is \url{http://www.postfix.org/smtpd.8.html}.
+}}
+
+\glossary{name={Bayesian spam filtering},description={
+    Bayesian spam filtering is a method of classifying mail based on the
+    frequency that the words in the mail have previously appeared in a spam
+    corpus and a ham (non-spam) corpus.  A full description is beyond the
+    scope of this document, see~\cite{bayesian-filtering, a-plan-for-spam}
+    for a detailed explanation.
+}}
+
+\glossary{name={Bayesian poisoning},description={
+    Bayesian poisoning is the addition of innocuous or unrelated words to a
+    spam mail in the hope of defeating Bayesian spam filtering.  E.g.\ the
+    word Viagra would be firmly in the spam corpus for most people, but by
+    adding the words \textit{schedule}, \textit{meeting}, \textit{moving
+    forward\/} and \textit{best business practices\/} to a mail received by
+    a manager, the Bayesian spam filter might tip the balance from bad to
+    good, because the non-spam words might outweigh the spam words.
+}}
+
+\glossary{name={$<>$},sort={<>},description={
+    $<>$ is the sender address used for mail which should not be replied
+    to, e.g.\ bounce notifications.  In \SMTP{} all addresses are enclosed
+    in $<>$, so \textit{username\at{}domain\/} becomes
+    \textit{$<$username\at{}domain$>$\/}; thus $<>$ is actually an empty
+    address.  All mail servers must accept mail sent from $<>$, or they are
+    in violation of \SMTP{}.
+}}
 
 \end{document}

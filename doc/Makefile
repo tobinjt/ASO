@@ -11,12 +11,20 @@ all: logparser.pdf
 	# logparser.aux.
 	(latex -interaction=nonstopmode "$<" || rm -f "$@") | tee "$@.out"
 	[ -f "$@" ]
-	# Rebuild the glossary
+	# Rebuild the glossary; see foo.glg for errors
+	# Sometimes glossary produces an empty foo.glo, though I cannot figure out why.
+	set -e; \
 	BASE=$$( basename "$@" .dvi ); \
-	makeindex -s "$$BASE.ist" -t "$$BASE.glg" -o "$$BASE.gls" "$$BASE.glo"
-	# Rebuild to acronym list
+	if [ ! -s "$$BASE.glo" ]; then \
+		(latex -interaction=nonstopmode "$<" || rm -f "$@") | tee "$@.out"; \
+	fi; \
+	makeindex -s "$$BASE.ist" -t "$$BASE.glg" -o "$$BASE.gls" "$$BASE.glo";
+	echo; echo; echo;
+	# Rebuild to acronym list; see foo.alg for errors
+	set -e; \
 	BASE=$$( basename "$@" .dvi ); \
-	makeindex -s "$$BASE.ist" -t "$$BASE.alg" -o "$$BASE.acn" "$$BASE.acr"
+	makeindex -s "$$BASE.ist" -t "$$BASE.alg" -o "$$BASE.acn" "$$BASE.acr";
+	echo; echo; echo;
 	# Include the new glossary
 	(latex -interaction=nonstopmode "$<" || rm -f "$@") | tee "$@.out"
 	[ -f "$@" ]

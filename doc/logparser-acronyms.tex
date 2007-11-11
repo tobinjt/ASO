@@ -28,12 +28,12 @@
 }}
 
 \newacronym{MTA}{Mail Transfer Agent}{description={
-    A Mail Transfer Agent sends and/or receives mail via SMTP\@.
+    A Mail Transfer Agent sends and/or receives mail via SMTP.
 }}
 
 \newacronym{RFC}{Request For Comments}{description={
     The Request For Comments series is a series of proposals defining
-    various protocols and file formats, e.g. SMTP\@.  The name is somewhat
+    various protocols and file formats, e.g. SMTP.  The name is somewhat
     misleading: initially the authors were asking for peer review, but
     these documents are now the de facto standards the Internet runs on.
 }}
@@ -71,10 +71,35 @@
 }}
 
 \newacronym{DFA}{Deterministic Finite Automata}{description={
-    XXX EXPLAIN DFA\@.  SHOULD IT BE NFA\@?
+    XXX EXPLAIN DFA.  SHOULD IT BE NFA?
 }}
 
 \newacronym{DNS}{Domain Name System}{description={
     The DNS converts between hostnames (www.example.com) and IP addresses
     (10.1.2.3).
+}}
+
+\newacronym{pid}{Process IDentifier}{description={
+    There may be multiple copies of any program executing at any one time,
+    so the program's name is not suitable as a distinguishing identifier;
+    instead each process executing is given a pid which is guaranteed to be
+    unique for the lifetime of the process.  Once the process has
+    completed, the pid may be reused, as they are drawn from a finite pool.
+}}
+
+\newacronym{UCE}{Unsolicited Commercial Email}{description={
+    UCE is a more restrictive definition of spam than most people would
+    use: it only covers mail that is explicitly commercial, thus excluding
+    viruses, Bayesian poisoning mails, backscatter, and those annoying
+    chain letters you get from friends.
+}}
+
+\newacronym{regex}{Regular Expression}{description={
+    Regular expressions are a method of matching patterns in text that are
+    explained in detail in~\cite{wikipedia-regex, perlre} .
+}}
+
+\newacronym{regexs}{Regular Expressions}{description={
+    Regular expressions are a method of matching patterns in text that are
+    explained in detail in~\cite{wikipedia-regex, perlre} .
 }}
