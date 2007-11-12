@@ -1956,7 +1956,9 @@ This check is performed during the COMMIT action.
 
 \label{aborted-delivery-attempts}
 
-Some mail clients appear to send the following sequence of commands during
+Some mail clients appear\footnote{Due to privacy concerns no attempt has
+been made to identify either the users or the software which exhibits this
+behaviour.} to send the following sequence of commands during
 the \SMTP{} session:
 
 \begin{verbatim}
@@ -1976,9 +1978,9 @@ until the delivery is complete.
 Once again Postfix does not log a message making the client's behaviour
 clear, so once again heuristics are required to identify when this
 behaviour occurs.  In this case a list of all mails accepted during a
-connection are saved in the connection state, and the accepted mails are
-examined when the disconnection line is parsed and the disconnection action
-executed.  Each mail is checked for the following characteristics:
+connection is saved in the connection state, and the accepted mails are
+examined when the disconnection action is executed.  Each mail is checked
+for the following characteristics:
 
 \begin{itemize}
 
@@ -1988,7 +1990,8 @@ executed.  Each mail is checked for the following characteristics:
         it too far.
 
     \item Were there exactly two \daemon{smtpd} log lines for the mail?
-        There should be a connection line and a mail accepted line.
+        There should be a connection line and a mail accepted line, nothing
+        else.
 
 \end{itemize}
 
@@ -1998,8 +2001,8 @@ logged for such mails, so without identifying and discarding them they
 accumulate in the state table and will cause clashes if the queueid is
 reused.  The mail cannot be entered in the database as the only data
 available is the client hostname and IP address, but the database schema
-requires many more fields be populated (see section~\refwithpage{database
-schema}).
+requires many more fields be populated (see
+sections~\refwithpage{connections table} and~\refwithpage{results table}).
 
 This check is performed in the DISCONNECT action; it requires support in
 the CLONE action where a list of cloned connections is maintained.
@@ -2047,7 +2050,8 @@ DATA phase; when this occurs Postfix will discard the mail and the parser
 needs to discard the data associated with that mail.  It seems more
 intuitive to save the data to the database, but if a timeout occurs there
 won't yet have been any data gathered for the mail, so there is none
-available to save; the timeout is saved with the connection data instead.
+available to save; the timeout is recorded with the connection data
+instead.
 
 To deal properly with timeouts the parsing algorithm needs to do the
 following in the TIMEOUT action:
@@ -2061,13 +2065,17 @@ following in the TIMEOUT action:
         timeout action ends.  The timeout action is dependant on the clone
         action keeping a list of all mails accepted on each connection.
 
-    \item Because of ESMTP pipelining the client can send MAIL FROM, RCPT
-        TO and DATA commands in one packet, instead of sending each command
+    \item \ESMTP{} pipelining allows the client to send MAIL FROM, RCPT TO
+        and DATA commands in one packet, instead of sending each command
         individually and waiting for the reply before sending subsequent
         commands.  If pipelining is used and Postfix rejects the sender
         address or any of the recipient addresses there is no way for the
         client to tell which command was rejected.  Some clients make no
-        attempt to recover and disconnect uncleanly.
+        attempt to recover and disconnect uncleanly; others presumably
+        stop pipelining and restart the mail sending operation.  The client
+        could attempt to parse the error message, but that would be
+        extremely error prone, whereas not pipelining makes the cause of
+        the error message obvious.
 
         A timeout may thus apply either to an accepted mail or a rejected
         mail.  To distinguish between the two cases the algorithm compares
@@ -2082,8 +2090,9 @@ following in the TIMEOUT action:
 
 \end{enumerate}
 
-This complication is further complicated by the presence of out of order \daemon{cleanup}
-lines: see section~\refwithpage{discarding cleanup lines} for details.
+This complication is further complicated by the presence of out of order
+\daemon{cleanup} lines: see section~\refwithpage{discarding cleanup lines}
+for details.
 
 \subsubsection{Discarding cleanup lines}
 
@@ -2098,11 +2107,12 @@ which has just been discarded, and the next log line for that queueid will
 be seen when the queueid is reused, causing a queueid clash and the
 appropriate warning.
 
-In the case where the \daemon{cleanup} line is still pending the algorithm
-updates a global cache of queueids, adding the queueid and the timestamp
-from the timeout line.  When the next \daemon{cleanup} line is parsed for
-that queueid the cache will be checked, and the line will be deemed part of
-the discarded mail and discarded if it meets the following requirements:
+In the case where the \daemon{cleanup} line is still pending during the
+TIMEOUT action the algorithm updates a global cache of queueids, adding the
+queueid and the timestamp from the timeout line.  When the next
+\daemon{cleanup} line is parsed for that queueid the cache will be checked,
+and the line will be deemed part of the discarded mail and discarded if it
+meets the following requirements:
 
 \begin{itemize}
 
@@ -2121,24 +2131,24 @@ the discarded mail and discarded if it meets the following requirements:
 The next \daemon{cleanup} line must meet the criteria above for it to be
 discarded because not every connection where a timeout occurs will have a
 \daemon{cleanup} line logged for it; if the algorithm blindly discarded the
-next \daemon{cleanup} line it would in some cases be mistaken.  Whether or
-not the next \daemon{cleanup} line is discarded the queueid will be removed
-from the cache of timeout queueids when the next \daemon{pickup} line
-containing that queueid is parsed.
+next \daemon{cleanup} line after a TIMEOUT it would in some cases be
+mistaken.  Whether or not the next \daemon{cleanup} line is discarded the
+queueid will be removed from the cache of timeout queueids when the next
+\daemon{pickup} line containing that queueid is parsed.
 
 During the TIMEOUT action if the mail lacks a \daemon{cleanup} line, the
 queueid and other data about the mail, particularly the timestamp of the
 last log line, are added to a global cache of timeout queueids.  This cache
 is subsequently consulted during the MAIL\_PICKED\_FOR\_DELIVERY action,
-and if the queueid exists and the \daemon{cleanup} line passes the checks
-listed above it will be discarded.
+and if the queueid is found in the cache and the \daemon{cleanup} line
+passes the checks listed above the line will be discarded.
 
 \subsubsection{Pickup logging after cleanup}
 
 \label{pickup logging after cleanup}
 
 Occasionally the \daemon{pickup} line logged when mail is submitted locally
-via sendmail appears later in the logfile than the \daemon{cleanup} line
+via sendmail appears later in the log file than the \daemon{cleanup} line
 for that mail.  This seems to occur during periods of particularly heavy
 load, so is most likely due to process scheduling vagaries.  Normally if
 the queueid given in the \daemon{pickup} line exists a warning is generated
@@ -2150,13 +2160,13 @@ is assumed that the lines are out of order:
     \item The only program which has logged anything thus far for the mail
         is \daemon{cleanup}.
 
-    \item There is less than a five second difference in the timestamps of
-        the \daemon{cleanup} and \daemon{pickup} lines.
+    \item There is less than a five second difference between the
+        timestamps of the \daemon{cleanup} and \daemon{pickup} lines.
 
 \end{itemize}
 
 As always with heuristics there may be circumstances in which these
-heuristics incorrectly match, but none have been identified so far.
+heuristics match incorrectly,  but none have been identified so far.
 
 This complication is dealt with during the PICKUP action.
 
@@ -2172,23 +2182,23 @@ several reasons for this infrequent occurrence:
 
     \item Postfix is stopped or its configuration is reloaded.  When this
         happens all \daemon{smtpd} processes exit, and all entries in the
-        connections state table must be committed and deleted from the
-        state table.  The queueid state table is untouched.
+        connections state table must be cleaned up, entered in the database
+        and deleted.  The queueid state table is untouched.
 
-    \item Postfix sometimes forcibly kills a \daemon{smtpd}, so the active
-        connection must be committed and deleted from the connections state
-        table.
+    \item Postfix sometimes forcibly kills a \daemon{smtpd} XXX FIGURE OUT
+        WHY, so the active connection must be cleaned up, entered in the
+        database and deleted from the connections state table.
 
     \item Occasionally a \daemon{smtpd} will die or exit uncleanly, so the
-        active connection must be committed and deleted from the
-        connections state table.
+        active connection must be cleaned up, entered in the database and
+        deleted from the connections state table.
 
 \end{enumerate}
 
-The above appear to cover all situations where a \daemon{smtpd} suddenly
-stops logging.  In addition to removing an active connection the last
-accepted mail may need to be discarded, as detailed in
-section~\refwithpage{timeouts-during-data-phase}.
+The above descriptions appear to cover all situations identified thus far
+where a \daemon{smtpd} suddenly stops logging.  In addition to removing an
+active connection the last accepted mail may need to be discarded, as
+detailed in section~\refwithpage{timeouts-during-data-phase}.
 
 These occurrences are handled by the three actions POSTFIX\_RELOAD,
 SMTPD\_DIED and SMTPD\_WATCHDOG\@.
@@ -2200,7 +2210,7 @@ SMTPD\_DIED and SMTPD\_WATCHDOG\@.
 Occasionally a log file will have out of order log lines which cannot be
 dealt with by the techniques described in sections~\refwithpage{tracking
 re-injected mail},~\refwithpage{discarding cleanup
-lines}~and~\refwithpage{pickup logging after cleanup}.  In the 93 log files
+lines}~or~\refwithpage{pickup logging after cleanup}.  In the 93 log files
 used for testing this occurs only five times in 60,721,709 log lines, but
 for completeness of the algorithm it should be dealt with.  The five
 occurrences in the test log files have the same characteristics: the
@@ -2216,20 +2226,20 @@ logged messages for each mail, comparing the list against a table of
 known-good combinations of programs (this check is performed during the
 COMMIT action).  If the mail's combination is found in the valid list the
 mail can be entered in the database; if the combination is not found entry
-must be postponed and the mail flagged.  The SAVE\_BY\_QUEUEID action
-checks for the flag and retries entry if it's found; if the additional log
-lines have caused the mail to reach a valid combination entry will succeed,
-otherwise it must be postponed once more.
+must be postponed and the mail flagged for later entry.  The
+SAVE\_BY\_QUEUEID action checks for the flag and retries entry if it's
+found; if the additional log lines have caused the mail to reach a valid
+combination entry will proceed, otherwise it must be postponed once more.
 
-The list of valid combinations is given below.  Every mail will
+The list of valid combinations is explained below.  Every mail will
 additionally have log entries from \daemon{cleanup} and \daemon{qmgr}; any
 mail may also have log entries from \daemon{bounce}, \daemon{postsuper}, or
 both.
 
 \begin{description}
 
-    \item [\daemon{local}:] Local delivery of bounce notification, or local
-        delivery of forwarded/tracked mail.
+    \item [\daemon{local}:] Local delivery of a bounce notification, or
+        local delivery of a forwarded or tracked mail.
 
     \item [\daemon{local}, \daemon{pickup}:] Mail submitted locally on the
         server, delivered locally on the server.
@@ -2241,12 +2251,13 @@ both.
         from a remote client, both local and remote delivery.
 
     \item [\daemon{local}, \daemon{smtpd}:] Mail accepted from a remote
-        client, local delivery.
+        client, local delivery only.
 
     \item [\daemon{pickup}, \daemon{smtp}:] Locally submitted mail, remote
-        delivery.
+        delivery only.
 
-    \item [\daemon{smtp}:] Remote delivery of forwarded/tracked mail.
+    \item [\daemon{smtp}:] Remote delivery of forwarded or tracked mail, or
+        a bounce notification.
 
     \item [\daemon{smtp}, \daemon{smtpd}:] Mail accepted from a remote
         client, then remotely delivered (typically relaying mail for
@@ -2254,7 +2265,7 @@ both.
 
 \end{description}
 
-This applies to accepted mails only, not to rejected mails.
+This check applies to accepted mails only, not to rejected mails.
 
 \subsubsection{Yet more aborted delivery attempts}
 
@@ -2288,18 +2299,18 @@ time the end of a log file is reached, and matching mails are deleted.
 
 \subsection{Conclusion}
 
-This section has presented the parsing algorithm, divided into: a high
-level overview of the basic algorithm, followed by the first group of
-difficulties thwarted.  The revised algorithm was detailed, preceded by a
-flow chart depicting the paths a mail may take through the algorithm.  The
-actions which are available to rules were described in full, and finally
-the remaining complications discovered and overcome in the process of
-refining and completing the algorithm.  Detecting, diagnosing and defeating
-complications forms the largest single subsection of this document,
-mirroring the development of the parser,  The complications are described
-in the order they were overcome, with subsequent problems affecting fewer
-mails (often by an order or magnitude), though the time required to solve
-problems increased with each successive problem.
+This section has presented the parsing algorithm, starting with a high
+level overview of the basic algorithm, and the first group of difficulties
+thwarted.  The revised algorithm was detailed, preceded by a flow chart
+depicting the paths a mail may take through the algorithm, and followed by
+the actions which are available to rules were described in full.  The
+section concludes with the remaining complications discovered and overcome
+in the process of refining and completing the algorithm.  Detecting,
+diagnosing and defeating complications forms the largest single portion of
+this document, mirroring the development of the parser,  The complications
+are described in the order they were overcome, with subsequent problems
+affecting fewer mails (often by an order or magnitude), though the time
+required to solve problems increased with each successive problem.
 
 \section{Coverage}
 
@@ -2388,8 +2399,8 @@ file; loading the saved state from the previous log file will solve this
 problem.} or when there are problems tracking a child mail (see
 section~\refwithpage{tracking re-injected mail}).  There should be few or
 no warnings, and the state table should only contain entries for mails
-which had yet to be delivered when the logfiles ended, or started before
-the logfiles began.
+which had yet to be delivered when the log files ended, or started before
+the log files began.
 
 At the time of writing the parser is being tested with 93 log files.  There
 are 5 warnings produced, but because the parser errs on the side of
@@ -2930,7 +2941,7 @@ reversed over normal}{percentage increase of reversed over normal}
 \subsubsection{Why are there dips in the graphs?}
 \label{Why are there dips in the graphs?}
 
-The dips at logfiles 22 and 62--68 correspond to peaks in log file size in
+The dips at log files 22 and 62--68 correspond to peaks in log file size in
 graph~\refwithpage{execution time vs file size vs number of lines graph},
 and peaks in graph~\refwithpage{execution time vs file size vs number lines
 factor} (where a peak means that more lines are processed per second, i.e.\
@@ -3119,10 +3130,6 @@ test run of the parser.
 \printacronym{}
 
 % The contents of the glossary.
-\glossary{name={ESMTP},description={
-    ESMTP is Extended \SMTP{}, defined in \RFC{}~1869~\cite{RFC1869}.
-}}
-
 \glossary{name={SQLite3},description={
     \textit{SQLite is a small C library that implements a self-contained,
     embeddable, zero-configuration SQL database engine.\/} SQLite3 is an
@@ -3246,6 +3253,13 @@ test run of the parser.
     \textit{$<$username\at{}domain$>$\/}; thus $<>$ is actually an empty
     address.  All mail servers must accept mail sent from $<>$, or they are
     in violation of \SMTP{}.
+}}
+
+\glossary{name={queueid},description={
+    Each mail in Postfix's queue is assigned a queueid to uniquely identify
+    it.  Queueids are assigned from a limited pool, so although they are
+    guaranteed to be unique for the lifetime of the mail, given sufficient
+    time they will be reused.
 }}
 
 \end{document}
