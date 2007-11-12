@@ -1451,6 +1451,8 @@ correlated by the queueid.  This is relatively minor, but does require:
 
 \subsubsection{Connection reuse}
 
+\label{connection reuse}
+
 Multiple independent mails may be delivered during one connection: this
 requires cloning the current data as soon as a mail is accepted, so that
 subsequent mails won't trample over each other's data.  This must be done
@@ -2373,12 +2375,12 @@ easy to achieve full coverage for a limited set of log files (at the time
 of writing the parser has 139 rules, fully parsing 93 contiguous log files
 from Postfix 2.2 and 2.3), and new rules are easy to add.  Maintaining full
 coverage is hard because other servers have different restrictions with
-custom messages, RBLs change their messages over time, major releases of
-Postfix change warning messages (usually adding more information), etc.\ so
-over time the log lines drift and change.  Graph~\refwithpage{rule hits}
-shows the number of hits for each rule over all 93 log files; it's obvious
-that a small number of rules match the vast majority of the lines, and more
-than half the rules match fewer than 100 times.
+custom messages, \RBL{} messages change over time, major releases of
+Postfix change warning messages (usually adding more information), etc.,\
+so over time the log lines drift and change.  Graph~\refwithpage{rule hits
+graph} shows the number of hits for each rule over all 93 log files; it's
+obvious that a small number of rules match the vast majority of the lines,
+and more than half the rules match fewer than 100 times.
 
 \subsection{Mails covered}
 
@@ -2393,14 +2395,14 @@ were detected in this way).  The parser issues warnings when it detects any
 errors, some of which may alert the user to a problem, e.g.\ when a queueid
 is reused before the previous mail is fully dealt with, when a queueid or
 \pid{} is not found,\footnote{There will often be warnings about a missing
-queueid or \pid{} in the first few hundred or thousand log lines because the
-earlier log lines for those connections or mails are in the previous log
-file; loading the saved state from the previous log file will solve this
-problem.} or when there are problems tracking a child mail (see
+queueid or \pid{} in the first few hundred or thousand log lines because
+the earlier log lines for those connections or mails are in the previous
+log file; loading the saved state from the previous log file will solve
+this problem.} or when there are problems tracking a child mail (see
 section~\refwithpage{tracking re-injected mail}).  There should be few or
-no warnings, and the state table should only contain entries for mails
-which had yet to be delivered when the log files ended, or started before
-the log files began.
+no warnings when parsing, and when finished parsing the state table should
+only contain entries for mails which had yet to be delivered when the log
+files ended, or started before the log files began.
 
 At the time of writing the parser is being tested with 93 log files.  There
 are 5 warnings produced, but because the parser errs on the side of
@@ -2442,14 +2444,18 @@ parser must successfully parse every line if it is to be complete, but
 subsequently the latter takes precedence because reproducing the path a
 mail takes through Postfix is the aim of the parser.  Increasing the
 percentage of log lines parsed is relatively simple and not intrusive:
-adding new rules or modifying existing rules is simplified by the parser
-implementation.  Improving the logical coverage is harder, as the actions
-taken by Postfix must be reconstructed, and the new sequence of actions
-integrated into the existing model without breaking the existing sequences.
-Detecting a deficiency in the parsing algorithm is also significantly
-harder than detecting unparsed log lines, as the parser will warn about any
-unparsed line, whereas the author must spot a flaw in the parser by
-understanding the warnings generated.
+adding new rules or modifying existing rules is simplified by the
+separation of rules and algorithm.  Improving the logical coverage is
+harder, as the actions taken by Postfix must be reconstructed, and the new
+sequence of actions integrated into the existing model without breaking
+the existing sequences.  Detecting a deficiency in the parsing algorithm is
+also significantly harder than detecting unparsed log lines, as the parser
+will warn about any unparsed line, whereas discovering a flaw in the
+parser requires understanding of the warnings produced and the mails
+remaining in the state table.  Rectifying a flaw in the parser requires an
+understanding of both the parser and Postfix's logs, and investigative work
+to determine the cause of the deficiency, followed by further examination
+of the logs in developing a solution.
 
 \section{Limitations and possible improvements}
 
@@ -2462,11 +2468,12 @@ always room for improvement.
 
 \subsection{Limitations}
 
-\begin{itemize}
+\begin{enumerate}
 
     \item Each new Postfix release requires new rules to be written to cope
-        with the new log lines.  Similarly new RBLs, new policy servers and
-        new administrator defined rejection messages require new rules.
+        with the new log lines.  Similarly using a new \RBL{}, new policy
+        server or new administrator defined rejection messages require new
+        rules.
 
     \item It appears that the hostname used in the HELO command is not
         logged if the mail is accepted.\footnote{Tested with Postfix 2.2.10
@@ -2477,20 +2484,22 @@ always room for improvement.
     \item The algorithm does not distinguish between mails where one or
         more mails are rejected and a subsequent mail is accepted; it will
         appear in the database as one mail with lots of rejections followed
-        by acceptance.  I don't believe it's possible to make this
-        distinction given the data Postfix logs, though it might be
-        possible to write a policy server to provide additional logging.
+        by acceptance (this has already been mentioned in
+        section~\refwithpage{connection reuse}).  I don't believe it's
+        possible to make this distinction given the data Postfix logs,
+        though it might be possible to write a policy server to provide
+        additional logging.
 
     \item The program will not detect parsing the same log file twice,
         resulting in the database containing duplicate entries.
 
-\end{itemize}
+\end{enumerate}
 
 \subsection{Possible improvements}
 
 \begin{itemize}
 
-    \item Write the policy server referred to in the limitations above.
+    \item Write the policy server referred to in limitation 3 above.
 
 \end{itemize}
 
@@ -2527,6 +2536,14 @@ program with \parsername{}.
 
 \subsection{Parsers reviewed}
 
+XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
+
+XXX HIGHLIGHT THE DIFFERENCE BETWEEN ADDING NEW RULES AND NEW PARSER
+FUNCTIONALITY\@.
+
+NEED A BETTER TERM THAN HARD-CODED, THOUGH THAT MIGHT ARISE FROM THE
+PREVIOUS TODO ITEM\@.
+
 \begin{description}
 
     \item [Pflogsumm] \textit{pflogsumm is designed to provide an over-view
@@ -2546,23 +2563,33 @@ program with \parsername{}.
         \url{http://jimsun.linxnet.com/postfix_contrib.html} \newline (Last
         checked 2007/08/13.)
 
-    \item [Sawmill Universal Log File Analysis and Reporting] is a general
-        purpose commercial product which parses 687 log file formats
-        (correct as of 2007/04/15) and produces reports.  Its data
-        extraction facilities are quite limited, though it does extract
-        three different sets of data for Postfix (as of 2007/04/15, one is
-        beta), but they do not appear to be interlinked, nor does it save
-        sufficient data for the purposes of this project.  Not attempt is
-        made to correlate log lines or deal with the difficulties
+    \item [Sawmill Universal Log File Analysis and Reporting] \textit{
+        Sawmill is a \newline Postfix log analyzer (it also support 686
+        other log formats).  It can process log files in Postfix format,
+        and generate dynamic statistics from them, analyzing and reporting
+        events.  Sawmill can parse Postfix logs, import them into a SQL
+        database (or its own built-in database), aggregate them, and
+        generate dynamically filtered reports, all through a web interface.
+        Sawmill can perform Postfix analysis on any platform, including
+        Window, Linux, FreeBSD, OpenBSD, Mac OS, Solaris, other UNIX, and
+        more.\/}
+        
+        Sawmill is a general purpose commercial product which parses 687
+        log file formats (correct as of 2007/04/15) and produces reports.
+        Its data extraction facilities are quite limited, though it does
+        extract three different sets of data for Postfix (one is beta as of
+        2007/04/15), but they do not appear to be interlinked, nor does it
+        save sufficient data for the purposes of this project.  No attempt
+        is made to correlate log lines or deal with the difficulties
         documented in sections~\refwithpage{complications}
         and~\refwithpage{additional complications}.\footnote{If any attempt
         is made there is no reference to it in the documentation available
         on the website.} The source code is available in an obfuscated form
         only (presumably for a fee), and the product is quite expensive, as
-        it requires a license for each report which is to be generated.
-        The web interface allows creation of dynamic reports based on any
-        field, but due to the associated cost the author has not
-        experimented with it.
+        it requires a license per report which is to be generated.  The web
+        interface allows creation of dynamic reports based on any field,
+        but due to the associated cost the author has not experimented with
+        it.
 
         \url{http://www.thesawmill.co.uk/formats/postfix.html} \newline
         Fields extracted: from, to, server, UID, relay, status, number of
@@ -2576,12 +2603,12 @@ program with \parsername{}.
         \textit{virus\/} field is a mystery.
 
         \url{http://www.thesawmill.co.uk/formats/postfix_ii.html} \newline
-        Fields extracted: from, to, RBL list, client hostname and client
+        Fields extracted: from, to, \RBL{}, client hostname and client
         IP\@.
 
         \url{http://www.thesawmill.co.uk/formats/beta_postfix.html}
         \newline Fields extracted: from, to, client hostname, client IP,
-        relay hostname, relay IP, status, response code, RBL list and
+        relay hostname, relay IP, status, response code, \RBL{} and
         message id.
 
         (Last checked 2007/09/26.)
@@ -2605,23 +2632,23 @@ program with \parsername{}.
         the results as required (though possibly without the graphs and
         detailed statistics).  In the specific case of parsing Postfix
         logs, Splunk extracts some standard fields: to and from addresses,
-        HELO, date, host the logs were collected from, and protocol.  It
-        parses the standard syslog fields at the beginning of the line, and
-        extracts any \texttt{key=<value>} pairs; these are the fields
-        listed above.  Searches can be made based on the extracted fields,
-        and all text in the line is also available for searching.  Many
-        types of reports are available, though all are variations of a bar
-        or pie chart, with the exception of bubble and heatmap graphs.  It
-        is very easy to drill down through the graphs to extract a portion
-        of the data (e.g.\ select the hour with the largest number of
-        events, then select a particular host, and finally a specific
-        address).  It is not possible to search on partial words, though
-        the web interface does provide and refine a list of possible search
-        terms as you type.  The searches are quite fast, though as the free
-        version has a limit on the amount of data indexed per day the
-        volume of data to be searched was merely 45mb; the cheapest
-        licensed version costs \$6000, and it still limits the volume of
-        data indexed per day.
+        HELO hostname, date, host the logs were collected from, and
+        protocol.  It parses the standard syslog fields at the beginning of
+        the line, and extracts any \texttt{key=<value>} pairs; these are
+        the fields listed above.  Searches can be made based on the
+        extracted fields, and all text in the line is also available for
+        searching.  Many types of reports are available, though all are
+        variations of a bar or pie chart, with the exception of bubble and
+        heatmap graphs.  It is very easy to drill down through the graphs
+        to extract a portion of the data (e.g.\ select the hour with the
+        largest number of events, then select a particular host, and
+        finally a specific address).  It is not possible to search on
+        partial words, though the web interface does provide and refine a
+        list of possible search terms as you type.  The searches are quite
+        fast, though as the free version has a limit on the amount of data
+        indexed per day the volume of data to be searched was merely 45mb;
+        the cheapest licensed version costs \$6000, and it still limits the
+        volume of data indexed per day.
 
         The interface is optimised for interactive rather than automated
         queries and it does not appear to be possible to write independent
@@ -2638,8 +2665,8 @@ program with \parsername{}.
 
     \item [Isoqlog] \textit{Isoqlog is an MTA log analysis program written
         in C. It designed to scan qmail, postfix, sendmail and exim logfile
-        and produce usage statistics in HTML format for viewing through a
-        browser. It produces Top domains output according to Sender,
+        and produce usage statistics in \HTML{} format for viewing through
+        a browser. It produces Top domains output according to Sender,
         Receiver, Total mails and bytes; it keeps your main domain mail
         statistics with regard to Days Top Domain, Top Users values for per
         day, per month and years.\/}
@@ -2675,9 +2702,9 @@ program with \parsername{}.
         Apache\footnote{The Apache web server is the most popular HTTP
         server in use for the past 10 years; more information is available
         at \url{http://httpd.apache.org/}} format log files, for analysis
-        by its HTTP log file parser.  The converting parser is hard coded,
-        hard to extend, and only deals with a small portion of the log
-        lines generates by Postfix, but it does correlate log lines by
+        by AWStats' HTTP log file parser.  The converting parser is hard
+        coded, hard to extend, and only deals with a small portion of the
+        log lines generated by Postfix, but it does correlate log lines by
         queueid.
 
         \url{http://awstats.sourceforge.net/} \newline
@@ -2723,29 +2750,29 @@ program with \parsername{}.
         the information appropriately.\/}
 
         YAALA uses a plugin based system to analyse log files and produce
-        HTML output reports.  The core code is merely 153 lines long, as
+        \HTML{} output reports.  The core code is merely 153 lines long, as
         all the parsing and report generation is handled by modules.  YAALA
         supports storing previously gathered data; it dumps its internal
         data structures using Perl's Storable module~\cite{perl-storable},
-        so with some knowledge of the module responsible for parsing
-        Postfix log files it should be possible to extract data with an
-        external program.  Using YAALA as a base would be only slightly
-        less work as both input and output modules would need to be
-        written; it may even be more work to implement the parser within
-        the constraints of YAALA\@.  YAALA bundles a Postfix parser, which
-        uses hard-coded parsing to extract the following fields from
-        specific log lines:
+        so with some knowledge of the data structure created by the module
+        responsible for parsing Postfix log files it should be possible to
+        extract data with an external program.  Using YAALA as a base would
+        be only slightly less work than starting from scratch, as both
+        input and output modules would need to be written; it may even be
+        more work to implement the parser within the constraints of
+        YAALA\@.  YAALA bundles a Postfix parser, which uses hard-coded
+        parsing to extract the following fields from specific log lines:
 
-        Aggregations: count, bytes (the sum of bytes transferred; count is
-        not explained).\newline Keyfields [sic]: date, hour, sender,
+        Aggregations: count(count is not explained), bytes (the sum of
+        bytes transferred).\newline Keyfields [sic]: date, hour, sender,
         recipient, defer\_count, delay, incoming\_host, outgoing\_host.
 
         YAALA provides an SQL like mini-language used when generating the
         reports; sample reports can be seen at~\cite{yaala-samples}.
         Example query: \newline \hspace*{2em} \texttt{requests BY file
         WHERE host =\~{} Google}. \newline The mini-language is quite
-        limited, and cannot be used to extract data, merely to create
-        reports.
+        limited, and cannot be used to extract data for external use,
+        merely to create reports.
 
         YAALA as distributed does not attempt the in-depth parsing
         explained in this document, and implementing it within the confines
@@ -2778,22 +2805,20 @@ program with \parsername{}.
         the number of deliveries and the volume of email delivered by day,
         the domains from which you receive or send the most emails, the
         relays most used, etc.\/}; notably rejections are not mentioned.
-        It supports multiple output formats (text, HTML, PDF and Excel 95).
-        Logs can be imported and the extracted data saved, and reports
-        generated later.  Accessing this data from another application is
-        undocumented; given the source code it should be possible, with
-        time, to access the data.
+        It supports multiple output formats (text, \HTML{}, PDF XXX and
+        Excel 95).  Logs can be imported and the extracted data saved, and
+        reports generated from it later.  Accessing this data from another
+        application is undocumented; given the source code it should be
+        possible, with time, to access the data.
 
-        Unlike other parsers reviewed, Lire does attempt to correlate log
-        lines by queueid, but not by \pid{}, so e.g.\ the complete list of
-        recipients for a mail should be available.
-
-        Lire does attempt to correlate log lines by queueid, not \pid{},
-        but its hard coded parsing extracts only part of the available data
-        and makes no attempt to deal with the other complications described
-        in sections~\refwithpage{complications} and~\refwithpage{additional
+        Like AWStats and Logrep, Lire attempts to correlate log lines by
+        queueid, but not by \pid{}, so the complete list of recipients for
+        a mail should be available; however its hard coded parsing extracts
+        only part of the available data and makes no attempt to deal with
+        the other complications described in
+        sections~\refwithpage{complications} and~\refwithpage{additional
         complications}.  It stores data, but not in an easily accessible
-        format.  It generates reports in multiple formats, but those
+        format, and generates reports in multiple formats, but those
         reports do not appear to be customisable.
 
         \url{http://logreport.org/lire.html} \newline (Last checked
@@ -2827,19 +2852,19 @@ program with \parsername{}.
         appears that they will not overwrite existing data.  It also counts
         the number of log lines parsed and skipped.  Most notably
         rejections are completely ignored, making it unsuitable for the
-        purposes of this project.  Needless to say it doesn't attempt to
-        address any of the complications in
-        sections~\refwithpage{complications} and~\refwithpage{additional
-        complications} except for correlating by queueid.
+        purposes of this project.  It doesn't attempt to address any of the
+        complications in sections~\refwithpage{complications}
+        and~\refwithpage{additional complications} except for correlating
+        by queueid.
 
-        Logrep does not come with any documentation, though some scanty
+        Logrep does not come with any documentation, though some scant
         documentation is available on its website.  It requires a web
         browser to interact with it, ensuring that automated log processing
         will be difficult.  Sadly all attempts to use Logrep failed, as it
         was unable to access the log files selected; this appears to be a
         bug rather than operator error.  As parsing failed it wasn't
         possible to review the reports Logrep can generate (available in
-        HTML only), nor to examine the (undocumented) format in which it
+        \HTML{} only), nor to examine the (undocumented) format in which it
         can save extracted data for subsequent reuse.
 
         Logrep extracts far less data from Postfix logs than \parsername{},
@@ -2860,15 +2885,15 @@ program with \parsername{}.
 
 While there are other programs available which perform basic Postfix log
 parsing (some to a greater level of detail than others), few attempt to
-correlate log lines queueid (none correlate by \pid{}) to produce an
-overall record of the journey each mail traverses through Postfix.  No
-other parser collects the breadth of information gathered by \parsername{},
-nor makes it as easy to add new parsing rules.  Most other parsers
-immediately generate a report and discard the data extracted from the logs;
-those which don't discard the data retain it in a format inaccessible to
-other tools.  All of the parsers reviewed can produce a report of greater
-or lesser detail and complexity, a facility not offered by \parsername{};
-reporting is deferred to a subsequent application.
+correlate log lines by queueid (none correlate by \pid{}) to produce an
+overall record of the journey each mail traverses through Postfix.  None of
+the reviewed parsers collect the breadth of information gathered by
+\parsername{}, nor make it as easy to extend the parser.  Most other
+parsers immediately generate a report and discard the data extracted from
+the logs; those which don't discard the data retain it in a format
+inaccessible to other tools.  All of the parsers reviewed can produce a
+report of greater or lesser detail and complexity, a facility not offered
+by \parsername{}; reporting is deferred to a subsequent application.
 
 The overriding difference between \parsername{} and the other parsers
 reviewed herein is that none of them aim to achieve the high level of

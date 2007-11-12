@@ -58,6 +58,7 @@ all: logparser.pdf
 	fi
 	[ -f "$@" ]
 	cat "$@.out"
+	grep Overfull "$@.out" || true
 	# Finally done.
 	chktex -I0 -q "$<"
 
