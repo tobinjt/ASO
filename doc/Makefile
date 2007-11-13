@@ -250,6 +250,10 @@ veryclean: clean
 check:
 	chktex logparser.tex
 
+# List all acronyms not followed by {}, for visual inspection.
+check-acronyms:
+	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{]/; p;' logparser-acronyms.tex | grep -f - -n logparser.tex
+
 2up: logparser-2up.ps logparser-2up.pdf
 
 logparser-2up.ps: logparser.ps

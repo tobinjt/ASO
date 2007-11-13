@@ -15,10 +15,10 @@
     existing code, so that each program does not reinvent the wheel.  When
     a body of code is intended to be reused repeatedly, the user of this
     code needs to be informed of the functionality provided by the code.
-    An API defines the interface provided to the user, and acts a contract
-    between the user and the provider: if the user adheres to the API the
-    provider guarantees it will work, while the provider is free to change
-    the implementation as long as the API is preserved.
+    An API defines the interface provided to the user, and acts as a
+    contract between the user and the provider: if the user adheres to the
+    API the provider guarantees it will work, while the provider is free to
+    change the implementation as long as the API is preserved.
 }}
 
 \newacronym{SMTP}{Simple Mail Transfer Protocol}{description={
@@ -63,10 +63,11 @@
     typically a comma or colon.
 }}
 
+
 \newacronym{FQDN}{Fully Qualified Domain Name}{description={
-    An FQDN is a hostname plus domain name, e.g.
-        example.com     is a domain name    \newline
-        www             is a hostname       \newline
+    An FQDN is a hostname plus domain name, e.g.    \newline
+        example.com     is a domain name          \newline
+        www             is a hostname             \newline
         www.example.com is a FQDN
 }}
 
@@ -99,10 +100,9 @@
     explained in detail in~\cite{wikipedia-regex, perlre} .
 }}
 
-\newacronym{regexs}{Regular Expressions}{description={
-    Regular expressions are a method of matching patterns in text that are
-    explained in detail in~\cite{wikipedia-regex, perlre} .
-}}
+% I think this is better than having both regex and regexs in the acronym
+% list.
+\newcommand{\regexs}{\regex{}s}
 
 \newacronym{ESMTP}{Extended SMTP}{description={
     ESMTP is Extended SMTP, defined in RFC~1869~\cite{RFC1869}.
@@ -111,4 +111,8 @@
 \newacronym{HTML}{Hypertext Markup Language}{description={
     HTML is the markup language designed for writing web
     pages~\cite{wikipedia-html, w3schools-html}.
+}}
+
+\newacronym{IP}{Internet Protocol}{description={
+    XXX ADD A DEFINITION\@.
 }}
