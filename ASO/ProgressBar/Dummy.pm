@@ -58,6 +58,19 @@ sub new {
 
 =over 4
 
+=item $progressbar->minor($ignored)
+
+Present only for compatibility with Term::ProgressBar.
+
+=back
+
+=cut
+
+sub minor {
+}
+
+=over 4
+
 =item $progressbar->update($current)
 
 Change how far along the progress bar the caller has gotten, in the same units
