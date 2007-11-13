@@ -893,7 +893,22 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- SMTPD INFO RULES {{{
 
+-- This has a high priority so that it supercedes the following rule, catching
+-- uselessly logged HELOs.
 -- NOQUEUE: warn: RCPT from unknown[200.42.252.162]: Logging HELO; from=<apple@cs.tcd.ie> to=<apple@cs.tcd.ie> proto=ESMTP helo=<200.42.252.162>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action)
+    VALUES('Logging HELO (ignored)', 'HELO logged to provide additional data (ignored, an improved version is now in use)',
+        'postfix/smtpd',
+        '^NOQUEUE: warn: __SHORT_CMD__ from (?:__HOSTNAME__)\[(?:__IP__)\]: Logging HELO; from=<(?:__SENDER__)> to=<(?:__RECIPIENT__)> proto=E?SMTP helo=<(?:__HELO__)>$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        5,
+        'IGNORED'
+);
+
+-- A3BB2363C: warn: DATA from localhost[127.0.0.1]: Logging HELO; from=<emailSenderApp+2VGO154B9WPQS-VA33Q45OY07B-2B82XZ9ZK7SCW@bounces.amazon.com> to=<eamonn.kenny@cs.tcd.ie> proto=ESMTP helo=<localhost>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Logging HELO', 'HELO logged to provide additional data',
         'postfix/smtpd',
@@ -1947,7 +1962,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Bloody Solaris LDAP 4', 'Solaris LDAP cannot contact server',
         '*',
-        '^libsldap: Status: 81 Mesg: openConnection: simple bind failed - Can.t contact LDAP server$',
+        '^libsldap: Status: 81  Mesg: openConnection: simple bind failed - Can.t contact LDAP server$',
         '',
         '',
         'IGNORE',
