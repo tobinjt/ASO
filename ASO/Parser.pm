@@ -1912,6 +1912,12 @@ sub prune_queueids {
 
     QUEUEID:
     foreach my $connection ($self->get_all_connections_by_queueid()) {
+        # Occasionally we have a connection with no results.  Weird.
+        if (scalar @{$connection->{results}} == 0) {
+            $self->my_warn(qq{prune_queueids: connection with zero results!},
+                $self->dump_connection($connection));
+            next QUEUEID;
+        }
         # It must be old.
         if ($connection->{results}->[-1]->{timestamp} >= $old_timestamp) {
             next QUEUEID;
@@ -2001,8 +2007,9 @@ sub filter_regex {
     $regex =~ s/__IPv4__                /(?:::ffff:)?$RE{net}{IPv4}/gx;
     $regex =~ s/__IPv6__                /$ipv6_re/gx;
     $regex =~ s/__SMTP_CODE__           /\\d{3}/gx;
-    # 3-9 is a guess.
-    $regex =~ s/__QUEUEID__             /(?:NOQUEUE|[\\dA-F]{3,9})/gx;
+    # 3-9 is a guess.  Turns out that we need at least 10, might as well go to
+    # 12 to be sure.
+    $regex =~ s/__QUEUEID__             /(?:NOQUEUE|[\\dA-F]{3,12})/gx;
     $regex =~ s/__COMMAND__             /(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gx;
     # DATA is deliberately excluded here because there are more specific rules
     # for DATA.
