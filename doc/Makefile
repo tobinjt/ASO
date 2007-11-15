@@ -242,17 +242,21 @@ extract-stats:
 
 # Cleanup.
 clean:
-	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out *.ist *.glg *.gls *.glo *.cbk *.cit *.lof *.idx
+	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out *.ist *.glg 
+	rm -f *.gls *.glo *.cbk *.cit *.lof *.idx *.acn *.acr *.alg *.deps *.lot
 
 veryclean: clean
 	rm -f build/*
 
 check:
-	chktex logparser.tex
+	chktex -I0 -q logparser.tex
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
 	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{]/; p;' logparser-acronyms.tex | grep -f - -n logparser.tex
+
+todo:
+	grep -E 'TODO|XXX' logparser.tex logparser-acronyms.tex
 
 2up: logparser-2up.ps logparser-2up.pdf
 

@@ -92,6 +92,8 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 XXX WHAT IS THE CONCLUSION???  FIRST THING IS TO COMPARE TO OTHER PARSERS
 REVIEWED
 
+XXX MOVE plot-* TO A SUBDIRECTORY\@?
+
 \newpage
 \tableofcontents
 \listoffigures
@@ -322,8 +324,8 @@ the data in several ways:
             \item New columns can be added to the tables used by the
                 program, with sufficient DEFAULT clauses or a clever
                 TRIGGER or two.\footnote{Please refer to an \SQL{} guide
-                for explanations of these terms, e.g.~\cite{wikipedia-sql}
-                XXX IMPROVE.}
+                for explanations of these terms,
+                e.g.~\cite{sql-for-web-nerds}}
 
             \item A VIEW gives a custom arrangement of data with very
                 little effort.
@@ -353,7 +355,9 @@ CREATE TRIGGER ON INSERT INTO results
         vendor implements a different dialect of \SQL{}, the basics are the
         same everywhere (analogous to the overall similarities and minor
         differences between British English, American English and
-        Australian English).  XXX CITE SOME RESOURCES\@.
+        Australian English).  A good introduction to \SQL{} can be found
+        at~\cite{sql-for-web-nerds}, others
+        are~\cite{w3schools-sql-tutorial, sqlcourse.com}.
 
 \end{enumerate}
 
@@ -1057,9 +1061,11 @@ with overlapping rules, and the problems they can cause.  An example rule
 and a line it would match are provided, plus a description of how the
 fields in the rule are used when matching and performing the action (the
 details of the table containing the rules have already been described in
-section~\refwithpage{rule attributes},).  This section finishes with a
+section~\refwithpage{rule attributes},).  This section continues with a
 discussion of rule efficiency concerns, referring to the graphs in
-section~\refwithpage{graphs}.
+section~\refwithpage{graphs}, and finishes with an explanation of how to
+add or edit rules, including the algorithm used to generate a new \regex{}
+from unparsed lines.
 
 
 \subsection{Rule characteristics}
@@ -1121,20 +1127,21 @@ The parser does not try to detect overlapping rules;\footnote{It may be
 possible to parse each rule's \regex{}, generate a \DFA{} from it, and
 examine every \DFA{} to determine if any overlap.  The author has not
 attempted to do this: such a project by itself would probably qualify for a
-PhD, and may involve solving the Halting Problem and circumventing the
-Church-Turing Thesis.  XXX REFERENCES FOR HALTING PROBLEM AND
-CHURCH-TURING\@.} that responsibility is left to the author of the rules.
-Unintentionally overlapping rules lead to inconsistent parsing and data
-extraction because the order in which rules are tried against each line is
-unspecified, and the first matching rule wins.  Overlapping rules are
-frequently a requirement, allowing a more specific rule to match some lines
-and a more general rule to match the majority, e.g.\ separating \SMTP{}
-delivery to a specific sites from \SMTP{} delivery to the rest of the
-world.  The algorithm provides a facility for ordering overlapping rules:
-the priority field in each rule (defaults to zero).  Rules are sorted by
-priority, highest first, and then rules with the same priority are sorted
-by the number of successful matches when parsing the previous log file.
-Negative priorities may be useful for catchall rules.
+PhD, and may involve solving the Halting
+Problem~\cite{wikipedia-halting-problem} and circumventing the
+Church-Turing Thesis~\cite{wikipedia-church-turing-thesis}.} that
+responsibility is left to the author of the rules.  Unintentionally
+overlapping rules lead to inconsistent parsing and data extraction because
+the order in which rules are tried against each line is unspecified, and
+the first matching rule wins.  Overlapping rules are frequently a
+requirement, allowing a more specific rule to match some lines and a more
+general rule to match the majority, e.g.\ separating \SMTP{} delivery to a
+specific sites from \SMTP{} delivery to the rest of the world.  The
+algorithm provides a facility for ordering overlapping rules: the priority
+field in each rule (defaults to zero).  Rules are sorted by priority,
+highest first, and then rules with the same priority are sorted by the
+number of successful matches when parsing the previous log file.  Negative
+priorities may be useful for catchall rules.
 
 Detecting overlapping rules is difficult, but the following may be helpful:
 
@@ -1162,6 +1169,8 @@ Detecting overlapping rules is difficult, but the following may be helpful:
 \end{itemize}
 
 \subsection{Example rule}
+
+\label{example rule}
 
 This example rule matches the message logged by Postfix when it rejects
 mail from a sender address because the appropriate \DNS{} entries are
@@ -1343,6 +1352,33 @@ when not caching each \regex{}.
 Caching the compiled \regexs{} is quite simple, and is the single most
 effective optimisation implemented in the parser.
 
+\subsection{Creating new rules}
+
+The logs produced by Postfix differ from installation to installation, as
+administrators have the freedom to choose the subset of available
+restrictions which suits their needs, including using different \RBL{}
+services, policy servers, or custom rejection messages.  To facilitate
+this, the parser's design separates parsing rules from parsing actions:
+adding new actions is difficult, but adding new rules to parse new
+rejection messages is trivial (and occurs much more frequently).  The
+implementation provides three programs to ease the process of adding new
+rules: \texttt{add-new-rule}, \texttt{edit-rule} and \texttt{logs2regexs}
+XXX NEED BETTER NAMES\@.
+
+\texttt{add-new-rule} is the simplest of the three, it just starts the
+user's preferred editor with a template rule which the user modifies as
+required, and then inserts the new rule into the database.  The various
+fields have already been described in sections~\refwithpage{rule
+attributes},~\refwithpage{rule characteristics} and~\refwithpage{example
+rule}, and will not be repeated here.
+
+\texttt{edit-rule} extracts a rule from the database, saves it in a human
+readable form, and runs the user's preferred editor for the user to change
+the rule as required.  Once the user is satisfied with the changes, the
+database will be updated appropriately.
+
+\texttt{logs2regexs} 
+
 \subsection{Conclusion}
 
 This section dealt with the rules used in parsing Postfix log files:
@@ -1363,10 +1399,14 @@ This section dealt with the rules used in parsing Postfix log files:
         section~\refwithpage{rule attributes}, and is not duplicated in
         this section.
 
-    \item The final part of this section discusses rule efficiency,
-        covering the effects of caching compiled \regexs{} and optimal
-        ordering of rules, with reference to the graphs in
+    \item The topic of rule efficiency was discussed next, covering the
+        effects of caching compiled \regexs{} and optimal ordering of
+        rules, with reference to the graphs in
         appendix~\refwithpage{graphs}.
+
+    \item This section finished with an explanation of how to add or edit
+        rules, including the algorithm used to generate a new \regex{} from
+        unparsed lines.
 
 \end{itemize}
 
@@ -2494,6 +2534,16 @@ always room for improvement.
     \item The program will not detect parsing the same log file twice,
         resulting in the database containing duplicate entries.
 
+    \item The parser does not distinguish between logs produced by
+        different sources when parsing; all results will be saved to the
+        same database.  This may be viewed as an advantage, as logs from
+        different sources can be combined in the same database, or it may
+        be viewed as a limitation as there is no facility to distinguish
+        between logs from different sources in the same database.  If the
+        results of parsing logs from different sources must remain
+        separate, the parser can easily be instructed to use a different
+        database to store the results in.
+
 \end{enumerate}
 
 \subsection{Possible improvements}
@@ -2542,7 +2592,7 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
 XXX HIGHLIGHT THE DIFFERENCE BETWEEN ADDING NEW RULES AND NEW PARSER
 FUNCTIONALITY\@.
 
-NEED A BETTER TERM THAN HARD-CODED, THOUGH THAT MIGHT ARISE FROM THE
+XXX NEED A BETTER TERM THAN HARD-CODED, THOUGH THAT MIGHT ARISE FROM THE
 PREVIOUS TODO ITEM\@.
 
 \begin{description}
@@ -2806,7 +2856,7 @@ PREVIOUS TODO ITEM\@.
         the number of deliveries and the volume of email delivered by day,
         the domains from which you receive or send the most emails, the
         relays most used, etc.\/}; notably rejections are not mentioned.
-        It supports multiple output formats (text, \HTML{}, PDF XXX and
+        It supports multiple output formats (text, \HTML{}, \PDF{} and
         Excel 95).  Logs can be imported and the extracted data saved, and
         reports generated from it later.  Accessing this data from another
         application is undocumented; given the source code it should be
@@ -3208,7 +3258,7 @@ parser.
 
 % Postfix components
 \glossary{name={bounce},description={
-    The definitive documentation is \url{http://www.postfix.org/bounce.8.html}.
+    XXX The definitive documentation is \url{http://www.postfix.org/bounce.8.html}.
 }}
 
 \glossary{name={cleanup},description={
@@ -3220,7 +3270,7 @@ parser.
 }}
 
 \glossary{name={local},description={
-    The definitive documentation is \url{http://www.postfix.org/local.8.html}.
+    XXX The definitive documentation is \url{http://www.postfix.org/local.8.html}.
 }}
 
 \glossary{name={pickup},description={
@@ -3230,11 +3280,11 @@ parser.
 }}
 
 \glossary{name={postdrop},description={
-    The definitive documentation is \url{http://www.postfix.org/postdrop.1.html}.
+    XXX The definitive documentation is \url{http://www.postfix.org/postdrop.1.html}.
 }}
 
 \glossary{name={postsuper},description={
-    The definitive documentation is available at \url{http://www.postfix.org/postsuper.1.html}.
+    XXX The definitive documentation is available at \url{http://www.postfix.org/postsuper.1.html}.
 }}
 
 \glossary{name={qmgr},description={
@@ -3255,7 +3305,7 @@ parser.
 }}
 
 \glossary{name={smtp},description={
-    The definitive documentation is \url{http://www.postfix.org/smtp.8.html}.
+    XXX The definitive documentation is \url{http://www.postfix.org/smtp.8.html}.
 }}
 
 \glossary{name={smtpd},description={
@@ -3299,11 +3349,19 @@ parser.
 }}
 
 \glossary{name={IPv4},description={
-    XXX IPv4.
+    Internet Protocol~\cite{wikipedia-ipv4} version 4 is the fourth version
+    of the Internet Protocol used to interconnect computers on the
+    Internet.  It is the first widely deployed version of IP, and has been
+    in use for over 25 years.
 }}
 
 \glossary{name={IPv6},description={
-    XXX IPv6.
+    Internet Protocol~\cite{wikipedia-ipv6} version 6 is the latest version
+    of the Internet Protocol used to interconnect computers on the
+    Internet.  It is the successor to IPv4, bringing with it a greatly
+    expanded address space, allowing many more computers to use the
+    Internet simultaneously.  IPv4 and IPv6 will coexist for many years to
+    come as existing networks transition from the former to the latter.
 }}
 
 \end{document}
