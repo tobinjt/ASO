@@ -1,0 +1,11 @@
+load "plot-defaults.gpi"
+
+set xlabel "Log file"
+set ylabel "Regexs: cached vs discarded, execution time in seconds"
+set output "../build/plot-cached-discarded.ps"
+
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
+
+plot "../build/stats-cached.txt" using 3 with lines title "Compiled once", \
+    "../build/stats-discarded.txt" using 3 with lines title "Compiled every time"

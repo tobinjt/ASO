@@ -2,9 +2,9 @@ load "plot-defaults.gpi"
 
 set xlabel "Rule"
 set ylabel "Number of lines"
-set output "build/plot-log22-distribution-by-rule.ps"
+set output "../build/plot-log22-distribution-by-rule.ps"
 
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
 
-plot "stats-log22-distribution-by-rule.txt" using 1:2 title "Number of lines"
+plot "../stats-log22-distribution-by-rule.txt" using 1:2 title "Number of lines"

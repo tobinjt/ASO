@@ -2,7 +2,7 @@ load "plot-defaults.gpi"
 
 set xlabel "Log file"
 set ylabel "Percentage increase of shuffled over normal"
-set output "build/plot-normal-shuffle-factor.ps"
+set output "../build/plot-normal-shuffle-factor.ps"
 
-plot "build/stats-normal-shuffle-reverse-factor.txt" using 1 with lines \
+plot "../build/stats-normal-shuffle-reverse-factor.txt" using 1 with lines \
         title "Shuffle vs normal"

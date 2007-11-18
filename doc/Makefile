@@ -109,8 +109,8 @@ build/plot-hits-low.ps: stats-hits.txt
 build/plot-log22-log-lines.ps: stats-log22-rule-count-by-program.txt
 build/plot-log22-rules.ps: stats-log22-rule-count-by-program.txt
 
-build/plot-%.ps: plot-%.gpi
-	gnuplot "$<"
+build/plot-%.ps: graphs/plot-%.gpi
+	cd graphs && gnuplot "../$<"
 
 build/stats-normal-stripped.txt: build/stats-normal.txt
 	sed -e '/^#/d' "$<" > "$@"

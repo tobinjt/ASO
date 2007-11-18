@@ -1,0 +1,13 @@
+load "plot-defaults.gpi"
+
+set xlabel "Log file"
+set ylabel "Execution time of normal, shuffled and reversed ordering"
+set output "../build/plot-normal-shuffle-reverse.ps"
+
+# Don't continue the scales to the next round number; stop at the topmost point.
+set autoscale yfixmax
+set autoscale yfixmin
+
+plot "../build/stats-normal.txt" using 3 with lines title "Normal ordering", \
+    "../build/stats-shuffle.txt" using 3 with lines title "Shuffled ordering", \
+    "../build/stats-reverse.txt" using 3 with lines title "Reversed ordering"
