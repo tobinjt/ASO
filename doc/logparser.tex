@@ -370,15 +370,15 @@ results may be used by someone with no access to the original logs.
 \subsection{SMTP background}
 \label{SMTP background}
 
-The \SMTPlong, originally defined in \RFC{} 821~\cite{RFC821} and updated
-in \RFC{} 2821~\cite{RFC2821}, is used for transferring mail between the
+The \SMTPlong, originally defined in \RFC{}~821~\cite{RFC821} and updated
+in \RFC{}~2821~\cite{RFC2821}, is used for transferring mail between the
 sending and receiving \MTA{}\@.  It is a simple, human readable, plain text
 protocol, making it quite easy to test and debug problems with it.  Despite
 the simplicity many virus and/or spam sending programs fail to implement it
 properly, so requiring strict adherence to the protocol specification is
 beneficial in protecting against spam and viruses.\footnote{This violates
 the principle of \textit{Be liberal in what you accept, and conservative in
-what you send\/} from \RFC{} 760~\cite{rfc760}, but unfortunately that
+what you send\/} from \RFC{}~760~\cite{rfc760}, but unfortunately that
 principle was written in a friendlier time.}  A typical \SMTP{}
 conversation resembles the following (the lines starting with a three digit
 number are sent by the server, all other lines are sent by the client):
@@ -1124,10 +1124,9 @@ $\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
 \label{overlapping rules}
 
 The parser does not try to detect overlapping rules;\footnote{It may be
-possible to parse each rule's \regex{}, generate a \DFA{} from it, and
-examine every \DFA{} to determine if any overlap.  The author has not
-attempted to do this: such a project by itself would probably qualify for a
-PhD, and may involve solving the Halting
+possible to parse each rule's \regex{}, and determine if any overlap.  The
+author has not attempted to do this: such a project by itself would
+probably qualify for a PhD, and may involve solving the Halting
 Problem~\cite{Wikipedia-halting-problem} and circumventing the
 Church-Turing Thesis~\cite{Wikipedia-church-turing-thesis}.} that
 responsibility is left to the author of the rules.  Unintentionally
@@ -3258,7 +3257,9 @@ parser.
 
 % Postfix components
 \glossary{name={bounce},description={
-    XXX The definitive documentation is \url{http://www.postfix.org/bounce.8.html}.
+    The bounce daemon is responsible for sending bounce notifications in
+    Postfix versions later than 2.2.  The definitive documentation is
+    \url{http://www.postfix.org/bounce.8.html}.
 }}
 
 \glossary{name={cleanup},description={
@@ -3270,7 +3271,12 @@ parser.
 }}
 
 \glossary{name={local},description={
-    XXX The definitive documentation is \url{http://www.postfix.org/local.8.html}.
+    Local is the Postfix component responsible for local delivery of mail
+    (i.e.\ delivered on the server Postfix is running on), whether it be to
+    a user's mailbox or a program such as a mailing list manager or
+    procmail (\url{http://www.procmail.org/}).  It also handles aliases and
+    processing of a user's \texttt{.forward} file.  The definitive
+    documentation is \url{http://www.postfix.org/local.8.html}.
 }}
 
 \glossary{name={pickup},description={
@@ -3280,11 +3286,19 @@ parser.
 }}
 
 \glossary{name={postdrop},description={
-    XXX The definitive documentation is \url{http://www.postfix.org/postdrop.1.html}.
+    Postdrop is used when submitting mail locally on the server: it creates
+    a new mail in the queue and copies its input into the mail.  Subsequent
+    delivery of the mail is the responsibility of other Postfix components.
+    The definitive documentation is
+    \url{http://www.postfix.org/postdrop.1.html}.
 }}
 
 \glossary{name={postsuper},description={
-    XXX The definitive documentation is available at \url{http://www.postfix.org/postsuper.1.html}.
+    Maintenance task such as deleting mails from the queue, putting mail on
+    hold (no further delivery attempts will be made until it is released
+    from hold, also by postsuper), and consistency checking of the mail
+    queue.  The definitive documentation is available at
+    \url{http://www.postfix.org/postsuper.1.html}.
 }}
 
 \glossary{name={qmgr},description={
@@ -3299,13 +3313,15 @@ parser.
 
 \glossary{name={sendmail},description={
     Postfix provides a command that is compatible with the Sendmail
-    (\url{http://www.sendmail.org/}) mail submission program
-    that all Unix commands which send mail depend on.  The definitive
-    documentation is \url{http://www.postfix.org/sendmail.1.html}.
+    (\url{http://www.sendmail.org/}) mail submission program that all Unix
+    commands which send mail depend on; Postfix sendmail executes postdrop
+    to place a new mail in the queue.  The definitive documentation is
+    \url{http://www.postfix.org/sendmail.1.html}.
 }}
 
 \glossary{name={smtp},description={
-    XXX The definitive documentation is \url{http://www.postfix.org/smtp.8.html}.
+    Delivery of mail over \SMTP{} is performed by the smtp component.  The
+    definitive documentation is \url{http://www.postfix.org/smtp.8.html}.
 }}
 
 \glossary{name={smtpd},description={
@@ -3329,7 +3345,7 @@ parser.
     adding the words \textit{schedule}, \textit{meeting}, \textit{moving
     forward\/} and \textit{best business practices\/} to a mail received by
     a manager, the Bayesian spam filter might tip the balance from bad to
-    good, because the non-spam words might outweigh the spam words.
+    good, if the non-spam words outweigh the spam words.
 }}
 
 \glossary{name={$<>$},sort={<>},description={
@@ -3337,8 +3353,9 @@ parser.
     to, e.g.\ bounce notifications.  In \SMTP{} all addresses are enclosed
     in $<>$, so \textit{username\at{}domain\/} becomes
     \textit{$<$username\at{}domain$>$\/}; thus $<>$ is actually an empty
-    address.  All mail servers must accept mail sent from $<>$, or they are
-    in violation of \SMTP{}.
+    address, but is always written as $<>$ for clarity.  All mail servers
+    must accept mail sent from $<>$, or they are in violation of
+    \RFC{}~2821~\cite{RFC2821}.
 }}
 
 \glossary{name={queueid},description={

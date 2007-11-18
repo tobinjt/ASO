@@ -256,7 +256,7 @@ check-acronyms:
 	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{]/; p;' logparser-acronyms.tex | grep -f - -n logparser.tex
 
 todo:
-	grep -E 'TODO|XXX' logparser.tex logparser-acronyms.tex
+	grep -E 'TODO|XXX' logparser.tex logparser-acronyms.tex logparser-bibliography.bib
 
 2up: logparser-2up.ps logparser-2up.pdf
 
