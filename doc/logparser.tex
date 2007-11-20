@@ -1420,6 +1420,29 @@ algorithm's task is to follow the journey each mail takes through Postfix,
 piecing the data extracted by rules into a coherent whole, saving it in a
 useful and consistent form, and performing housekeeping duties.
 
+XXX WHERE SHOULD THE NEXT PARAGRAPH BE PLACED\@?
+
+\label{why separate rules and algorithm}
+
+Separating the rules and algorithm makes it possible to parse new log lines
+without modifying the core parsing algorithm.  Although this may seem like
+a trivial point, is it substantially more difficult to understand a
+program's entire parsing algorithm, identify the correct location to
+change, and make the appropriate changes without adversely affecting
+parsing, particularly as there may be edge cases which are not immediately
+obvious.\footnote{See
+section~\refwithpage{yet-more-aborted-delivery-attempts} for a complication
+which occurs only four times in 93 log files tested.}  Requiring changes to
+the parsing algorithm also complicates upgrades, as the changes must be
+preserved during the upgrade, and may clash with changes made by the
+developer.  \parsername{} allows the user to add new rules to the database
+without changing the parsing algorithm, unless the new log lines to be
+parsed require functionality not already provided by the algorithm.  If the
+new log lines do require new functionality, new actions can be added to the
+parser without modifying existing actions or other parts of the algorithm;
+only in the rare case that the new actions require support from other
+sections of the code will more extensive changes be required.
+
 \subsection{Introduction}
 
 This section covers the following topics:
@@ -2582,26 +2605,10 @@ depending on the needs of the creator.  The programs are not reviewed from
 an independent viewpoint; the objective is to compare and contrast each
 program with \parsername{}.  One important difference between \parsername{}
 and the parsers reviewed is that only \parsername{} makes it possible to
-parse new log lines without modifying the core parsing algorithm.  Although
-this may seem like a trivial point, is it substantially more difficult to
-understand a program's entire parsing algorithm, identify the correct
-location to change, and make the appropriate changes without adversely
-affecting parsing, particularly as there may be edge cases which are not
-immediately obvious.\footnote{See
-section~\refwithpage{yet-more-aborted-delivery-attempts} for a complication
-which occurs only four times in 93 log files tested.}  Requiring changes to
-the parsing algorithm also complicates upgrades, as the changes must be
-preserved, and may clash with changes made by the developer.  \parsername{}
-allows the user to add new rules to the database without changing the
-parsing algorithm, unless the new log lines to be parsed require
-functionality not already provided by the algorithm.  If the new log lines
-do require new functionality, new actions can be added to the parser
-without modifying existing actions or other parts of the algorithm; only in
-the rare case that the new actions require support from other sections of
-the code will more extensive changes be required.
+parse new log lines without modifying the core parsing algorithm; see
+section~\refwithpage{why separate rules and algorithm} for a discussion of
+why the separation of rules from the algorithm is beneficial.
 
-XXX ADD THE PREVIOUS TWO SENTENCES TO THE PARSING RULES/ALGORITHM
-SECTION\@.
 
 \subsection{Parsers reviewed}
 
@@ -2733,13 +2740,19 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         statistics with regard to Days Top Domain, Top Users values for per
         day, per month and years.\/}
 
-        XXX TEST THIS\@: THE NEXT PARAGRAPH IS CRAP\@.
-
-        Due to the paucity of data gathered by this tool the author has not
-        experimented with it, but based on the documentation it is obvious
-        that it doesn't attempt to gather the breadth of data required for
-        in-depth analysis, and presumably doesn't attempt to correlate log
-        lines per-connection or per-mail.
+        Isoqlog produces a report listing the number of mails sent by each
+        unique sender address, and separately the total number of bytes
+        transferred; both reports are produced for daily, monthly and
+        annual time spans, but only for the domains listed in its
+        configuration file.  It appears to ignore all log lines except for
+        those for the current day, though it does maintain a record of data
+        previously extracted, which the newly extracted data is merged into
+        (no information is provided on the format of the data store).  It
+        doesn't utilise rejection log lines in any way, so is unsuitable
+        for the purposes of this project.  It doesn't handle any of the
+        complications discussed in this document, doesn't gather the
+        breadth of data required for this project, and ignores the majority
+        of log lines produced by Postfix.
 
         \url{http://www.enderunix.org/isoqlog/} \newline (Last checked
         2007/08/13.)
