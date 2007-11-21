@@ -1840,9 +1840,20 @@ The actions:
 
 \begin{description}
 
-    \item [IGNORE] This rule just returns successfully; it is used when a
-        line needs to be parsed for completeness but doesn't either provide
-        any useful data or require anything to be done.
+    \item [BOUNCE] Postfix 2.3 (and hopefully subsequent versions) logs the
+        creation of bounce messages.  This action creates a new mail if
+        necessary; if the mail already exists the unknown origin flag will
+        be removed.  The action also marks the mail as a bounce
+        notification.
+
+    \item [CLONE] Multiple mails may be accepted on a single connection, so
+        each time a mail is accepted the connection's state table entry
+        must be cloned; if the original data structure was used the second
+        and subsequent mails would overwrite one another's data.
+
+    \item [COMMIT] Enter the data from the mail into the database. Entry
+        will be postponed if the mail is a child waiting to be tracked.
+        Once entered, the mail will be deleted from the state tables.
 
     \item [CONNECT] Handle a remote client connecting: create a new state
         table entry (indexed by \daemon{smtpd} \pid{}) and save both the
@@ -1851,25 +1862,6 @@ The actions:
     \item [DISCONNECT] Deal with the remote client disconnecting: enter the
         connection in the database, perform any required cleanup, and
         delete the connection from the state tables.
-
-    \item [SAVE\_BY\_QUEUEID] Find the correct mail based on the queueid in
-        the log line, and save the data extracted by the \regex{} to it.
-
-    \item [COMMIT] Enter the data from the mail into the database. Entry
-        will be postponed if the mail is a child waiting to be tracked.
-        Once entered, the mail will be deleted from the state tables.
-
-    \item [TRACK] Track a mail when it is re-injected for forwarding to
-        another mail server; this happens when a local address is aliased
-        to a remote address.  TRACK will be called when dealing with the
-        parent mail, and will create the child mail if necessary. TRACK
-        checks if the child has already been tracked, either by this parent
-        or by another parent, and issues appropriate warnings in either
-        case.
-
-    \item [REJECTION] Deal with Postfix rejecting an \SMTP{} command from
-        the remote client: log the rejection with a mail if there is a
-        queueid in the log line, or with the connection if not.
 
     \item [EXPIRY] If Postfix has not managed to deliver a mail after
         trying for five days it will give up and return the mail to the
@@ -1880,11 +1872,20 @@ The actions:
         mail as expired; the flag later causes the valid combinations check
         to be skipped, so the mail will be committed.
 
+    \item [IGNORE] This rule just returns successfully; it is used when a
+        line needs to be parsed for completeness but doesn't either provide
+        any useful data or require anything to be done.
+
     \item [MAIL\_PICKED\_FOR\_DELIVERY] This action represents Postfix
         picking a mail from the queue to deliver. This action is used for
         both \daemon{qmgr} and \daemon{cleanup} as it needs to deal with
         out of order log lines; see section~\refwithpage{discarding cleanup
         lines} for details.
+
+    \item [MAIL\_TOO\_LARGE] When the client tries to send a message larger
+        than the local server accepts, the mail will be discarded, and the
+        client informed.  See TIMEOUT for further discussion; the two are
+        handled in exactly the same way.
 
     \item [PICKUP] The PICKUP action corresponds to the \daemon{pickup}
         service dealing with a locally submitted mail.  Out of order log
@@ -1893,23 +1894,6 @@ The actions:
         is created.  The data from the log line is then saved to the state
         table entry.
 
-    \item [CLONE] Multiple mails may be accepted on a single connection, so
-        each time a mail is accepted the connection's state table entry
-        must be cloned; if the original data structure was used the second
-        and subsequent mails would overwrite one another's data.
-
-    \item [MAIL\_TOO\_LARGE] When the client tries to send a message larger
-        than the local server accepts, the mail will be discarded, and the
-        client informed.  See TIMEOUT for further discussion; the two are
-        handled in exactly the same way.
-
-    \item [TIMEOUT] The connection timed out so the mail currently being
-        transferred must be discarded. The mail may have been accepted, in
-        which case there's a data structure to dispose of, or it may not in
-        which case there is not.  See
-        section~\refwithpage{timeouts-during-data-phase} for the gory
-        details.
-
     \item [POSTFIX\_RELOAD] When Postfix stops or reloads its configuration
         it kills all \daemon{smtpd} processes,\footnote{Possibly other
         programs are killed also, but the parser is only affected by and
@@ -1917,15 +1901,22 @@ The actions:
         active connections to be cleaned up, entered in the database, and
         deleted from the state tables.
 
-    \item [SMTPD\_KILLED] Sometimes an event occurs which requires Postfix
-        to forcefully kill a \daemon{smtpd}; that \daemon{smtpd} processes'
-        active connection must be cleaned up, entered in the database, and
-        deleted from the state tables.
+    \item [REJECTION] Deal with Postfix rejecting an \SMTP{} command from
+        the remote client: log the rejection with a mail if there is a
+        queueid in the log line, or with the connection if not.
+
+    \item [SAVE\_BY\_QUEUEID] Find the correct mail based on the queueid in
+        the log line, and save the data extracted by the \regex{} to it.
 
     \item [SMTPD\_DIED] Sometimes a \daemon{smtpd} dies or exits
         unsuccessfully; the active connection for that \daemon{smtpd} must
         be cleaned up, entered in the database, and deleted from the state
         tables.
+
+    \item [SMTPD\_KILLED] Sometimes an event occurs which requires Postfix
+        to forcefully kill a \daemon{smtpd}; that \daemon{smtpd} processes'
+        active connection must be cleaned up, entered in the database, and
+        deleted from the state tables.
 
     \item [SMTPD\_WATCHDOG] \daemon{smtpd} processes have a watchdog timer
         to deal with unusual situations --- after five hours the timer will
@@ -1936,10 +1927,20 @@ The actions:
         \daemon{smtpd} must be cleaned up, entered in the database, and
         deleted from the state tables.
 
-    \item [BOUNCE] Postfix 2.3 (and hopefully subsequent versions) logs the
-        creation of bounce messages.  This action creates a new mail if
-        necessary, marking it as a bounce notification and removing the
-        unknown origin flag if it exists.
+    \item [TIMEOUT] The connection timed out so the mail currently being
+        transferred must be discarded. The mail may have been accepted, in
+        which case there's a data structure to dispose of, or it may not in
+        which case there is not.  See
+        section~\refwithpage{timeouts-during-data-phase} for the gory
+        details.
+
+    \item [TRACK] Track a mail when it is re-injected for forwarding to
+        another mail server; this happens when a local address is aliased
+        to a remote address.  TRACK will be called when dealing with the
+        parent mail, and will create the child mail if necessary. TRACK
+        checks if the child has already been tracked, either by this parent
+        or by another parent, and issues appropriate warnings in either
+        case.
 
 \end{description}
 
