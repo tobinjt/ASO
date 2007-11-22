@@ -18,7 +18,7 @@
 \makeglossary{}
 \makeacronym{}
 
-% When creating a PDF make the table of contents into links to the pages
+% When creating a \PDF{} make the table of contents into links to the pages
 % (without horrible red borders) and include bookmarks.  The title and
 % author don't work - I think either gnuplot or graphviz clobbers it.
 \usepackage{hyperref}
@@ -61,6 +61,10 @@
 % This is ridiculous, but I can't put @ in glossary entries, so . . .
 \newcommand{\at}[0]{%
     @%
+}
+
+\newcommand{\tab}[0]{%
+    \hspace*{2em}%
 }
 
 \begin{document}
@@ -184,11 +188,11 @@ are some additional resources expected to be helpful in understanding
 
 Appendix~\ref{graphs} contains graphs illustrating the topics previously
 discussed in section~\ref{rule efficiency}, rule efficiency, and explains
-the irregularities observed in the graphs.
-
-Appendix~\ref{Acronyms} provides a list of acronyms used in the paper.
+the irregularities observed in these graphs.
 
 Appendix~\ref{Glossary} provides a glossary of terms used in the paper.
+
+Appendix~\ref{Acronyms} provides a list of acronyms used in the paper.
 
 \section{Background}
 
@@ -365,10 +369,10 @@ results may be used by someone with no access to the original logs.
 
 
 
-\subsection{SMTP background}
+\subsection{Simple Mail Transfer Protocol}
 \label{SMTP background}
 
-The \SMTPlong, originally defined in \RFC{}~821~\cite{RFC821} and updated
+The \SMTPlong{}, originally defined in \RFC{}~821~\cite{RFC821} and updated
 in \RFC{}~2821~\cite{RFC2821}, is used for transferring mail between the
 sending and receiving \MTA{}\@.  It is a simple, human readable, plain text
 protocol, making it quite easy to test and debug problems with it.  Despite
@@ -377,9 +381,10 @@ properly, so requiring strict adherence to the protocol specification is
 beneficial in protecting against spam and viruses.\footnote{This violates
 the principle of \textit{Be liberal in what you accept, and conservative in
 what you send\/} from \RFC{}~760~\cite{rfc760}, but unfortunately that
-principle was written in a friendlier time.}  A typical \SMTP{}
-conversation resembles the following (the lines starting with a three digit
-number are sent by the server, all other lines are sent by the client):
+principle was written in a friendlier time. XXX CARL WANTS ME TO SUGGEST A
+NEW PRINCIPAL.}  A typical \SMTP{} conversation resembles the following
+(the lines starting with a three digit number are sent by the server, all
+other lines are sent by the client):
 
 \begin{verbatim}
 220 smtp.example.com ESMTP
@@ -401,7 +406,7 @@ QUIT
 A detailed description of \SMTP{} is beyond the scope of this document:
 introductory guides can be found at~\cite{smtp-intro-01, smtp-intro-02}.
 
-\subsection{Postfix background}
+\subsection{Postfix}
 
 Postfix is a highly configurable, high performance, secure and scalable
 Mail Transport Agent.  It features extensive and extensible optional
@@ -449,14 +454,15 @@ earlier rejections properly; a side benefit of this delay is that Postfix
 has more information available when logging the rejection.\footnote{The
 \texttt{smtpd\_delay\_reject} parameter in Postfix's configuration controls
 this behaviour.}  Postfix uses simple lookup tables as the deciding factor
-for some restrictions, e.g.\
-\texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
+for some restrictions, e.g.\ XXX IMPROVE THIS EXPLANATION OR REMOVE IT \\
+\tab{}\texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
 \footnote{\texttt{cidr}~\cite{cidr_table} is the type of the lookup table.}
-will check whether the \IP{} address of the connected client matches the
-left hand side of each line in the file and will return the right hand side
-of the first matching line.  Other restrictions determine their result in
-different ways, e.g.\ \texttt{reject\_rbl\_client rbl.example.com} checks
-whether the \IP{} address of the client is present in the listed \RBL{}\@.
+\newline checks whether the \IP{} address of the connected client matches
+the left hand side of each line in the file and will return the right hand
+side of the first matching line.  Other restrictions determine their result
+in different ways, e.g.\ \texttt{reject\_rbl\_client rbl.example.com}
+checks whether the \IP{} address of the client is present in the listed
+\RBL{}\@.
 
 Each restriction is evaluated to produce a result of \textit{reject},
 \textit{permit}, \textit{dunno\/} or the name of another restriction to be
@@ -491,7 +497,8 @@ encountered scenarios are:
 
 \begin{itemize}
 
-    \item Checking \SPF{} records~\cite{openspf, Wikipedia-spf}.  \SPF{}
+    \item Checking \SPF{} records~\cite{openspf, Wikipedia-spf}.
+        \SPF{}\label{spf introduction}
         records specify which mail servers are allowed to send mail
         claiming to be from a particular domain.  The intention is to
         reduce spam from faked sender addresses,
@@ -607,7 +614,7 @@ The words \textit{connection\/} and \textit{mail\/} are often used
 interchangeably in this paper; in general the word used was chosen based on
 the context it appears in.
 
-\subsection{Other parsers}
+\subsection{Other Postfix log parsers}
 
 Ten other parsers have been reviewed in
 appendix~\refwithpage{other-parsers} as part of the background research for
@@ -695,13 +702,15 @@ most standard \SQL{} features (its lacks full foreign key support), has
 libraries available for most common programming languages, and a simple
 text based client allowing ad-hoc queries with minimal effort.
 
-Parsing in \LMA{} is hand-coded and requires major changes to the code to
-parse new log lines or extract additional data.  It does not appear to deal
-with any of the complications discussed in
-sections~\refwithpage{complications} and~\refwithpage{additional
-complications}.  The program fails to parse Postfix 2.2.x or 2.3.x log
-files; indeed it produces a number of warnings and no usable output.
-Parsing in \parsername{} is divided in two (see
+XXX IMPROVE THE NEXT PARAGRAPH BASED ON COMMENTS FROM CARL\@.
+
+Parsing in \LMA{} requires major changes to the code to parse new log lines
+or extract additional data.  It does not appear to deal with any of the
+complications discussed in sections~\refwithpage{complications}
+and~\refwithpage{additional complications}.  The program fails to parse
+Postfix 2.2 or 2.3 log files; indeed all it produces is a number of
+warning messages from the Perl interpreter, without any other output,
+useful or otherwise.  Parsing in \parsername{} is divided in two (see
 sections~\refwithpage{rules} and~\refwithpage{parsing-algorithm} for a more
 detailed explanation): parsing a new log line is a trivial matter of adding
 a new rule, but code changes may be required if new complications
@@ -712,11 +721,11 @@ complications}) must be dealt with or a new action is required
 \LMA{} does provide some simple reports (IP-STORY, FROM-STORY, DAILY-EMAIL
 and DAILY-REJECT); the author was unable to parse any logs with \LMA{}, so
 didn't have an opportunity to review the reports.  \parsername{} does not
-have any bundled reports, it delegates that task to a separate, dedicated
+produce any reports, it delegates that task to a separate, dedicated
 program.
 
-In summary \LMA{} appears to be a proof of concept, written to demonstrate
-the point of the paper (that having this information in an accessible
+In summary, \LMA{} appears to be a proof of concept, written to demonstrate
+the point of their paper (that having this information in an accessible
 fashion is useful to systems administrators), rather than a program
 designed to be extensible and useful in a production environment.
 
@@ -871,9 +880,9 @@ Each rule defines the following:
         on the right hand side.  The list of acceptable variable names is:
 
         \texttt{connection\_cols: client\_hostname, client\_ip, server\_ip,
-        \newline \hspace*{2em} server\_hostname} and \texttt{helo.\newline}
+        \newline \tab{} server\_hostname} and \texttt{helo.\newline}
         \texttt{result\_cols: sender, recipient, smtp\_code, message\_id,
-        \newline \hspace*{2em} pid\_regex, data} and \texttt{child.}
+        \newline \tab{} pid\_regex, data} and \texttt{child.}
 
     \item [result\_data, connection\_data] Sometimes rules need to supply a
         piece of data which isn't present in the log line: e.g.\ setting
@@ -953,12 +962,11 @@ fields:
         \begin{enumerate}
 
             \item Create \texttt{/etc/postfix/log\_helo.pcre}
-                containing:\newline
-                \hspace*{2em}\texttt{/./~~~~WARN~Logging~HELO}
+                containing:\newline \tab{}\texttt{/./~~~~WARN~Logging~HELO}
 
             \item Modify \texttt{smtpd\_data\_restrictions} in
                 \texttt{/etc/postfix/main.cf} to contain\newline
-                \hspace*{2em}\texttt{check\_helo\_access~/etc/postfix/log\_helo.pcre}
+                \tab{}\texttt{check\_helo\_access~/etc/postfix/log\_helo.pcre}
 
         \end{enumerate}
 
@@ -1358,23 +1366,34 @@ services, policy servers, or custom rejection messages.  To facilitate
 this, the parser's design separates parsing rules from parsing actions:
 adding new actions is difficult, but adding new rules to parse new
 rejection messages is trivial (and occurs much more frequently).  The
-implementation provides three programs to ease the process of adding new
-rules: \texttt{add-new-rule}, \texttt{edit-rule} and \texttt{logs2regexs}
-XXX NEED BETTER NAMES\@.
+implementation provides a program to ease the process of creating new rules
+from unparsed lines, based on the algorithm developed by Risto
+Vaarandi~\cite{risto-vaarandi} for \SLCT{}~\cite{slct-paper}.  The
+differences between the two algorithms will be outlines as part of the
+general explanation below.
 
-\texttt{add-new-rule} is the simplest of the three, it just starts the
-user's preferred editor with a template rule which the user modifies as
-required, and then inserts the new rule into the database.  The various
-fields have already been described in sections~\refwithpage{rule
-attributes},~\refwithpage{rule characteristics} and~\refwithpage{example
-rule}, and will not be repeated here.
+The core of the algorithm was developed by Risto Vaarandi, and is quite
+simple: log lines are generally created by substituting variable words into
+a fixed pattern, and analysis of the frequency with which each word occurs
+determines whether the word is fixed or variable.  This classification can
+be used to group similar log lines and generate a \regex{} to match each
+group of lines.
 
-\texttt{edit-rule} extracts a rule from the database, saves it in a human
-readable form, and runs the user's preferred editor for the user to change
-the rule as required.  Once the user is satisfied with the changes, the
-database will be updated appropriately.
+There are 4 steps in the algorithm:
 
-\texttt{logs2regexs} 
+\begin{description}
+
+    \item [Pre-process the file]
+
+        In the original algorithm the preprocessing stage was 
+
+    \item [Calculate the word frequency]
+
+    \item [XXX]
+
+    \item [Build regexs]
+
+\end{description}
 
 \subsection{Conclusion}
 
@@ -1913,10 +1932,10 @@ The actions:
         be cleaned up, entered in the database, and deleted from the state
         tables.
 
-    \item [SMTPD\_KILLED] Sometimes an event occurs which requires Postfix
-        to forcefully kill a \daemon{smtpd}; that \daemon{smtpd} processes'
-        active connection must be cleaned up, entered in the database, and
-        deleted from the state tables.
+    \item [SMTPD\_KILLED] Sometimes an \daemon{smtpd} is killed by a
+        signal~\cite{Wikipedia-unix-signals}; the active connection for
+        that \daemon{smtpd} must be cleaned up, entered in the database,
+        and deleted from the state tables.
 
     \item [SMTPD\_WATCHDOG] \daemon{smtpd} processes have a watchdog timer
         to deal with unusual situations --- after five hours the timer will
@@ -2772,19 +2791,19 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         AWStats will produce simple graphs for many different services, but
         supporting many different services without special purpose code
         restricts it to supporting the \LCD{}.  The data it will extract
-        from an \MTA{} log file is limited to: \newline \hspace*{2em}
-        time2, email, email\_r, host, host\_r, method, url, code and
-        bytesd.  \newline  There does not seem to be an explanation of
-        those fields in the documentation.  AWStats has no special purpose
-        code to deal with the intricacies of Postfix logs, in fact it
-        operates by coercing Postfix logs into Apache\footnote{The Apache
-        web server is the most popular HTTP server in use for the past 10
-        years; more information is available at
-        \url{http://httpd.apache.org/}} format log files, for analysis by
-        AWStats' HTTP log file parser.  The converting parser only deals
-        with a small portion of the log lines generated by Postfix, and
-        though it does correlate log lines by queueid, it does not deal
-        with any of the other complications described in this document.
+        from an \MTA{} log file is limited to: \newline \tab{} time2,
+        email, email\_r, host, host\_r, method, url, code and bytesd.
+        \newline  There does not seem to be an explanation of those fields
+        in the documentation.  AWStats has no special purpose code to deal
+        with the intricacies of Postfix logs, in fact it operates by
+        coercing Postfix logs into Apache\footnote{The Apache web server is
+        the most popular HTTP server in use for the past 10 years; more
+        information is available at \url{http://httpd.apache.org/}} format
+        log files, for analysis by AWStats' HTTP log file parser.  The
+        converting parser only deals with a small portion of the log lines
+        generated by Postfix, and though it does correlate log lines by
+        queueid, it does not deal with any of the other complications
+        described in this document.
 
         \url{http://awstats.sourceforge.net/} \newline
         \url{http://awstats.sourceforge.net/awstats.mail.html} \newline
@@ -2841,17 +2860,16 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         YAALA\@.  YAALA bundles a Postfix parser, which extracts the
         following fields from specific log lines:
 
-        \hspace*{2em}Aggregations: count (not explained), bytes (sum of
-        bytes transferred).\newline \hspace*{2em}Keyfields [sic]: date,
-        hour, sender, recipient, defer\_count, delay, incoming\_host,
-        outgoing\_host.
+        \tab{}Aggregations: count (not explained), bytes (sum of bytes
+        transferred).\newline \tab{}Keyfields [sic]: date, hour, sender,
+        recipient, defer\_count, delay, incoming\_host, outgoing\_host.
 
         YAALA provides an \SQL{} like mini-language used when generating
         the reports; sample reports can be seen at~\cite{yaala-samples}.
-        Example query: \newline \hspace*{2em} \texttt{requests BY file
-        WHERE host =\~{} Google}. \newline The mini-language is quite
-        limited and cannot be used to extract data for external use, merely
-        to create reports.
+        Example query: \newline \tab{} \texttt{requests BY file WHERE host
+        =\~{} Google}. \newline The mini-language is quite limited and
+        cannot be used to extract data for external use, merely to create
+        reports.
 
         YAALA as distributed does not attempt the in-depth parsing
         explained in this document, and implementing such parsing within
@@ -3046,6 +3064,8 @@ file size vs number lines factor table}
 
 \label{rule ordering graphs}
 
+XXX CAN I PUT \% ON THE Y AXIS\@?
+
 \showgraph{build/plot-normal-shuffle-factor.ps}{Percentage increase of
 shuffled over normal}{percentage increase of shuffled over normal}
 
@@ -3066,17 +3086,17 @@ log lines is quite different to normal, resulting in different performance
 characteristics.
 
 The mail loop was set up by a user modifying his mail forwarding to:
-\newline \hspace*{2em}\texttt{$\backslash$username, username@domain}
-\newline This instructs Postfix to deliver the mail to the local user, and
-also forward it to the remote address; this is generally not a problem
-except that the remote address in this case is the user's address, creating
-an infinite loop.  To prevent this happening Postfix examines the
-Delivered-To header in the mail, and if the mail has already been delivered
-to the current address it is bounced back to the sender with the error
-message \texttt{mail forwarding loop for username@domain}.  Ordinarily this
-works well, but unfortunately in this case the user noticed they had not
-received any mail in a while and opted to send a test mail to themselves,
-causing a loop not caught by Postfix as described below.
+\newline \tab{}\texttt{$\backslash$username, username@domain} \newline This
+instructs Postfix to deliver the mail to the local user, and also forward
+it to the remote address; this is generally not a problem except that the
+remote address in this case is the user's address, creating an infinite
+loop.  To prevent this happening Postfix examines the Delivered-To header
+in the mail, and if the mail has already been delivered to the current
+address it is bounced back to the sender with the error message
+\texttt{mail forwarding loop for username@domain}.  Ordinarily this works
+well, but unfortunately in this case the user noticed they had not received
+any mail in a while and opted to send a test mail to themselves, causing a
+loop not caught by Postfix as described below.
 
 \begin{enumerate}
 
@@ -3113,7 +3133,7 @@ causing a loop not caught by Postfix as described below.
         Log lines are added by \daemon{local}, \daemon{qmgr} (twice) and
         \daemon{cleanup}.
 
-    \item GOTO 2.
+    \item GOTO 2.  XXX IMPROVE THIS, IT'S RUBBISH\@.
 
 \end{enumerate}
 
