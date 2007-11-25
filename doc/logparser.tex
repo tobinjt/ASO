@@ -67,16 +67,22 @@
     \hspace*{2em}%
 }
 
+% This may keep hyperref happy about the Abstract entry in the table of
+% contents.
+\newcounter{dummy}
+
 \begin{document}
 
 % Pull in the acronyms early, so they can be used throughout the text.
 \input{logparser-acronyms.tex}
 
 \title{Parsing Postfix log files}
-\author{John Tobin \\ School of Computer Science and Statistics \\ 
+\author{John Tobin \\ School of Computer Science and Statistics \\
 Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 \maketitle
 
+\refstepcounter{dummy}
+\addcontentsline{toc}{section}{Abstract}
 \begin{abstract}
 
     Parsing Postfix logs is much more difficult than it first appears, but
@@ -147,15 +153,16 @@ beyond those conceived of by the author.
 Section~\ref{background} provides background information useful in
 understanding the paper, parser and algorithm.
 
-Section~\ref{database schema} describes the database schema used by the
-parser, explaining in detail the tables used for storing the data gleaned
-from the logs and the table that stores the rules.
+This algorithm requires a database for storing both the rules used when
+parsing and the results gleaned from parsing.  The database schema used is
+described in section~\ref{database schema}, explaining in detail the tables
+used for storing the data gleaned from the logs and the table that stores
+the rules.
 
-Section~\ref{rules} discusses the parsing rules in detail, describing the
-table in the database used to hold the rules and explaining their
-structure, referring to an example rule and sample data it matches
-successfully against.  This section concludes with a discussion of rule
-efficiency concerns.
+Section~\ref{rules} discusses the parsing rules in detail, explaining the
+purpose and usage of each field in a rule, referring to an example rule and
+sample data it matches successfully against.  This section concludes with a
+discussion of rule efficiency concerns.
 
 Section~\ref{parsing-algorithm} contains the meat of the paper, describing
 a naive parsing algorithm and the complications encountered which shaped
@@ -168,7 +175,8 @@ Section~\ref{parsing coverage} analyses the coverage the parser achieves
 over a set of 93 log files taken from a mail server handling mail for over
 1000 users.  Coverage is described both in terms of the fraction of lines
 parsed and the fraction of mails and connections successfully reconstructed
-by the parsing algorithm.
+by the parsing algorithm, including dealing with false negatives and a
+discussion of the difficulties in identifying false positives.
 
 Section~\ref{limitations-improvements} lists the limitations of the
 algorithm, then suggests some ways of dealing with the limitations, with
@@ -359,7 +367,11 @@ CREATE TRIGGER ON INSERT INTO results
         differences between British English, American English and
         Australian English).  A good introduction to \SQL{} can be found
         at~\cite{sql-for-web-nerds}, others
-        are~\cite{w3schools-sql-tutorial, sqlcourse.com}.
+        are~\cite{w3schools-sql-tutorial, sqlcourse.com}.  Depending on the
+        database in use there may be tools available which reduce or remove
+        the requirement to know \SQL{}; for SQLite (the default database
+        used by the implementation) there are several
+        available~\cite{sqlite-guis}.
 
 \end{enumerate}
 
@@ -382,9 +394,10 @@ beneficial in protecting against spam and viruses.\footnote{This violates
 the principle of \textit{Be liberal in what you accept, and conservative in
 what you send\/} from \RFC{}~760~\cite{rfc760}, but unfortunately that
 principle was written in a friendlier time. XXX CARL WANTS ME TO SUGGEST A
-NEW PRINCIPAL.}  A typical \SMTP{} conversation resembles the following
-(the lines starting with a three digit number are sent by the server, all
-other lines are sent by the client):
+NEW PRINCIPAL AND POSSIBLY AN APPENDIX OF SPAM RELATED ISSUES\@.}  A
+typical \SMTP{} conversation resembles the following (the lines starting
+with a three digit number are sent by the server, all other lines are sent
+by the client):
 
 \begin{verbatim}
 220 smtp.example.com ESMTP
@@ -403,22 +416,46 @@ QUIT
 221 2.0.0 Bye
 \end{verbatim}
 
+An example deviation from the protocol:
+
+\begin{verbatim}
+220 smtp.example.com ESMTP
+HELO client.example.com
+250 smtp.example.com
+MAIL FROM: Alice N. Other alice@example.com
+501 5.1.7 Bad sender address syntax
+RCPT TO: Bob in Sales/Marketing bob@example.com
+503 5.5.1 Error: need MAIL command
+DATA
+503 5.5.1 Error: need RCPT command
+Message headers and body sent here.
+.
+502 5.5.2 Error: command not recognized
+QUIT
+221 2.0.0 Bye
+\end{verbatim}
+
+This client is so poorly written that not only does it present the sender
+and recipient addresses improperly, it ignores the error messages returned
+by the server and carries on regardless.
+
 A detailed description of \SMTP{} is beyond the scope of this document:
 introductory guides can be found at~\cite{smtp-intro-01, smtp-intro-02}.
 
 \subsection{Postfix}
 
-Postfix is a highly configurable, high performance, secure and scalable
-Mail Transport Agent.  It features extensive and extensible optional
-anti-spam restrictions, allowing an administrator to deploy those
-restrictions which they judge suitable for their site's needs, rather than
-a fixed set chosen by Postfix's author.  These restrictions can be
-selectively applied, combined and bypassed on a per-client, per-recipient
-or per-sender basis, allowing varying levels of severity and/or
-permissiveness.  Postfix leverages simple lookup tables to support
-arbitrarily complicated user-defined sequences of restrictions and
-exceptions, with policy servers\footnote{Policy servers will be explained
-in section~\refwithpage{policy servers}.} as the ultimate in flexibility.
+Postfix is a \MTA{} with the following design aims (in order of
+importance): security, flexibility of configuration, scalability, and high
+performance.  It features extensive, extensible, optional anti-spam
+restrictions, allowing an administrator to deploy those restrictions which
+they judge suitable for their site's needs, rather than a fixed set chosen
+by Postfix's author.  These restrictions can be selectively applied,
+combined and bypassed on a per-client, per-recipient or per-sender basis,
+allowing varying levels of severity and/or permissiveness.  Postfix
+leverages simple lookup tables to support arbitrarily complicated
+user-defined sequences of restrictions and exceptions, with policy
+servers\footnote{Policy servers will be explained in
+section~\refwithpage{policy servers}.} as the ultimate in flexibility.
 Administrators can also supply their own rejection messages to make it
 clear to senders why exactly their mail was rejected.  Unfortunately this
 flexibility has a cost: complexity in the logs generated.  While it is easy
@@ -594,19 +631,28 @@ of (hopefully safe and reasonable) assumptions:
 
 In some ways this task is similar to reverse engineering or replicating a
 black box program based solely on its inputs and outputs.  Although the
-source code is available, reading and understanding it would require a
-significant investment of time:
+source code is available,\footnote{Reading and understanding the source
+code would require a significant investment of time; the source code for
+Postfix 2.4.6 is 16MB.} there are advantages to treating Postfix as a black
+box while developing the parser:
 
-\begin{tabular}[]{llll}
+\begin{itemize}
 
-    Postfix 2.2.11  & Postfix 2.3.8   & Postfix 2.4.0 &                   \\
-    71548           & 82224           & 83965         & lines of code     \\
-    60962           & 67146           & 68675         & lines of comments \\
-    16117           & 17647           & 18069         & lines are blank   \\
-    148627          & 167017          & 170709        & lines in total    \\
+    \item The parser is developed using real world logs rather than the
+        idealised logs someone would naturally envisage reading the source
+        code.
 
-\end{tabular}
+    \item The source code cannot accurately communicate the variety of
+        orderings in which log lines are written to the log file, as
+        process scheduling interferes with it.
 
+    \item The parser acts as a second source of information, with the
+        information gathered from empirical evidence.  An interesting
+        project would be to compare the empirical knowledge inherent in the
+        parsing algorithm with the documentation and source code of
+        Postfix.
+
+\end{itemize}
 
 \subsection{Conventions used in the paper}
 
@@ -703,6 +749,14 @@ libraries available for most common programming languages, and a simple
 text based client allowing ad-hoc queries with minimal effort.
 
 XXX IMPROVE THE NEXT PARAGRAPH BASED ON COMMENTS FROM CARL\@.
+
+XXX REFER TO THE RULES/PARSER SPLIT ELSEWHERE RATHER THAN EXPLAINING IT
+AGAIN HERE\@.
+
+XXX``CATEGORISE THE COMPLICATIONS SECTIONS IN WORDS HERE'' --- CARL\@.
+
+XXX DISCUSS THE OUTPUT, OR LACK THEREOF, IN GREATER DETAIL, AFTER RERUNNING
+\LMA{}\@.
 
 Parsing in \LMA{} requires major changes to the code to parse new log lines
 or extract additional data.  It does not appear to deal with any of the
@@ -955,7 +1009,7 @@ fields:
         occasionally changes during a connection, presumably because spam
         or virus senders think it's a good idea.  By default Postfix only
         logs the HELO when it rejects an \SMTP{} command, but it is quite
-        easy to rectify this: 
+        easy to rectify this:
 
 \label{logging helo}
 
@@ -1184,7 +1238,7 @@ full details see~\cite{reject-unknown-sender-domain}).
 This rule would match the following log line:
 
 \begin{verbatim}
-NOQUEUE: reject: RCPT from example.com[10.1.1.1]: 
+NOQUEUE: reject: RCPT from example.com[10.1.1.1]:
   550 <foo@example.com>: Sender address rejected:
   Domain not found; from=<foo@example.com>
   to=<info@example.net> proto=SMTP
@@ -1747,7 +1801,7 @@ due to forwarding, or internally generated by Postfix.  Local submission is
 the simplest case: a queueid is assigned immediately and the sender address
 is logged (action: pickup; flowchart:~2).
 
-\SMTP{} is more complicated: 
+\SMTP{} is more complicated:
 
 \begin{enumerate}
 
@@ -1849,8 +1903,8 @@ indications:
         cases the new mail is marked as a child of the parent.  The log
         line in question is:
 
-        \texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline 
-        delay=0, status=sent (forwarded as 56F5B43FD)}
+        \texttt{3FF7C4317: to=<username@example.com>, relay=local,
+        \newline delay=0, status=sent (forwarded as 56F5B43FD)}
 
         This second indicator always occurs for re-injected mail but
         typically occurs after the first indicator explained above.  This
@@ -1895,13 +1949,13 @@ finally be described:
 \end{itemize}
 
 A parent mail can have multiple children, which may be delivered before or
-after the parent mail.  
+after the parent mail.
 
 \subsection{Actions in detail}
 
 \label{actions-in-detail}
 
-Each action is passed the same arguments: 
+Each action is passed the same arguments:
 
 \begin{description}
 
@@ -2471,6 +2525,8 @@ required to solve problems increased with each successive problem.
 
 \label{parsing coverage}
 
+XXX ADD SOMETHING ABOUT FALSE POSITIVES AND NEGATIVES\@.
+
 \subsection{Introduction}
 
 The discussion of the parser's coverage of Postfix log files is separated
@@ -2491,7 +2547,7 @@ Parsing a log line is a three stage process:
 \begin{enumerate}
 
     \item Check if there are any rules for the program which produced the
-        log line; if not then skip the line.  
+        log line; if not then skip the line.
 
     \item Try each rule until a matching rule is found.
 
@@ -2734,7 +2790,7 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         Sawmill can perform Postfix analysis on any platform, including
         Window, Linux, FreeBSD, OpenBSD, Mac OS, Solaris, other UNIX, and
         more.\/}
-        
+
         Sawmill is a general purpose commercial product which parses 687
         log file formats (correct as of 2007/04/15) and produces reports.
         Its data extraction facilities are quite limited, though it does
@@ -3221,7 +3277,7 @@ highest number of rules.  \daemon{smtpd} log lines are distributed across
 rules much more evenly than the log lines of \daemon{qmgr}, \daemon{local},
 \daemon{cleanup} or \daemon{pickup}, so the average number of rules
 required to parse a \daemon{smtpd} log line is much higher that the average
-number required to parse other log lines.  
+number required to parse other log lines.
 
 These two characteristics combine to reduce the average number or rules
 required to parse a log line when there is a mail loop, as shown by the
