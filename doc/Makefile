@@ -253,11 +253,11 @@ check:
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
-	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{]/; p;' logparser-acronyms.tex | grep -f - -n logparser.tex
+	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{s]/; p;' logparser-acronyms.tex | grep -f - -n logparser.tex
 
 .PHONY: todo
 todo:
-	grep -E 'TODO|XXX' *.tex *.bib
+	grep -n -E 'TODO|XXX' *.tex *.bib
 
 2up: logparser-2up.ps logparser-2up.pdf
 

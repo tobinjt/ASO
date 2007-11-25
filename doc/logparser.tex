@@ -1069,9 +1069,8 @@ fields in the rule are used when matching and performing the action (the
 details of the table containing the rules have already been described in
 section~\refwithpage{rule attributes},).  This section continues with a
 discussion of rule efficiency concerns, referring to the graphs in
-section~\refwithpage{graphs}, and finishes with an explanation of how to
-add or edit rules, including the algorithm used to generate a new \regex{}
-from unparsed lines.
+section~\refwithpage{graphs}, and finishes with an explanation of the
+algorithm used to generate a new \regex{} from unparsed lines.
 
 
 \subsection{Rule characteristics}
@@ -1346,54 +1345,126 @@ performance increase.
 
 Perl compiles the original \regex{} into an internal representation,
 optimising the \regex{} to improve the speed of matching, but this
-compilation and optimisation takes CPU time.  Perl automatically caches
-static \regexs{}, but dynamic \regexs{} need to be explicitly compiled and
-cached.  Graph~\refwithpage{normal regex vs discard regex} shows execution
-times with and without caching the \regex{}.  Caching the compiled
-\regexs{} is obviously far more efficient; graph~\refwithpage{normal regex
-vs discarded regex factor} shows the percentage execution time increase
-when not caching each \regex{}.
+compilation and optimisation takes CPU time; far more CPU time, in fact,
+than the actual matching takes.  Perl automatically caches static
+\regexs{}, but dynamic \regexs{} need to be explicitly compiled and cached.
+Graph~\refwithpage{normal regex vs discard regex} shows execution times
+with and without caching the \regex{}.  Caching the compiled \regexs{} is
+obviously far more efficient; graph~\refwithpage{normal regex vs discarded
+regex factor} shows the percentage execution time increase when not caching
+each \regex{}.
 
 Caching the compiled \regexs{} is quite simple, and is the single most
 effective optimisation implemented in the parser.
 
 \subsection{Creating new rules}
 
-The logs produced by Postfix differ from installation to installation, as
-administrators have the freedom to choose the subset of available
+The logs produced by Postfix differ from installation to installation,
+because administrators have the freedom to choose the subset of available
 restrictions which suits their needs, including using different \RBL{}
-services, policy servers, or custom rejection messages.  To facilitate
-this, the parser's design separates parsing rules from parsing actions:
-adding new actions is difficult, but adding new rules to parse new
-rejection messages is trivial (and occurs much more frequently).  The
-implementation provides a program to ease the process of creating new rules
-from unparsed lines, based on the algorithm developed by Risto
-Vaarandi~\cite{risto-vaarandi} for \SLCT{}~\cite{slct-paper}.  The
-differences between the two algorithms will be outlines as part of the
+services, policy servers, or custom rejection messages.  To facilitate easy
+parsing of new log lines, the parser's design separates parsing rules from
+parsing actions: adding new actions is difficult, but adding new rules to
+parse new rejection messages is trivial (and also occurs much more
+frequently).  The implementation provides a program to ease the process of
+creating new rules from unparsed lines, based on the algorithm developed by
+Risto Vaarandi~\cite{risto-vaarandi} for his \SLCT{}~\cite{slct-paper}.
+The differences between the two algorithms will be outlined as part of the
 general explanation below.
 
-The core of the algorithm was developed by Risto Vaarandi, and is quite
-simple: log lines are generally created by substituting variable words into
-a fixed pattern, and analysis of the frequency with which each word occurs
-determines whether the word is fixed or variable.  This classification can
-be used to group similar log lines and generate a \regex{} to match each
-group of lines.
+The core of the algorithm is quite simple: log lines are generally created
+by substituting variable words into a fixed pattern, and analysis of the
+frequency with which each word occurs can be used to determine whether the
+word is fixed or variable.  This classification can be used to group
+similar log lines and generate a \regex{} to match each group of lines.
 
 There are 4 steps in the algorithm:
 
 \begin{description}
 
-    \item [Pre-process the file]
+    \item [Pre-process the file]  The new algorithm leverages the knowledge
+        gained while writing rules and performs a large number of
+        substitutions on the input lines, replacing commonly occurring
+        variable terms (e.g.\ email addresses, \IP{} addresses, the
+        standard start of rejection messages, etc.) with \regex{} keywords
+        which the parser will expand when it loads the rule (see the
+        \regex{} entry in section~\refwithpage{rule attributes}).  The
+        purpose of this phase is to utilise the existing knowledge to
+        create more accurate \regexs{}.  The new log lines are written to a
+        temporary file, which all subsequent stages use instead of the
+        original input file.
 
-        In the original algorithm the preprocessing stage was 
+        In the original algorithm the purpose of the preprocessing stage
+        was to reduce the memory consumption of the program.  In the first
+        pass it generated a hash from a small range of values for each word
+        of each line, incrementing a counter for each hash.  The counters
+        will later be used to filter out words: if the word's hash does not
+        have a high frequency, the word itself cannot have a high
+        frequency, and there is no need to maintain a counter for it,
+        reducing the number of counters and thus the programme's memory
+        consumption.
 
-    \item [Calculate the word frequency]
+    \item [Calculate word frequencies]  The position of words within a line
+        is important: a common word does not indicate similarity between
+        lines unless it occupies the same position within both
+        lines.\footnote{If a variable term within a line contains spaces,
+        it will appear to the algorithm as two words rather than one.  This
+        will alter the position of subsequent words, so a word occurring in
+        different positions in two log lines may indicate similarity, but
+        the algorithm does not attempt to deal with this possibility.}  The
+        algorithm maintains a counter for each \textit{(word, word's
+        position within the line)\/} tuple, incrementing it each time that
+        word is occurs in that position.
 
-    \item [XXX]
+        The original algorithm only maintains counters for words whose hash
+        result has a high frequency from the previous phase; this reduces
+        the number of counters maintained by the algorithm, reducing the
+        memory requirements of the algorithm.  The modified algorithm omits
+        this check because the majority of unique or infrequently occurring
+        words will have been substituted with keywords during the first
+        phase, vastly reducing the number of tuples to maintain counters
+        for.
 
-    \item [Build regexs]
+    \item [Classify words based on their frequency]  The frequency of each
+        \textit{(word, word's position within the line)\/} tuple is
+        checked: if its frequency is greater than the threshold supplied by
+        the user (1\% of all lines is generally a good starting point) it
+        is classified as a fixed word, otherwise it is classified as a
+        variable term.  Variable terms are replaced by \texttt{.*}, which
+        means to match zero or more of any character.  The words are
+        reassembled to produce a \regex{} matching the line, and a counter
+        is maintained for each \regex{}.
+
+    \item [Build regexs]  Contiguous sequences of \texttt{.*} in the newly
+        reassembled \regexs{} are collapsed to a single \texttt{.*}; any
+        resulting duplicate \regexs{} are combined, and their counters
+        summed.  If the frequency of a \regex{} is lower than the threshold
+        supplied by the user the \regex{} is discarded.\footnote{This is a
+        second, independent threshold, but once again 1\% of input lines is
+        a good starting point; obviously the threshold depends on the
+        number and type of input lines.}  The new \regexs{} are printed for
+        the user to add to the database, either as new rules or merged into
+        the \regexs{} of existing rules; the counter for each \regex{} is
+        also printed, giving the user an indication of how many of the
+        input lines that \regex{} should match.  Discarding \regexs{} will
+        result in some of the input lines not being matched; this utility
+        should be run again once the unmatched lines have been isolated by
+        running the parser, including the new \regexs{}, with the same
+        input which produced the original set of unparsed lines.
 
 \end{description}
+
+A second utility is also provided which reads a list of new \regexs{} and
+the input given to the first utility.  It tries to match each input line
+against each \regex{}, counting the number of lines which match each
+\regex{}, warning the user if an input line is matched by more than one
+\regex{}, and additionally warning if an input line is not matched by any
+\regex{}.  It displays a summary of how many input lines each \regex{}
+matched, comparing it to the expected number of matches; this provides the
+user with an easy method of checking if the \regexs{} produced by the first
+utility are correctly matching the input lines they are based upon.  A
+future version of this utility will also group input lines by \regex{}, so
+the user can tweak the \regexs{} if required.
 
 \subsection{Conclusion}
 
@@ -1420,9 +1491,8 @@ This section dealt with the rules used in parsing Postfix log files:
         rules, with reference to the graphs in
         appendix~\refwithpage{graphs}.
 
-    \item This section finished with an explanation of how to add or edit
-        rules, including the algorithm used to generate a new \regex{} from
-        unparsed lines.
+    \item This section finished with an explanation of the algorithm used
+        to generate a new \regex{} from unparsed lines.
 
 \end{itemize}
 
@@ -1627,9 +1697,11 @@ covers the most common paths only; there are additional, uncommon paths
 which are excluded for the sake of clarity, but are described in
 section~\refwithpage{additional complications}.
 
+XXX SPLIT THIS IMAGE INTO TWO\@; IT'S UNREADABLE NOW, IT'S SO BIG\@.
+
 % This is very likely to move around as the flow chart is as big as
 % possible, so if any preceding text changes the flow chart may end up on
-% the next page, which may not be a bad thing, maybe.  What woould be a bad
+% the next page, which may not be a bad thing, maybe.  What would be a bad
 % thing is the \clearpage seems to cause a blank page sometimes, if the
 % image is just slightly too big.
 \showgraph{build/logparser-flow-chart.ps}{Parser flow chart}{flow chart
@@ -1851,7 +1923,7 @@ Each action is passed the same arguments:
 
     \item [rule] The matching rule.
 
-    \item [matches] The fields in the line captured by the rule's regex.
+    \item [matches] The fields in the line captured by the rule's \regex{}.
 
 \end{description}
 
@@ -3428,6 +3500,14 @@ parser.
     expanded address space, allowing many more computers to use the
     Internet simultaneously.  IPv4 and IPv6 will coexist for many years to
     come as existing networks transition from the former to the latter.
+}}
+
+\glossary{name={hash},description={
+    A hashing function transforms a string of characters to a number.
+    There are many possible uses for the resulting number: a common usage
+    is to maintain a data structure indexed by strings in an efficient
+    manner.  A full description is beyond the scope of this paper, further
+    information can be found at~\cite{hash-functions}.
 }}
 
 \end{document}
