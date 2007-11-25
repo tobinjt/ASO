@@ -19,15 +19,22 @@ all: logparser.pdf
 		(latex -interaction=nonstopmode "$<" || rm -f "$@") | tee "$@.out"; \
 	fi; \
 	makeindex -s "$$BASE.ist" -t "$$BASE.glg" -o "$$BASE.gls" "$$BASE.glo";
+	touch "$$BASE.gls.old"
 	echo; echo; echo;
-	# Rebuild to acronym list; see foo.alg for errors
+	# Rebuild the acronym list; see foo.alg for errors
 	set -e; \
 	BASE=$$( basename "$@" .dvi ); \
 	makeindex -s "$$BASE.ist" -t "$$BASE.alg" -o "$$BASE.acn" "$$BASE.acr";
+	touch "$$BASE.acn.old"
 	echo; echo; echo;
-	# Include the new glossary
-	(latex -interaction=nonstopmode "$<" || rm -f "$@") | tee "$@.out"
+	# Include the new glossary and acronyms if anything has changed.
+	BASE=$$( basename "$@" .dvi ); \
+	(cmp -s "$$BASE.gls" "$$BASE.gls.old" && cmp -s "$$BASE.acn" "$$BASE.acn.old") \
+		|| (latex -interaction=nonstopmode "$<" || rm -f "$@") | tee "$@.out"
 	[ -f "$@" ]
+	BASE=$$( basename "$@" .dvi ); \
+	cp -p "$$BASE.gls" "$$BASE.gls.old"; \
+	cp -p "$$BASE.acn" "$$BASE.acn.old";
 	# Rebuild the index, if there is one; note this is done after the glossary 
 	# and acronym lists are pulled in so that they can have index entries too.
 	# Run bibtex to extract the right entries from logparser-bibliography.bib
