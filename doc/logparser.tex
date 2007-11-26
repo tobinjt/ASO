@@ -491,15 +491,28 @@ earlier rejections properly; a side benefit of this delay is that Postfix
 has more information available when logging the rejection.\footnote{The
 \texttt{smtpd\_delay\_reject} parameter in Postfix's configuration controls
 this behaviour.}  Postfix uses simple lookup tables as the deciding factor
-for some restrictions, e.g.\ XXX IMPROVE THIS EXPLANATION OR REMOVE IT \\
+for some restrictions, e.g.\newline
 \tab{}\texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
-\footnote{\texttt{cidr}~\cite{cidr_table} is the type of the lookup table.}
-\newline checks whether the \IP{} address of the connected client matches
-the left hand side of each line in the file and will return the right hand
-side of the first matching line.  Other restrictions determine their result
-in different ways, e.g.\ \texttt{reject\_rbl\_client rbl.example.com}
-checks whether the \IP{} address of the client is present in the listed
-\RBL{}\@.
+\newline The line above can be broken down as follows:
+
+\begin{description}
+
+    \item [check\_client\_access] The name of the restriction to evaluate.
+
+    \item [cidr] The type of the lookup table.
+
+    \item [/etc/postfix/client\_access] The file containing the lookup
+        table.
+
+\end{description}
+
+check\_client\_access checks whether the \IP{} address of the connected
+client matches the left hand side of each line in the file and returns the
+right hand side of the first matching line.  Other restrictions determine
+their result by consulting external sources, e.g.\
+\texttt{reject\_rbl\_client rbl.example.com} checks whether the \IP{}
+address of the client is present in the listed \RBL{}, rejecting the
+command if the client is listed.
 
 Each restriction is evaluated to produce a result of \textit{reject},
 \textit{permit}, \textit{dunno\/} or the name of another restriction to be
@@ -748,29 +761,16 @@ most standard \SQL{} features (its lacks full foreign key support), has
 libraries available for most common programming languages, and a simple
 text based client allowing ad-hoc queries with minimal effort.
 
-XXX IMPROVE THE NEXT PARAGRAPH BASED ON COMMENTS FROM CARL\@.
-
-XXX REFER TO THE RULES/PARSER SPLIT ELSEWHERE RATHER THAN EXPLAINING IT
-AGAIN HERE\@.
-
-XXX``CATEGORISE THE COMPLICATIONS SECTIONS IN WORDS HERE'' --- CARL\@.
-
 XXX DISCUSS THE OUTPUT, OR LACK THEREOF, IN GREATER DETAIL, AFTER RERUNNING
 \LMA{}\@.
 
 Parsing in \LMA{} requires major changes to the code to parse new log lines
 or extract additional data.  It does not appear to deal with any of the
-complications discussed in sections~\refwithpage{complications}
-and~\refwithpage{additional complications}.  The program fails to parse
-Postfix 2.2 or 2.3 log files; indeed all it produces is a number of
-warning messages from the Perl interpreter, without any other output,
-useful or otherwise.  Parsing in \parsername{} is divided in two (see
-sections~\refwithpage{rules} and~\refwithpage{parsing-algorithm} for a more
-detailed explanation): parsing a new log line is a trivial matter of adding
-a new rule, but code changes may be required if new complications
-(sections~\refwithpage{complications} and~\refwithpage{additional
-complications}) must be dealt with or a new action is required
-(section~\refwithpage{actions-in-detail}).
+complications discussed in sections~\refwithpage{complications} (initial
+complications) and~\refwithpage{additional complications} (additional
+complications).  The program fails to parse Postfix 2.2 or 2.3 log files;
+indeed all it produces is a number of warning messages from the Perl
+interpreter, without any other output, useful or otherwise.
 
 \LMA{} does provide some simple reports (IP-STORY, FROM-STORY, DAILY-EMAIL
 and DAILY-REJECT); the author was unable to parse any logs with \LMA{}, so
@@ -1730,15 +1730,9 @@ child mail will be created, delivered and entirely finished with
 coming from an unknown origin cannot be entered into the database when
 their final log line is parsed; instead they must be marked as ready for
 entry and subsequently entered by the parent mail once it has been
-identified.  Quite apart from identifying mail injected in an unknown
-fashion, or bugs in the parser, unknown origin mails need to be marked as
-such because they lack some data present in the parent mail; they must copy
-that data from their parent before being entered in the database.  The
-effect of this complication upon the algorithm is discussed more fully in
-section~\refwithpage{tracking re-injected mail}.
+identified.
 
-XXX FIGURE OUT IF I NEED TO COPY DATA ANY MORE, AND DOCUMENT IT IF SO\@.
-
+XXX MAYBE REMOVE THE NEWPAGE BELOW WHEN I'VE SPLIT THE FLOW CHART\@.
 
 \newpage
 \subsection{Flow chart}
@@ -1926,9 +1920,8 @@ finally be described:
         only its parent should refer to it.
 
     \item If the mail is a child mail then it has already been tracked
-        (action: commit; flowchart:~20): the data is cleaned up, missing
-        data is copied from its parent if necessary, and the child is
-        entered in the database (flowchart:~21), then deleted from the
+        (action: commit; flowchart:~20): the data is cleaned up, the child
+        is entered in the database (flowchart:~21), then deleted from the
         state tables (flowchart:~22).  The child mail will be removed from
         the parent mail's list of children (flowchart:~23); if this is the
         last child and the parent has also been entered in the database the
