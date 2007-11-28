@@ -72,8 +72,7 @@ all: logparser.pdf
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
 logparser.dvi: logparser.deps logparser.bbl logparser-acronyms.tex
-logparser.deps: build/logparser-flow-chart.ps \
-				build/plot-cached-discarded.ps build/plot-cached-discarded-factor.ps  \
+logparser.deps: build/plot-cached-discarded.ps build/plot-cached-discarded-factor.ps  \
 				build/plot-normal-shuffle-reverse.ps build/plot-normal-shuffle-factor.ps  \
 				build/plot-normal-reverse-factor.ps build/plot-normal-filesize-numlines-factor.ps \
 				build/plot-normal-filesize-numlines.ps build/plot-log22-distribution-by-rule.ps \
@@ -85,7 +84,9 @@ logparser.deps: build/logparser-flow-chart.ps \
 				build/stats-normal-shuffle-reverse-include.tex \
 				build/plot-log22-distribution-versus-rule-count-factor.ps \
 				build/plot-log22-log-lines.ps \
-				build/plot-log22-rules.ps
+				build/plot-log22-rules.ps \
+				build/logparser-flow-chart-part-1.ps \
+				build/logparser-flow-chart-part-2.ps
 	touch "$@"
 
 # Rebuild the bibtex db whenever the input changes.
@@ -96,7 +97,7 @@ logparser.bbl: logparser-bibliography.bib logparser-bibliography-style.bst
 	fi
 	bibtex $$( basename "$@" .bbl ) || (rm -f "$@"; false);
 
-build/logparser-flow-chart.ps: logparser-flow-chart.dot
+build/logparser-flow-chart-%.ps: logparser-flow-chart-%.dot
 	dot -o "$@" -Tps -x "$<"
 
 # graph dependencies

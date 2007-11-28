@@ -1732,28 +1732,29 @@ their final log line is parsed; instead they must be marked as ready for
 entry and subsequently entered by the parent mail once it has been
 identified.
 
-XXX MAYBE REMOVE THE NEWPAGE BELOW WHEN I'VE SPLIT THE FLOW CHART\@.
-
-\newpage
 \subsection{Flow chart}
 
 \label{flow-chart}
 
-Figure~\ref{flow chart image} shows the paths the data representing a
-mail/connection can take through the parser algorithm.  The flow chart
-covers the most common paths only; there are additional, uncommon paths
-which are excluded for the sake of clarity, but are described in
-section~\refwithpage{additional complications}.
-
-XXX SPLIT THIS IMAGE INTO TWO\@; IT'S UNREADABLE NOW, IT'S SO BIG\@.
+Figures~\refwithpage{flow chart image part 1} and~\refwithpage{flow chart
+image part 2} shows the paths the data representing a mail/connection can
+take through the parser algorithm.  The flow chart covers the most common
+paths only; there are additional, uncommon paths which are excluded for the
+sake of clarity, but are described in section~\refwithpage{additional
+complications}.
 
 % This is very likely to move around as the flow chart is as big as
 % possible, so if any preceding text changes the flow chart may end up on
 % the next page, which may not be a bad thing, maybe.  What would be a bad
 % thing is the \clearpage seems to cause a blank page sometimes, if the
 % image is just slightly too big.
-\showgraph{build/logparser-flow-chart.ps}{Parser flow chart}{flow chart
-image}
+
+\showgraph{build/logparser-flow-chart-part-1.ps}{Parser flow chart part
+1}{flow chart image part 1}
+
+\showgraph{build/logparser-flow-chart-part-2.ps}{Parser flow chart part
+2}{flow chart image part 2}
+
 \clearpage
 
 \subsection{Full algorithm}
@@ -1841,21 +1842,21 @@ All four are handled in exactly the same way:
 \begin{enumerate}
 
     \item Postfix will log the sender and recipient addresses separately
-        (action: save\_by\_queueid; flowchart:~10).
+        (action: save\_by\_queueid; flowchart:~9).
 
     \item Sometimes mail is re-injected and the child mail needs to be
-        tracked by the parent mail (action: track; flowchart:~11) ---
+        tracked by the parent mail (action: track; flowchart:~10) ---
         section~\refwithpage{tracking re-injected mail} discusses this in
         detail.
 
     \item Eventually the mail will be delivered, bounced, or deleted by the
-        administrator (action: commit; flowchart:~13).  This is the last
+        administrator (action: commit; flowchart:~12).  This is the last
         log line for this particular mail (though it may be indirectly
         referred to if it was re-injected).  If it is neither parent nor
         child of re-injection the data is cleaned up and entered in the
-        database (flowchart:~15), then deleted from the state tables
-        (flowchart:~16).  Re-injected mails are described in
-        section~\refwithpage{tracking re-injected mail}.
+        database (flowchart:~14), then deleted from the state tables.
+        Re-injected mails are described in section~\refwithpage{tracking
+        re-injected mail}.
 
 \end{enumerate}
 
@@ -1888,7 +1889,7 @@ indications:
 
     \item Local delivery re-injects the mail and logs a relayed delivery
         rather than delivering directly to a mailbox or program as it
-        usually would (action: track; flowchart:~11).\footnote{Relayed
+        usually would (action: track; flowchart:~10).\footnote{Relayed
         delivery is performed by the \SMTP{} client; local delivery means
         local to the server, i.e.\ an address the server is final
         destination for.} In this case the mail may already have been
@@ -1914,30 +1915,30 @@ finally be described:
 
     \item If the mail is of unknown origin it is assumed to be a child mail
         whose parent hasn't yet been identified (action: commit;
-        flowchart:~17).  Mark the mail as ready for entry in the database
-        (flowchart:~18), and wait for the parent to deal with it
-        (flowchart:~19).  The mail should not have subsequent log entries;
+        flowchart:~15).  Mark the mail as ready for entry in the database
+        (flowchart:~16), and wait for the parent to deal with it
+        (flowchart:~17).  The mail should not have subsequent log entries;
         only its parent should refer to it.
 
     \item If the mail is a child mail then it has already been tracked
-        (action: commit; flowchart:~20): the data is cleaned up, the child
-        is entered in the database (flowchart:~21), then deleted from the
-        state tables (flowchart:~22).  The child mail will be removed from
-        the parent mail's list of children (flowchart:~23); if this is the
-        last child and the parent has also been entered in the database the
-        parent will be deleted from the state tables.
+        (action: commit; flowchart:~18): the data is cleaned up, the child
+        is entered in the database (flowchart:~19), then deleted from the
+        state tables.  The child mail will be removed from the parent
+        mail's list of children (flowchart:~20); if this is the last child
+        and the parent has also been entered in the database the parent
+        will be deleted from the state tables.
 
     \item The last alternative is that the mail is a parent mail (action:
-        commit; flowchart:~24).  Regardless of the state of its children
-        its data is cleaned up and entered in the database (flowchart:~25).
+        commit; flowchart:~21).  Regardless of the state of its children
+        its data is cleaned up and entered in the database (flowchart:~22).
         The parent may have children which are waiting to be entered in the
-        database (flowchart:~26); each of those children's data is cleaned
+        database (flowchart:~23); each of those children's data is cleaned
         up and entered in the database, then deleted from the state tables.
         The parent may also have outstanding children which are not yet
-        delivered, in which case (flowchart:~27) the parent must wait for
+        delivered, in which case (flowchart:~24) the parent must wait for
         those children to be finished with.  As soon as the last child is
         deleted from the state tables the parent will also be finished with
-        (flowchart:~28), and deleted from the state tables.
+        (flowchart:~25), and deleted from the state tables.
 
 \end{itemize}
 
@@ -3184,8 +3185,6 @@ file size vs number lines factor table}
 \subsection{Rule ordering}
 
 \label{rule ordering graphs}
-
-XXX CAN I PUT \% ON THE Y AXIS\@?
 
 \showgraph{build/plot-normal-shuffle-factor.ps}{Percentage increase of
 shuffled over normal}{percentage increase of shuffled over normal}

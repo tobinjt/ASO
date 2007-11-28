@@ -1,0 +1,97 @@
+/* vim: set textwidth=160 : */
+/* $Id$ */
+
+digraph logparser {
+    graph [
+        /* This seems to be width, height - but they interact strangely, so 
+         * I'm never sure.
+         */
+        size = "5.2, 8.4"
+        margin = "0"
+        center = true
+    ]
+    node [
+        shape = box
+    ]
+    edge [
+        color = blue
+        fontcolor = red
+        minlen = 2
+    ]
+
+    /* EDGES */
+    /* Commit is complicated */
+    /* Neither parent nor child. */
+    commit                          -> { if_neither_parent_nor_child }
+    if_neither_parent_nor_child     -> { fixup_enter_in_db_npc }
+    /* Untracked child */
+    if_neither_parent_nor_child     -> { if_untracked_child }
+    if_untracked_child              -> { mark_for_commit }
+    mark_for_commit                 -> { wait_for_parent_to_commit_me }
+    if_untracked_child              -> { if_tracked_child }
+    /* Tracked child */
+    if_tracked_child                -> { fixup_enter_in_db_tc }
+    fixup_enter_in_db_tc            -> { maybe_delete_parent }
+    /* Parent */
+    if_tracked_child                -> { parent }
+    parent                          -> { fixup_enter_in_db_parent }
+    fixup_enter_in_db_parent        -> { commit_children }
+    /* This next edge pulls wait_for_children_to_be_deleted leftwards */
+    fixup_enter_in_db_parent        -> { wait_for_children_to_be_deleted } [style = invis]
+    commit_children                 -> { wait_for_children_to_be_deleted } [headport = nw, tailport = se, weight = 0]
+    wait_for_children_to_be_deleted -> { delete_parent }
+
+    /* NODE LABELS */
+    /* Commit is complicated */
+    /* Neither parent nor child. */
+    commit                          [label = "12: Mail has been delivered,\nbounced or deleted"]
+    if_neither_parent_nor_child     [label = "13: If not a tracked mail:", shape = diamond]
+    fixup_enter_in_db_npc           [label = "14: Fixup, enter in db\nDelete from state\ntables by queueid"]
+
+    /* Untracked child */
+    if_untracked_child              [label = "15: If a child mail\nwaiting to be tracked:", shape = diamond]
+    mark_for_commit                 [label = "16: Mark for later\nentry in db"]
+    wait_for_parent_to_commit_me    [label = "17: Wait for parent to track child,\nthen enter child in db"]
+
+    /* Tracked child */
+    if_tracked_child                [label = "18: If tracked child:", shape = diamond]
+    fixup_enter_in_db_tc            [label = "19: Fixup, enter in db\nDelete from state\ntables by queueid"]
+    maybe_delete_parent             [label = "20: Inform parent child\lhas finished"]
+
+    /* Parent */
+    parent                          [label = "21: Parent"]
+    fixup_enter_in_db_parent        [label = "22: Fixup, enter in db"]
+    commit_children                 [label = "23: for each child waiting for parent:\l          fixup and enter child in db\l          delete child by queueid\l", labeljust = l]
+    wait_for_children_to_be_deleted [label = "24: Wait for any remaining \nchildren to be deleted"]
+    delete_parent                   [label = "25: Delete parent from state\ntables by queueid"]
+
+    /* SUB-GRAPHS */
+    subgraph not_tracked {
+        rank = same
+        if_neither_parent_nor_child
+        fixup_enter_in_db_npc
+    }
+    subgraph untracked_child {
+        rank = same
+        if_untracked_child
+        mark_for_commit
+        wait_for_parent_to_commit_me
+    }
+    subgraph tracked_child {
+        rank = same
+        if_tracked_child
+        fixup_enter_in_db_tc
+        maybe_delete_parent
+    }
+    subgraph parent {
+        rank = same
+        parent
+        fixup_enter_in_db_parent
+        commit_children
+    }
+    subgraph parent_waiting {
+        rank = same
+        wait_for_children_to_be_deleted
+        delete_parent
+    }
+}
