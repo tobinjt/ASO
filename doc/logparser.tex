@@ -102,6 +102,8 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 XXX WHAT IS THE CONCLUSION???  FIRST THING IS TO COMPARE TO OTHER PARSERS
 REVIEWED
 
+XXX THINK OF A NAME\@.
+
 \newpage
 \tableofcontents
 \listoffigures
@@ -700,17 +702,16 @@ subsequent programs to develop upon.
 There only appears to be one prior paper published about parsing Postfix
 log files: \textit{Log Mail Analyzer: Architecture and Practical
 Utilizations\/}~\cite{log-mail-analyser}.  The aim of \LMA{} is quite
-different from this parser: it attempts to present correlated log data in
-a form suitable for a systems administrator to search using grep(1), awk(1)
-and the myriad of other standard Unix text processing utilities already
-available, producing a \CSV{} file which can subsequently be imported into
-a MySQL or Berkeley DB database.  The decision to support both \CSV{} and
-Berkeley DB appears to have been a limiting factor: \CSV{} is a very simple
-format where a record is stored in a single line, with fields separated by
-a comma or other punctuation symbol.  Problems with \CSV{} files include
-the difficulty in escaping separators, providing multiple values for a
-field (e.g.\ multiple recipients), adding new fields, and lack of a bundled
-schema describing the fields.
+different from this parser: it attempts to present correlated log data in a
+form suitable for a systems administrator to search using the myriad of
+standard Unix text processing utilities already available, producing both a
+\CSV{} file and either a MySQL or Berkeley DB database.  The decision to
+support both \CSV{} and Berkeley DB appears to have been a limiting factor:
+\CSV{} is a very simple format where a record is stored in a single line,
+with fields separated by a comma or other punctuation symbol.  Problems
+with \CSV{} files include the difficulty in escaping separators, providing
+multiple values for a field (e.g.\ multiple recipients), adding new fields,
+and lack of a bundled schema describing the fields.
 
 Berkeley DB is not an \SQL{} database, supporting only \textbf{(key,
 value)} pairs; in the main table the key is an integer referred to by
@@ -726,57 +727,80 @@ queries: IP-STORY, FROM-STORY, DAILY-EMAIL and DAILY-REJECT\@.  Berkeley DB
 appears to be the least useful of the three output formats
 
 The data stored is limited to time and date, hostname and \IP{} address of
-client, sender and recipient addresses, and the \SMTP{} code.  Handling of
-multiple recipients, \SMTP{} codes or remote servers\footnote{A single mail
-may be sent to multiple remote servers if it was addressed to recipients in
-different domains, or Postfix needs to try multiple servers for one or more
-recipients.} is not explained in the paper, but the options appear to be:
-
-\begin{enumerate}
-
-    \item Discard some of the data; this option is obviously undesirable,
-        and presumably was not chosen by the \LMA{} authors.
-
-    \item Combine all data into a \CSV{} line, which is then embedded into
-        the main \CSV{} line for that mail, making searching even more
-        difficult and requiring a second separating character.
-
-\end{enumerate}
+client, \IP{} of server, sender and recipient addresses, \SMTP{} code, and
+size (for accepted mails only).  Handling of multiple recipients, \SMTP{}
+codes or remote servers\footnote{A single mail may be sent to multiple
+remote servers if it was addressed to recipients in different domains, or
+Postfix needs to try multiple servers for one or more recipients.} is not
+explained in the paper; experimental observation shows that multiple
+records are added when there are multiple recipients (sadly the records are
+not associated in any way), and presumably the same approach is taken when
+there are multiple destination servers.
 
 The schema used with the MySQL database is undocumented, but at least it's
 possible to discover the schema with an \SQL{} database, unlike with
 Berkeley DB\@; all \SQL{} databases embed the database schema into the
 database and provide commands for displaying it.  Berkeley DB does not
-embed a schema, as there is neither requirement nor benefit; it provides
-\textbf{(key, value)} pairs, so any additional structuring of the data is
-imposed by the application, thus it behoves the application to document
-this structure.
-
-\parsername{} is bundled with extensive documentation, including an
-in-depth explanation of the database schema.  It supports multiple values
-for every field for which multiple values are reasonable (e.g.\ the sender
-address should have one value only, whereas the recipient address can have
-multiple values).  The default database it uses is SQLite3, which supports
-most standard \SQL{} features (its lacks full foreign key support), has
-libraries available for most common programming languages, and a simple
-text based client allowing ad-hoc queries with minimal effort.
-
-XXX DISCUSS THE OUTPUT, OR LACK THEREOF, IN GREATER DETAIL, AFTER RERUNNING
-\LMA{}\@.
+embed a schema, as there is neither requirement nor benefit; it only
+provides \textbf{(key, value)} pairs, so any additional structuring of the
+data is imposed by the application, thus it behoves the application to
+document this structure.
 
 Parsing in \LMA{} requires major changes to the code to parse new log lines
 or extract additional data.  It does not appear to deal with any of the
 complications discussed in sections~\refwithpage{complications} (initial
 complications) and~\refwithpage{additional complications} (additional
-complications).  The program fails to parse Postfix 2.2 or 2.3 log files;
-indeed all it produces is a number of warning messages from the Perl
-interpreter, without any other output, useful or otherwise.
+complications).  It does not differentiate between different types of
+rejections, so it is not suitable for the purposes of this project; the
+data about which restriction caused the rejection is discarded, whereas an
+important goal of this project is to retain that data to aid optimisation
+and evaluation of Postfix restrictions.  \LMA{} fails to parse Postfix log
+files generated on Solaris hosts because the fields added automatically
+differ from those added on Linux hosts; logs from Solaris hosts (and
+possibly other operating systems) thus require preprocessing before parsing
+by \LMA{}.
 
-\LMA{} does provide some simple reports (IP-STORY, FROM-STORY, DAILY-EMAIL
-and DAILY-REJECT); the author was unable to parse any logs with \LMA{}, so
-didn't have an opportunity to review the reports.  \parsername{} does not
-produce any reports, it delegates that task to a separate, dedicated
-program.
+\LMA{} does provide some simple reports: IP-STORY, FROM-STORY, DAILY-EMAIL
+and DAILY-REJECT\@.  IP-STORY shows the \CSV{} lines with the specified
+client \IP{} address; FROM-STORY shows the \CSV{} lines with the specified
+sender address; DAILY-EMAIL shows the \CSV{} lines for the specified day.
+DAILY-REJECT initially failed with an error message from the Perl
+interpreter; after making some corrections to the code it worked, and
+produced the \CSV{} lines for the specified day where the \SMTP{} code
+signifies a rejection.  All of these reports are trivially simple to
+produce from the \CSV{} file using the standard Unix tool \texttt{awk},
+e.g.\ the most complicated, DAILY-REJECT, is merely:
+
+\begin{verbatim}
+awk -F\| '$1 ~ /2007-01-26/ && $7 ~ /^[450]|deferred/ 
+    { print $0; print " "; }' lma_output.txt
+\end{verbatim}
+
+Notes about the command above: there is an unnecessary line containing only
+a single space output after each matching line, for compatibility with the
+output of DAILY-REJECT\@.  Some records have an \SMTP{} code of 0, though
+this is not a valid \SMTP{} code, so presumably this is due to \LMA{} not
+parsing a line properly; \LMA{} considers this code to be a rejection, so
+the command above must too.  In a tiny proportion of records the \SMTP{}
+code is \textit{deferred\/} (again, not a valid code, and most likely due
+to mis-parsing), and is treated as a rejection by \LMA{}, so the equivalent
+\texttt{awk} command must do so too.
+
+There are a number of differences in the output from DAILY-REJECT and the
+\texttt{awk} command: 
+
+\begin{itemize}
+
+    \item \LMA{} does not escape or replace the separators used in the
+        \CSV{} records when they are present in sender or recipient
+        addresses, leading to some mangled records; these records are not
+        present in the output from \texttt{awk}.
+
+    \item Where there are multiple records in the \CSV{} file, DAILY-REJECT
+        produces only one output line, whereas the \texttt{awk} command
+        produces all matching lines.
+
+\end{itemize}
 
 In summary, \LMA{} appears to be a proof of concept, written to demonstrate
 the point of their paper (that having this information in an accessible
@@ -3556,6 +3580,16 @@ parser.
     is to maintain a data structure indexed by strings in an efficient
     manner.  A full description is beyond the scope of this paper, further
     information can be found at~\cite{hash-functions}.
+}}
+
+\glossary{name={Solaris},description={
+    Solaris is a Unix-derived Operating System produced by Sun Microsystems
+    (\url{http://www.sun.com/software/solaris/}).
+}}
+
+\glossary{name={awk},description={AWK is a general purpose programming
+    language that is designed for processing text-based data, and is
+    available as a standard utility on all Unix systems.
 }}
 
 \end{document}
