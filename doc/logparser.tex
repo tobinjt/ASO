@@ -395,11 +395,14 @@ properly, so requiring strict adherence to the protocol specification is
 beneficial in protecting against spam and viruses.\footnote{This violates
 the principle of \textit{Be liberal in what you accept, and conservative in
 what you send\/} from \RFC{}~760~\cite{rfc760}, but unfortunately that
-principle was written in a friendlier time. XXX CARL WANTS ME TO SUGGEST A
-NEW PRINCIPAL AND POSSIBLY AN APPENDIX OF SPAM RELATED ISSUES\@.}  A
-typical \SMTP{} conversation resembles the following (the lines starting
-with a three digit number are sent by the server, all other lines are sent
-by the client):
+principle was written in a friendlier time.  Given the deluge of spam that
+mail servers are subjected to daily, a more appropriate maxim could be:
+\textit{Require strict adherence to \RFC{}~2821; implement the strongest
+restrictions you can; relax the restrictions and adherence only when
+legitimate mail is impeded.\/}  It's not as friendly, nor as catchy, but it
+more accurately reflects the current situation.} A typical \SMTP{}
+conversation resembles the following (the lines starting with a three digit
+number are sent by the server, all other lines are sent by the client):
 
 \begin{verbatim}
 220 smtp.example.com ESMTP
@@ -3277,7 +3280,9 @@ loop not caught by Postfix as described below.
         Log lines are added by \daemon{local}, \daemon{qmgr} (twice) and
         \daemon{cleanup}.
 
-    \item GOTO 2.  XXX IMPROVE THIS, IT'S RUBBISH\@.
+    \item Repeat from step two; this will continue indefinitely unless an
+        administrator intervenes and deletes the appropriate mails from the
+        queue.
 
 \end{enumerate}
 
