@@ -6,6 +6,7 @@
 % Wrapping of URLs.  This is used in the bibliography instead of \url{}.
 \usepackage{url}
 \newcommand{\parsername}{ASO}
+\newcommand{\parsernames}{ASO's}
 % Include images
 \usepackage[final]{graphicx}
 % Change how nested enumerate environments are labelled.
@@ -775,7 +776,7 @@ produce from the \CSV{} file using the standard Unix tool \texttt{awk},
 e.g.\ the most complicated, DAILY-REJECT, is merely:
 
 \begin{verbatim}
-awk -F\| '$1 ~ /2007-01-26/ && $7 ~ /^[450]|deferred/ 
+awk -F\| '$1 ~ /2007-01-26/ && $7 ~ /^[450]|deferred/
     { print $0; print " "; }' lma_output.txt
 \end{verbatim}
 
@@ -790,7 +791,7 @@ to mis-parsing), and is treated as a rejection by \LMA{}, so the equivalent
 \texttt{awk} command must do so too.
 
 There are a number of differences in the output from DAILY-REJECT and the
-\texttt{awk} command: 
+\texttt{awk} command:
 
 \begin{itemize}
 
@@ -2620,7 +2621,7 @@ impossible to quantify the false positive rate.  The author is confident
 that the false positive rate is extremely low, approaching if not reaching
 zero, because the \regexs{} used are as specific as possible and care has
 been taken to ensure that there are no unintentionally overlapping
-\regexs{}.  
+\regexs{}.
 
 \subsection{Mails covered}
 
@@ -2685,11 +2686,11 @@ evidence that the false positive rate is quite low:
     \item The parser is quite verbose when complaining about known problems
         (e.g.\ if a mail is tracked twice as described in
         section~\refwithpage{tracking re-injected mail}), and no such
-        warnings are produced during the test runs.  
+        warnings are produced during the test runs.
 
     \item Queueids and \pids{} naturally group together log lines belonging
         to one mail or connection, respectively; it is extremely unlikely
-        that a log line would be associated with the wrong connection.  
+        that a log line would be associated with the wrong connection.
 
     \item When dealing with the complications described in
         sections~\refwithpage{complications} and~\refwithpage{additional
@@ -2698,13 +2699,13 @@ evidence that the false positive rate is quite low:
         positives.  In addition the solution to the \textit{Out of order
         log files\/} problem described in section~\refwithpage{out of order
         log lines} imposes conditions which each reassembled mail must
-        comply with to be acceptable.  
-        
+        comply with to be acceptable.
+
     \item Every effort has been made while developing to make the parser as
         precise, demanding and particular as possible.
 
 \end{itemize}
-        
+
 Despite the lack of numerical evidence, the author is confident that the
 false positive rate when reconstructing a mail is exceedingly low, if not
 approaching zero.
@@ -2832,14 +2833,16 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         of Postfix activity, with just enough detail to give the
         administrator a ``heads up'' for potential trouble spots.\/}
 
-        Pflogsumm produces a report designed for troubleshooting, and does
-        not support saving any data; parsing concentrates on extracting
-        only the data required to produce the report.  Both the parsing and
-        reporting are difficult to extend, as it is a specialised tool.  It
-        does not attempt to correlate log lines by queueid or \pid{}, nor
-        does it need to deal with the complications encountered during this
-        project.  Pflogsumm produces a useful report, and successfully
-        dealt with all the Postfix logs tested with.
+        Pflogsumm produces a report designed for troubleshooting, rather
+        than for in-depth analysis.  It does not support saving any data,
+        nor does it extract more data than is required for producing the
+        report.  Both the parsing and reporting are difficult to extend as
+        it is a specialised tool, unlike the easily extensible design of
+        \parsername{}.  It does not attempt to correlate log lines by
+        queueid or \pid{}, nor does it need to deal with the complications
+        encountered during this project.  Pflogsumm produces a useful
+        report, and successfully dealt with all the Postfix logs tested
+        with, but is not a suitable base for this project.
 
         \url{http://jimsun.linxnet.com/postfix_contrib.html} \newline (Last
         checked 2007/08/13.)
@@ -2856,10 +2859,10 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         more.\/}
 
         Sawmill is a general purpose commercial product which parses 687
-        log file formats (correct as of 2007/04/15) and produces reports.
+        log file formats (correct as of 2007/12/04) and produces reports.
         Its data extraction facilities are quite limited, though it does
         extract three different sets of data for Postfix (one is beta as of
-        2007/04/15), but they do not appear to be interlinked, nor does it
+        2007/12/04), but they do not appear to be interlinked, nor does it
         save sufficient data for the purposes of this project.  No attempt
         is made to correlate log lines or deal with the difficulties
         documented in sections~\refwithpage{complications}
@@ -2867,10 +2870,14 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         is made there is no reference to it in the documentation available
         on the website.} The source code is available in an obfuscated form
         only (presumably for a fee), and the product is quite expensive, as
-        it requires a license per report which is to be generated.  The web
-        interface allows creation of dynamic reports based on any field,
-        but due to the associated cost the author has not experimented with
-        it.
+        it requires a license per report which is to be generated; in
+        contrast \parsername{} is free and the code is freely available.
+        The web interface allows creation of dynamic reports based on any
+        field, but due to the associated cost the author has not
+        experimented with it.  Presumably as the company charges per report
+        the user wishes to generate the data store (if there is one) is
+        deliberately inaccessible and undocumented to prevent the user
+        bypassing the program and generating their own reports.
 
         \url{http://www.thesawmill.co.uk/formats/postfix.html} \newline
         Fields extracted: from, to, server, UID, relay, status, number of
@@ -2892,7 +2899,12 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         relay hostname, relay \IP{}, status, response code, \RBL{} and
         message id.
 
-        (Last checked 2007/09/26.)
+        Even if the three data sets were linked together Sawmill would
+        extract less data than \parsername{}, and it does not appear to
+        extract data about rejections except when the rejection is caused
+        by an \RBL{} check.
+
+        (Last checked 2007/12/04.)
 
     \item [Splunk] \textit{Splunk is an IT Search engine. It is software
         that indexes any format of IT data from any source in real time,
@@ -2906,41 +2918,48 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
 
         Splunk aims to index all an organisation's logs, providing a
         centralised view capable of searching and correlating diverse log
-        sources.  The web interface allows complicated searches, providing
-        statistics and graphs in real time.  Saved searches can be
-        configured to run periodically and the results emailed to a
-        recipient or sent to a shell script, which presumably can publish
-        the results as required (though possibly without the graphs and
-        detailed statistics).  In the specific case of parsing Postfix
-        logs, Splunk extracts some standard fields: to and from addresses,
-        HELO hostname, date, host the logs were collected from, and
-        protocol.  It parses the standard syslog fields at the beginning of
-        the line, and extracts any \texttt{key=<value>} pairs; these are
-        the fields listed above.  Searches can be based on the extracted
-        fields, and all text in the line is also available for searching.
-        Many types of reports are available, though all are variations of a
-        bar or pie chart, with the exception of bubble and heatmap graphs.
-        It is very easy to drill down through the graphs to extract a
-        portion of the data (e.g.\ select the hour with the largest number
-        of events, then select a particular host, and finally a specific
-        address).  It is not possible to search on partial words, though
-        the web interface does provide and refine a list of possible search
-        terms as you type.  The searches are quite fast, though as the free
+        sources.  The web interface supports complicated searches,
+        providing statistics and graphs in real time, a facility not
+        provided by \parsername{} (report generation has been deferred to a
+        subsequent program).  Saved searches\footnote{The author was unable
+        to save searches, though that may have been due to limitations in
+        the free version.} can be run periodically and the results emailed
+        to a recipient or sent to a shell script, which presumably can
+        publish the results as required (though possibly without the graphs
+        and detailed statistics); \parsername{} provides the database and
+        leaves it to the user to utilise it in any way, whenever they want,
+        with no restrictions on usage of the data.  The interface is
+        optimised for interactive rather than automated queries and it does
+        not appear to be possible to write independent tools to utilise the
+        Splunk database.  Many types of reports are available, though most
+        are variations of a bar or pie chart, with the exception of bubble
+        and heatmap graphs.  It is very easy to drill down through the
+        graphs to extract a portion of the data (e.g.\ select the hour with
+        the largest number of events, then select a particular host, and
+        finally a specific address), though it is not possible to search on
+        partial words.  The searches are quite fast, though as the free
         version has a limit on the amount of data indexed per day the
-        volume of data to be searched was merely 45mb; the cheapest
-        licensed version costs \$6000, and it still limits the volume of
-        data indexed per day.
+        volume of data to be searched was merely 45MB\@; the cheapest
+        licensed version costs \$6000, and still limits the volume of data
+        indexed per day.
 
-        The interface is optimised for interactive rather than automated
-        queries and it does not appear to be possible to write independent
-        tools to utilise the Splunk database.  Splunk is a generic tool, so
-        it lacks any Postfix specific support over and above extracting the
-        \texttt{key=<value>} fields; most importantly it makes no attempt
-        to correlate log lines by queueid or \pid{}, nor to handle any of
-        the myriad complications discussed in this document.  Correlation
-        of log lines is left up to the user, and Splunk certainly makes the
-        job easier than using grep, awk and similar Unix tools unless the
-        user has a very high proficiency with those tools.
+        In the specific case of parsing Postfix logs, Splunk extracts some
+        standard fields: to and from addresses, HELO hostname, date, host
+        the logs were collected from, and protocol.  It parses the standard
+        syslog fields at the beginning of the line, and extracts any
+        \texttt{key=<value>} pairs occurring after the standard syslog
+        prologue; these pairs are the fields listed above.  Searches can be
+        based on the extracted fields, and all text in the line is also
+        available for searching.  \parsername{} extracts noticeably more
+        data, though it does not make the full text of the line available,
+        and the full power of \SQL{} is available when searching, allowing
+        the user to search on arbitrarily complicated conditions.
+
+        Splunk is a generic tool, so it lacks any Postfix specific support
+        over and above extracting the \texttt{key=<value>} fields; most
+        importantly it makes no attempt to correlate log lines by queueid
+        or \pid{}, nor to handle any of the myriad complications discussed
+        in this document.
 
         \url{http://www.splunk.com/} \newline (Last checked 2007/09/25.)
 
@@ -2956,12 +2975,19 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         unique sender address, and separately the total number of bytes
         transferred; both reports are produced for daily, monthly and
         annual time spans, but only for the domains listed in its
-        configuration file.  It appears to ignore all log lines except for
-        those for the current day, though it does maintain a record of data
-        previously extracted, which the newly extracted data is merged into
-        (no information is provided on the format of the data store).  It
-        doesn't utilise rejection log lines in any way, so is unsuitable
-        for the purposes of this project.  It doesn't handle any of the
+        configuration file (making it impossible to produce reports for
+        every sender domain).  It appears to ignore all log lines except
+        for those for the current day, though it does maintain a record of
+        data previously extracted, which the newly extracted data is merged
+        into (no information is provided on the format of the data store).
+        The data extracted appears to be limited to the number of mails
+        sent by each sender, unlike the copious amounts of data extracted
+        by \parsername{}.  It doesn't utilise rejection log lines in any
+        way, so is unsuitable for the purposes of this project.  Its
+        parsing is completely inextensible, indeed is almost
+        incomprehensible, relying on \texttt{scanf(3)}, fixed offsets and
+        low level string manipulation; it is the opposite end of the
+        spectrum to \parsernames{} parsing.  It doesn't handle any of the
         complications discussed in this document, doesn't gather the
         breadth of data required for this project, and ignores the majority
         of log lines produced by Postfix.
@@ -2983,19 +3009,22 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         AWStats will produce simple graphs for many different services, but
         supporting many different services without special purpose code
         restricts it to supporting the \LCD{}.  The data it will extract
-        from an \MTA{} log file is limited to: \newline \tab{} time2,
-        email, email\_r, host, host\_r, method, url, code and bytesd.
-        \newline  There does not seem to be an explanation of those fields
-        in the documentation.  AWStats has no special purpose code to deal
-        with the intricacies of Postfix logs, in fact it operates by
+        from an \MTA{} log file is limited in comparison to \parsername{}:
+        \newline \tab{} time2, email, email\_r, host, host\_r, method, url,
+        code and bytesd.\newline  There does not seem to be an explanation
+        of any of those fields in the documentation (\parsername{} provides
+        copious documentation).  AWStats has no special purpose code to
+        deal with the intricacies of Postfix logs, in fact it operates by
         coercing Postfix logs into Apache\footnote{The Apache web server is
         the most popular HTTP server in use for the past 10 years; more
-        information is available at \url{http://httpd.apache.org/}} format
+        information is available at \url{http://httpd.apache.org/}.} format
         log files, for analysis by AWStats' HTTP log file parser.  The
         converting parser only deals with a small portion of the log lines
-        generated by Postfix, and though it does correlate log lines by
-        queueid, it does not deal with any of the other complications
-        described in this document.
+        generated by Postfix, silently skipping those it cannot deal with,
+        and does not distinguish between different types of rejection.
+        Although though it does correlate log lines by queueid, it does not
+        deal with any of the other complications described in this
+        document.
 
         \url{http://awstats.sourceforge.net/} \newline
         \url{http://awstats.sourceforge.net/awstats.mail.html} \newline
@@ -3638,6 +3667,12 @@ parser.
 \glossary{name={awk},description={AWK is a general purpose programming
     language that is designed for processing text-based data, and is
     available as a standard utility on all Unix systems.
+}}
+
+\glossary{name={syslog},description={Syslog is the standard logging
+    mechanism on Unix systems: the program sends log messages to syslog,
+    then syslog filters and stores the messages according to the
+    configuration the administrator has chosen.
 }}
 
 \end{document}
