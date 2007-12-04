@@ -2546,8 +2546,6 @@ required to solve problems increased with each successive problem.
 
 \label{parsing coverage}
 
-XXX ADD SOMETHING ABOUT FALSE POSITIVES AND NEGATIVES\@.
-
 \subsection{Introduction}
 
 The discussion of the parser's coverage of Postfix log files is separated
@@ -2612,6 +2610,18 @@ graph} shows the number of hits for each rule over all 93 log files; it's
 obvious that a small number of rules match the vast majority of the lines,
 and more than half the rules match fewer than 100 times.
 
+Warnings are issued for any lines which are not parsed; no warnings are
+issued for unparsed lines while testing with the 93 test log files, so it
+can be safely concluded that there are zero false negatives.  False
+positives are harder to quantify: short of examining each of the 60,721,709
+log lines and determining which \regex{} parsed it, there is no way to be
+sure that every line was parsed by the correct \regex{}, making it
+impossible to quantify the false positive rate.  The author is confident
+that the false positive rate is extremely low, approaching if not reaching
+zero, because the \regexs{} used are as specific as possible and care has
+been taken to ensure that there are no unintentionally overlapping
+\regexs{}.  
+
 \subsection{Mails covered}
 
 \label{mails-covered}
@@ -2663,8 +2673,41 @@ entries, breaking down into:
 
 \end{itemize}
 
-The 13,850,793 connections and mails accepted, rejected or delivered by
-Postfix during this period are handled correctly by the parser.
+There are no mails in the state tables which should not be present, thus it
+can be concluded that there are zero false negatives.  Once again,
+determining the false positive rate is much harder, as manually checking
+the results of parsing 13,850,793 connections and mails accepted, rejected,
+bounced or delivered is infeasible.  There is considerable circumstantial
+evidence that the false positive rate is quite low:
+
+\begin{itemize}
+
+    \item The parser is quite verbose when complaining about known problems
+        (e.g.\ if a mail is tracked twice as described in
+        section~\refwithpage{tracking re-injected mail}), and no such
+        warnings are produced during the test runs.  
+
+    \item Queueids and \pids{} naturally group together log lines belonging
+        to one mail or connection, respectively; it is extremely unlikely
+        that a log line would be associated with the wrong connection.  
+
+    \item When dealing with the complications described in
+        sections~\refwithpage{complications} and~\refwithpage{additional
+        complications} the solutions are as specific and restrictive as
+        possible, with the goal of minimising the number of false
+        positives.  In addition the solution to the \textit{Out of order
+        log files\/} problem described in section~\refwithpage{out of order
+        log lines} imposes conditions which each reassembled mail must
+        comply with to be acceptable.  
+        
+    \item Every effort has been made while developing to make the parser as
+        precise, demanding and particular as possible.
+
+\end{itemize}
+        
+Despite the lack of numerical evidence, the author is confident that the
+false positive rate when reconstructing a mail is exceedingly low, if not
+approaching zero.
 
 \subsection{Conclusion}
 
