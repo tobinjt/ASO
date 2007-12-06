@@ -939,8 +939,8 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('qmgr processing mail', 'qmgr is going to deliver this mail',
         'postfix/qmgr',
-        '^(__QUEUEID__): from=<(__SENDER__)>, size=\d+, nrcpt=(\d+) \(queue active\)$',
-        'sender = 2',
+        '^(__QUEUEID__): from=<(__SENDER__)>, size=(\d+), nrcpt=(\d+) \(queue active\)$',
+        'sender = 2, size = 3',
         '',
         'MAIL_PICKED_FOR_DELIVERY',
         1,

@@ -133,6 +133,12 @@ my %cols = (
         sql             => q{},
         type            => q{text},
     },
+    # The size of delivered mails.  Will be null for rejection mails.
+    size            => {
+        result_cols     => 1,
+        sql             => q{},
+        type            => q{integer},
+    },
     # The recipient; checks after DATA won't have a recipient, so allow it to
     # be null.
     recipient       => {
