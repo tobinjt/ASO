@@ -3,8 +3,10 @@
 
 % Useful stuff for math mode.
 \usepackage{amstext}
-% Wrapping of URLs.
-\usepackage{url}
+% Wrapping of URLs; this doesn't work in the bibliography, but the breakurl
+% package does.
+%\usepackage{url}
+% The name of the program, so I only have to change it in one place.
 \newcommand{\parsername}{\PLP{}}
 \newcommand{\parsernames}{\PLP{}'s}
 % Include images
@@ -19,19 +21,25 @@
 \makeglossary{}
 \makeacronym{}
 
-% XXX THIS DOESN'T WORK AFTER PACKAGE UPGRADES :(
 % When creating a \PDF{} make the table of contents into links to the pages
 % (without horrible red borders) and include bookmarks.  The title and
 % author don't work - I think either gnuplot or graphviz clobbers it.
-%\usepackage{hyperref}
-%\hypersetup{
-%    pdftitle    = {Parsing Postfix log files},
-%    pdfauthor   = {John Tobin},
-%    final       = true,
-%    pdfborder   = {0 0 0},
-%%    breaklinks  = true,
-%}
-%\usepackage{breakurl}
+% With later TeX versions the dvips argument is necessary; everywhere else
+% suggests using pdftex as the argument, but pdftex doesn't know how to
+% include postscript images, so I need to create a dvi, convert it to
+% postscript, and convert that to PDF.  I might lookup how to include
+% postscript with pdftex.
+\usepackage[dvips]{hyperref}
+\hypersetup{
+    pdftitle    = {Parsing Postfix log files},
+    pdfauthor   = {John Tobin},
+    final       = true,
+    pdfborder   = {0 0 0},
+%    breaklinks  = true,
+}
+% This is necessary for URLs in the bibliography; I dunno why the url
+% package doesn't work.
+\usepackage{breakurl}
 \usepackage{lastpage}
 
 % \showgraph{filename}{caption}{label}
