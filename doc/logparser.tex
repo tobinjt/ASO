@@ -1469,14 +1469,14 @@ Perl compiles the original \regex{} into an internal representation,
 optimising the \regex{} to improve the speed of matching, but this
 compilation and optimisation takes CPU time; far more CPU time, in fact,
 than the actual matching takes.  Perl automatically caches static
-\regexs{}, but dynamic \regexs{} need to be explicitly compiled and cached.
-Graph~\refwithpage{normal regex vs discard regex} shows execution times
-with and without caching the \regex{}.  Caching the compiled \regexs{} is
-obviously far more efficient; graph~\refwithpage{normal regex vs discarded
-regex factor} shows the percentage execution time increase when not caching
-each \regex{}.
+\regexes{}, but dynamic \regexes{} need to be explicitly compiled and
+cached.  Graph~\refwithpage{normal regex vs discard regex} shows execution
+times with and without caching the \regex{}.  Caching the compiled
+\regexes{} is obviously far more efficient; graph~\refwithpage{normal regex
+vs discarded regex factor} shows the percentage execution time increase
+when not caching each \regex{}.
 
-Caching the compiled \regexs{} is quite simple, and is the single most
+Caching the compiled \regexes{} is quite simple, and is the single most
 effective optimisation implemented in the parser.
 
 \subsection{Creating new rules}
@@ -1512,8 +1512,8 @@ There are 4 steps in the algorithm:
         which the parser will expand when it loads the rule (see the
         \regex{} entry in section~\refwithpage{rule attributes}).  The
         purpose of this phase is to utilise the existing knowledge to
-        create more accurate \regexs{}.  The new log lines are written to a
-        temporary file, which all subsequent stages use instead of the
+        create more accurate \regexes{}.  The new log lines are written to
+        a temporary file, which all subsequent stages use instead of the
         original input file.
 
         In the original algorithm the purpose of the preprocessing stage
@@ -1557,36 +1557,37 @@ There are 4 steps in the algorithm:
         reassembled to produce a \regex{} matching the line, and a counter
         is maintained for each \regex{}.
 
-    \item [Build regexs]  Contiguous sequences of \texttt{.*} in the newly
-        reassembled \regexs{} are collapsed to a single \texttt{.*}; any
-        resulting duplicate \regexs{} are combined, and their counters
+    \item [Build regexes]  Contiguous sequences of \texttt{.*} in the newly
+        reassembled \regexes{} are collapsed to a single \texttt{.*}; any
+        resulting duplicate \regexes{} are combined, and their counters
         summed.  If the frequency of a \regex{} is lower than the threshold
         supplied by the user the \regex{} is discarded.\footnote{This is a
         second, independent threshold, but once again 1\% of input lines is
         a good starting point; obviously the threshold depends on the
-        number and type of input lines.}  The new \regexs{} are printed for
-        the user to add to the database, either as new rules or merged into
-        the \regexs{} of existing rules; the counter for each \regex{} is
-        also printed, giving the user an indication of how many of the
-        input lines that \regex{} should match.  Discarding \regexs{} will
-        result in some of the input lines not being matched; this utility
-        should be run again once the unmatched lines have been isolated by
-        running the parser, including the new \regexs{}, with the same
-        input which produced the original set of unparsed lines.
+        number and type of input lines.}  The new \regexes{} are printed
+        for the user to add to the database, either as new rules or merged
+        into the \regexes{} of existing rules; the counter for each
+        \regex{} is also printed, giving the user an indication of how many
+        of the input lines that \regex{} should match.  Discarding
+        \regexes{} will result in some of the input lines not being
+        matched; this utility should be run again once the unmatched lines
+        have been isolated by running the parser, including the new
+        \regexes{}, with the same input which produced the original set of
+        unparsed lines.
 
 \end{description}
 
-A second utility is also provided which reads a list of new \regexs{} and
+A second utility is also provided which reads a list of new \regexes{} and
 the input given to the first utility.  It tries to match each input line
 against each \regex{}, counting the number of lines which match each
 \regex{}, warning the user if an input line is matched by more than one
 \regex{}, and additionally warning if an input line is not matched by any
 \regex{}.  It displays a summary of how many input lines each \regex{}
 matched, comparing it to the expected number of matches; this provides the
-user with an easy method of checking if the \regexs{} produced by the first
-utility are correctly matching the input lines they are based upon.  A
-future version of this utility will also group input lines by \regex{}, so
-the user can tweak the \regexs{} if required.
+user with an easy method of checking if the \regexes{} produced by the
+first utility are correctly matching the input lines they are based upon.
+A future version of this utility will also group input lines by \regex{},
+so the user can tweak the \regexes{} if required.
 
 \subsection{Conclusion}
 
@@ -1609,7 +1610,7 @@ This section dealt with the rules used in parsing Postfix log files:
         this section.
 
     \item The topic of rule efficiency was discussed next, covering the
-        effects of caching compiled \regexs{} and optimal ordering of
+        effects of caching compiled \regexes{} and optimal ordering of
         rules, with reference to the graphs in
         appendix~\refwithpage{graphs}.
 
@@ -2636,9 +2637,9 @@ log lines and determining which \regex{} parsed it, there is no way to be
 sure that every line was parsed by the correct \regex{}, making it
 impossible to quantify the false positive rate.  The author is confident
 that the false positive rate is extremely low, approaching if not reaching
-zero, because the \regexs{} used are as specific as possible and care has
+zero, because the \regexes{} used are as specific as possible and care has
 been taken to ensure that there are no unintentionally overlapping
-\regexs{}.
+\regexes{}.
 
 \subsection{Mails covered}
 
@@ -3054,7 +3055,7 @@ why the separation of rules from the algorithm is beneficial.
         similar problems occur. It doesn't attempt to extract or save data,
         correlate log lines, or any of the more advanced tasks described in
         this document, because it is not designed to do so.  The user must
-        construct the \regexs{} to match significant input lines before it
+        construct the \regexes{} to match significant input lines before it
         will parse any logs.  This program was not reviewed in further
         detail because its aims are so far removed from the aims of this
         project.
@@ -3099,7 +3100,7 @@ why the separation of rules from the algorithm is beneficial.
         data with another Perl program also using the Storable module;
         \parsername{} uses a well documented database which is accessible
         from the majority of programming languages.
-        
+
         YAALA provides a Postfix parser which extracts the following fields
         from specific log lines:
 
@@ -3268,7 +3269,7 @@ that performance scales linearly with input size.  The impact of rule
 ordering is shown in section~\refwithpage{rule ordering graphs}, and the
 anomalous dips and peaks apparent in some graphs are explained.  The third
 group of graphs vividly shows the huge impact that caching compiled
-\regexs{} has on parser performance.  This section concludes with a
+\regexes{} has on parser performance.  This section concludes with a
 breakdown of the rule hits accumulated during a single test run of the
 parser.
 
@@ -3423,13 +3424,13 @@ and without a mail loop}{Rule ordering with and without a mail loop}
 
 
 
-\subsection{Caching regexs}
+\subsection{Caching regexes}
 
-The following graphs show the impact that not caching compiled \regexs{}
+The following graphs show the impact that not caching compiled \regexes{}
 has on parser performance: on typical log files the execution time when not
-caching compiled \regexs{} is 500--600\% of the execution time when
+caching compiled \regexes{} is 500--600\% of the execution time when
 caching; reversing the perspective shows that cached execution time is
-merely 17--20\% of non-cached execution time.  Caching compiled \regexs{}
+merely 17--20\% of non-cached execution time.  Caching compiled \regexes{}
 is probably the single most effective optimisation possible in the parser's
 implementation.
 
@@ -3450,7 +3451,7 @@ The distribution of log lines across rules when there is a mail loop is
 much different and the average number of rules consulted per log line is
 much lower; this results in far fewer \regex{} compilations per line than
 when there isn't a mail loop, and a correspondingly decreased execution
-time.  The increases in execution time when not caching \regexs{} for
+time.  The increases in execution time when not caching \regexes{} for
 different combinations of log files are summarised in the table below:
 
 \showtable{build/stats-cached-discarded-include-for-graph}
@@ -3492,10 +3493,10 @@ about parser scalability, showing the linear relationship between execution
 time and input size.  Section~\refwithpage{rule ordering graphs} relates to
 the effect of rule ordering on execution time, and the unexpected
 consequences of specific inputs.  The necessity of caching compiled
-\regexs{} is attested to by the third group of graphs, where the difference
-between caching and discarding is staggering.  This section concluded with
-a breakdown of the rule hits accumulated during a single test run of the
-parser.
+\regexes{} is attested to by the third group of graphs, where the
+difference between caching and discarding is staggering.  This section
+concluded with a breakdown of the rule hits accumulated during a single
+test run of the parser.
 
 
 % This fools the syntax highlighting so we get a new fold here, but it
