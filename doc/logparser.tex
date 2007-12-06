@@ -3,10 +3,10 @@
 
 % Useful stuff for math mode.
 \usepackage{amstext}
-% Wrapping of URLs.  This is used in the bibliography instead of \url{}.
+% Wrapping of URLs.
 \usepackage{url}
-\newcommand{\parsername}{ASO}
-\newcommand{\parsernames}{ASO's}
+\newcommand{\parsername}{\PLP{}}
+\newcommand{\parsernames}{\PLP{}'s}
 % Include images
 \usepackage[final]{graphicx}
 % Change how nested enumerate environments are labelled.
@@ -19,18 +19,19 @@
 \makeglossary{}
 \makeacronym{}
 
+% XXX THIS DOESN'T WORK AFTER PACKAGE UPGRADES :(
 % When creating a \PDF{} make the table of contents into links to the pages
 % (without horrible red borders) and include bookmarks.  The title and
 % author don't work - I think either gnuplot or graphviz clobbers it.
-\usepackage{hyperref}
-\hypersetup{
-    pdftitle    = {Parsing Postfix log files},
-    pdfauthor   = {John Tobin},
-    final       = true,
-    pdfborder   = {0 0 0},
-%    breaklinks  = true,
-}
-\usepackage{breakurl}
+%\usepackage{hyperref}
+%\hypersetup{
+%    pdftitle    = {Parsing Postfix log files},
+%    pdfauthor   = {John Tobin},
+%    final       = true,
+%    pdfborder   = {0 0 0},
+%%    breaklinks  = true,
+%}
+%\usepackage{breakurl}
 \usepackage{lastpage}
 
 % \showgraph{filename}{caption}{label}
@@ -90,9 +91,9 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
     it is possible to achieve a high degree of accuracy in understanding
     the logs, and thus reconstructing the actions taken by Postfix to
     generate the logs.  This paper describes the creation of a parser,
-    documenting the parsing algorithm and rules, explaining the
-    difficulties encountered and the solutions developed, with reference to
-    an implementation which stores data gleaned from the logs in an SQL
+    documenting the parsing algorithm, explaining the difficulties
+    encountered and the solutions developed, with reference to an
+    implementation which stores data gleaned from the logs in an SQL
     database.  The gathered data can then be used to optimise current
     anti-spam measures, provide a baseline to test new anti-spam measures
     against, or to produce statistics showing how effective those measures
@@ -103,7 +104,7 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 XXX WHAT IS THE CONCLUSION???  FIRST THING IS TO COMPARE TO OTHER PARSERS
 REVIEWED
 
-XXX THINK OF A NAME\@.
+XXX NOW SAVING THE SIZE OF MAILS\@.
 
 \newpage
 \tableofcontents
@@ -450,6 +451,8 @@ introductory guides can be found at~\cite{smtp-intro-01, smtp-intro-02}.
 
 \subsection{Postfix}
 
+\label{postfix background}
+
 Postfix is a \MTA{} with the following design aims (in order of
 importance): security, flexibility of configuration, scalability, and high
 performance.  It features extensive, extensible, optional anti-spam
@@ -672,6 +675,42 @@ box while developing the parser:
         Postfix.
 
 \end{itemize}
+
+
+\subsection{Parser design}
+
+\label{parser design}
+
+It should be clear from the earlier Postfix background
+(section~\refwithpage{postfix background}) that logs produced by Postfix
+are not fixed; they vary widely from host to host, depending on the set of
+restrictions chosen by the administrator.  With this in mind, one of the
+parser's design aims was to make adding new rules as easy as possible, to
+enable administrators to properly parse their log lines.  The main design
+decision which enables this is the separation of rules from the parsing
+algorithm, and secondly the division of the algorithm into discrete
+actions.
+
+\label{why separate rules and algorithm}
+
+Separating the rules from the algorithm makes it possible to parse new log
+lines without modifying the core parsing algorithm.  Although this may seem
+like a trivial point, is it substantially more difficult to understand a
+program's entire parsing algorithm, identify the correct location to
+change, and make the appropriate changes without adversely affecting
+parsing, particularly as there may be edge cases which are not immediately
+obvious.\footnote{See
+section~\refwithpage{yet-more-aborted-delivery-attempts} for a complication
+which occurs only four times in 93 log files tested.}  Requiring changes to
+the parsing algorithm also complicates upgrades, as the changes must be
+preserved during the upgrade, and may clash with changes made by the
+developer.  \parsername{} allows the user to add new rules to the database
+without changing the parsing algorithm, unless the new log lines to be
+parsed require functionality not already provided by the algorithm.  If the
+new log lines do require new functionality, new actions can be added to the
+parser without modifying existing actions or other parts of the algorithm;
+only in the rare case that the new actions require support from other
+sections of the code will more extensive changes be required.
 
 \subsection{Conventions used in the paper}
 
@@ -1590,29 +1629,6 @@ the resulting data in a normalised, easy to use representation.  The
 algorithm's task is to follow the journey each mail takes through Postfix,
 piecing the data extracted by rules into a coherent whole, saving it in a
 useful and consistent form, and performing housekeeping duties.
-
-XXX WHERE SHOULD THE NEXT PARAGRAPH BE PLACED\@?
-
-\label{why separate rules and algorithm}
-
-Separating the rules and algorithm makes it possible to parse new log lines
-without modifying the core parsing algorithm.  Although this may seem like
-a trivial point, is it substantially more difficult to understand a
-program's entire parsing algorithm, identify the correct location to
-change, and make the appropriate changes without adversely affecting
-parsing, particularly as there may be edge cases which are not immediately
-obvious.\footnote{See
-section~\refwithpage{yet-more-aborted-delivery-attempts} for a complication
-which occurs only four times in 93 log files tested.}  Requiring changes to
-the parsing algorithm also complicates upgrades, as the changes must be
-preserved during the upgrade, and may clash with changes made by the
-developer.  \parsername{} allows the user to add new rules to the database
-without changing the parsing algorithm, unless the new log lines to be
-parsed require functionality not already provided by the algorithm.  If the
-new log lines do require new functionality, new actions can be added to the
-parser without modifying existing actions or other parts of the algorithm;
-only in the rare case that the new actions require support from other
-sections of the code will more extensive changes be required.
 
 \subsection{Introduction}
 
@@ -2825,8 +2841,6 @@ why the separation of rules from the algorithm is beneficial.
 
 \subsection{Parsers reviewed}
 
-XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
-
 \begin{description}
 
     \item [Pflogsumm] \textit{pflogsumm is designed to provide an over-view
@@ -3021,7 +3035,8 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         log files, for analysis by AWStats' HTTP log file parser.  The
         converting parser only deals with a small portion of the log lines
         generated by Postfix, silently skipping those it cannot deal with,
-        and does not distinguish between different types of rejection.
+        and does not distinguish between different types of rejection;
+        there is no easy way to extend it to handle new log lines.
         Although though it does correlate log lines by queueid, it does not
         deal with any of the other complications described in this
         document.
@@ -3037,7 +3052,11 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         to provide real time alerts when dictionary attacks, mail loops or
         similar problems occur. It doesn't attempt to extract or save data,
         correlate log lines, or any of the more advanced tasks described in
-        this document, because it is not designed to do so.
+        this document, because it is not designed to do so.  The user must
+        construct the \regexs{} to match significant input lines before it
+        will parse any logs.  This program was not reviewed in further
+        detail because its aims are so far removed from the aims of this
+        project.
 
         \url{http://home.uninet.ee/~ragnar/throughput_monitor/} \newline
         (Last checked 2007/08/13.)
@@ -3051,12 +3070,12 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         stdout or to files.\/}
 
         Anteater doesn't have any English documentation so it's difficult,
-        nigh impossible, to accurately comment on what analysis is
-        performs.  It did not run successfully when tested, and its parsing
-        would certainly be out of date as Postfix has evolved considerably
-        since this tool was last updated (November 2003).  As it neither
-        ran successfully nor has documentation the author can read a
-        detailed review cannot be provided.
+        nigh impossible, for this author to accurately comment on what
+        analysis it performs.  It did not run successfully when tested, and
+        its parsing would certainly be out of date as Postfix has evolved
+        considerably since this tool was last updated (November 2003).  As
+        it neither ran successfully nor has documentation the author can
+        read a detailed review cannot be provided.
 
         \url{http://anteater.drzoom.ch/} \newline (Last checked
         2007/08/13.)
@@ -3068,39 +3087,43 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         the information appropriately.\/}
 
         YAALA uses a plugin based system to analyse log files and produce
-        \HTML{} output reports.  The core code is merely 153 lines long, as
-        all the parsing and report generation is handled by modules.  YAALA
-        supports storing previously gathered data; it dumps its internal
-        data structures using Perl's Storable module~\cite{perl-storable},
-        so with some knowledge of the data structure created by the module
-        responsible for parsing Postfix log files it should be possible to
-        extract data with an external program.  Using YAALA as a base would
-        be only slightly less work than starting from scratch, as both
-        input and output modules would need to be written specially; it may
-        even be more work to implement the parser within the constraints of
-        YAALA\@.  YAALA bundles a Postfix parser, which extracts the
-        following fields from specific log lines:
+        \HTML{} output reports, with all the parsing and report generation
+        handled by modules.  Using YAALA as a base would be only slightly
+        less work than starting from scratch, as both input and output
+        modules would need to be written specially; it may even be more
+        work to implement the parser within the constraints of YAALA\@.
+        YAALA supports storing previously gathered data using Perl's
+        Storable module~\cite{perl-storable}, so with enough knowledge of
+        the data structure YAALA stores it should be possible to extract
+        data with another Perl program also using the Storable module;
+        \parsername{} uses a well documented database which is accessible
+        from the majority of programming languages.
+        
+        YAALA provides a Postfix parser which extracts the following fields
+        from specific log lines:
 
         \tab{}Aggregations: count (not explained), bytes (sum of bytes
         transferred).\newline \tab{}Keyfields [sic]: date, hour, sender,
         recipient, defer\_count, delay, incoming\_host, outgoing\_host.
 
-        YAALA provides an \SQL{} like mini-language used when generating
-        the reports; sample reports can be seen at~\cite{yaala-samples}.
-        Example query: \newline \tab{} \texttt{requests BY file WHERE host
-        =\~{} Google}. \newline The mini-language is quite limited and
-        cannot be used to extract data for external use, merely to create
-        reports.
+        YAALA extracts most of the fields \parsername{} does, but it does
+        not maintain separate counters for each restriction like
+        \parsername{}, so its data cannot be used for optimisation, testing
+        or understanding of restrictions.  YAALA's Postfix parser does not
+        deal with the complications explained in this document, though it
+        does correlate log lines by queueid.
 
-        YAALA as distributed does not attempt the in-depth parsing
-        explained in this document, and implementing such parsing within
-        the confines of YAALA would be at least as much work as
-        implementing it separately.
+        YAALA provides a mini-language based on \SQL{} that is used when
+        generating reports; sample reports can be seen
+        at~\cite{yaala-samples}.  Example query: \newline \tab{}
+        \texttt{requests BY file WHERE host =\~{} Google} \newline The
+        mini-language is quite limited and cannot be used to extract data
+        for external use, merely to create reports.
 
         In summary YAALA provides a Postfix parser which only handles the
         most common Postfix log lines, provides reasonably flexible report
-        generation from the limited data extracted, but no facilities to
-        extract data for use in other tools.
+        generation from the limited data extracted, but has no facilities
+        to extract data for use in other tools.
 
         \url{http://yaala.org/} \newline (Last checked 2007/10/09.)
 
@@ -3121,22 +3144,24 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         the number of deliveries and the volume of email delivered by day,
         the domains from which you receive or send the most emails, the
         relays most used, etc.\/}; notably rejections are not mentioned or
-        handled.  It supports multiple output formats (text, \HTML{},
-        \PDF{} and Excel 95).  Logs can be parsed, the extracted data
-        saved, and reports generated from it later.  Accessing this data
-        from another application is undocumented; given the source code it
-        should be possible, with sufficient time and effort, to access the
-        data.
+        dealt with, and unlike \parsername{} there is no facility to extend
+        the parser.  It supports multiple output formats for generated
+        reports (text, \HTML{}, \PDF{} and Excel 95) but the reports do not
+        appear to be customisable; \parsername{} does not produce any
+        reports.  Lire supports saving extracted data for later report
+        generation, but accessing this data from another application is
+        undocumented; given the source code it should be possible, with
+        sufficient time and effort, to access the data from an external
+        program.
 
         Like AWStats and Logrep, Lire attempts to correlate log lines by
         queueid, but not by \pid{}, so the complete list of recipients for
         a mail should be available; however its parser extracts only part
         of the available data and makes no attempt to deal with the other
         complications described in sections~\refwithpage{complications}
-        and~\refwithpage{additional complications}.  It stores data, but
-        not in an easily accessible format, and generates reports in
-        multiple formats, but those reports do not appear to be
-        customisable.
+        and~\refwithpage{additional complications}.  \parsername{} uses an
+        \SQL{} database to make accessing the extracted data as easy as
+        possible.
 
         \url{http://logreport.org/lire.html} \newline (Last checked
         2007/10/09.)
@@ -3149,7 +3174,7 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
         Apache, Sendmail, syslog, ipchains, iptables, NT event logs,
         Firewall-1, wtmp, xferlog, Oracle listener and Pix.\/}
 
-        Logrep extracts the following fields from Postfix logs:
+        Logrep extracts roughly half the fields \parsername{} does:
 
         \begin{itemize}
 
@@ -3162,28 +3187,31 @@ XXX COMPARE AND CONTRAST RATHER THAN REVIEW\@.
 
         \end{itemize}
 
-        Fields are correlated based on the queueid (referred to as
+        It also counts the number of log lines parsed and skipped.  Log
+        lines are correlated based on the queueid (referred to as
         sessionname [sic] within Logrep), but not by \pid{}.  The parsing
         is error prone: empty fields are saved when the log line doesn't
         match the \regex{}, though it appears that they will not overwrite
-        existing data.  It also counts the number of log lines parsed and
-        skipped.  Most notably rejections are completely ignored, making it
-        unsuitable for the purposes of this project.  It doesn't attempt to
-        address any of the complications in
+        existing data.  Most notably rejections are completely ignored,
+        making it unsuitable for the purposes of this project.  It doesn't
+        attempt to address any of the complications in
         sections~\refwithpage{complications} and~\refwithpage{additional
         complications} except for correlating by queueid.
 
         Logrep does not come with any documentation, though some scant
-        documentation is available on its website.  It requires a web
-        browser to interact with it, ensuring that automated log processing
-        will be difficult.  Sadly all attempts to use Logrep failed, as it
-        was unable to access the log files selected; this appears to be a
-        bug rather than operator error.\footnote{If it is caused by
+        documentation is available on its website (\parsername{} provides
+        copious documentation).  It requires a web browser to interact with
+        it, ensuring that automated log processing will be difficult,
+        whereas automated processing is a key part of \parsernames{}
+        design.  Sadly all the author's attempts to use Logrep failed, as
+        it was unable to access the log files selected; this appears to be
+        a bug rather than operator error.\footnote{If it is caused by
         operator error, the interface needs improvement as the (minimal)
-        instructions were followed as closely as possible.}  As parsing
-        failed it wasn't possible to review the reports Logrep can generate
-        (available in \HTML{} only), nor to examine the (undocumented)
-        format in which it can save extracted data for subsequent reuse.
+        instructions were followed as closely as possible, and multiple
+        attempts were made.}  As parsing failed it wasn't possible to
+        review the reports Logrep can generate (available in \HTML{} only),
+        nor to examine the (undocumented) format in which it can save
+        extracted data for subsequent reuse.
 
         Logrep extracts far less data from Postfix logs than \parsername{},
         completely ignores rejections, is effectively undocumented, doesn't
