@@ -6,96 +6,91 @@ all: logparser.pdf
 %.pdf: %.ps
 	ps2pdf "$<" "$@"
 
+latex:
+	(latex -interaction=nonstopmode "${SOURCE}" || rm -f "${DEST}") | tee "${DEST}.out";
+	[ -f "${DEST}" ]
+	# Re-run bibtex and latex if necessary; I'd rather not repeat the latex
+	# line, but it's easier than trying to rig up a loop or recursion.
+	if grep -q "LaTeX Warning: Citation .* on page .* undefined" "${DEST}.out"; then \
+		bibtex $$( basename "${SOURCE}" .tex ) || rm -f "${DEST}"; \
+		(latex -interaction=nonstopmode "${SOURCE}" || rm -f "${DEST}") | tee "${DEST}.out"; \
+	fi
+	[ -f "${DEST}" ]
+
 %.dvi: %.tex
+	make compile SOURCE="$<" DEST="$@"
+
+run_makeindex:
+	set -e; \
+	touch "${INPUT}.old"; \
+	if ! cmp -s "${INPUT}" "${INPUT}.old"; then \
+		makeindex -s "${STYLE}" -t "${LOG}" -o "${OUTPUT}" "${INPUT}"; \
+		cp "${INPUT}" "${INPUT}.old"; \
+		touch ran_makeindex; \
+	fi
+	echo; echo; echo;
+
+compile:
 	# Run latex to handle \cite: latex will add \cite references to
 	# logparser.aux.
-	(latex -interaction=nonstopmode "$<" || rm -f "$@") | tee "$@.out"
-	[ -f "$@" ]
+	make latex SOURCE="${SOURCE}" DEST="${DEST}"
 	# Rebuild the glossary; see foo.glg for errors
-	# Sometimes glossary produces an empty foo.glo, though I cannot figure out why.
-	set -e; \
-	BASE=$$( basename "$@" .dvi ); \
-	if [ ! -s "$$BASE.glo" ]; then \
-		(latex -interaction=nonstopmode "$<" || rm -f "$@") | tee "$@.out"; \
-	fi; \
-	makeindex -s "$$BASE.ist" -t "$$BASE.glg" -o "$$BASE.gls" "$$BASE.glo";
-	touch "$$BASE.gls.old"
-	echo; echo; echo;
 	# Rebuild the acronym list; see foo.alg for errors
-	set -e; \
-	BASE=$$( basename "$@" .dvi ); \
-	makeindex -s "$$BASE.ist" -t "$$BASE.alg" -o "$$BASE.acn" "$$BASE.acr";
-	touch "$$BASE.acn.old"
-	echo; echo; echo;
+	# Sometimes glossary produces an empty foo.glo, though I cannot figure out why.
+	BASE=$$( basename "${SOURCE}" .tex ); \
+	make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.glg" OUTPUT="$$BASE.gls" INPUT="$$BASE.glo"; \
+	make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.alg" OUTPUT="$$BASE.acn" INPUT="$$BASE.acr"
 	# Include the new glossary and acronyms if anything has changed.
-	BASE=$$( basename "$@" .dvi ); \
-	(cmp -s "$$BASE.gls" "$$BASE.gls.old" && cmp -s "$$BASE.acn" "$$BASE.acn.old") \
-		|| (latex -interaction=nonstopmode "$<" || rm -f "$@") | tee "$@.out"
-	[ -f "$@" ]
-	BASE=$$( basename "$@" .dvi ); \
-	cp -p "$$BASE.gls" "$$BASE.gls.old"; \
-	cp -p "$$BASE.acn" "$$BASE.acn.old";
-	# Rebuild the index, if there is one; note this is done after the glossary 
-	# and acronym lists are pulled in so that they can have index entries too.
-	# Run bibtex to extract the right entries from logparser-bibliography.bib
-	# into logparser-bibliography.bbl
-	# Run latex again to pull in logparser-bibliography.bbl.
-	if grep -q "LaTeX Warning: Citation .* on page .* undefined" "$@.out"; then \
-		set -e; \
-		bibtex $$( echo "$<" | sed -e 's/.tex$$//' ) \
-            || (rm -f "$@"; false); \
-		make logparser.deps; \
-		( latex -interaction=nonstopmode "$<" || rm -f "$@" ) | tee "$@.out"; \
+	if [ -e ran_makeindex ]; then \
+		make latex SOURCE="${SOURCE}" DEST="${DEST}"; \
+		rm -f ran_makeindex; \
 	fi
-	[ -f "$@" ]
-	# Run latex for a third time to fix up references from $< to
+	# Run latex for a third time to fix up references from ${SOURCE} to
 	# logparser-bibliography.bbl.
-	if grep -q "LaTeX Warning: Reference .* on page .* undefined" "$@.out"; then \
-		( latex -interaction=nonstopmode "$<" || rm -f "$@" ) | tee "$@.out"; \
+	if grep -q "LaTeX Warning: Reference .* on page .* undefined" "${DEST}.out"; then \
+		make latex SOURCE="${SOURCE}" DEST="${DEST}"; \
 	fi
-	[ -f "$@" ]
+	[ -f "${DEST}" ]
 	# Run latex for a fourth time in case labels have changed.
-	if grep -q "Rerun to get cross-references right." "$@.out"; then \
-		( latex -interaction=nonstopmode "$<" || rm -f "$@" ) | tee "$@.out"; \
+	if grep -q "Rerun to get cross-references right." "${DEST}.out"; then \
+		make latex SOURCE="${SOURCE}" DEST="${DEST}"; \
 	fi
-	[ -f "$@" ]
+	[ -f "${DEST}" ]
 	# Run latex for a fifth time in case tables lengths have changed.
-	if grep -q "Package longtable Warning: Column widths have changed" "$@.out"; then \
-		( latex -interaction=nonstopmode "$<" || rm -f "$@" ) | tee "$@.out"; \
+	if grep -q "Package longtable Warning: Column widths have changed" "${DEST}.out"; then \
+		make latex SOURCE="${SOURCE}" DEST="${DEST}"; \
 	fi
-	[ -f "$@" ]
-	cat "$@.out"
-	grep Overfull "$@.out" || true
+	[ -f "${DEST}" ]
+	cat "${DEST}.out"
+	grep Overfull "${DEST}.out" || true
 	# Finally done.
-	chktex -I0 -q "$<"
+	chktex -I0 -q "${SOURCE}"
 
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
-logparser.dvi: logparser.deps logparser.bbl logparser-acronyms.tex
-logparser.deps: build/plot-cached-discarded.ps build/plot-cached-discarded-factor.ps  \
-				build/plot-normal-shuffle-reverse.ps build/plot-normal-shuffle-factor.ps  \
-				build/plot-normal-reverse-factor.ps build/plot-normal-filesize-numlines-factor.ps \
-				build/plot-normal-filesize-numlines.ps build/plot-log22-distribution-by-rule.ps \
-				build/plot-log22-distribution-versus-rule-count.ps build/plot-hits.ps \
-				build/plot-hits-high.ps build/plot-hits-middle.ps \
-				build/plot-hits-low.ps \
+logparser.dvi: logparser.deps logparser-bibliography.bib logparser-bibliography-style.bst logparser-acronyms.tex
+logparser.deps: build/plot-cached-discarded.pdf build/plot-cached-discarded-factor.pdf  \
+				build/plot-normal-shuffle-reverse.pdf build/plot-normal-shuffle-factor.pdf  \
+				build/plot-normal-reverse-factor.pdf build/plot-normal-filesize-numlines-factor.pdf \
+				build/plot-normal-filesize-numlines.pdf build/plot-log22-distribution-by-rule.pdf \
+				build/plot-log22-distribution-versus-rule-count.pdf build/plot-hits.pdf \
+				build/plot-hits-high.pdf build/plot-hits-middle.pdf \
+				build/plot-hits-low.pdf \
 				build/stats-cached-discarded-include-for-graph.tex \
 				build/stats-normal-filesize-line-count-include.tex \
 				build/stats-normal-shuffle-reverse-include.tex \
-				build/plot-log22-distribution-versus-rule-count-factor.ps \
-				build/plot-log22-log-lines.ps \
-				build/plot-log22-rules.ps \
-				build/logparser-flow-chart-part-1.ps \
-				build/logparser-flow-chart-part-2.ps
+				build/plot-log22-distribution-versus-rule-count-factor.pdf \
+				build/plot-log22-log-lines.pdf \
+				build/plot-log22-rules.pdf \
+				build/logparser-flow-chart-part-1.pdf \
+				build/logparser-flow-chart-part-2.pdf
 	touch "$@"
 
-# Rebuild the bibtex db whenever the input changes.
-logparser.bbl: logparser-bibliography.bib logparser-bibliography-style.bst
-	BASE=$$( basename "$@" .bbl ); \
-	if [ ! -f "$$BASE.aux" ]; then \
-		latex -interaction=nonstopmode "$$BASE" || ( rm -f "$$BASE.dvi"; false ); \
-	fi
-	bibtex $$( basename "$@" .bbl ) || (rm -f "$@"; false);
+build/plot-%.pdf: build/plot-%.ps
+	ps2pdf "$<" "$@"
+
+build/logparser-flow-chart-%.pdf: logparser-flow-chart-%.dot
+	dot -o "$@" -Tpdf -x "$<"
 
 build/logparser-flow-chart-%.ps: logparser-flow-chart-%.dot
 	dot -o "$@" -Tps -x "$<"
@@ -252,6 +247,7 @@ extract-stats:
 clean:
 	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out *.ist *.glg 
 	rm -f *.gls *.glo *.cbk *.cit *.lof *.idx *.acn *.acr *.alg *.deps *.lot
+	rm -f *.old
 
 veryclean: clean
 	rm -f build/*

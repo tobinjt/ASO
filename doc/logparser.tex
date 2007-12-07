@@ -1803,10 +1803,10 @@ complications}.
 % thing is the \clearpage seems to cause a blank page sometimes, if the
 % image is just slightly too big.
 
-\showgraph{build/logparser-flow-chart-part-1.ps}{Parser flow chart part
+\showgraph{build/logparser-flow-chart-part-1}{Parser flow chart part
 1}{flow chart image part 1}
 
-\showgraph{build/logparser-flow-chart-part-2.ps}{Parser flow chart part
+\showgraph{build/logparser-flow-chart-part-2}{Parser flow chart part
 2}{flow chart image part 2}
 
 \clearpage
@@ -3283,7 +3283,7 @@ parser.
 
 \subsection{Parser scalability}
 
-\showgraph{build/plot-normal-filesize-numlines.ps}{Execution time vs file
+\showgraph{build/plot-normal-filesize-numlines}{Execution time vs file
 size vs number of lines}{execution time vs file size vs number of lines
 graph}
 
@@ -3309,7 +3309,7 @@ size vs number lines factor} and table~\refwithpage{execution time vs file
 size vs number lines factor table} show that the parser's execution time
 scales linearly with input size.
 
-\showgraph{build/plot-normal-filesize-numlines-factor.ps}{Ratio of file
+\showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file
 size and number of lines to execution time}{execution time vs file size vs
 number lines factor}
 
@@ -3323,10 +3323,10 @@ file size vs number lines factor table}
 
 \label{rule ordering graphs}
 
-\showgraph{build/plot-normal-shuffle-factor.ps}{Percentage increase of
+\showgraph{build/plot-normal-shuffle-factor}{Percentage increase of
 shuffled over normal}{percentage increase of shuffled over normal}
 
-\showgraph{build/plot-normal-reverse-factor.ps}{Percentage increase of
+\showgraph{build/plot-normal-reverse-factor}{Percentage increase of
 reversed over normal}{percentage increase of reversed over normal}
 
 \subsubsection{Why are there dips in the graphs?}
@@ -3442,10 +3442,10 @@ merely 17--20\% of non-cached execution time.  Caching compiled \regexes{}
 is probably the single most effective optimisation possible in the parser's
 implementation.
 
-\showgraph{build/plot-cached-discarded.ps}{Regex: cached vs
+\showgraph{build/plot-cached-discarded}{Regex: cached vs
 discarded}{normal regex vs discard regex}
 
-\showgraph{build/plot-cached-discarded-factor.ps}{Regex caching: percentage
+\showgraph{build/plot-cached-discarded-factor}{Regex caching: percentage
 execution time increase}{normal regex vs discarded regex factor}
 
 Two large dips can be seen in graph~\refwithpage{normal regex vs discarded
@@ -3473,22 +3473,22 @@ different combinations of log files are summarised in the table below:
 The number of hits per rule is quite unevenly spread, resembling a Power
 Law distribution~\cite{powerlaw}.
 
-\showgraph{build/plot-hits.ps}{Hits per rule}{rule hits graph}
+\showgraph{build/plot-hits}{Hits per rule}{rule hits graph}
 
 As graph~\refwithpage{rule hits graph} is quite difficult to read it has
 been separated into three sections: low, middle and high.
 
-\showgraph{build/plot-hits-low.ps}{Hits per rule (low)}{hits per rule low}
+\showgraph{build/plot-hits-low}{Hits per rule (low)}{hits per rule low}
 
 It is apparent from the low graph (graph~\refwithpage{hits per rule low})
 that some rules have few or no hits; those with zero hits are rules which
 were written to parse log files used during development of the parser but
 not utilised in the test runs performed for this document.
 
-\showgraph{build/plot-hits-middle.ps}{Hits per rule (middle)}{hits per rule
+\showgraph{build/plot-hits-middle}{Hits per rule (middle)}{hits per rule
 middle}
 
-\showgraph{build/plot-hits-high.ps}{Hits per rule (high)}{hits per rule
+\showgraph{build/plot-hits-high}{Hits per rule (high)}{hits per rule
 high}
 
 \clearpage
