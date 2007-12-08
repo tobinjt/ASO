@@ -9,16 +9,15 @@ all: logparser.pdf
 latex:
 	(latex -interaction=nonstopmode "${SOURCE}" || rm -f "${DEST}") | tee "${DEST}.out";
 	[ -f "${DEST}" ]
-	# Re-run bibtex and latex if necessary; I'd rather not repeat the latex
-	# line, but it's easier than trying to rig up a loop or recursion.
-	if grep -q "LaTeX Warning: Citation .* on page .* undefined" "${DEST}.out"; then \
+	# Run bibtex if necessary; latex will pick up the new information on the 
+	# next run, and on the third run will properly resolve \cite commands.
+	if grep -q "Warning: Citation .* on page .* undefined" "${DEST}.out"; then \
 		bibtex $$( basename "${SOURCE}" .tex ) || rm -f "${DEST}"; \
-		(latex -interaction=nonstopmode "${SOURCE}" || rm -f "${DEST}") | tee "${DEST}.out"; \
 	fi
 	[ -f "${DEST}" ]
 
 %.dvi: %.tex
-	make compile SOURCE="$<" DEST="$@"
+	make build_loop SOURCE="$<" DEST="$@"
 
 run_makeindex:
 	set -e; \
@@ -30,37 +29,55 @@ run_makeindex:
 	fi
 	echo; echo; echo;
 
-compile:
-	# Run latex to handle \cite: latex will add \cite references to
-	# logparser.aux.
+
+build_run:
 	make latex SOURCE="${SOURCE}" DEST="${DEST}"
 	# Rebuild the glossary; see foo.glg for errors
 	# Rebuild the acronym list; see foo.alg for errors
 	# Sometimes glossary produces an empty foo.glo, though I cannot figure out why.
+	# The source files change between different runs; it seems that including
+	# the output files causes the source files to change on the next latex run.
+	# I haven't investigated much further, I don't really care.
 	BASE=$$( basename "${SOURCE}" .tex ); \
 	make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.glg" OUTPUT="$$BASE.gls" INPUT="$$BASE.glo"; \
 	make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.alg" OUTPUT="$$BASE.acn" INPUT="$$BASE.acr"
-	# Include the new glossary and acronyms if anything has changed.
-	if [ -e ran_makeindex ]; then \
-		make latex SOURCE="${SOURCE}" DEST="${DEST}"; \
-		rm -f ran_makeindex; \
-	fi
-	# Run latex for a third time to fix up references from ${SOURCE} to
-	# logparser-bibliography.bbl.
-	if grep -q "LaTeX Warning: Reference .* on page .* undefined" "${DEST}.out"; then \
-		make latex SOURCE="${SOURCE}" DEST="${DEST}"; \
-	fi
-	[ -f "${DEST}" ]
-	# Run latex for a fourth time in case labels have changed.
-	if grep -q "Rerun to get cross-references right." "${DEST}.out"; then \
-		make latex SOURCE="${SOURCE}" DEST="${DEST}"; \
-	fi
-	[ -f "${DEST}" ]
-	# Run latex for a fifth time in case tables lengths have changed.
-	if grep -q "Package longtable Warning: Column widths have changed" "${DEST}.out"; then \
-		make latex SOURCE="${SOURCE}" DEST="${DEST}"; \
-	fi
-	[ -f "${DEST}" ]
+	# The next run will include the new glossary and acronyms if they've changed.
+
+build_loop:
+	# Run latex at least three times:
+	# 1 \cite commands populate foo.aux; bibtex will populate foo.bbl
+	#   glossary and acronym files are written, and postprocessed
+	# 2 latex reads foo.bbl, updates foo.aux
+	#   glossary and acronym files are now included; more \cite commands are 
+	#   added to foo.aux; bibtex reads foo.aux again and updates foo.bbl
+	# 3 latex can now properly deal with the first set of \cite commands; it 
+	#   reads foo.bbl again, updating foo.aux
+	# 4 latex now resolves \cite commands from the glossary and acronyms, 
+	#   possibly causing labels to change; in a more complicated document 
+	#   this might even cause new entries in the glossary and acronyms, 
+	#   requiring a rebuild of those, possibly causing new bibliography 
+	#   entries, . . .
+	# Other reasons to run it:
+	# 5 table lengths in the acronym/glossary pages may have changed
+	# 6 hyperref may need to add stuff (not sure what)
+	# So this loop runs four times, and may need to run more times in future
+	# (e.g. if I added an index).
+	make build_run SOURCE="${SOURCE}" DEST="${DEST}";
+	echo; echo; echo;
+	for i in $$( seq 1 4 ); do \
+		echo "iteration $$i starting"; \
+		if [ -e ran_makeindex ]; then \
+			echo "ran_makeindex exists, running latex again"; \
+			make build_run SOURCE="${SOURCE}" DEST="${DEST}"; \
+			rm -f ran_makeindex; \
+			echo; echo; echo; \
+		fi; \
+		if grep -q -f latex-warnings "${DEST}.out"; then \
+			echo "warnings found, running latex again"; \
+			make build_run SOURCE="${SOURCE}" DEST="${DEST}"; \
+			echo; echo; echo; \
+		fi; \
+	done
 	cat "${DEST}.out"
 	grep Overfull "${DEST}.out" || true
 	# Finally done.
