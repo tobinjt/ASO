@@ -1,8 +1,8 @@
-load "plot-defaults-ps.gpi"
+load "plot-defaults-png.gpi"
 
 set xlabel "Rule"
 set ylabel "Number of hits, middle (> 1000, < 100000)"
-set output "../build/plot-hits-middle.ps"
+set output "../build/plot-hits-middle.png"
 
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse

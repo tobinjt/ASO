@@ -1,4 +1,4 @@
-load "plot-defaults.gpi"
+load "plot-defaults-ps.gpi"
 
 set xlabel "Program"
 set ylabel "Number of rules"

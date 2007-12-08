@@ -1,0 +1,4 @@
+load "plot-defaults.gpi"
+# Create png output.
+# six: 5.4,3.3 inches roughly
+set terminal png size 388,237

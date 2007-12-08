@@ -1,8 +1,8 @@
-load "plot-defaults-ps.gpi"
+load "plot-defaults-png.gpi"
 
 set xlabel "Program"
 set ylabel "Number of lines"
-set output "../build/plot-log22-distribution-versus-rule-count.ps"
+set output "../build/plot-log22-distribution-versus-rule-count.png"
 
 set y2label "Number of rules"
 # Put the scale on the y2axis

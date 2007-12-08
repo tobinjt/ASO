@@ -7,4 +7,3 @@ set autoscale xfixmax
 set yrange [0:*]
 # Put the legend at the bottom left, Left justified text.
 set key bottom left Left reverse
-set terminal postscript monochrome eps size 5.4,3.3

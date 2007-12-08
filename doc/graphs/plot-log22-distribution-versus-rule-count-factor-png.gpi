@@ -1,8 +1,8 @@
-load "plot-defaults-ps.gpi"
+load "plot-defaults-png.gpi"
 
 set xlabel "Program"
 set ylabel "Lines per rule"
-set output "../build/plot-log22-distribution-versus-rule-count-factor.ps"
+set output "../build/plot-log22-distribution-versus-rule-count-factor.png"
 
 set nox2tics
 set xrange [0:8]

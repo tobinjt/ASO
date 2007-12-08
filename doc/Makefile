@@ -1,13 +1,7 @@
-all: logparser.pdf
+all: logparser.dvi
 
-%.ps: %.dvi
-	dvips -o "$@" "$<"
-
-%.pdf: %.ps
-	ps2pdf "$<" "$@"
-
-latex:
-	(latex -interaction=nonstopmode "${SOURCE}" || rm -f "${DEST}") | tee "${DEST}.out";
+run_latex:
+	("${PROGRAM}" -interaction=nonstopmode "${SOURCE}" || rm -f "${DEST}") | tee "${DEST}.out";
 	[ -f "${DEST}" ]
 	# Run bibtex if necessary; latex will pick up the new information on the 
 	# next run, and on the third run will properly resolve \cite commands.
@@ -17,7 +11,10 @@ latex:
 	[ -f "${DEST}" ]
 
 %.dvi: %.tex
-	make build_loop SOURCE="$<" DEST="$@"
+	make build PROGRAM="latex" SOURCE="$<" DEST="$@"
+
+%.pdf: %.tex
+	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@"
 
 run_makeindex:
 	set -e; \
@@ -29,9 +26,17 @@ run_makeindex:
 	fi
 	echo; echo; echo;
 
+# Why does build need to .PHONY when build_loop and build_run don't?
+.PHONY: build
+build:
+	make build_loop PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
+	cat "${DEST}.out"
+	grep Overfull "${DEST}.out" || true
+	# Finally done.
+	chktex -I0 -q "${SOURCE}"
 
 build_run:
-	make latex SOURCE="${SOURCE}" DEST="${DEST}"
+	make run_latex PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
 	# Rebuild the glossary; see foo.glg for errors
 	# Rebuild the acronym list; see foo.alg for errors
 	# Sometimes glossary produces an empty foo.glo, though I cannot figure out why.
@@ -62,49 +67,71 @@ build_loop:
 	# 6 hyperref may need to add stuff (not sure what)
 	# So this loop runs four times, and may need to run more times in future
 	# (e.g. if I added an index).
-	make build_run SOURCE="${SOURCE}" DEST="${DEST}";
+	make build_run PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}";
 	echo; echo; echo;
 	for i in $$( seq 1 4 ); do \
 		echo "iteration $$i starting"; \
 		if [ -e ran_makeindex ]; then \
 			echo "ran_makeindex exists, running latex again"; \
-			make build_run SOURCE="${SOURCE}" DEST="${DEST}"; \
+			make build_run PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"; \
 			rm -f ran_makeindex; \
 			echo; echo; echo; \
 		fi; \
 		if grep -q -f latex-warnings "${DEST}.out"; then \
 			echo "warnings found, running latex again"; \
-			make build_run SOURCE="${SOURCE}" DEST="${DEST}"; \
+			make build_run PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"; \
 			echo; echo; echo; \
 		fi; \
 	done
-	cat "${DEST}.out"
-	grep Overfull "${DEST}.out" || true
-	# Finally done.
-	chktex -I0 -q "${SOURCE}"
 
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
-logparser.dvi: logparser.deps logparser-bibliography.bib logparser-bibliography-style.bst logparser-acronyms.tex
-logparser.deps: build/plot-cached-discarded.pdf build/plot-cached-discarded-factor.pdf  \
-				build/plot-normal-shuffle-reverse.pdf build/plot-normal-shuffle-factor.pdf  \
-				build/plot-normal-reverse-factor.pdf build/plot-normal-filesize-numlines-factor.pdf \
-				build/plot-normal-filesize-numlines.pdf build/plot-log22-distribution-by-rule.pdf \
-				build/plot-log22-distribution-versus-rule-count.pdf build/plot-hits.pdf \
-				build/plot-hits-high.pdf build/plot-hits-middle.pdf \
-				build/plot-hits-low.pdf \
-				build/stats-cached-discarded-include-for-graph.tex \
-				build/stats-normal-filesize-line-count-include.tex \
-				build/stats-normal-shuffle-reverse-include.tex \
-				build/plot-log22-distribution-versus-rule-count-factor.pdf \
-				build/plot-log22-log-lines.pdf \
-				build/plot-log22-rules.pdf \
-				build/logparser-flow-chart-part-1.pdf \
-				build/logparser-flow-chart-part-2.pdf
+logparser.dvi: logparser.deps logparser-bibliography.bib logparser-bibliography-style.bst \
+				logparser-acronyms.tex
+logparser.deps: \
+				build/plot-cached-discarded.png								\
+				build/plot-cached-discarded-factor.png						\
+				build/plot-normal-shuffle-reverse.png						\
+				build/plot-normal-shuffle-factor.png						\
+				build/plot-normal-reverse-factor.png						\
+				build/plot-normal-filesize-numlines-factor.png				\
+				build/plot-normal-filesize-numlines.png						\
+				build/plot-log22-distribution-by-rule.png					\
+				build/plot-log22-distribution-versus-rule-count.png			\
+				build/plot-hits.png											\
+				build/plot-hits-high.png									\
+				build/plot-hits-middle.png									\
+				build/plot-hits-low.png										\
+				build/plot-log22-distribution-versus-rule-count-factor.png	\
+				build/plot-log22-log-lines.png								\
+				build/plot-log22-rules.png									\
+				\
+				build/plot-cached-discarded.ps								\
+				build/plot-cached-discarded-factor.ps						\
+				build/plot-normal-shuffle-reverse.ps						\
+				build/plot-normal-shuffle-factor.ps							\
+				build/plot-normal-reverse-factor.ps							\
+				build/plot-normal-filesize-numlines-factor.ps				\
+				build/plot-normal-filesize-numlines.ps						\
+				build/plot-log22-distribution-by-rule.ps					\
+				build/plot-log22-distribution-versus-rule-count.ps			\
+				build/plot-hits.ps											\
+				build/plot-hits-high.ps										\
+				build/plot-hits-middle.ps									\
+				build/plot-hits-low.ps										\
+				build/plot-log22-distribution-versus-rule-count-factor.ps	\
+				build/plot-log22-log-lines.ps								\
+				build/plot-log22-rules.ps									\
+				\
+				build/stats-cached-discarded-include-for-graph.tex			\
+				build/stats-normal-filesize-line-count-include.tex			\
+				build/stats-normal-shuffle-reverse-include.tex				\
+				\
+				build/logparser-flow-chart-part-1.pdf						\
+				build/logparser-flow-chart-part-1.ps						\
+				build/logparser-flow-chart-part-2.pdf						\
+				build/logparser-flow-chart-part-2.ps
 	touch "$@"
-
-build/plot-%.pdf: build/plot-%.ps
-	ps2pdf "$<" "$@"
 
 build/logparser-flow-chart-%.pdf: logparser-flow-chart-%.dot
 	dot -o "$@" -Tpdf -x "$<"
@@ -131,6 +158,15 @@ build/plot-log22-rules.ps: stats-log22-rule-count-by-program.txt
 
 build/plot-%.ps: graphs/plot-%.gpi
 	cd graphs && gnuplot "../$<"
+
+build/plot-%.png: graphs/plot-%-png.gpi
+	cd graphs && gnuplot "../$<"
+
+# Stop make deleting the intermediate gnuplot file, because there's no point
+# in recreating it each time make runs.
+.PRECIOUS: graphs/plot-%-png.gpi
+graphs/plot-%-png.gpi: graphs/plot-%.gpi
+	sed -e 's/ps/png/g' "$<" > "$@" || rm -f "$@"
 
 build/stats-normal-stripped.txt: build/stats-normal.txt
 	sed -e '/^#/d' "$<" > "$@"

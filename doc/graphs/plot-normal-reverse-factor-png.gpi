@@ -1,8 +1,8 @@
-load "plot-defaults-ps.gpi"
+load "plot-defaults-png.gpi"
 
 set xlabel "Log file"
 set ylabel "Percentage increase of reversed over normal"
-set output "../build/plot-normal-reverse-factor.ps"
+set output "../build/plot-normal-reverse-factor.png"
 # Add a % sign on the y axis
 set format y "% g%%"
 

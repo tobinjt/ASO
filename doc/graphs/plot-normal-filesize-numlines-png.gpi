@@ -1,8 +1,8 @@
-load "plot-defaults-ps.gpi"
+load "plot-defaults-png.gpi"
 
 set xlabel "Log file"
 set ylabel "Execution time in seconds, file size in MB and number of lines / 10000"
-set output "../build/plot-normal-filesize-numlines.ps"
+set output "../build/plot-normal-filesize-numlines.png"
 
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
