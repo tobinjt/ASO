@@ -2649,7 +2649,8 @@ sub queueid_exists {
 =item $self->get_connection_by_queueid($queueid)
 
 Returns the connection for $queueid in the state tables, or creates a
-connection marked faked and logs a warning if one doesn't exist.
+connection marked faked and logs a warning if one doesn't exist.  Warns if you
+try to use NOQUEUE as the queueid.
 
 =back
 
@@ -2657,6 +2658,12 @@ connection marked faked and logs a warning if one doesn't exist.
 
 sub get_connection_by_queueid {
     my ($self, $queueid) = @_;
+
+    if ($queueid eq q{NOQUEUE}) {
+        $self->warn(qq{get_connection_by_queueid: }
+            . q{inappropriate queueid $queueid});
+    }
+
     if ($self->queueid_exists($queueid)) {
         return $self->{queueids}->{$queueid};
     }
@@ -2671,7 +2678,8 @@ sub get_connection_by_queueid {
 
 Creates and returns a new connection, saving it into the state table under
 $queueid,  %attributes will be used to initialise the new connection; there are
-no restrictions on what can be present in %attributes.
+no restrictions on what can be present in %attributes.  Warns if you try to use
+NOQUEUE as the queueid.
 
 =back
 
@@ -2679,6 +2687,11 @@ no restrictions on what can be present in %attributes.
 
 sub make_connection_by_queueid {
     my ($self, $queueid, %attributes) = @_;
+
+    if ($queueid eq q{NOQUEUE}) {
+        $self->my_warn(qq{make_connection_by_queueid: }
+            . q{inappropriate queueid $queueid});
+    }
 
     if ($self->queueid_exists($queueid)) {
         $self->my_warn(qq{make_connection_by_queueid: $queueid exists\n},
