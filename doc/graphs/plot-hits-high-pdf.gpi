@@ -1,8 +1,8 @@
-load "plot-defaults-png.gpi"
+load "plot-defaults-pdf.gpi"
 
 set xlabel "Rule"
 set ylabel "Number of hits, high (> 100000)"
-set output "../build/plot-hits-high.png"
+set output "../build/plot-hits-high.pdf"
 
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse

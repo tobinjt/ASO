@@ -93,17 +93,17 @@ logparser.pdf: logparser.deps logparser-bibliography.bib logparser-bibliography-
 logparser.dvi: logparser.deps logparser-bibliography.bib logparser-bibliography-style.bst \
 				logparser-acronyms.tex
 logparser.deps: \
-				build/plot-cached-discarded.png								\
-				build/plot-cached-discarded-factor.png						\
-				build/plot-normal-shuffle-reverse.png						\
-				build/plot-normal-shuffle-factor.png						\
-				build/plot-normal-reverse-factor.png						\
-				build/plot-normal-filesize-numlines-factor.png				\
-				build/plot-normal-filesize-numlines.png						\
-				build/plot-hits.png											\
-				build/plot-hits-high.png									\
-				build/plot-hits-middle.png									\
-				build/plot-hits-low.png										\
+				build/plot-cached-discarded.pdf								\
+				build/plot-cached-discarded-factor.pdf						\
+				build/plot-normal-shuffle-reverse.pdf						\
+				build/plot-normal-shuffle-factor.pdf						\
+				build/plot-normal-reverse-factor.pdf						\
+				build/plot-normal-filesize-numlines-factor.pdf				\
+				build/plot-normal-filesize-numlines.pdf						\
+				build/plot-hits.pdf											\
+				build/plot-hits-high.pdf									\
+				build/plot-hits-middle.pdf									\
+				build/plot-hits-low.pdf										\
 				\
 				build/plot-cached-discarded.ps								\
 				build/plot-cached-discarded-factor.ps						\
@@ -153,14 +153,14 @@ build/plot-log22-rules.ps: stats-log22-rule-count-by-program.txt
 build/plot-%.ps: graphs/plot-%.gpi
 	cd graphs && gnuplot "../$<"
 
-build/plot-%.png: graphs/plot-%-png.gpi
+build/plot-%.pdf: graphs/plot-%-pdf.gpi
 	cd graphs && gnuplot "../$<"
 
 # Stop make deleting the intermediate gnuplot file, because there's no point
 # in recreating it each time make runs.
-.PRECIOUS: graphs/plot-%-png.gpi
-graphs/plot-%-png.gpi: graphs/plot-%.gpi
-	sed -e 's/ps/png/g' "$<" > "$@" || rm -f "$@"
+.PRECIOUS: graphs/plot-%-pdf.gpi
+graphs/plot-%-pdf.gpi: graphs/plot-%.gpi
+	sed -e 's/ps/pdf/g' "$<" > "$@" || rm -f "$@"
 
 build/stats-normal-stripped.txt: build/stats-normal.txt
 	sed -e '/^#/d' "$<" > "$@"

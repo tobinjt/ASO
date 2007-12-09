@@ -1,8 +1,8 @@
-load "plot-defaults-png.gpi"
+load "plot-defaults-pdf.gpi"
 
 set xlabel "Log file"
 set ylabel "Regexs: cached vs discarded, execution time in seconds"
-set output "../build/plot-cached-discarded.png"
+set output "../build/plot-cached-discarded.pdf"
 
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
