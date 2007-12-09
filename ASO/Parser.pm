@@ -137,7 +137,7 @@ sub new {
         $self->{data_source},
         $self->{username},
         $self->{password},
-        {AutoCommit => 0},
+        {AutoCommit => 1},
     );
 
     bless $self, $package;
