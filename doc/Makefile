@@ -1,4 +1,6 @@
-all: logparser.dvi
+# NOTE: you need to run 'make clean' between running 'make foo.dvi' and 'make
+# foo.pdf', otherwise latex will only be run once and it will get very confused.
+all: logparser.pdf
 
 run_latex:
 	("${PROGRAM}" -interaction=nonstopmode "${SOURCE}" || rm -f "${DEST}") | tee "${DEST}.out";
@@ -86,6 +88,8 @@ build_loop:
 
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
+logparser.pdf: logparser.deps logparser-bibliography.bib logparser-bibliography-style.bst \
+				logparser-acronyms.tex
 logparser.dvi: logparser.deps logparser-bibliography.bib logparser-bibliography-style.bst \
 				logparser-acronyms.tex
 logparser.deps: \
@@ -96,15 +100,10 @@ logparser.deps: \
 				build/plot-normal-reverse-factor.png						\
 				build/plot-normal-filesize-numlines-factor.png				\
 				build/plot-normal-filesize-numlines.png						\
-				build/plot-log22-distribution-by-rule.png					\
-				build/plot-log22-distribution-versus-rule-count.png			\
 				build/plot-hits.png											\
 				build/plot-hits-high.png									\
 				build/plot-hits-middle.png									\
 				build/plot-hits-low.png										\
-				build/plot-log22-distribution-versus-rule-count-factor.png	\
-				build/plot-log22-log-lines.png								\
-				build/plot-log22-rules.png									\
 				\
 				build/plot-cached-discarded.ps								\
 				build/plot-cached-discarded-factor.ps						\
@@ -113,15 +112,10 @@ logparser.deps: \
 				build/plot-normal-reverse-factor.ps							\
 				build/plot-normal-filesize-numlines-factor.ps				\
 				build/plot-normal-filesize-numlines.ps						\
-				build/plot-log22-distribution-by-rule.ps					\
-				build/plot-log22-distribution-versus-rule-count.ps			\
 				build/plot-hits.ps											\
 				build/plot-hits-high.ps										\
 				build/plot-hits-middle.ps									\
 				build/plot-hits-low.ps										\
-				build/plot-log22-distribution-versus-rule-count-factor.ps	\
-				build/plot-log22-log-lines.ps								\
-				build/plot-log22-rules.ps									\
 				\
 				build/stats-cached-discarded-include-for-graph.tex			\
 				build/stats-normal-filesize-line-count-include.tex			\
