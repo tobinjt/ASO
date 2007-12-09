@@ -112,8 +112,10 @@ sub new {
         discard_compiled_regex  => 0,
         # Skip inserting results into the database, because it quadruples run
         # time.
-        skip_inserting_results => 0,
-        parse_lines_only       => 0,
+        skip_inserting_results  => 0,
+        parse_lines_only        => 0,
+        username                => undef,
+        password                => undef,
     );
 
     if (not exists $options->{data_source}) {
@@ -133,6 +135,8 @@ sub new {
 
     $self->{dbix} = ASO::DB->connect(
         $self->{data_source},
+        $self->{username},
+        $self->{password},
         {AutoCommit => 0},
     );
 

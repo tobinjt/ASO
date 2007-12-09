@@ -140,6 +140,8 @@ sub get_options {
         q{discard_compiled_regex!}  => 0,
         q{skip_inserting_results!}  => 1,
         q{parse_lines_only!}        => 0,
+        q{username=s}               => undef,
+        q{password=s}               => undef,
     );
     my %opts = (
         q{in-statefile|i=s}         => undef,
@@ -249,6 +251,14 @@ saved to a file named 'state' in the current directory.
 Specifies the database to use when loading rules and saving results.  Defaults
 to 'dbi:SQLite:dbname=../sql/db.sq3'.  See L<DBI> for more information about the
 format of this option.
+
+=item --username USERNAME
+
+The password to use when connecting to the database.
+
+=item --password PASSWORD
+
+The username to use when connecting to the database.
 
 =item --sort_rules normal|shuffle|reverse
 
