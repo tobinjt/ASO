@@ -139,6 +139,7 @@ sub get_options {
         q{sort_rules=s}             => q{normal},
         q{discard_compiled_regex!}  => 0,
         q{skip_inserting_results!}  => 1,
+        q{parse_lines_only!}        => 0,
     );
     my %opts = (
         q{in-statefile|i=s}         => undef,
@@ -272,10 +273,16 @@ sufficiently complicated regex may require re-compilation each time it is used
 =item --skip_inserting_results
 
 Inserting results into the database is slow because of the additional disk or
-network IO required, causing an XXX% slowdown in execution.  When testing new
+network IO required, causing a huge slowdown in execution.  When testing new
 rules or parser features disabling insertion of results is essential for a quick
 testing cycle.  You can force insertion of results by specifying
 --no-skip_inserting_results.
+
+=item --parse_lines_only
+
+Parse log lines, but don't run the rule's action.  Useful for testing new rules,
+as no new data will be added to the database but warnings will still be issued
+for unparsed lines.  Execution is also much faster.
 
 =item --timing-data FILE
 

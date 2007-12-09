@@ -93,6 +93,12 @@ because of the disk IO (this is based on using SQLite on Windows, other
 databases and/or OS's may give different results).  For testing it can be very
 helpful to disable insertion; everything else happens as normal.
 
+=item parse_lines_only
+
+Parse log lines but don't execute actions; useful when you want to test regexes
+in new rules but don't want any new data saved to the database.  By defaults we
+parse and execute actions.
+
 =back
 
 =back
@@ -107,6 +113,7 @@ sub new {
         # Skip inserting results into the database, because it quadruples run
         # time.
         skip_inserting_results => 0,
+        parse_lines_only       => 0,
     );
 
     if (not exists $options->{data_source}) {
@@ -494,7 +501,8 @@ sub parse_result_cols {
 
 Try each regex against the line until a match is found, then perform the
 associated action.  If no match is found spew a warning.  $line is not a string,
-it's the hash returned by Parse::Syslog.
+it's the hash returned by Parse::Syslog.  If the option parse_lines_only was
+given to new(), the action will not be executed.
 
 =back
 
@@ -518,6 +526,9 @@ sub parse_line {
         # shift the array forward so they're aligned
         unshift @matches, undef;
 
+        if ($self->{parse_lines_only}) {
+            return;
+        }
         # Hmmm, I can't figure out how to combine the next two lines.
         my $action = $rule->{action};
         return $self->$action($rule, $line, \@matches);
@@ -2211,6 +2222,8 @@ sub fixup_connection {
                 and defined $parent
                 and exists $parent->{connection}->{$ccol}) {
             $connection->{connection}->{$ccol} = $parent->{connection}->{$ccol};
+            $self->my_warn(qq{copied $ccol from parent},
+                dump_connection($connection));
         }
         if (not exists $connection->{connection}->{$ccol}) {
             $missing_connection{$ccol}++;
