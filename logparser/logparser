@@ -90,8 +90,7 @@ print_timing(qq{Updated hits}, q{}, tv_interval($update_starting, $update_finish
 # here and the data will go to the requested file.
 redirect_stdout();
 my $finished = [gettimeofday()];
-    print_timing(qq{Total time}, q{},
-        tv_interval($start_time, $finished));
+print_timing(qq{Total time}, q{}, tv_interval($start_time, $finished));
 
 exit 0;
 
@@ -134,12 +133,15 @@ sub redirect_stdout {
 }
 
 sub get_options {
+    # XXX figure out how to pull the options from ASO::Parser instead of
+    # repeating them here.
     my %parser_options = (
         q{data_source=s}            => q{dbi:SQLite:dbname=../sql/db.sq3},
         q{sort_rules=s}             => q{normal},
         q{discard_compiled_regex!}  => 0,
         q{skip_inserting_results!}  => 1,
         q{parse_lines_only!}        => 0,
+        q{debug_results!}           => undef,
         q{username=s}               => undef,
         q{password=s}               => undef,
     );
@@ -292,7 +294,14 @@ testing cycle.  You can force insertion of results by specifying
 
 Parse log lines, but don't run the rule's action.  Useful for testing new rules,
 as no new data will be added to the database but warnings will still be issued
-for unparsed lines.  Execution is also much faster.
+for unparsed lines.  Execution is also much faster.  Default is to run actions.
+
+=item --debug_results
+
+Save extra data in each result to aid in debugging.  The data will not be stored
+in the database, but it will be shown when connections are dumped for any
+reason.  There is extra memory overhead associated with saving this data, and
+even a slight run time increase.  Default is to save the minimum data required.
 
 =item --timing-data FILE
 

@@ -116,6 +116,7 @@ sub new {
         parse_lines_only        => 0,
         username                => undef,
         password                => undef,
+        debug_results           => undef,
     );
 
     if (not exists $options->{data_source}) {
@@ -2322,16 +2323,25 @@ sub save {
     # NOTE: every time a new attribute is added here it needs to be stripped 
     # out in commit_connection().
     my %result = (
-        rule_id         => $rule->{id},
+        # postfix_action isn't saved in the database, but it is used elsewhere
+        # to classify results, so we need to save it.
         postfix_action  => $rule->{postfix_action},
-        line            => $line,
+        rule_id         => $rule->{id},
         timestamp       => $line->{timestamp},
-        date            => scalar localtime ($line->{timestamp}),
-        logfile         => $self->{current_logfile},
-        line_number     => $.,
         # Sneakily in-line result_data here
         %{$rule->{result_data}},
     );
+    if ($self->{debug_results}) {
+        # NOTE: every time a new attribute is added here it needs to be stripped
+        # out in commit_connection().
+        %result = (
+            date            => scalar localtime ($line->{timestamp}),
+            line            => $line,
+            line_number     => $.,
+            logfile         => $self->{current_logfile},
+            %result,
+        );
+    }
     push @{$connection->{results}}, \%result;
 
     # We don't use $self->update_hash() for result_cols, we check for internal
@@ -2405,15 +2415,15 @@ sub save {
 
 =over 4
 
-=item $self->commit_connection($commit_connection)
+=item $self->commit_connection($connection)
 
-Enter the data from the connection into the database (unless
-skip_inserting_results was specified).  If the connection is faked, hasn't
-successfully completed fixup_connection(), or has already been committed an
-appropriate error message will be logged and commit_connection() will abort.  If
-skip_inserting_results was specified commit_connection() will finish at this
-point.  A new row will be entered in the connections table, and a new row in the
-results table for each result where postfix_action is not INFO.
+Enter the data from $connection into the database (unless skip_inserting_results
+was specified).  If $connection is faked, hasn't successfully completed
+fixup_connection(), or has already been committed an appropriate error message
+will be logged and commit_connection() will abort.  If skip_inserting_results
+was specified commit_connection() will finish at this point.  A new row will be
+entered in the connections table, and a new row in the results table for each
+result where postfix_action is not INFO.
 
 Database insertions are wrapped in transactions, and each transaction is
 committed once there have been 1000 rows added to the connections table.  This
@@ -2474,9 +2484,7 @@ sub commit_connection {
         $result->{connection_id} = $connection_id;
         my @unwanted_attrs = qw(child date line line_number logfile
             postfix_action);
-        foreach my $unwanted_attr (@unwanted_attrs) {
-            delete $result->{$unwanted_attr};
-        }
+        delete @{$result}{@unwanted_attrs};
         my $result_in_db =
             $self->{dbix}->resultset(q{Result})->new_result($result);
         $result_in_db->insert();
