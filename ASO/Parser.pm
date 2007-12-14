@@ -2178,8 +2178,6 @@ sub fixup_connection {
         return;
     }
 
-    my $parent = $connection->{parent};
-
     my $failure = 0;
     my %data;
     # Populate %data.
@@ -2199,8 +2197,7 @@ sub fixup_connection {
     }
 
     my %missing_result;
-    # Check that we have everything we need; we can't pull any of this from the
-    # parent, I think.  Maybe I can?  I don't need to, at least at this stage.
+    # Check that we have everything we need
     RESULT:
     foreach my $result (@{$results}) {
         if (uc $result->{postfix_action} eq q{INFO}) {
@@ -2220,16 +2217,6 @@ sub fixup_connection {
 
     my %missing_connection;
     foreach my $ccol (keys %{$self->{required_connection_cols}}) {
-        # NOTE: I'm assuming that anything we're going to require from the
-        # parent connection has already been saved there; if not I'll need to
-        # revisit this and complicate it much further.
-        if (not exists $connection->{connection}->{$ccol}
-                and defined $parent
-                and exists $parent->{connection}->{$ccol}) {
-            $connection->{connection}->{$ccol} = $parent->{connection}->{$ccol};
-            $self->my_warn(qq{copied $ccol from parent},
-                dump_connection($connection));
-        }
         if (not exists $connection->{connection}->{$ccol}) {
             $missing_connection{$ccol}++;
             $failure++;
