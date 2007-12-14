@@ -88,7 +88,7 @@ The regex to apply to log lines.  Several keywords will be expanded in the regex
 be compact, easy to read, less prone to typos (some of the regex components are
 pretty hairy), and far easier to fix when a problem in one of the components is
 discovered.  For efficiency each regex is compiled when the rule is loaded,
-rather than recompiling it each time (XXX% slower).
+rather than recompiling it each time.
 
 =item result_cols
 
