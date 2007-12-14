@@ -13,8 +13,13 @@ use IO::File;
 use Data::Dumper;
 $Data::Dumper::Sortkeys = 1;
 use List::Util qw(sum);
+use Getopt::Long;
+use Pod::Usage;
+use Regexp::Common;
 
 my $COUNT_STRING = q{__COUNT__};
+
+my %Options = get_options();
 
 # Read all the input files, replacing known regexs in each line.
 debug(qq{$0: starting replace_regexs()\n});
@@ -97,6 +102,8 @@ sub replace_regexs {
         # and every \ needs to be doubled.
         [q/(__HOSTNAME__)\\\\\\[(__IP__)\\\\\\]/, q/(__HOSTNAME__)\[(__IP__)\]/],
         [q/(__IPv4__|__IPv6__)/, q/(__IP__)/],
+        # XXX Do I need these?  They should only appear in log lines we already
+        # parse, so I dunno.
         q/hostname (__HOSTNAME__) verification failed:/,
         q/(__HOSTNAME__): Host not found(?:, try again)?/,
         # This won't catch every queueid, but it's a start.
@@ -167,8 +174,8 @@ sub build_pattern_hashes {
 
     my %patterns;
     # Only use words which are present in 0.05% or more of lines.
-    my $minimum_frequency = int $num_lines / 2000;
-#    $minimum_frequency = 50;
+    my $minimum_frequency = parse_frequency($Options{q{word-frequency}},
+        $num_lines);
 
     while (<$input>) {
         my @words = split /\s+/, $_;
@@ -176,6 +183,7 @@ sub build_pattern_hashes {
         my $i = 0;
         foreach my $word (@words) {
             if ($frequency_table->{$word}->[$i] < $minimum_frequency) {
+                # XXX CHANGE .* TO .+
                 $frequency_table->{q{.*}}->[$i] += $frequency_table->{$word}->[$i];
                 $word = q{.*};
             }
@@ -198,6 +206,7 @@ sub build_regexs {
     my %no_dupes;
     foreach my $pattern (@patterns) {
         my ($regex, $count) = @$pattern;
+        # XXX CHANGE .* TO .+
         # There'll be an extra space at the start of the line.
         $regex =~ s/^ //;
         # Replace sequences of '.* .* etc' with '.*'
@@ -208,7 +217,7 @@ sub build_regexs {
     }
 
     my @modified_patterns;
-    my $min_matches = int $num_lines / 100;
+    my $min_matches = parse_frequency($Options{q{line-frequency}}, $num_lines);
     REGEX:
     foreach my $regex (keys %no_dupes) {
         if ($no_dupes{$regex} < $min_matches) {
@@ -254,4 +263,59 @@ sub build_regexs_recursive {
 sub debug {
     my $time = localtime;
     warn $time, q{ }, @_;
+}
+
+sub getopt_to_key {
+    my (%opts) = @_;
+    my %names;
+
+    map {
+        my ($key, $value) = ($_, $opts{$_});
+        $key =~ s/[!|=].*//;
+        $names{$key} = $value;
+    } keys %opts;
+
+    return %names;
+}
+
+sub get_options {
+    my %opts = (
+        q{word-frequency|w=s}       => q{1%},
+        q{line-frequency|l=s}       => q{1%},
+        q{help|h}                   => 0,
+        q{version|v}                => 0,
+    );
+
+    my @switches    = keys %opts;
+    %opts           = getopt_to_key(%opts);
+
+    Getopt::Long::Configure qw(no_getopt_compat permute bundling);
+    Getopt::Long::GetOptions(\%opts, @switches) or pod2usage(2);
+
+    if ($opts{help}) {
+        pod2usage(1);
+    }
+    if ($opts{version}) {
+        my $version = q{$Id$};
+        print qq{$0 version $version\n};
+        exit 0;
+    }
+
+    return %opts;
+}
+
+sub parse_frequency {
+    my ($user_frequency, $num_lines) = @_;
+
+    if ($user_frequency =~ m/^($RE{num}{real})%$/) {
+        # foo % of the number of lines.
+        return $num_lines * $1 / 100;
+    } elsif ($user_frequency =~ m/^($RE{num}{real})$/) {
+        # An exact number of lines.
+        return $user_frequency;
+    } else {
+        die <<"DEATH";
+$0: bad frequency $user_frequency; expecting a number or a percentage
+DEATH
+    }
 }
