@@ -319,3 +319,150 @@ $0: bad frequency $user_frequency; expecting a number or a percentage
 DEATH
     }
 }
+
+=pod
+
+=head1 NAME
+
+logs2regexs - create new regexes from unparsed Postfix log lines
+
+=head1 VERSION
+
+This documentation refers to logparser version $Id$
+
+=head1 SYNOPSIS
+
+    # Parse mail.log.1, saving unparsed lines
+    logparser mail.log.1 2> warnings
+    XXX ADD MORE
+
+=head1 DESCRIPTION
+
+logs2regexs reads unparsed Postfix log lines and creates regexes which match
+those lines.  These regexes can then be used to create new rules for use by
+logparser(1).
+
+=head1 OPTIONS
+
+Defaults are equivalent to:
+    logs2regexs --word-frequency 1% --line-frequency 1%
+
+=over 4
+
+=item --word-frequency FREQUENCY
+
+Set the frequency which determines whether a word is fixed or variable.  If the
+word appears in more than FREQUENCY lines it is taken to be fixed, otherwise it
+is variable and will be replaced by .* in the generated regex.  If FREQUENCY
+ends with % it is taken to be a percentage of the input lines rather than a
+fixed threshold.  1% is the default value and is a reasonable starting point.
+
+=item --line-frequency FREQUENCY
+
+Set the frequency which determines whether a regex is retained or discarded.  If
+the regex matches more than FREQUENCY lines it is retained, otherwise it is
+discarded.  If FREQUENCY ends with % it is taken to be a percentage of the input
+lines rather than a fixed threshold.  1% is the default value and is a
+reasonable starting point.  If regexes are discarded the generated regexes will
+not match all input lines; simply add the regexes as new rules to the database
+(see logparser(1)), rerun logparser(1), and rerun logs2regexs on the resulting
+unparsed lines.
+
+=back
+
+=head1 ALGORITHM
+
+The frequency with which a word occurs at that point in a line is used to
+determine whether the word is fixed or variable: fixed words are retained,
+whereas variable words are replaced by .* in the generated regex.  The original
+algorithm was developed by Risto Vaarandi for SLCT (simple logfile clustering
+tool), available from http://kodu.neti.ee/~risto/slct/
+
+The full algorithm:
+
+=over 4
+
+=item Preprocessing
+
+Commonly occurring variable words such as IP addresses, email addresses,
+start of rejection messages etc. are substituted with keywords which ASO::Parser
+will later expand when loading rules (full details of the keywords are available
+in ASO::Parser's documentation).  This improves the resulting regexes in two
+ways: the regexes are more precise, and provide more information to the user,
+e.g. compare:
+
+    ^connect from (__HOSTNAME__)\[(__IP__)\]$
+    ^connect from (.*)\[(.*)\]$
+
+The newly substituted lines are saved to a temporary file which is used as input
+to the remaining stages.
+
+=item Calculate word frequency
+
+The position of words within a line is important: a common word does not
+indicate similarity between lines unless it occupies the same position within
+both lines.  The algorithm maintains a counter for each B<(word, word's position
+within the line)> tuple, incrementing it each time that word occurs in that
+position.
+
+=item Classify words based on frequency
+
+The frequency of each B<(word, word's position within the line)> tuple is
+checked: if its frequency is greater than the threshold supplied by the user (1%
+of all lines is generally a good starting point) it is classified as a fixed
+word, otherwise it is classified as a variable term.  Variable terms are replaced
+by .*, which means to match zero or more of any character.
+
+=item Build regexes
+
+The words are reassembled to produce a regex matching the line, and a counter
+is maintained for each regex.  Contiguous sequences of .* in the newly
+reassembled regexes are collapsed to a single .*; any resulting duplicate
+regexes are combined, and their counters summed.  If the frequency of a regex
+is lower than the threshold supplied by the user the regex is discarded.18 The
+new regexes are printed for the user to add to the database, either as new
+rules or merged into the regexes
+
+=back
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+None.
+
+=head1 DEPENDENCIES
+
+Modules packaged with logparser: ASO::DB, ASO::Parser (both have additional
+dependencies, see their documentation for details).
+
+Standard Perl modules: Getopt::Long, Pod::Usage, File::Temp, File::Spec,
+IO::File, Data::Dumper, List::Util.
+
+Other modules: Regexp::Common.
+
+=head1 INCOMPATIBILITIES
+
+None known.
+
+=head1 BUGS AND LIMITATIONS
+
+No bugs known.  Bug reports and optionally patches welcome.
+
+The regexes produced are not as good as those produced by a human, but they are
+a good starting point.
+
+=head1 AUTHOR
+
+John Tobin <tobinjt@cs.tcd.ie>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2006-2007 John Tobin <tobinjt@cs.tcd.ie>.  All rights reserved.
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See L<perlartistic>.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+
+=cut
