@@ -333,8 +333,11 @@ This documentation refers to logparser version $Id$
 =head1 SYNOPSIS
 
     # Parse mail.log.1, saving unparsed lines
-    logparser mail.log.1 2> warnings
-    XXX ADD MORE
+    logparser --parse_lines_only mail.log.1 2> warnings
+    # Extract the unparsed lines
+    grep 'unparsed line: ' warnings | cut -d ' ' -f 7- > unparsed-lines
+    # Process the unparsed lines to create new regexes
+    logs2regexs unparsed-lines > new-regexes
 
 =head1 DESCRIPTION
 
