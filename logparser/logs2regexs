@@ -183,9 +183,8 @@ sub build_pattern_hashes {
         my $i = 0;
         foreach my $word (@words) {
             if ($frequency_table->{$word}->[$i] < $minimum_frequency) {
-                # XXX CHANGE .* TO .+
-                $frequency_table->{q{.*}}->[$i] += $frequency_table->{$word}->[$i];
-                $word = q{.*};
+                $frequency_table->{q{.+}}->[$i] += $frequency_table->{$word}->[$i];
+                $word = q{.+};
             }
             if (not exists $pattern->{$word}) {
                 $pattern->{$word} = {};
@@ -206,13 +205,12 @@ sub build_regexs {
     my %no_dupes;
     foreach my $pattern (@patterns) {
         my ($regex, $count) = @$pattern;
-        # XXX CHANGE .* TO .+
         # There'll be an extra space at the start of the line.
         $regex =~ s/^ //;
-        # Replace sequences of '.* .* etc' with '.*'
-        $regex =~ s/(?:\.\* )+/.* /g;
-        $regex =~ s/(?: \.\*)+/ .*/g;
-        $regex =~ s/(?:\.\* \.\*)+/.*/g;
+        # Replace sequences of '.+ .+ etc' with '.+'
+        $regex =~ s/(?:\.\+ )+/.+ /g;
+        $regex =~ s/(?: \.\+)+/ .+/g;
+        $regex =~ s/(?:\.\+ \.\+)+/.+/g;
         $no_dupes{$regex} += $count;
     }
 
@@ -328,7 +326,7 @@ logs2regexs - create new regexes from unparsed Postfix log lines
 
 =head1 VERSION
 
-This documentation refers to logparser version $Id$
+This documentation refers to logs2regexs version $Id$
 
 =head1 SYNOPSIS
 
@@ -356,7 +354,7 @@ Defaults are equivalent to:
 
 Set the frequency which determines whether a word is fixed or variable.  If the
 word appears in more than FREQUENCY lines it is taken to be fixed, otherwise it
-is variable and will be replaced by .* in the generated regex.  If FREQUENCY
+is variable and will be replaced by .+ in the generated regex.  If FREQUENCY
 ends with % it is taken to be a percentage of the input lines rather than a
 fixed threshold.  1% is the default value and is a reasonable starting point.
 
@@ -377,7 +375,7 @@ unparsed lines.
 
 The frequency with which a word occurs at that point in a line is used to
 determine whether the word is fixed or variable: fixed words are retained,
-whereas variable words are replaced by .* in the generated regex.  The original
+whereas variable words are replaced by .+ in the generated regex.  The original
 algorithm was developed by Risto Vaarandi for SLCT (simple logfile clustering
 tool), available from http://kodu.neti.ee/~risto/slct/
 
@@ -387,15 +385,15 @@ The full algorithm:
 
 =item Preprocessing
 
-Commonly occurring variable words such as IP addresses, email addresses,
-start of rejection messages etc. are substituted with keywords which ASO::Parser
-will later expand when loading rules (full details of the keywords are available
-in ASO::Parser's documentation).  This improves the resulting regexes in two
-ways: the regexes are more precise, and provide more information to the user,
-e.g. compare:
+Commonly occurring variable words such as IP addresses, email addresses, start
+of rejection messages etc. are substituted with keywords which ASO::Parser will
+later expand when loading rules (full details of the keywords are available in
+ASO::Parser's documentation).  This improves the resulting regexes in two ways:
+the regexes are more precise, and provide more information to the user, e.g.
+compare:
 
     ^connect from (__HOSTNAME__)\[(__IP__)\]$
-    ^connect from (.*)\[(.*)\]$
+    ^connect from (.+)\[(.+)\]$
 
 The newly substituted lines are saved to a temporary file which is used as input
 to the remaining stages.
@@ -413,18 +411,18 @@ position.
 The frequency of each B<(word, word's position within the line)> tuple is
 checked: if its frequency is greater than the threshold supplied by the user (1%
 of all lines is generally a good starting point) it is classified as a fixed
-word, otherwise it is classified as a variable term.  Variable terms are replaced
-by .*, which means to match zero or more of any character.
+word, otherwise it is classified as a variable term.  Variable terms are
+replaced by .+, which means to match zero or more of any character.
 
 =item Build regexes
 
-The words are reassembled to produce a regex matching the line, and a counter
-is maintained for each regex.  Contiguous sequences of .* in the newly
-reassembled regexes are collapsed to a single .*; any resulting duplicate
-regexes are combined, and their counters summed.  If the frequency of a regex
-is lower than the threshold supplied by the user the regex is discarded.18 The
-new regexes are printed for the user to add to the database, either as new
-rules or merged into the regexes
+The words are reassembled to produce a regex matching the line, and a counter is
+maintained for each regex.  Contiguous sequences of .+ in the newly reassembled
+regexes are collapsed to a single .+; any resulting duplicate regexes are
+combined, and their counters summed.  If the frequency of a regex is lower than
+the threshold supplied by the user the regex is discarded.  The new regexes are
+printed for the user to add to the database, either as new rules or merged into
+the regexes
 
 =back
 

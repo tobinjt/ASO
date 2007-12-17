@@ -1564,13 +1564,13 @@ There are 4 steps in the algorithm:
         checked: if its frequency is greater than the threshold supplied by
         the user (1\% of all lines is generally a good starting point) it
         is classified as a fixed word, otherwise it is classified as a
-        variable term.  Variable terms are replaced by \texttt{.*}, which
+        variable term.  Variable terms are replaced by \texttt{.+}, which
         means to match zero or more of any character.  
 
     \item [Build regexes]  The words are reassembled to produce a \regex{}
         matching the line, and a counter is maintained for each \regex{}.
-        Contiguous sequences of \texttt{.*} in the newly reassembled
-        \regexes{} are collapsed to a single \texttt{.*}; any resulting
+        Contiguous sequences of \texttt{.+} in the newly reassembled
+        \regexes{} are collapsed to a single \texttt{.+}; any resulting
         duplicate \regexes{} are combined, and their counters summed.  If
         the frequency of a \regex{} is lower than the threshold supplied by
         the user the \regex{} is discarded.\footnote{This is a second,
