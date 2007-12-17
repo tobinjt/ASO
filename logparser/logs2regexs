@@ -88,11 +88,7 @@ sub replace_regexs {
     );
     my @regexs = (
         q/from=<(__SENDER__)>/,
-        # XXX how do these two rules interact?  I think the second rule will
-        # clobber the result of the first line.  Maybe the space at the end of
-        # the second rule will sort it.
         q/to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)?/,
-        q/to=<(__RECIPIENT__)>/,
         q/helo=<(__HELO__)>/,
         q/<__RECIPIENT__>: Recipient address rejected:/,
         q/<__SENDER__>: Sender address rejected:/,
@@ -102,8 +98,6 @@ sub replace_regexs {
         # and every \ needs to be doubled.
         [q/(__HOSTNAME__)\\\\\\[(__IP__)\\\\\\]/, q/(__HOSTNAME__)\[(__IP__)\]/],
         [q/(__IPv4__|__IPv6__)/, q/(__IP__)/],
-        # XXX Do I need these?  They should only appear in log lines we already
-        # parse, so I dunno.
         q/hostname (__HOSTNAME__) verification failed:/,
         q/(__HOSTNAME__): Host not found(?:, try again)?/,
         # This won't catch every queueid, but it's a start.
