@@ -179,6 +179,29 @@ C<dbi:SQLite:dbname=db.sq3>
 
 =back
 
+=head1 EXIT STATUS
+
+Exits successfully (0) if there were no errors, exits unsuccessfully (1) if
+there were errors.  No attempt is made to distinguish between different errors,
+but error messages from the database will be displayed.  If there are errors the
+transaction will be rolled back; depending on your database some changes may not
+be rolled back, particularly if you add, alter or delete tables, views, etc.
+
+=head1 NOTES
+
+SQLite3, when used through DBI, executes only the first statement in a multi
+statement line.  The following won't do what you expect:
+
+    delete from foo; delete from bar; delete from baz;
+
+The first statement will be executed, the following two will be ignored.  For
+this reason setup-database splits the input into paragraphs and feeds each
+paragraph individually to the database.  It B<does not> attempt to split lines
+containing multiple statements, because that would require proper, database
+specific, SQL parsing.  If you're using SQLite3 you'll need to separate
+statements with a blank line; other databases may handle multiple statements at
+once.
+
 =head1 CONFIGURATION AND ENVIRONMENT
 
 None.
@@ -197,7 +220,9 @@ None known.
 No bugs known.  Bug reports and optionally patches welcome.
 
 The SQL parsing has been tested with SQLite3 only, and may not work for other
-SQL dialects.
+SQL dialects, though it is extremely simple so will most likely work; you'll
+probably only have problems if your database uses something other than -- to
+indicate comments.
 
 =head1 AUTHOR
 
