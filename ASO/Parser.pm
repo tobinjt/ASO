@@ -16,25 +16,34 @@ This documentation refers to ASO::Parser version $Id$
 =head1 SYNOPSIS
 
     use ASO::Parser;
+    # Create the parser, loading rules from and saving results to db.sq3.
     my $parser = ASO::Parser->new({
-            data_source => q{dbi:SQLite:dbname=../sql/db.sq3},
-            sort_rules  => q{normal},
-            discard_compiled_regex  => 0,
+            data_source => q{dbi:SQLite:dbname=db.sq3},
         });
 
-    $parser->load_state($statefile);
-    $parser->parse($logfile);
+    # Load previously saved state if there is any.
+    $parser->load_state($statefilename);
 
+    # Parse the log file.
+    $parser->parse($logfile);
+    # Do anything necessary after parsing each log.
+    $parser->post_parsing();
+    # Parse more files if you wish.
+
+    # Update the order rules will be tried in, to improve efficiency.
     $parser->update_check_order();
-    my $statefile = IO::File->new($statefile);
-    print $statefile $parser->dump_state();
+
+    # Save the parser's current state to $statefile.
+    my $statefile = IO::File->new($statefilename);
+    $parser->dump_state($statefile);
 
 =head1 DESCRIPTION
 
 ASO::Parser parses Postfix 2.2.x and 2.3.x log messages, populating an SQL
-database with the data extracted from the logs.
-
-XXX ADD A WHOLE LOT MORE HERE.
+database with the data extracted from the logs.  It deals with all the
+complications and difficulties the author has encountered parsing Postfix logs,
+providing a simple interface to the logs.  The difficulties encountered are
+documented herein and at L<http://www.cs.tcd.ie/~tobinjt/>
 
 =head1 SUBROUTINES/METHODS 
 
@@ -2960,6 +2969,8 @@ sub make_connection {
 
 =head1 DIAGNOSTICS
 
+XXX
+
 A list of every error and warning message that the module can generate
 (even the ones that will "never happen"), with a full explanation of each 
 problem, one or more likely causes, and any suggested remedies.
@@ -2968,12 +2979,10 @@ problem, one or more likely causes, and any suggested remedies.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-A full explanation of any configuration system(s) used by the module,
-including the names and locations of any configuration files, and the
-meaning of any environment variables or properties that can be set. These
-descriptions must also include details of any configuration language used.
-(also see  QUOTE \" " INCLUDETEXT "19_Miscellanea" "XREF40334_Configuration_Files_"\! Configuration Files QUOTE \" " QUOTE " in Chapter "  in Chapter  INCLUDETEXT "19_Miscellanea" "XREF55683__"\! 19.)
-
+No configuration files or environment variables are used by ASO::Parser; all
+rules are held in the database alongside the results.  Some modules used by
+ASO::Parser may utilise configuration files or environment variables - see those
+module's documentation for details.
 
 =head1 DEPENDENCIES
 
@@ -3007,7 +3016,7 @@ Patches are welcome.
 
 =head1 SEE ALSO
 
-XXX ADD INSTRUCTIONS FOR GETTING PAPER
+L<http://www.cs.tcd.ie/~tobinjt/>
 
 =head1 AUTHOR
 
