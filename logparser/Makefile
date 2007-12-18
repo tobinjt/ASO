@@ -32,7 +32,7 @@ test.%: ../../../../logs/mail.log-%
 	make INPUT='"$<"'                 STATE='"state"'         OUTPUT='"warnings"'         test-real
 
 test-real:
-	date; nice --adjustment=19 perl logparser --out-statefile ${STATE} ${INPUT} 2> ${OUTPUT}; date
+	date; perl logparser --out-statefile ${STATE} ${INPUT} 2> ${OUTPUT}; date
 
 ../sql/create-tables-sqlite3-generated.sql: ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm
 	(cd ../sql && perl make_schema > "$@")
@@ -120,3 +120,8 @@ summarize:
 
 unknown-summary:
 	grep  '^# xxx' state-some | sort | uniq -c | sort  -n
+
+pod-coverage:
+	for package in $$( find .. -name \*.pm | sed -e 's,^../,,' -e 's,/,::,g' -e 's,.pm$$,,' ); do \
+		perl -I .. -MPod::Coverage="$$package" -e 1; \
+	done
