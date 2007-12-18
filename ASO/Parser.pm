@@ -485,23 +485,23 @@ sub parse_result_cols {
     foreach my $assign (split /\s*[,;]\s*/, $spec) {
         if (not length $assign) {
             $self->my_warn(qq{parse_result_cols: empty assignment found in: \n},
-                dump_rule_from_db($rule));
+                $self->dump_rule_from_db($rule));
             next ASSIGNMENT;
         }
         if ($assign !~ m/^\s*(\w+)\s*=\s*(.+)\s*/) {
             $self->my_warn(qq{parse_result_cols: bad assignment found in: \n},
-                dump_rule_from_db($rule));
+                $self->dump_rule_from_db($rule));
             next ASSIGNMENT;
         }
         my ($key, $value) = ($1, $2);
         if ($number_required and $value !~ m/^\d+$/) {
             $self->my_warn(qq{parse_result_cols: $value: not a number in: \n},
-                dump_rule_from_db($rule));
+                $self->dump_rule_from_db($rule));
             next ASSIGNMENT;
         }
         if (not exists $column_names->{$key}) {
             $self->my_die(qq{parse_result_cols: $key: unknown variable in: \n},
-                dump_rule_from_db($rule));
+                $self->dump_rule_from_db($rule));
             next ASSIGNMENT;
         }
         $assignments->{$key} = $value;
@@ -628,7 +628,7 @@ sub DISCONNECT {
         $self->my_warn(qq{disconnection: no connection found for pid }
             . qq{$line->{pid} - perhaps the connect line is in a }
             . qq{previous log file?\n},
-            dump_line($line));
+            $self->dump_line($line));
         # Does this make sense?  At the moment yes, there aren't any other rules
         # which will deal with these lines anyway.
         return;
@@ -638,7 +638,7 @@ sub DISCONNECT {
     # There should NEVER be a queueid.
     if (exists $connection->{queueid}) {
         $self->my_warn(qq{disconnection: PANIC: found queueid: \n},
-            dump_connection($connection));
+            $self->dump_connection($connection));
         # Similarly there's no point in failing here.
         return;
     }
@@ -672,9 +672,9 @@ sub DISCONNECT {
                 $self->my_warn(qq{missing cleanup, but connection }
                     . qq{found by queueid $mail->{queueid} differs:\n},
                     qq{found in cloned_mails:\n},
-                    dump_connection($mail),
+                    $self->dump_connection($mail),
                     qq{found in queueids:\n},
-                    dump_connection($mail_by_queueid),
+                    $self->dump_connection($mail_by_queueid),
                 );
             }
             next CLONED_MAIL;
@@ -1504,14 +1504,14 @@ sub delete_child_from_parent {
 
     if (not exists $child->{parent}) {
         $self->my_warn(qq{delete_child_from_parent: missing parent:\n},
-            dump_connection($child));
+            $self->dump_connection($child));
         return;
     }
 
     my $parent = $child->{parent};
     if (not defined $parent) {
         $self->my_warn(qq{delete_child_from_parent: missing parent:\n},
-            dump_connection($child));
+            $self->dump_connection($child));
         return;
     }
 
@@ -1526,9 +1526,9 @@ sub delete_child_from_parent {
         $self->my_warn(qq{delete_child_from_parent: $child_queueid }
             . qq{not found in \%children:\n},
             qq{parent: },
-            dump_connection($parent),
+            $self->dump_connection($parent),
             qq{child: },
-            dump_connection($child));
+            $self->dump_connection($child));
         return;
     }
 
@@ -1643,12 +1643,12 @@ sub load_rules {
         }
         if ($overlapping_cols) {
             $self->my_die(qq{Exiting due to overlapping columns in rule:\n},
-                dump_rule($rule_hash));
+                $self->dump_rule($rule_hash));
         }
 
         if (not exists $self->{actions}->{$rule_hash->{action}}) {
             $self->my_die(qq{load_rules: unknown action $rule_hash->{action}: },
-                dump_rule_from_db($rule));
+                $self->dump_rule_from_db($rule));
         }
 
         # Compile the regex for efficiency, otherwise it'll be recompiled every
@@ -1661,8 +1661,8 @@ sub load_rules {
             $self->my_die(qq{$0: failed to compile regex:\n\n},
                 $filtered_regex,
                 qq{\n\nbecause: $@\n\n},
-                dump_rule_from_db($rule),
-                dump_rule($rule_hash),
+                $self->dump_rule_from_db($rule),
+                $self->dump_rule($rule_hash),
             );
         }
         if ($self->{discard_compiled_regex}) {
@@ -1692,29 +1692,75 @@ sub load_rules {
     return sort { $b->{priority} <=> $a->{priority} } @results;
 }
 
+=over 4
+
+=item $self->dump_connection($connection)
+
+Returns a dump of $connection in a human readable format (currently just uses
+Data::Dumper->Dumper()).
+
+=back
+
+=cut
+
 sub dump_connection {
-    my ($connection) = @_;
+    my ($self, $connection) = @_;
 
     local $Data::Dumper::Sortkeys = 1;
     return Data::Dumper->Dump([$connection], [q{connection}]);
 }
 
+=over 4
+
+=item $self->dump_line($line)
+
+Returns a dump of $line in a human readable format (currently just uses
+Data::Dumper->Dumper()).
+
+=back
+
+=cut
+
 sub dump_line {
-    my ($line) = @_;
+    my ($self, $line) = @_;
 
     local $Data::Dumper::Sortkeys = 1;
     return Data::Dumper->Dump([$line], [q{line}]);
 }
 
+=over 4
+
+=item $self->dump_rule($rule)
+
+Returns a dump of $rule in a human readable format (currently just uses
+Data::Dumper->Dumper()).  $rule should be a rule returned by load_rules(), not a
+rule returned from the database.
+
+=back
+
+=cut
+
 sub dump_rule {
-    my ($rule) = @_;
+    my ($self, $rule) = @_;
 
     local $Data::Dumper::Sortkeys = 1;
     return Data::Dumper->Dump([$rule], [q{rule}]);
 }
 
+=over 4
+
+=item $self->dump_rule_from_db($rule_from_db)
+
+Returns a dump of $rule_from_db in a human readable format (currently just uses
+Data::Dumper->Dumper()).  $rule should be a rule returned from the database, not
+a rule returned by load_rules().
+
+=back
+
+=cut
+
 sub dump_rule_from_db {
-    my ($rule) = @_;
+    my ($self, $rule) = @_;
 
     local $Data::Dumper::Sortkeys = 1;
     my %columns = $rule->get_columns();
@@ -2129,11 +2175,11 @@ TEMPLATE
 
     if ($conflicts) {
         $self->my_warn(qq{This rule produced conflicts: \n},
-            dump_rule($rule),
+            $self->dump_rule($rule),
             qq{in this line:\n},
-            dump_line($line),
+            $self->dump_line($line),
             qq{for this connection:\n},
-            dump_connection($connection),
+            $self->dump_connection($connection),
             Data::Dumper->Dump([$silent_overwrite], [q{silent_overwrite}]),
             Data::Dumper->Dump([$silent_discard], [q{silent_discard}]),
         );
@@ -2182,7 +2228,7 @@ sub fixup_connection {
     # it should be retried later with the faked flag cleared.
     if (exists $connection->{faked}) {
         $self->my_warn(qq{fixup_connection: faked connection: \n},
-            dump_connection($connection)
+            $self->dump_connection($connection)
         );
         return;
     }
@@ -2244,7 +2290,7 @@ sub fixup_connection {
             . qq{\n};
     }
     if ($error_message ne q{}) {
-        $self->my_warn($error_message, dump_connection($connection));
+        $self->my_warn($error_message, $self->dump_connection($connection));
     }
 
     if ($failure) {
@@ -2395,9 +2441,9 @@ sub save {
         if ($connection ne $other_con) {
             $self->my_warn(qq{save: queueid clash: $connection->{queueid}\n},
                 qq{old:\n},
-                dump_connection($other_con),
+                $self->dump_connection($other_con),
                 qq{new:\n},
-                dump_connection($connection),
+                $self->dump_connection($connection),
             );
         }
     }
@@ -2435,7 +2481,7 @@ sub commit_connection {
 
     if (exists $connection->{faked}) {
         $self->my_warn(qq{commit_connection: faked connection: \n},
-            dump_connection($connection)
+            $self->dump_connection($connection)
         );
         return;
     }
@@ -2445,7 +2491,7 @@ sub commit_connection {
     }
     if (exists $connection->{committed}) {
         $self->my_warn(qq{commit_connection: previously committed: \n},
-            dump_connection($connection)
+            $self->dump_connection($connection)
         );
         return;
     }
@@ -2699,7 +2745,7 @@ sub make_connection_by_queueid {
 
     if ($self->queueid_exists($queueid)) {
         $self->my_warn(qq{make_connection_by_queueid: $queueid exists\n},
-            dump_connection($self->get_connection_by_queueid($queueid)));
+            $self->dump_connection($self->get_connection_by_queueid($queueid)));
     }
     my $connection = $self->make_connection(queueid => $queueid, %attributes);
     $self->{queueids}->{$queueid} = $connection;
@@ -2782,21 +2828,21 @@ sub get_queueid_from_matches {
 
     if (not $rule->{queueid}) {
         $self->my_die(qq{get_queueid_from_matches: no queueid extracted by:\n},
-            dump_rule($rule));
+            $self->dump_rule($rule));
     }
     my $queueid     = $matches->[$rule->{queueid}];
     if (not defined $queueid or not $queueid) {
         $self->my_die(qq{get_queueid_from_matches: blank/undefined queueid\n},
-            dump_line($line),
+            $self->dump_line($line),
             qq{using: },
-            dump_rule($rule)
+            $self->dump_rule($rule)
         );
     }
     if ($queueid !~ m/^$self->{queueid_regex}$/o) {
         $self->my_die(qq{get_queueid_from_matches: $queueid !~ __QUEUEID__;\n},
-            dump_line($line),
+            $self->dump_line($line),
             qq{using: },
-            dump_rule($rule)
+            $self->dump_rule($rule)
         );
     }
 
@@ -2891,7 +2937,7 @@ sub make_connection_by_pid {
 
     if ($self->pid_exists($pid)) {
         $self->my_warn(qq{make_connection_by_pid: $pid exists\n},
-            dump_connection($self->get_connection_by_pid($pid)));
+            $self->dump_connection($self->get_connection_by_pid($pid)));
     }
     my $connection = $self->make_connection(pid => $pid, %attributes);
     $self->{connections}->{$pid} = $connection;
