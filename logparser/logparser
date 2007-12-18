@@ -133,31 +133,42 @@ sub redirect_stdout {
 }
 
 sub get_options {
-    # XXX figure out how to pull the options from ASO::Parser instead of
-    # repeating them here.
-    my %parser_options = (
-        q{data_source=s}            => q{dbi:SQLite:dbname=../sql/db.sq3},
-        q{sort_rules=s}             => q{normal},
-        q{discard_compiled_regex!}  => 0,
-        q{skip_inserting_results!}  => 1,
-        q{parse_lines_only!}        => 0,
-        q{debug_results!}           => undef,
-        q{username=s}               => undef,
-        q{password=s}               => undef,
-    );
-    my %opts = (
+    # Start by extracting options from ASO::Parser.
+    my @switches;
+    my $parser_options = ASO::Parser::options_for_new();
+    foreach my $option_type (keys %$parser_options) {
+        if ($option_type =~ /toggle$/) {
+            push @switches, map { qq{$_!} }
+                keys %{$parser_options->{$option_type}};
+        } elsif ($option_type =~ /argument$/) {
+            push @switches, map { qq{$_=s} }
+                keys %{$parser_options->{$option_type}};
+        } else {
+            die qq{$0: unknown option type $option_type\n};
+        }
+    }
+
+    # Add logparser options.
+    my %logparser_options = (
         q{in-statefile|i=s}         => undef,
         q{out-statefile|o=s}        => q{state},
         q{timing-data|t=s}          => undef,
         q{help|h}                   => 0,
         q{version|v}                => 0,
-        %parser_options,
     );
+    push @switches, keys %logparser_options;
 
-    my @switches    = keys %opts;
-    %opts           = getopt_to_key(%opts);
-    %parser_options = getopt_to_key(%parser_options);
+    # Now, default values.
+    my %parser_defaults = (
+        data_source => q{dbi:SQLite:dbname=../sql/db.sq3},
+    );
+    my %logparser_defaults = getopt_to_key(%logparser_options);
 
+    # Finally process the command line.
+    my %opts = (
+        %parser_defaults,
+        %logparser_defaults,
+    );
     Getopt::Long::Configure qw(no_getopt_compat permute bundling);
     Getopt::Long::GetOptions(\%opts, @switches) or pod2usage(2);
 
@@ -170,9 +181,17 @@ sub get_options {
         exit 0;
     }
 
-    map { $parser_options{$_} = $opts{$_}; } keys %parser_options;
+    # Separate logparser and ASO::Parser options.
+    my (%logparser, %parser);
+    foreach my $option (keys %opts) {
+        if (exists $logparser_defaults{$option}) {
+            $logparser{$option} = $opts{$option};
+        } else {
+            $parser{$option} = $opts{$option};
+        }
+    }
 
-    return (\%opts, \%parser_options);
+    return (\%logparser, \%parser);
 }
 
 # Convert keys from Getopt::Long option specifiers to option names.

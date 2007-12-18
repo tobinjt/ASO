@@ -19,6 +19,7 @@ This documentation refers to ASO::Parser version $Id$
     # Create the parser, loading rules from and saving results to db.sq3.
     my $parser = ASO::Parser->new({
             data_source => q{dbi:SQLite:dbname=db.sq3},
+            # other options if required
         });
 
     # Load previously saved state if there is any.
@@ -78,7 +79,8 @@ required option is data_source; the rest are optional options.
 
 The SQL database to use: rules will be loaded from it and results saved to it.
 If opening the database fails die will be called with an appropriate error
-message.  There is no default value; one must be specified.
+message.  There is no default value; one must be specified.  This is a required,
+non-boolean parameter.
 
 =item sort_rules
 
@@ -86,27 +88,29 @@ How to sort the rules returned from the database: C<normal> (most efficient,
 default), C<shuffle>, or C<reverse> (least efficient).  Useful for checking new
 rules: you should obtain the same results regardless of the order the rules are
 tried in; if not you have overlapping rules and need to rationalise your rule
-set or change the priority of one or more rules.
+set or change the priority of one or more rules.  This is an optional, boolean
+parameter.
 
 =item discard_copiled_regex
 
 For efficiency the regex in each rule is compiled once and cached.  If you're
 doing something extremely complicated, or want to drastically slow down
 execution, set this option to true and the regexs will be recompiled each time
-they're used.  Defaults to false.
+they're used.  Defaults to false.  This is an optional, boolean parameter.
 
 =item skip_inserting_results
 
 Inserting results into the database quadruples the run time of the program,
 because of the disk IO (this is based on using SQLite on Windows, other
 databases and/or OS's may give different results).  For testing it can be very
-helpful to disable insertion; everything else happens as normal.
+helpful to disable insertion; everything else happens as normal.  This is an
+optional, boolean parameter.
 
 =item parse_lines_only
 
 Parse log lines but don't execute actions; useful when you want to test regexes
 in new rules but don't want any new data saved to the database.  By defaults we
-parse and execute actions.
+parse and execute actions.  This is an optional, boolean parameter.
 
 =back
 
@@ -116,32 +120,37 @@ parse and execute actions.
 
 sub new {
     my ($package, $options) = @_;
-    my %defaults = (
-        sort_rules              => q{normal},
-        discard_compiled_regex  => 0,
-        # Skip inserting results into the database, because it quadruples run
-        # time.
-        skip_inserting_results  => 0,
-        parse_lines_only        => 0,
-        username                => undef,
-        password                => undef,
-        debug_results           => undef,
-    );
 
-    if (not exists $options->{data_source}) {
-        croak qq{${package}->new: you must provide a data_source\n};
-    }
+    my $self     = {};
+    my $defaults = $package->options_for_new();
 
-    foreach my $option (keys %$options) {
-        if (not exists $defaults{$option} and $option ne q{data_source}) {
-            croak qq{${package}::new(): unknown option $option\n};
+    # Ensure we have all required options
+    foreach my $required_option (keys %{$defaults->{required_argument}},
+            keys %{$defaults->{required_toggle}}) {
+        if (not exists $options->{$required_option}) {
+            croak qq{${package}->new: you must provide $required_option\n};
         }
     }
 
-    my $self = {
-        %defaults,
-        %{$options},
-    };
+    # Copy the defaults
+    foreach my $option_type (keys %$defaults) {
+        $self = {
+            %$self,
+            %{$defaults->{$option_type}},
+        };
+    }
+
+    # Ensure the options passed are valid
+    OPTION_CHECK:
+    foreach my $option (keys %$options) {
+        foreach my $option_type (keys %$defaults) {
+            if (exists $defaults->{$option_type}->{$option}) {
+                $self->{$option} = $options->{$option};
+                next OPTION_CHECK;
+            }
+        }
+        croak qq{${package}::new(): unknown option $option\n};
+    }
 
     $self->{dbix} = ASO::DB->connect(
         $self->{data_source},
@@ -153,6 +162,68 @@ sub new {
     bless $self, $package;
     $self->init_globals();
     return $self;
+}
+
+=over 4
+
+=item ASO::Parser->options_for_new()
+
+Returns a hash of hashes containing the options which can be passed to
+ASO::Parser->new().  The main reason is to avoid duplicating the option list in
+programs which create ASO::Parser objects.  The hash returned has four entries
+(at the moment, but more may be added in future):
+
+=over 8
+
+=item required_toggle
+
+A hash listing required boolean parameters and their default values.  The actual
+values passed are unimportant, only their truth value is used.
+
+=item required_argument
+
+A hash listing required non-boolean parameters and their default values.  The
+values passed are important for these parameters (expected values are described
+in new()).
+
+=item optional_toggle
+
+A hash listing optional boolean parameters and their default values.  The actual
+values passed are unimportant, only their truth value is used.
+
+=item optional_argument
+
+A hash listing optional non-boolean parameters and their default values.  The
+values passed are important for these parameters (expected values are described
+in new()).
+
+=back
+
+=back
+
+=cut
+
+sub options_for_new {
+    return {
+        optional_argument   => {
+            sort_rules              => q{normal},
+            username                => undef,
+            password                => undef,
+            debug_results           => undef,
+        },
+        optional_toggle     => {
+            discard_compiled_regex  => 0,
+            # Skip inserting results into the database, because it quadruples
+            # run time.
+            skip_inserting_results  => 0,
+            parse_lines_only        => 0,
+        },
+        required_argument   => {
+            data_source             => undef,
+        },
+        required_toggle     => {
+        },
+    };
 }
 
 =over 4
