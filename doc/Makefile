@@ -304,7 +304,7 @@ check:
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
-	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{s]/; p;' logparser-acronyms.tex | grep -f - -n logparser.tex
+	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{e]/; p;' logparser-acronyms.tex | grep -f - -n logparser.tex
 
 .PHONY: todo
 todo:

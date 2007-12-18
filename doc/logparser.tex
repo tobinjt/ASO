@@ -2821,12 +2821,39 @@ always room for improvement.
 This section has covered the limitations of the parser and possible
 improvements which may be implemented in the future.
 
+\newpage
 \section{Conclusion}
 
 \label{conclusion}
 
-XXX WRITE THIS
+Parsing Postfix logs appears at first sight to be an almost trivial task,
+especially given previous experience in parsing logs, but it turns out to
+be a much more taxing project than initially expected.  The variety and
+breadth of log lines produced by Postfix is quite surprising, as a quick
+survey of sample log files gives the impression that the number of distinct
+log lines is quite small; this impression is due to the uneven distribution
+evidenced by logs produced in normal operation (see graph~\refwithpage{rule
+hits graph} for a vivid illustration of this).  
 
+
+Enabling users to easily extend the parser to deal with new log lines is a
+design imperative, and despite the resulting increase in complexity the job
+is quite tractable, though it does raise interesting efficiency and
+optimisation questions (answered in section~\refwithpage{rule efficiency}).
+For the parser to be useful to the average user, parsing new log lines
+produced by Postfix must be as simple a task as configuring Postfix to
+produce those log lines was in the first place, otherwise users won't make
+to effort to utilise the parser.  Providing a tool to ease the generation
+of \regexes{} from unparsed log lines should help 
+
+
+The real difficulties arise once the parser is successfully dealing with
+90\% of the log lines, as the irregularities and complications previously
+explained only begin to become apparent once the vast majority of log lines
+have been parsed successfully.  Dealing with numerous, infrequently
+occurring log lines is a simple, albeit tiresome task, whereas dealing with
+information which hasn't been logged, e.g.\ when delivery attempts are
+aborted.  
 
 \appendix
 
