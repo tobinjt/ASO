@@ -18,6 +18,10 @@ run_latex:
 %.pdf: %.tex
 	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@"
 
+%.bbl: %-bibliography.bib
+	bibtex $$( basename "$@" .bbl )
+	touch ran_bibtex
+
 run_makeindex:
 	set -e; \
 	touch "${INPUT}.old"; \
@@ -34,6 +38,8 @@ build:
 	make build_loop PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
 	cat "${DEST}.out"
 	grep Overfull "${DEST}.out" || true
+	BASE=$$( basename "${SOURCE}" .tex ); \
+	grep ^Warning "$$BASE.blg" || true
 	# Finally done.
 	chktex -I0 -q "${SOURCE}"
 
@@ -73,6 +79,13 @@ build_loop:
 	echo; echo; echo;
 	for i in $$( seq 1 4 ); do \
 		echo "iteration $$i starting"; \
+		make $$( echo "$$SOURCE" | sed -e 's/tex$$/bbl/' ); \
+		if [ -e ran_bibtex ]; then \
+			echo "ran_bibtex exists, running latex again"; \
+			make build_run PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"; \
+			rm -f ran_bibtex; \
+			echo; echo; echo; \
+		fi; \
 		if [ -e ran_makeindex ]; then \
 			echo "ran_makeindex exists, running latex again"; \
 			make build_run PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"; \
