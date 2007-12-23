@@ -703,6 +703,16 @@ actions.
 
 \label{why separate rules and algorithm}
 
+Decoupling the parsing rules from the associated actions allows new rules
+to be written and tested without requiring modifications to the algorithm
+source code (significantly lowering the barrier to entry for new or casual
+users who need to parse new log lines), and greatly simplifies both
+algorithm and rules.  Decoupling also creates a clear separation of
+functionality: rules handle low level details of identifying log lines and
+extracting data from a line, whereas the algorithm handles the higher level
+details of following the path a mail takes through Postfix, assembling the
+required data before storing it, dealing with complications arising, etc.
+
 Separating the rules from the algorithm makes it possible to parse new log
 lines without modifying the core parsing algorithm.  Although this may seem
 like a trivial point, is it substantially more difficult to understand a
@@ -1206,23 +1216,13 @@ discussion of rule efficiency concerns, referring to the graphs in
 section~\refwithpage{graphs}, and finishes with an explanation of the
 algorithm used to generate a new \regex{} from unparsed lines.
 
+Please refer to section~\refwithpage{parser design} for a discussion of why
+the rules and actions have been separated in the parser's design.
 
 \subsection{Rule characteristics}
 
 \label{rule characteristics}
 
-The complexity and variation in Postfix's logs requires similar flexibility
-in the parser, which is split into two parts: the parsing algorithm and the
-parsing rules which are applied to the lines.  Decoupling the parsing rules
-from the associated actions allows new rules to be written and tested
-without requiring modifications to the algorithm source code (significantly
-lowering the barrier to entry for new or casual users who need to parse new
-log lines), and greatly simplifies both algorithm and rules.  Decoupling
-also creates a clear separation of functionality: rules handle low level
-details of identifying log lines and extracting data from a line, whereas
-the algorithm handles the higher level details of following the path a mail
-takes through Postfix, assembling the required data before storing it,
-dealing with complications arising, etc.
 
 Rule have certain characteristics which may help in understanding the
 parser:
@@ -1642,6 +1642,9 @@ the resulting data in a normalised, easy to use representation.  The
 algorithm's task is to follow the journey each mail takes through Postfix,
 piecing the data extracted by rules into a coherent whole, saving it in a
 useful and consistent form, and performing housekeeping duties.
+
+Please refer to section~\refwithpage{parser design} for a discussion of why
+the rules and actions have been separated in the parser's design.
 
 \subsection{Introduction}
 
@@ -2832,7 +2835,7 @@ be a much more taxing project than initially expected.  The variety and
 breadth of log lines produced by Postfix is quite surprising, as a quick
 survey of sample log files gives the impression that the number of distinct
 log lines is quite small; this impression is due to the uneven distribution
-evidenced by logs produced in normal operation (see graph~\refwithpage{rule
+exhibited by logs produced in normal operation (see graph~\refwithpage{rule
 hits graph} for a vivid illustration of this).  
 
 
@@ -2844,16 +2847,30 @@ For the parser to be useful to the average user, parsing new log lines
 produced by Postfix must be as simple a task as configuring Postfix to
 produce those log lines was in the first place, otherwise users won't make
 to effort to utilise the parser.  Providing a tool to ease the generation
-of \regexes{} from unparsed log lines should help 
+of \regexes{} from unparsed log lines should greatly help users
+add rules to parse unparsed lines.
 
 
 The real difficulties arise once the parser is successfully dealing with
 90\% of the log lines, as the irregularities and complications previously
 explained only begin to become apparent once the vast majority of log lines
 have been parsed successfully.  Dealing with numerous, infrequently
-occurring log lines is a simple, albeit tiresome task, whereas dealing with
-information which hasn't been logged, e.g.\ when delivery attempts are
-aborted.  
+occurring log lines is a simple task, albeit tiresome, whereas dealing with
+mails where information appears to be missing is much more grueling.
+Trawling through the logs, looking for something out of the ordinary,
+possibly hundreds or even thousands of lines away from the last mention of
+the queueid in question, is extremely time consuming and error prone.  In
+many cases the task is not to spot the line which is unusual, but to spot
+that a line normally present is missing.  In all cases the evidence must be
+used to construct a hypothesis to explain the irregularities, and that
+hypothesis must then be tested in the parser; if successful the parser must
+be modified to deal with the irregularities, without adversely affecting
+the existing functionality.  The complications described in
+section~\refwithpage{additional complications} were solved in the order
+they are described in, and that order closely resembles the frequency with
+which they occur; the most frequently occurring complications dominate the
+warning messages produced, and so naturally they are the first
+complications to be dealt with.
 
 \appendix
 
