@@ -732,6 +732,30 @@ parser without modifying existing actions or other parts of the algorithm;
 only in the rare case that the new actions require support from other
 sections of the code will more extensive changes be required.
 
+There is some similarity between the parser's design and William Wood's
+\ATN{}~\cite{atns, nlpip}, a tool used in Computational Linguistics for
+creating grammars to parse or generate sentences.  The resemblance between
+\ATN{} and the parser is accidental, but it is interesting how two
+apparently different approaches share an underlying separation of concerns;
+this appears to be a natural division of responsibility and functionality.
+
+% Do Not Reformat!
+
+\begin{tabular}[]{lll}
+    \textit{\ATN{}\/}   & \textit{Parser\/} & \textit{Similarity\/}     \\
+    Networks            & Algorithm         & Determines the sequence 
+                                              of transitions            \\
+                        &                   & or actions which 
+                                              constitutes a valid       \\
+                        &                   & input.                    \\
+    Transitions         & Actions           & Save data and impose
+                                              conditions the            \\
+                        &                   & input must meet to be
+                                              considered valid.         \\
+    Abbreviations       & Rules             & Responsible for 
+                                              classifying input.        \\
+\end{tabular}
+
 \subsection{Conventions used in the paper}
 
 The words \textit{connection\/} and \textit{mail\/} are often used
