@@ -321,7 +321,7 @@ check-acronyms:
 
 .PHONY: todo
 todo:
-	grep -n -E 'TODO|XXX' *.tex *.bib
+	grep -n -E 'TODO|XXX' *.tex *.bib || true
 
 2up: logparser-2up.ps logparser-2up.pdf
 
