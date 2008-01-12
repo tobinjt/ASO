@@ -310,6 +310,35 @@ sub init_globals {
     $self->{c_cols_silent_overwrite}  = $mock_conn->silent_overwrite_columns();
     $self->{c_cols_silent_discard}    = $mock_conn->silent_discard_columns();
 
+    $self->{valid_combos}             = $self->create_valid_combos();
+
+    # Used in parse_result_cols().
+    $self->{NUMBER_REQUIRED}          = 1;
+    $self->{result_cols_names}        = $mock_result->result_cols_columns();
+    $self->{connection_cols_names}    = $mock_conn->connection_cols_columns();
+    # Load the rules, and collate them by program, so that later we'll only try
+    # rules for the program that logged the line.
+    $self->{rules}            = [$self->load_rules()];
+    my %rules_by_program;
+    map {        $rules_by_program{$_->{program}} = []; }   @{$self->{rules}};
+    map { push @{$rules_by_program{$_->{program}}}, $_; }   @{$self->{rules}};
+    $self->{rules_by_program} = \%rules_by_program;
+}
+
+=over 4
+
+=item $self->create_valid_combos()
+
+Return the hash of valid program combinations used by
+is_valid_program_combination().
+
+=back
+
+=cut
+
+sub create_valid_combos {
+    my ($self) = @_;
+
     # Used in is_valid_program_combination()
     # This list is embedded in the paper too.
     my @valid_combos = (
@@ -348,26 +377,16 @@ sub init_globals {
     );
 
     # Finally build the hash.
-    $self->{valid_combos} = {};
+    my $valid_combos = {};
     foreach my $combo (@valid_combos) {
         foreach my $extras (@extra_programs) {
             my %no_dups = map { $_ => 1 } @{$combo}, @{$extras};
             my $vc = join q{ }, sort keys %no_dups;
-            $self->{valid_combos}->{$vc} = 0;
+            $valid_combos->{$vc} = 0;
         }
     }
 
-    # Used in parse_result_cols().
-    $self->{NUMBER_REQUIRED}          = 1;
-    $self->{result_cols_names}        = $mock_result->result_cols_columns();
-    $self->{connection_cols_names}    = $mock_conn->connection_cols_columns();
-    # Load the rules, and collate them by program, so that later we'll only try
-    # rules for the program that logged the line.
-    $self->{rules}            = [$self->load_rules()];
-    my %rules_by_program;
-    map {        $rules_by_program{$_->{program}} = []; }   @{$self->{rules}};
-    map { push @{$rules_by_program{$_->{program}}}, $_; }   @{$self->{rules}};
-    $self->{rules_by_program} = \%rules_by_program;
+    return $valid_combos;
 }
 
 =over 4
