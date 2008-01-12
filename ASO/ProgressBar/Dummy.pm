@@ -44,7 +44,8 @@ hash of options - of those options, only count is used.
 
 sub new {
     my $self = {};
-    bless $self;
+    my $class = shift @_;
+    bless $self, $class;
 
     my ($arg) = @_;
     if (not ref $arg) {
