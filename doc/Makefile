@@ -38,6 +38,7 @@ build:
 	make build_loop PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
 	cat "${DEST}.out"
 	grep Overfull "${DEST}.out" || true
+	grep "LaTeX Warning: " "${DEST}.out" || true
 	BASE=$$( basename "${SOURCE}" .tex ); \
 	grep ^Warning "$$BASE.blg" || true
 	# Finally done.
