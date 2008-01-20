@@ -1853,8 +1853,29 @@ for each line in the input files:
 \end{verbatim}
 
 Yet despite the brevity of the algorithm above the (simplified) flow chart
-below contains twenty one states, three entry points, five exit points,
-five loops, four explicit branches, and eight implicit branches.  Several
+below contains:
+
+\begin{itemize}
+
+    \item Twenty one states (not including explicit branches).
+
+    \item Three entry points (1, 2, 3).
+
+    \item Five exit points (8, 14, 17, 20, 25).
+
+    \item Five loops (4--4, 4--5--4, 5--5, 9--9, 9--10--9).
+
+    \item Four explicit branches (7, 13, 15, 18); these are decisions taken
+        by an action, determining what will happen next to a mail.
+
+    \item Four implicit branches, where the transition is determined by the
+        next log line which is processed for that mail, e.g.\ state 1 can
+        transition to either state 4 or state 5.  (1--\{4,5\},
+        4--\{4,5,6\}, 5--\{4,5,6\}, 9--\{9,10,11,12\})
+
+\end{itemize}
+
+    Several
 more states and corresponding branches are omitted for the sake of clarity
 (these extra states are caused by solving the difficulties described in
 section~\refwithpage{additional complications}).
@@ -1862,7 +1883,7 @@ section~\refwithpage{additional complications}).
 The solution to the second last complication encountered
 (section~\refwithpage{out of order log lines}) requires that a list of the
 acceptable combinations of Postfix programs a mail can pass through;
-however this does not correspond to the \textit{actions} a mail must pass
+however this does not correspond to the \textit{actions\/} a mail must pass
 through.  Before that complication was overcome, i.e.\ for the majority of
 the development of this parser, there was nothing in the parser explicitly
 encoding the states or paths a mail could take; the vast majority of the
@@ -2217,26 +2238,43 @@ The actions:
 Adding new actions is almost as simple as adding new rules, though actions
 are not stored in the database.  The implementor writes a subroutine which
 accepts the standard arguments given to actions, and registers it as an
-action by calling the parser method add\_actions() with the subroutine
-name as a parameter.  No other work is required on the implementor's part;
-all of their attention and effort can be focused on the correctness of
-their action.  The only negative aspect is that the process involves
-editing the parser source code, which makes upgrading to a later version of
-the parser more difficult, though by no means impossible.  If the author of
-the new action wishes they can take advantage of the parser's object
-oriented implementation~\cite{Wikipedia-object-orientation} by subclassing
-it and implementing their changes in the derived class, allowing future
-upgrading of the parser with greatly reduced chance of conflicts.  The
-action may need to extend the list of valid combinations described in
-section~\refwithpage{out of order log lines} if the addition creates a
-different set of acceptable programs, but this is unlikely to occur, as it
-would require parsing log lines from Postfix components the parser
-currently ignores.\footnote{The mail server used for development does not
-utilise the \daemon{lmtp} or \daemon{virtual} delivery agents, so this
-parser does not deal with those components.  Adding new rules to parse
-their log lines is a simple process, though if their behaviour differs
-significantly from the \daemon{smtp} or \daemon{local} delivery agents new
-actions may be required.}
+action by calling the parser subroutine add\_actions() with the name of the
+new action subroutine as a parameter.  No other work is required on the
+implementor's part; all of their attention and effort can be focused on the
+correctness of their action.  The only negative aspect is that the process
+involves editing the parser source code, which makes upgrading to a later
+version of the parser more difficult, though by no means impossible.  If
+the author of the new action wishes they can take advantage of the parser's
+object oriented implementation~\cite{Wikipedia-object-orientation} by
+subclassing it and implementing their changes in the derived class,
+allowing future upgrading of the parser with greatly reduced chance of
+conflicts.\footnote{The real difference between the two approaches is where
+the new code is placed.  The simpler option is to change the parser code
+directly, but those changes will then have to be made to subsequent
+versions of the parser, and as the scope of the changes increases so does
+the chance of conflict.  The more time consuming option is to write a
+subclass containing the new actions and change the program which invokes
+the parser so that it uses the subclass rather than the parser; the changes
+required to the program invoking the parser are minor and much less likely
+to lead to conflicts when upgrading to future versions of the parser.  An
+alternative is to submit new actions to the author of the parser for
+inclusion in future versions, resulting in two benefits: the new actions do
+not need to be maintained separately, and other users of the parser will
+avail of the new functionality.} The action may need to extend the list of
+valid combinations described in section~\refwithpage{out of order log
+lines} if the addition creates a different set of acceptable programs, but
+this is unlikely to occur, as it would require parsing log lines from
+Postfix components the parser currently ignores.\footnote{The mail server
+used for development does not utilise the \daemon{lmtp} or \daemon{virtual}
+delivery agents, so this parser does not have rules to handle log lines
+from those components.  Adding new rules to parse their log lines is a
+simple process, though if their behaviour differs significantly from the
+\daemon{smtp} or \daemon{local} delivery agents new actions may be
+required.  The mail server in question is a production mail server handling
+mail for a university department; the benefit is that the logs used exhibit
+the idiosyncrasies and foibles a mail server in the wild must deal with,
+but the downside is that significantly altering the configuration just to
+log messages from a different Postfix component is not an option.}
 
 
 \subsection{Additional complications}
@@ -2249,7 +2287,7 @@ these complications caused the parser to operate incorrectly, generating
 either warning messages or leaving mails in the state table.  The frequency
 of occurrence is much higher at the start of the list, with the first
 complication occurring several orders of magnitude more frequently than the
-last.  When deciding which problem to address next, the most common was
+last.  When deciding which problem to address next the most common was
 always chosen, as resolving the most common problem would yield the biggest
 improvement in the parser, and also prune the greatest number of mails from
 the state tables and error messages.
@@ -3765,6 +3803,11 @@ test run of the parser.
     documentation is \url{http://www.postfix.org/cleanup.8.html}.
 }}
 
+\glossary{name={lmtp},description={
+    Delivery of mail over \LMTP{} is performed by the lmtp component.  The
+    definitive documentation is \url{http://www.postfix.org/lmtp.8.html}.
+}}
+
 \glossary{name={local},description={
     Local is the Postfix component responsible for local delivery of mail
     (i.e.\ delivered on the server Postfix is running on), whether it be to
@@ -3823,6 +3866,23 @@ test run of the parser.
     Smtpd is the Postfix program which accepts mail via \SMTP{}, and
     implements all the anti-spam restrictions Postfix provides.  The
     definitive documentation is \url{http://www.postfix.org/smtpd.8.html}.
+}}
+
+\glossary{name={virtual},description={
+    Virtual is the Postfix component responsible for delivery of mails to
+    virtual domains.  With \daemon{local} delivery the destination is
+    determined only by the portion of the email address on the left side of
+    the \at{}, whereas with \daemon{virtual} delivery the destination is
+    determined by the entire email address, e.g.\ if the server considers
+    itself responsible for both \textbf{example.org} and
+    \textbf{example.net} domains: \daemon{local} considers
+    \textbf{john\at{}example.org} and \textbf{john\at{}example.net} to have
+    the same mailbox, whereas \daemon{virtual} considers them to have
+    different mailboxes.  Virtual delivery is used when a server hosts
+    multiple domains where a username may be present in more than one
+    domain but represent different users in each.  The definitive
+    documentation is
+    \url{http://www.postfix.org/virtual.8.html}.
 }}
 
 \glossary{name={Bayesian spam filtering},description={

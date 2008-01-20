@@ -32,6 +32,14 @@
     provided in section~\refwithpage{SMTP background}.
 }}
 
+\newacronym{LMTP}{Local Mail Transfer Protocol}{description={
+    LMTP is a protocol derived from SMTP that removes the need for the
+    server to maintain a mail delivery queue, instead relying on the client
+    to maintain it.  Typically the client would be an MTA, and the server
+    would be a delivery agent or a mail store.  Full details are available
+    in \cite{lmtp-rfc}.
+}}
+
 \newacronym{MTA}{Mail Transfer Agent}{description={
     A Mail Transfer Agent sends and/or receives mail via SMTP.
 }}

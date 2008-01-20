@@ -40,7 +40,8 @@ build:
 	grep Overfull "${DEST}.out" || true
 	grep "LaTeX Warning: " "${DEST}.out" || true
 	BASE=$$( basename "${SOURCE}" .tex ); \
-	grep ^Warning "$$BASE.blg" || true
+	grep ^Warning "$$BASE.blg" || true; \
+	grep '!!' "$$BASE.glg" "$$BASE.alg" || true;
 	# Finally done.
 	chktex -I0 -q "${SOURCE}"
 
