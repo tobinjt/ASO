@@ -53,7 +53,6 @@ documented herein and at L<http://www.cs.tcd.ie/~tobinjt/>
 
 use strict;
 use warnings;
-$| = 1;
 
 use lib q{..};
 use ASO::DB;
@@ -232,7 +231,7 @@ sub options_for_new {
 
 init_globals() sets up various data structures in $self which are used by the
 remainder of the module.  It's called automatically by new(), and is separate
-from new() to ease subclassing.
+from new() to ease subclassing.  Returns $self to ease method call chaining.
 
 =back
 
@@ -244,7 +243,7 @@ sub init_globals {
     # Used in $self->my_warn() and $self->my_die() to report the logfile we're
     # currently parsing.
     $self->{current_logfile}  = q{INITIALISATION};
-    $.                        = 0;
+    local $.                  = 0;
 
     # Used to validate queueids in get_queueid_from_matches() and in
     # maybe_remove_faked() to check if a message-id contains a queueid.
@@ -323,6 +322,8 @@ sub init_globals {
     map {        $rules_by_program{$_->{program}} = []; }   @{$self->{rules}};
     map { push @{$rules_by_program{$_->{program}}}, $_; }   @{$self->{rules}};
     $self->{rules_by_program} = \%rules_by_program;
+
+    return $self;
 }
 
 =over 4
@@ -441,7 +442,7 @@ Parses the logfile, ignoring any lines logged by programs the ruleset doesn't
 contain rules for.  Lines which aren't parsed will be warned about; warnings may
 also be generated for a myriad of other reasons, see DIAGNOSTICS for more
 information.  Data gathered from the logs will be inserted into the database
-(depending on the value of skip_inserting_results).
+(depending on the value of skip_inserting_results).  Always returns true.
 
 =back
 
@@ -497,6 +498,7 @@ sub parse {
     if ($self->{num_connections_uncommitted}) {
         $self->{dbix}->txn_commit();
     }
+    return 1;
 }
 
 =over 4
@@ -513,7 +515,7 @@ $self->prune_queueids().
 sub post_parsing {
     my ($self) = @_;
 
-    $self->prune_queueids();
+    return $self->prune_queueids();
 }
 
 =over 4
@@ -525,7 +527,7 @@ tried earlier on the next run.  The order rules are tried in does not change
 during the lifetime of an ASO::Parser object, but the next object created will
 hopefully have a more efficient ordering of rules.  The optimal rule ordering
 is dependant on the contents of the logfile currently being parsed, so this
-measure may not be 100% accurate.
+measure may not be 100% accurate.  Returns the result of committing the changes.
 
 =back
 
@@ -542,7 +544,7 @@ sub update_check_order {
         $rule->{rule}->update();
     }
 
-    $self->{dbix}->txn_commit();
+    return $self->{dbix}->txn_commit();
 }
 
 =over 4
@@ -606,7 +608,9 @@ sub parse_result_cols {
 Try each regex against the line until a match is found, then perform the
 associated action.  If no match is found spew a warning.  $line is not a string,
 it's the hash returned by Parse::Syslog.  If the option parse_lines_only was
-given to new(), the action will not be executed.
+given to new(), the action will not be executed.  The result of the action will
+be returned if one is executed, an empty list otherwise; it's probably not wise
+to make assumptions about what an empty list means.
 
 =back
 
@@ -642,6 +646,7 @@ sub parse_line {
     # use my_warn because it complicates and clutters the warning.
     warn qq{$0: $self->{current_logfile}: $.: }
         . qq{unparsed line: $line->{program}: $line->{text}\n};
+    return;
 }
 
 =head1 ACTIONS
@@ -1408,7 +1413,8 @@ sub get_result_col {
 
 Add @actions to the list of available actions.  Currently actions cannot be
 removed.  Nothing clever is done to @actions, so you must use the name of the
-subroutine implementing the action.
+subroutine implementing the action.  Returns $self to make method call chaining
+easier.
 
 =back
 
@@ -1418,6 +1424,7 @@ sub add_actions {
     my ($self, @actions) = @_;
 
     map { $self->{actions}->{$_} = 1 } @actions;
+    return $self;
 }
 
 =over 4
@@ -1504,8 +1511,8 @@ sub handle_dead_smtpd {
 
 =item $self->delete_dead_smtpd($connection, $line)
 
-If there's only one
-smtpd log line the connection will be discarded, otherwise it will be committed.
+If there's only one smtpd log line the connection will be discarded (returns
+false), otherwise it will be committed (returns true).
 
 =back
 
@@ -1517,6 +1524,7 @@ sub delete_dead_smtpd {
     if ($connection->{programs}->{q{postfix/smtpd}} <= 2) {
         # Only the connect and/or killed lines, delete it.
         $self->delete_connection_by_pid($connection->{pid});
+        return;
     } else {
         # Hopefully this will work, I'll refine it later if it doesn't.
         $connection->{connection}->{end} = $line->{timestamp};
@@ -1524,6 +1532,7 @@ sub delete_dead_smtpd {
         $self->fixup_connection($connection);
         $self->commit_connection($connection);
         $self->delete_connection_by_pid($connection->{pid});
+        return 1;
     }
 
 }
@@ -1539,7 +1548,9 @@ commit_ready and their database entry postponed.  maybe_commit_children() will
 loop over all children and call both fixup_connection() and commit_connection()
 on those marked commit_ready; those children will also be removed from the state
 tables.  Children not marked commit_ready will be deferred and will reach
-COMMIT() when their last log entry is parsed.
+COMMIT() when their last log entry is parsed.  Returns the number of children
+committal was attempted for, which may be higher than the number successfully
+committed.
 
 =back
 
@@ -1553,6 +1564,7 @@ sub maybe_commit_children {
     # maybe_commit_children() -> delete_child_from_parent()
     $parent->{committing_children} = 1;
 
+    my $count = 0;
     CHILD:
     foreach my $child_queueid (keys %{$parent->{children}}) {
         my $child = $parent->{children}->{$child_queueid};
@@ -1566,6 +1578,7 @@ sub maybe_commit_children {
             $self->delete_connection_by_queueid($child->{queueid});
             # This is safe: see perldoc -f each for the guarantee.
             delete $parent->{children}->{$child_queueid};
+            $count++;
         }
 
         # We don't do anything with other children, they'll reach committal by
@@ -1573,6 +1586,7 @@ sub maybe_commit_children {
     }
 
     delete $parent->{committing_children};
+    return $count;
 }
 
 =over 4
@@ -1582,7 +1596,7 @@ sub maybe_commit_children {
 Delete $child from its parent's list of children.  Co-operates with
 maybe_commit_children() to ensure it doesn't do anything while
 maybe_commit_children() is executing.  Should be called when a child is being
-committed, not for non-child mails.
+committed, not for non-child mails.  Returns $child if successful.
 
 =back
 
@@ -1622,7 +1636,7 @@ sub delete_child_from_parent {
         return;
     }
 
-    delete $parent->{children}->{$child_queueid};
+    return delete $parent->{children}->{$child_queueid};
 }
 
 =over 4
@@ -1955,6 +1969,8 @@ use warnings q{redefine};
 
 1;
 POSTAMBLE
+
+    return 1;
 }
 
 =over 4
@@ -1971,7 +1987,8 @@ reload state tables.
 sub load_state {
     my ($self, $file) = @_;
 
-    $@ = $! = 0;
+    local $@ = 0;
+    local $! = 0;
     my $result = do $file;
     if (not defined $result) {
         if ($@) {
@@ -1997,6 +2014,8 @@ sub load_state {
     } else {
         $self->my_warn(qq{Loaded state from $file\n});
     }
+
+    return 1;
 }
 
 =over 4
@@ -2025,7 +2044,8 @@ subroutine which does exactly this, so in general the calling sequence will be:
 
 Remove any connection in $self->{timeout_queueids} more than 10 minutes older
 than the timestamp of the last log line parsed, so they don't accumulate
-forever.  Called from dump_state() before dumping.
+forever.  Called from dump_state() before dumping.  Returns the number of
+connections deleted from $self->{timeout_queueids}.
 
 =back
 
@@ -2033,6 +2053,7 @@ forever.  Called from dump_state() before dumping.
 
 sub prune_timeout_queueids {
     my ($self) = @_;
+    my $count = 0;
 
     # This is dependant on the time difference used in MAIL_PICKED_FOR_DELIVERY.
     foreach my $queueid (keys %{$self->{timeout_queueids}}) {
@@ -2040,8 +2061,11 @@ sub prune_timeout_queueids {
         if ($connection->{results}->[-1]->{timestamp}
                 < ($self->{last_timestamp} - (10 * 60))) {
             delete $self->{timeout_queueids}->{$queueid};
+            $count++;
         }
     }
+
+    return $count;
 }
 
 =over 4
@@ -2054,7 +2078,7 @@ last log line parsed.  These mails don't have any further logging after the
 cleanup line, but there aren't any related log lines (e.g. smtpd dying, being
 killed, postfix reloaded), so there's no way to identify these short of scanning
 all mails periodically.  This will be called automatically by parse(), to stop
-these mails accumulating.
+these mails accumulating.  Returns the number of connections deleted.
 
 =back
 
@@ -2071,6 +2095,7 @@ sub prune_queueids {
         q{postfix/cleanup}  => 1,
     );
 
+    my $count = 0;
     QUEUEID:
     foreach my $connection ($self->get_all_connections_by_queueid()) {
         # Occasionally we have a connection with no results.  Weird.
@@ -2086,8 +2111,11 @@ sub prune_queueids {
         # And the programs which have logged must match.
         if (Compare(\%programs, $connection->{programs})) {
             $self->delete_connection_by_queueid($connection->{queueid});
+            $count++;
         }
     }
+
+    return $count;
 }
 
 =over 4
@@ -2388,6 +2416,8 @@ sub fixup_connection {
     } else {
         $connection->{fixuped} = 1;
     }
+
+    return $failure == 0;
 }
 
 =over 4
@@ -2543,6 +2573,7 @@ sub save {
     if (exists $connection->{queueid}) {
         $self->save_connection_by_queueid($connection, $connection->{queueid});
     }
+    return 1;
 }
 
 =over 4
@@ -2626,6 +2657,8 @@ sub commit_connection {
         $self->{dbix}->txn_commit();
         $self->{num_connections_uncommitted} = 0;
     }
+
+    return 1;
 }
 
 =over 4
@@ -2720,6 +2753,7 @@ sub my_warn {
     my ($self, @warnings) = @_;
 
     warn $self->format_error(@warnings);
+    return;
 }
 
 =over 4
@@ -2869,8 +2903,8 @@ sub get_or_make_connection_by_queueid {
 
 =item $self->delete_connection_by_queueid($queueid)
 
-Delete the connection saved under $queueid from the state tables.  The
-connection won't be changed in any way, and will still be accessible through
+Delete the connection saved under $queueid from the state tables, returning it.
+The connection won't be changed in any way, and will still be accessible through
 other references.
 
 =back
@@ -2884,7 +2918,7 @@ sub delete_connection_by_queueid {
         $self->my_warn(qq{delete_connection_by_queueid: $queueid }
             . q{doesn't exist\n});
     }
-    delete $self->{queueids}->{$queueid};
+    return delete $self->{queueids}->{$queueid};
 }
 
 =over 4
@@ -2943,9 +2977,9 @@ sub get_queueid_from_matches {
 
 =item $self->save_connection_by_queueid($connection, $queueid)
 
-Saves $connection into the state tables under $queueid.  Doesn't complain or
-check anything; will happily clobber an existing connection - it's up to the
-caller to check that with $self->queueid_exists($queueid).
+Saves $connection into the state tables under $queueid, returning it.  Doesn't
+complain or check anything, and will happily clobber an existing connection -
+it's up to the caller to check that with $self->queueid_exists($queueid).
 
 =back
 
@@ -2954,7 +2988,7 @@ caller to check that with $self->queueid_exists($queueid).
 sub save_connection_by_queueid {
     my ($self, $connection, $queueid) = @_;
 
-    $self->{queueids}->{$queueid} = $connection;
+    return $self->{queueids}->{$queueid} = $connection;
 }
 
 # Accessing mails/connections by pid
@@ -3060,9 +3094,9 @@ sub get_or_make_connection_by_pid {
 
 =item $self->delete_connection_by_pid($pid)
 
-Delete the connection saved under $pid from the state tables.  The connection
-won't be changed in any way, and will still be accessible through other
-references.
+Delete the connection saved under $pid from the state tables, returning it.  The
+connection won't be changed in any way, and will still be accessible through
+other references.
 
 =back
 
@@ -3074,7 +3108,7 @@ sub delete_connection_by_pid {
     if (not $self->pid_exists($pid)) {
         $self->my_warn(qq{delete_connection_by_pid: $pid doesn't exist\n});
     }
-    delete $self->{connections}->{$pid};
+    return delete $self->{connections}->{$pid};
 }
 
 =over 4
