@@ -248,11 +248,11 @@ sub init_globals {
     # Used to validate queueids in get_queueid_from_matches() and in
     # maybe_remove_faked() to check if a message-id contains a queueid.
     $self->{queueid_regex}    = $self->filter_regex(q{__QUEUEID__});
-    $self->{queueid_regex}    = qr/$self->{queueid_regex}/;
+    $self->{queueid_regex}    = qr/$self->{queueid_regex}/mx;
     # Used to set warning in REJECTION.
     $self->{reject_warning}   =
-            $self->filter_regex(q{^__QUEUEID__: reject_warning:});
-    $self->{reject_warning}   = qr/$self->{reject_warning}/;
+            $self->filter_regex(q{^__QUEUEID__:\sreject_warning:});
+    $self->{reject_warning}   = qr/$self->{reject_warning}/mx;
 
     # The data to dump in dump_state()
     $self->{data_to_dump} = [qw(queueids connections timeout_queueids)];
@@ -455,7 +455,7 @@ sub parse {
     if (not $logfile_fh) {
         $self->my_die(qq{parse: failed to open $logfile: $!\n});
     }
-    my $syslog = Parse::Syslog->new($logfile_fh);
+    my $syslog = Parse::Syslog->new($logfile_fh, year => 2007);
     if (not $syslog) {
         $self->my_die(qq{parse: failed creating syslog parser for }
             . qq{$logfile: $@\n});
@@ -574,19 +574,19 @@ sub parse_result_cols {
 
     my $assignments = {};
     ASSIGNMENT:
-    foreach my $assign (split /\s*[,;]\s*/, $spec) {
+    foreach my $assign (split /\s*[,;]\s*/mx, $spec) {
         if (not length $assign) {
             $self->my_warn(qq{parse_result_cols: empty assignment found in: \n},
                 $self->dump_rule_from_db($rule));
             next ASSIGNMENT;
         }
-        if ($assign !~ m/^\s*(\w+)\s*=\s*(.+)\s*/) {
+        if ($assign !~ m/^\s*(\w+)\s*=\s*(.+)\s*/mx) {
             $self->my_warn(qq{parse_result_cols: bad assignment found in: \n},
                 $self->dump_rule_from_db($rule));
             next ASSIGNMENT;
         }
         my ($key, $value) = ($1, $2);
-        if ($number_required and $value !~ m/^\d+$/) {
+        if ($number_required and $value !~ m/^\d+$/mx) {
             $self->my_warn(qq{parse_result_cols: $value: not a number in: \n},
                 $self->dump_rule_from_db($rule));
             next ASSIGNMENT;
@@ -623,13 +623,13 @@ sub parse_line {
     # Use the program specific rules first, then the generic rules.
     foreach my $rule (@{$self->{rules_by_program}->{$line->{program}}},
             @{$self->{rules_by_program}->{q{*}}}) {
-        if ($line->{text} !~ m/$rule->{regex}/) {
+        if ($line->{text} !~ m/$rule->{regex}/mx) {
             next RULE;
         }
         $rule->{count}++;
 
         # TODO: is there a way I can do this without matching twice??
-        my @matches = ($line->{text} =~ m/$rule->{regex}/);
+        my @matches = ($line->{text} =~ m/$rule->{regex}/mx);
         # regex matches start at one, but array indices start at 0.
         # shift the array forward so they're aligned
         unshift @matches, undef;
@@ -1006,7 +1006,7 @@ sub REJECTION {
         $connection = $self->get_connection_by_pid($line->{pid});
     }
     $self->save($connection, $line, $rule, $matches);
-    if ($line->{text} =~ m/$self->{reject_warning}/) {
+    if ($line->{text} =~ m/$self->{reject_warning}/mx) {
         $connection->{results}->[-1]->{warning} = 1;
     }
     return;
@@ -2156,8 +2156,8 @@ sub filter_regex {
     my ($self, $regex) = @_;
 
     # I'm deliberately allowing a trailing . in $hostname_re.
-    my $hostname_re = qr/(?:unknown|(?:[-_a-zA-Z0-9.]+))/;
-    my $ipv6_chunk  = qr/(?:[0-9A-Fa-f]{1,4})/;
+    my $hostname_re = qr/(?:unknown|(?:[-_a-zA-Z0-9.]+))/mx;
+    my $ipv6_chunk  = qr/(?:[0-9A-Fa-f]{1,4})/mx;
     my $ipv6_re = qr/(?:
  (?>(?:${ipv6_chunk}:){7}${ipv6_chunk})             # Full address
 |(?>(?:${ipv6_chunk}:){1,6}(?::${ipv6_chunk}){1,6}) # Elided address, missing
@@ -2169,44 +2169,44 @@ sub filter_regex {
 |(?:${ipv6_chunk}:){1,7}:                           # Elided address missing the
                                                     # end of the address (e.g.
                                                     # 2001::)
-)/x;
+)/mx;
 
-    $regex =~ s/__SENDER__              /__EMAIL__/gx;
-    $regex =~ s/__RECIPIENT__           /__EMAIL__/gx;
-    $regex =~ s/__RESTRICTION_START__   /(__QUEUEID__): reject(?:_warning)?: (?:RCPT|DATA) from (?>(__HOSTNAME__)\\[)(?>(__IP__)\\]): (__SMTP_CODE__)(?: __DSN__)?/gx;
+    $regex =~ s/__SENDER__              /__EMAIL__/gmx;
+    $regex =~ s/__RECIPIENT__           /__EMAIL__/gmx;
+    $regex =~ s/__RESTRICTION_START__   /(__QUEUEID__): reject(?:_warning)?: (?:RCPT|DATA) from (?>(__HOSTNAME__)\\[)(?>(__IP__)\\]): (__SMTP_CODE__)(?: __DSN__)?/gmx;
     # message-ids initially look like email addresses, but really they can be
     # absolutely anything; just like email addresses in fact.
     # E.g.  <%RND_DIGIT[10].%STATWORD@mail%SINGSTAT.%RND_FROM_DOMAIN>
     #       <45BA63320008E5FC@mail06.sc2.he.tucows.com> (added by postmaster@globo.com)
     #       <848511243547.G96470@flatland.vjopu.com (HELO chignon.gb-media.com [96.168.158.213])>
-    $regex =~ s/__MESSAGE_ID__          /.*?/gx;
+    $regex =~ s/__MESSAGE_ID__          /.*?/gmx;
     # We see some pretty screwed hostnames in HELO commands; in fact just match
     # any damn thing, the hostnames are particularly weird when Postfix rejects
     # them.
-    $regex =~ s/__HELO__                /.*?/gx;
+    $regex =~ s/__HELO__                /.*?/gmx;
 #   This doesn't work, as it matches valid addresses, not real world addresses.
 #   $regex =~ s/__EMAIL__               /$RE{Email}{Address}/gx;
 #   Wibble: from=<<>@inprima.locaweb.com.br>; just match anything as an address.
-    $regex =~ s/__EMAIL__               /[^>]*?/gx;
+    $regex =~ s/__EMAIL__               /[^>]*?/gmx;
     # This doesn't match, for varous reason - I think numeric subnets are one.
     #$regex =~ s/__HOSTNAME__           /$RE{net}{domain}{-nospace}/gx;
-    $regex =~ s/__HOSTNAME__            /$hostname_re/gx;
+    $regex =~ s/__HOSTNAME__            /$hostname_re/gmx;
     # Believe it or not, sometimes the IP address is unknown.
-    $regex =~ s/__IP__                  /(?:__IPv4__|__IPv6__|unknown)/gx;
-    $regex =~ s/__IPv4__                /(?:::ffff:)?$RE{net}{IPv4}/gx;
-    $regex =~ s/__IPv6__                /$ipv6_re/gx;
-    $regex =~ s/__SMTP_CODE__           /\\d{3}/gx;
+    $regex =~ s/__IP__                  /(?:__IPv4__|__IPv6__|unknown)/gmx;
+    $regex =~ s/__IPv4__                /(?:::ffff:)?$RE{net}{IPv4}/gmx;
+    $regex =~ s/__IPv6__                /$ipv6_re/gmx;
+    $regex =~ s/__SMTP_CODE__           /\\d{3}/gmx;
     # 3-9 is a guess.  Turns out that we need at least 10, might as well go to
     # 12 to be sure.
-    $regex =~ s/__QUEUEID__             /(?:NOQUEUE|[\\dA-F]{3,12})/gx;
-    $regex =~ s/__COMMAND__             /(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gx;
+    $regex =~ s/__QUEUEID__             /(?:NOQUEUE|[\\dA-F]{3,12})/gmx;
+    $regex =~ s/__COMMAND__             /(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gmx;
     # DATA is deliberately excluded here because there are more specific rules
     # for DATA.
-    $regex =~ s/__SHORT_CMD__           /(?:CONNECT|HELO|EHLO|AUTH|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN)/gx;
-    $regex =~ s/__DELAYS__              /delays=(?:[\\d.]+\/){3}[\\d.]+, /gx;
-    $regex =~ s/__DELAY__               /delay=\\d+(?:\\.\\d+)?, /gx;
-    $regex =~ s/__DSN__                 /\\d\\.\\d\\.\\d/gx;
-    $regex =~ s/__CONN_USE__            /conn_use=\\d+, /gx;
+    $regex =~ s/__SHORT_CMD__           /(?:CONNECT|HELO|EHLO|AUTH|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN)/gmx;
+    $regex =~ s/__DELAYS__              /delays=(?:[\\d.]+\/){3}[\\d.]+, /gmx;
+    $regex =~ s/__DELAY__               /delay=\\d+(?:\\.\\d+)?, /gmx;
+    $regex =~ s/__DSN__                 /\\d\\.\\d\\.\\d/gmx;
+    $regex =~ s/__CONN_USE__            /conn_use=\\d+, /gmx;
 #   $regex =~ s/____/$RE{}{}/gx;
 
     return $regex;
@@ -2279,10 +2279,10 @@ TEMPLATE
             }
             if (not $skip_warning) {
                 my $warning = $template;
-                $warning =~ s/__NAME__/$name/;
-                $warning =~ s/__KEY__/$key/;
-                $warning =~ s/__ORIG_VALUE__/$orig_value/;
-                $warning =~ s/__NEW_VALUE__/$value/;
+                $warning =~ s/__NAME__/$name/mx;
+                $warning =~ s/__KEY__/$key/mx;
+                $warning =~ s/__ORIG_VALUE__/$orig_value/mx;
+                $warning =~ s/__NEW_VALUE__/$value/mx;
                 $self->my_warn($warning);
                 $conflicts++;
             }
@@ -2726,7 +2726,7 @@ sub maybe_remove_faked {
             # datetime.queueid@, so check for that.
             if (exists $result->{message_id}
                     and $result->{message_id}
-                        =~ m/^<\d{14}\.($self->{queueid_regex})\@/o
+                        =~ m/^<\d{14}\.($self->{queueid_regex})\@/mox
                     and $1 eq $connection->{queueid}) {
                 $bounce_message_id++;
             }
@@ -2962,7 +2962,7 @@ sub get_queueid_from_matches {
             $self->dump_rule($rule)
         );
     }
-    if ($queueid !~ m/^$self->{queueid_regex}$/o) {
+    if ($queueid !~ m/^$self->{queueid_regex}$/mox) {
         $self->my_die(qq{get_queueid_from_matches: $queueid !~ __QUEUEID__;\n},
             $self->dump_line($line),
             qq{using: },
