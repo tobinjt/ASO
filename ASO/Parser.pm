@@ -64,7 +64,6 @@ use Data::Dumper;
 use Regexp::Common qw(net);
 use List::Util qw(shuffle);
 use Data::Compare;
-use Fatal qw(print);
 
 our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
 
