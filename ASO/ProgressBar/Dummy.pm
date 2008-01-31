@@ -31,6 +31,8 @@ use warnings;
 
 package ASO::ProgressBar::Dummy;
 
+our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
+
 =over 4
 
 =item ASO::ProgressBar::Dummy->new($max), ASO::ProgressBar::Dummy->new({count => $max})
@@ -43,11 +45,10 @@ hash of options - of those options, only count is used.
 =cut
 
 sub new {
+    my ($class, $arg) = @_;
     my $self = {};
-    my $class = shift @_;
     bless $self, $class;
 
-    my ($arg) = @_;
     if (not ref $arg) {
         $self->{max} = $arg;
     } else {
@@ -98,7 +99,8 @@ sub update {
 =item $progressbar->target($max)
 
 Changes the highest value of the progress bar.  No check is performed to ensure
-that it is greater than the current value.
+that it is greater than the current value.  Returns $self to make method call
+chaining easier.
 
 =back
 
@@ -107,6 +109,7 @@ that it is greater than the current value.
 sub target {
     my ($self, $max) = @_;
     $self->{max} = $max;
+    return $self;
 }
 
 =head1 DIAGNOSTICS

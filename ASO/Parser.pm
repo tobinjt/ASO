@@ -64,6 +64,9 @@ use Data::Dumper;
 use Regexp::Common qw(net);
 use List::Util qw(shuffle);
 use Data::Compare;
+use Fatal qw(print);
+
+our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
 
 =over 4
 
@@ -132,17 +135,17 @@ sub new {
     }
 
     # Copy the defaults
-    foreach my $option_type (keys %$defaults) {
+    foreach my $option_type (keys %{$defaults}) {
         $self = {
-            %$self,
+            %{$self},
             %{$defaults->{$option_type}},
         };
     }
 
     # Ensure the options passed are valid
     OPTION_CHECK:
-    foreach my $option (keys %$options) {
-        foreach my $option_type (keys %$defaults) {
+    foreach my $option (keys %{$options}) {
+        foreach my $option_type (keys %{$defaults}) {
             if (exists $defaults->{$option_type}->{$option}) {
                 $self->{$option} = $options->{$option};
                 next OPTION_CHECK;
@@ -457,7 +460,7 @@ sub parse {
     }
     my $syslog = Parse::Syslog->new($logfile_fh, year => 2007);
     if (not $syslog) {
-        $self->my_die(qq{parse: failed creating syslog parser for }
+        $self->my_die(q{parse: failed creating syslog parser for }
             . qq{$logfile: $@\n});
     }
 
@@ -720,7 +723,7 @@ sub DISCONNECT {
     my ($self, $rule, $line, $matches) = @_;
 
     if (not $self->pid_exists($line->{pid})) {
-        $self->my_warn(qq{disconnection: no connection found for pid }
+        $self->my_warn(q{disconnection: no connection found for pid }
             . qq{$line->{pid} - perhaps the connect line is in a }
             . qq{previous log file?\n},
             $self->dump_line($line));
@@ -764,7 +767,7 @@ sub DISCONNECT {
             if ($mail eq $mail_by_queueid) {
                 $self->delete_connection_by_queueid($mail->{queueid});
             } else {
-                $self->my_warn(qq{missing cleanup, but connection }
+                $self->my_warn(q{missing cleanup, but connection }
                     . qq{found by queueid $mail->{queueid} differs:\n},
                     qq{found in cloned_mails:\n},
                     $self->dump_connection($mail),
@@ -1629,9 +1632,9 @@ sub delete_child_from_parent {
             or not exists $parent->{children}->{$child_queueid}) {
         $self->my_warn(qq{delete_child_from_parent: $child_queueid }
             . qq{not found in \%children:\n},
-            qq{parent: },
+            q{parent: },
             $self->dump_connection($parent),
-            qq{child: },
+            q{child: },
             $self->dump_connection($child));
         return;
     }
@@ -1740,7 +1743,7 @@ sub load_rules {
             foreach my $col (keys %{$rule_hash->{$type_data}}) {
                 if (exists $rule_hash->{$type_cols}->{$col}) {
                     $overlapping_cols++;
-                    $self->my_warn(qq{Overlapping column in both }
+                    $self->my_warn(q{Overlapping column in both }
                         . qq{$type_cols and $type_data: $col\n});
                 }
             }
@@ -2100,7 +2103,7 @@ sub prune_queueids {
     foreach my $connection ($self->get_all_connections_by_queueid()) {
         # Occasionally we have a connection with no results.  Weird.
         if (scalar @{$connection->{results}} == 0) {
-            $self->my_warn(qq{prune_queueids: connection with zero results!},
+            $self->my_warn(q{prune_queueids: connection with zero results!},
                 $self->dump_connection($connection));
             next QUEUEID;
         }
@@ -2156,7 +2159,7 @@ sub filter_regex {
     my ($self, $regex) = @_;
 
     # I'm deliberately allowing a trailing . in $hostname_re.
-    my $hostname_re = qr/(?:unknown|(?:[-_a-zA-Z0-9.]+))/mx;
+    my $hostname_re = qr/(?:unknown|(?:[-.\w]+))/mx;
     my $ipv6_chunk  = qr/(?:[0-9A-Fa-f]{1,4})/mx;
     my $ipv6_re = qr/(?:
  (?>(?:${ipv6_chunk}:){7}${ipv6_chunk})             # Full address
@@ -2248,7 +2251,7 @@ TEMPLATE
 
     UPDATE:
     while (my ($key, $value) = each %{$updates}) {
-        if (exists $hash->{$key} 
+        if (exists $hash->{$key}
             and exists $silent_discard->{$key}
             and (not defined $silent_discard->{$key}
                  or (defined $silent_discard->{$key}
@@ -2359,7 +2362,7 @@ sub fixup_connection {
             if (exists $self->{nochange_result_cols}->{$key}
                     and exists $data{$key}
                     and $data{$key} ne $result->{$key}) {
-                $self->my_warn(qq{fixup_connection: }
+                $self->my_warn(q{fixup_connection: }
                     . qq{Different values for $key: \n}
                     . qq{\told: $data{$key}\n}
                     . qq{\tnew: $result->{$key}\n}
@@ -2398,13 +2401,13 @@ sub fixup_connection {
 
     my $error_message = q{};
     if (keys %missing_result) {
-        $error_message .= qq{fixup_connection: missing result col(s): }
-            . join(qq{, }, sort keys %missing_result)
+        $error_message .= q{fixup_connection: missing result col(s): }
+            . join(q{, }, sort keys %missing_result)
             . qq{\n};
     }
     if (keys %missing_connection) {
-        $error_message .= qq{fixup_connection: missing connection col(s): }
-            . join(qq{, }, sort keys %missing_connection)
+        $error_message .= q{fixup_connection: missing connection col(s): }
+            . join(q{, }, sort keys %missing_connection)
             . qq{\n};
     }
     if ($error_message ne q{}) {
@@ -2834,8 +2837,8 @@ sub get_connection_by_queueid {
     my ($self, $queueid) = @_;
 
     if ($queueid eq q{NOQUEUE}) {
-        $self->warn(qq{get_connection_by_queueid: }
-            . q{inappropriate queueid $queueid});
+        $self->warn(q{get_connection_by_queueid: }
+            . qq{inappropriate queueid $queueid});
     }
 
     if ($self->queueid_exists($queueid)) {
@@ -2863,8 +2866,8 @@ sub make_connection_by_queueid {
     my ($self, $queueid, %attributes) = @_;
 
     if ($queueid eq q{NOQUEUE}) {
-        $self->my_warn(qq{make_connection_by_queueid: }
-            . q{inappropriate queueid $queueid});
+        $self->my_warn(q{make_connection_by_queueid: }
+            . qq{inappropriate queueid $queueid});
     }
 
     if ($self->queueid_exists($queueid)) {
@@ -2916,7 +2919,7 @@ sub delete_connection_by_queueid {
 
     if (not $self->queueid_exists($queueid)) {
         $self->my_warn(qq{delete_connection_by_queueid: $queueid }
-            . q{doesn't exist\n});
+            . qq{doesn't exist\n});
     }
     return delete $self->{queueids}->{$queueid};
 }
@@ -2958,14 +2961,14 @@ sub get_queueid_from_matches {
     if (not defined $queueid or not $queueid) {
         $self->my_die(qq{get_queueid_from_matches: blank/undefined queueid\n},
             $self->dump_line($line),
-            qq{using: },
+            q{using: },
             $self->dump_rule($rule)
         );
     }
     if ($queueid !~ m/^$self->{queueid_regex}$/mox) {
         $self->my_die(qq{get_queueid_from_matches: $queueid !~ __QUEUEID__;\n},
             $self->dump_line($line),
-            qq{using: },
+            q{using: },
             $self->dump_rule($rule)
         );
     }

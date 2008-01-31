@@ -54,6 +54,8 @@ package ASO::DB::Base;
 
 use Carp;
 
+our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
+
 # Keep DBIx::Class happy.
 our $pointless_variable;
 $pointless_variable = 1;

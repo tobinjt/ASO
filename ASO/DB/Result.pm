@@ -101,6 +101,8 @@ package ASO::DB::Result;
 use base qw{DBIx::Class};
 use base qw{ASO::DB::Base};
 
+our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
+
 my %cols = (
     # Reference to connections->id
     connection_id   => {

@@ -103,6 +103,8 @@ use warnings;
 
 package ASO::ProgressBar;
 
+our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
+
 my $module_loaded = 0;
 my @modules = qw(Term::ProgressBar ASO::ProgressBar::Dummy);
 
@@ -122,7 +124,7 @@ foreach my $module (@modules) {
 }
 
 if (not $module_loaded) {
-    die qq{__PACKAGE__: failed to load any of: }
+    die q{__PACKAGE__: failed to load any of: }
         . join (q{, }, @modules)
         . qq{\n};
 }

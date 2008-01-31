@@ -48,6 +48,8 @@ package ASO::DB::Rule;
 use base qw{DBIx::Class};
 use base qw{ASO::DB::Base};
 
+our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
+
 =head1 COLUMNS
 
 The columns in this table are:
