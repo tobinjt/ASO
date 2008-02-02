@@ -125,3 +125,6 @@ pod-coverage:
 	for package in $$( find .. -name \*.pm | sed -e 's,^../,,' -e 's,/,::,g' -e 's,.pm$$,,' ); do \
 		perl -I .. -MPod::Coverage="$$package" -e 1; \
 	done
+
+todo:
+	ack [X]XX . ../ASO

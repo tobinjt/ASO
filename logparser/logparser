@@ -332,10 +332,10 @@ Save timing data to FILE.
 When parsing log lines from previous years you must specify the year the log
 lines are from.
 
-Parse::Syslog will discard log lines which appear to come from the future.
-If today is 2008/01/01, and you're parsing log lines from 2007/06/01, because
-the year is not included in the log line, the syslog parser will assume the log
-line is from B<2008>/06/01, decide it's from the future, and will discard it.
+Parse::Syslog will discard log lines which appear to come from the future.  If
+today is 2008/01/01, and you're parsing log lines from 2007/06/01, because the
+year is not included in the log line the syslog parser will assume the log line
+is from B<2008>/06/01, decide it's from the future, and discard it.
 
 =back
 

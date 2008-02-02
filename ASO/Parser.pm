@@ -116,6 +116,18 @@ Parse log lines but don't execute actions; useful when you want to test regexes
 in new rules but don't want any new data saved to the database.  By defaults we
 parse and execute actions.  This is an optional, boolean parameter.
 
+=item year
+
+When parsing log lines from previous years you must specify the year the log
+lines are from.
+
+Parse::Syslog will discard log lines which appear to come from the future. If
+today is 2008/01/01, and you're parsing log lines from 2007/06/01, because the
+year is not included in the log line the syslog parser will assume the log line
+is from 2008/06/01, decide it's from the future, and discard it.
+
+This is an optional, non-boolean parameter.
+
 =back
 
 =back
@@ -577,18 +589,18 @@ sub parse_result_cols {
     ASSIGNMENT:
     foreach my $assign (split /\s*[,;]\s*/mx, $spec) {
         if (not length $assign) {
-            $self->my_warn(qq{parse_result_cols: empty assignment found in: \n},
+            $self->my_die(qq{parse_result_cols: empty assignment found in: \n},
                 $self->dump_rule_from_db($rule));
             next ASSIGNMENT;
         }
         if ($assign !~ m/^\s*(\w+)\s*=\s*(.+)\s*/mx) {
-            $self->my_warn(qq{parse_result_cols: bad assignment found in: \n},
+            $self->my_die(qq{parse_result_cols: bad assignment found in: \n},
                 $self->dump_rule_from_db($rule));
             next ASSIGNMENT;
         }
         my ($key, $value) = ($1, $2);
         if ($number_required and $value !~ m/^\d+$/mx) {
-            $self->my_warn(qq{parse_result_cols: $value: not a number in: \n},
+            $self->my_die(qq{parse_result_cols: $value: not a number in: \n},
                 $self->dump_rule_from_db($rule));
             next ASSIGNMENT;
         }
@@ -721,7 +733,7 @@ sub DISCONNECT {
     my ($self, $rule, $line, $matches) = @_;
 
     if (not $self->pid_exists($line->{pid})) {
-        $self->my_warn(q{disconnection: no connection found for pid }
+        $self->my_warn(q{DISCONNECT: no connection found for pid }
             . qq{$line->{pid} - perhaps the connect line is in a }
             . qq{previous log file?\n},
             $self->dump_line($line));
@@ -733,7 +745,7 @@ sub DISCONNECT {
     my $connection = $self->get_connection_by_pid($line->{pid});
     # There should NEVER be a queueid.
     if (exists $connection->{queueid}) {
-        $self->my_warn(qq{disconnection: PANIC: found queueid: \n},
+        $self->my_warn(qq{DISCONNECT: PANIC: found queueid: \n},
             $self->dump_connection($connection));
         # Similarly there's no point in failing here.
         return;
@@ -939,7 +951,7 @@ sub TRACK {
         $parent->{children} = {};
     }
     if (exists $parent->{children}->{$child_queueid}) {
-        $self->my_warn(qq{track: tracking $child_queueid for a second time:\n});
+        $self->my_warn(qq{track: tracking $child_queueid for a second time\n});
     }
 
     my $child = $self->get_or_make_connection_by_queueid($child_queueid);
@@ -1494,7 +1506,8 @@ sub handle_dead_smtpd {
     my ($self, $line, $action, $regex) = @_;
 
     if ($line->{text} !~ m/$regex/) {
-        $self->my_warn(qq{$action: bad line: $line->{text}\n});
+        $self->my_warn(qq{$action: regex >>$regex<< doesn't match }
+            . qq{line: $line->{text}\n});
         return;
     }
 
@@ -1608,7 +1621,7 @@ sub delete_child_from_parent {
     my $child_queueid = $child->{queueid};
 
     if (not exists $child->{parent}) {
-        $self->my_warn(qq{delete_child_from_parent: missing parent:\n},
+        $self->my_warn(qq{delete_child_from_parent: not a tracked connection:\n},
             $self->dump_connection($child));
         return;
     }
@@ -1747,7 +1760,7 @@ sub load_rules {
             foreach my $col (keys %{$rule_hash->{$type_data}}) {
                 if (exists $rule_hash->{$type_cols}->{$col}) {
                     $overlapping_cols++;
-                    $self->my_warn(q{Overlapping column in both }
+                    $self->my_warn(q{load_rules: Overlapping column in both }
                         . qq{$type_cols and $type_data: $col\n});
                 }
             }
@@ -1769,7 +1782,7 @@ sub load_rules {
             $rule_hash->{regex} = qr/$filtered_regex/;
         };
         if ($@) {
-            $self->my_die(qq{$0: failed to compile regex:\n\n},
+            $self->my_die(qq{load_rules: failed to compile regex:\n\n},
                 $filtered_regex,
                 qq{\n\nbecause: $@\n\n},
                 $self->dump_rule_from_db($rule),
@@ -2007,11 +2020,13 @@ sub load_state {
     my $result = do $file;
     if (not defined $result) {
         if ($@) {
-            $self->my_warn(qq{Error while reloading state from "$file": $@\n});
+            $self->my_die(qq{Error while reloading state from "$file": $@\n});
         } elsif ($!) {
-            $self->my_warn(qq{Error while reloading state from "$file": $!\n});
+            $self->my_die(qq{Error while reloading state from "$file": $!\n});
+        } else {
+            $self->my_die(qq{Error while reloading state from "$file": }
+                .qq{unknown error\n});
         }
-        $self->my_die(qq{Error while reloading state from "$file", exiting.\n});
     }
 
     if (not $self->can(q{reload_state})) {
@@ -2026,8 +2041,6 @@ sub load_state {
     };
     if ($@) {
         $self->my_die(qq{Fatal: error running reload_state(): $@\n});
-    } else {
-        $self->my_warn(qq{Loaded state from $file\n});
     }
 
     return 1;
@@ -2367,6 +2380,7 @@ sub fixup_connection {
     }
 
     my $failure = 0;
+    my $error_message = q{};
     my %data;
     # Populate %data.
     foreach my $result (@{$results}) {
@@ -2374,11 +2388,12 @@ sub fixup_connection {
             if (exists $self->{nochange_result_cols}->{$key}
                     and exists $data{$key}
                     and $data{$key} ne $result->{$key}) {
-                $self->my_warn(q{fixup_connection: }
-                    . qq{Different values for $key: \n}
-                    . qq{\told: $data{$key}\n}
-                    . qq{\tnew: $result->{$key}\n}
-                );
+                $failure++;
+                $error_message .= <<"DIFFERENT";
+fixup_connection: Different values for $key:
+    old: $data{$key}
+    new: $result->{$key}
+DIFFERENT
             }
             $data{$key} = $result->{$key};
         }
@@ -2411,7 +2426,6 @@ sub fixup_connection {
         }
     }
 
-    my $error_message = q{};
     if (keys %missing_result) {
         $error_message .= q{fixup_connection: missing result col(s): }
             . join(q{, }, sort keys %missing_result)
@@ -2424,10 +2438,7 @@ sub fixup_connection {
     }
     if ($error_message ne q{}) {
         $self->my_warn($error_message, $self->dump_connection($connection));
-    }
-
-    if ($failure) {
-        $self->my_warn(qq{fixup_connection: fixup failed\n});
+        delete $connection->{fixuped};
     } else {
         $connection->{fixuped} = 1;
     }
@@ -2561,8 +2572,10 @@ sub save {
         if ($queueid ne q{NOQUEUE}) {
             if (exists $connection->{queueid}
                     and $connection->{queueid} ne $queueid) {
-                $self->my_warn(qq{queueid change: was $connection->{queueid}; }
-                    . qq{now $queueid\n});
+                $self->my_warn(qq{save: queueid change: }
+                    . qq{was $connection->{queueid}, }
+                    . qq{now $queueid\n},
+                    $self->dump_connection($connection));
             }
             $connection->{queueid} = $queueid;
         }
@@ -3154,12 +3167,283 @@ sub make_connection {
 
 =head1 DIAGNOSTICS
 
-XXX
+In the sample error messages variable terms are shown as $variable, with longer
+terms shown as <a description of the content>.
 
-A list of every error and warning message that the module can generate
-(even the ones that will "never happen"), with a full explanation of each 
-problem, one or more likely causes, and any suggested remedies.
-(See also  QUOTE \" " INCLUDETEXT "13_ErrorHandling" "XREF83683_Documenting_Errors_"\! Documenting Errors QUOTE \" " QUOTE " in Chapter "  in Chapter  INCLUDETEXT "13_ErrorHandling" "XREF40477__"\! 13.)
+=head2 ERRORS
+
+These are fatal errors which will cause the immediate termination of the program
+unless caught by the caller.  There is no mechanism to continue parsing of the
+file which triggered the error.
+
+=head3 Errors while loading rules
+
+=over 4
+
+=item parse_result_cols: empty assignment found in: <dumped rule from database>
+
+One of result_cols, connection_cols, result_data or connection_data contains
+nothing on the right hand side of the assignment; check the rule dumped with the
+error message and correct as required.
+
+=item parse_result_cols: bad assignment found in: <dumped rule from database>
+
+One of result_cols, connection_cols, result_data or connection_data has an
+assignment which isn't in the form B<variable = value>; check the rule dumped
+with the error message and correct as required.
+
+=item parse_result_cols: $value: not a number in: <dumped rule from database>
+
+One of result_cols or connection_cols contains an assignment with a value which
+isn't an integer; check the rule dumped with the error message and correct as
+required.
+
+=item parse_result_cols: $key: unknown variable in: <dumped rule from database>
+
+One of result_cols, connection_cols, result_data or connection_data has an
+assignment which has an unknown variable on the left hand side; check the rule
+dumped with the error message and correct as required.
+
+=item load_rules: Overlapping column in both connection_cols and
+connection_data: $column Exiting due to overlapping columns in rule: <dump of
+rule>
+
+$column appears in both connection_cols and connection_data in a rule.  Check
+the rule and correct the overlap.
+
+=item load_rules: Overlapping column in both result_cols and result_data:
+$column Exiting due to overlapping columns in rule: <dump of rule>
+
+$column appears in both result_cols and result_data in a rule.  Check
+the rule and correct the overlap.
+
+=item load_rules: unknown action $action: <dump of rule>
+
+The rule specifies an unknown action; check the rule dumped with the error
+message and correct as required.
+
+=item load_rules: failed to compile regex: <lots of debugging info>
+
+Compilation of the regex failed; check the regex in the rule and correct it as
+required.
+
+=back
+
+=head3 Errors while reloading state.
+
+=over 4
+
+=item Error while reloading state from "$file": <error message>
+
+Parsing of the state from $file failed for some reason; hopefully the <error
+message> will give a good indication of why.  Generally this means that the file
+was inaccessible or corrupt.
+
+=item reload_state() not defined by $file
+
+Loading of state from $file failed because it didn't define the reload_state()
+function.  More than likely the wrong file was specified.
+
+=item Fatal: error running reload_state(): <error message>
+
+The reload_state() function defined in $file called die(), or did something else
+resulting in a fatal error.  Check the contents of $file.
+
+=back
+
+=head3 Errors while parsing
+
+=over 4
+
+=item parse: failed to stat $logfile: <error message>
+
+The parser was unable to stat(2) $logfile; check the <error message> for the
+reason, correct the problem, and try again.
+
+=item parse: failed to open $logfile: <error message>
+
+The parser was unable to open $logfile for reading; check the <error message>
+for the reason, correct the problem, and try again.
+
+=item parse: failed creating syslog parser for $logfile: <error message>
+
+The parser failed to create a Parse::Syslog object to parse $logfile; check the
+<error message> for the reason, correct the problem, and try again.
+
+=back
+
+=head3 Internal parser errors
+
+These errors indicate an internal parser error, please mail a bug report,
+including the triggering log file and a dump of the rules from the database if
+possible, to the address in the BUGS section.
+
+=over 4
+
+=item get_connection_col: Missing column $column
+
+=item get_result_col: Missing column $column
+
+=back
+
+=head2 WARNINGS
+
+=head3 Warnings when parsing
+
+=over 4
+
+=item parse: creating progress bar failed
+
+The parser wasn't able to create a progress bar, so there won't be an indication
+of how long it will take to parse the file.
+
+=item $file: $line_number: unparsed line: $postfix_program: <line>
+
+The parser didn't have a rule which was capable of parsing LINE from PROGRAM;
+add a new rule or modify an existing rule to deal with the unparsed line.
+
+=item DISCONNECT: no connection found for pid $pid - perhaps the connect line is
+in a previous log file?
+
+The DISCONNECT action was called but there isn't an existing connection for
+$pid; possible causes are:
+
+=over 8
+
+=item A rule with an incorrect action: correct the action.
+
+=item An internal error in the parser: please mail a bug report, including the
+triggering log file and a dump of the rules from the database nd a dump of the
+rules from the database if possible, to the address in the BUGS section.
+
+=item The previous log lines for this connection are in a previous log file:
+ignore the warning or parse the previous log file, saving its state, and reload
+that state before parsing the current log file.
+
+=back
+
+The third option is the most likely, particularly if the warning comes from the
+first few hundred lines of the log file.
+
+=item commit_connection: faked connection: <dump of connection>
+
+The connection couldn't be committed because it was marked as faked, i.e. of
+unknown origin.  If it occurs after the previous warning (DISCONNECT: no
+connection found for pid . . .) the solutions for that warning should cover it,
+otherwise it's an internal parser error (please mail a bug report, including the
+triggering log file and a dump of the rules from the database if possible, to
+the address in the BUGS section).
+
+=item $action: regex >>$regex<< doesn't match line: <log line>
+
+Actions which deal with smtpds exiting unexpectedly need to be supplied with a
+regex to extract the pid from the line; this error message is issued when $regex
+failed to match $line.  Improve the regex in the rule so it successfully matches
+$line, or add another rule which does.
+
+=item save: connection_data|connection_cols: new value for $column ($new_value)
+differs from existing value ($original_value) This rule produced conflicts:
+<pages of debugging info>
+
+Data extracted from the current log line for a connection differs from data
+extracted from previous log lines, e.g. the IP address of the client or server.
+This is generally caused by a mistake in one of the rules, e.g. mixing up the IP
+address and hostname in one of the rules.  There should be enough information in
+the <pages of debugging info> to figure out where the problem is.
+
+=item fixup_connection: Different values for $key: old: $old new: $new <dump of
+connection>
+
+Every connection will have multiple results associated with it, and some of
+those results will contain overlapping data.  This warning indicates that the
+overlapping data differs between results.  This is generally caused by a mistake
+in one of the rules, e.g. mixing up the sender and recipient in one of the
+rules.  There should be enough information in the <dump of connection> to figure
+out where the problem is.
+
+=item fixup_connection: missing result col(s): <list of columns> <dump of
+connection>
+
+Some of the columns required for a result in a connection haven't been set; this
+is generally caused by one of the log lines for that connection not being
+parsed, so check for unparsed log lines first, then check <dump of connection>.
+
+=item fixup_connection: missing connection col(s): <list of columns> <dump of
+connection>
+
+Some of the columns required for a connection haven't been set; this is
+generally caused by one of the log lines for that connection not being parsed,
+so check for unparsed log lines first, then check <dump of connection>.
+
+=item commit_connection: non-fixuped connection
+
+There should be earlier warnings explaining why fixup of the connection failed;
+correct the problems described in those warnings and this warning will no longer
+appear.
+
+
+
+=back
+
+=head3 Internal parser errors
+
+These warnings indicate an internal parser error, please mail a bug report,
+including the triggering log file and a dump of the rules from the database if
+possible, to the address in the BUGS section.
+
+=over 4
+
+=item DISCONNECT: PANIC: found queueid: <dump of connection>
+
+This may also be cause by a rule with an incorrect action.
+
+=item missing cleanup, but connection found by queueid $queueid differs:
+<debugging info>
+
+=item track: tracking $child_queueid for a second time
+
+=item Trying to track for a second time! <lots of debugging output>
+
+=item delete_child_from_parent: not a tracked connection: <dump of child
+connection>
+
+=item delete_child_from_parent: missing parent: <dump of child connection>
+
+=item delete_child_from_parent: $child_queueid not found in %children: <lots of
+debugging info>
+
+=item fixup_connection: faked connection: <dump of connection>
+
+=item save: queueid change: was $old_queueid, now $new_queueid <dump of
+connection>
+
+=item save: queueid clash: $queueid old: <dump of old connection> new <dump of
+new connection>
+
+=item commit_connection: previously committed: <dump of connection>
+
+=item get_connection_by_queueid: no connection for $queueid
+
+=item make_connection_by_queueid: inappropriate queueid NOQUEUE
+
+=item make_connection_by_queueid: $queueid exists <dump of connection>
+
+=item get_queueid_from_matches: no queueid extracted by: <dump of rule>
+
+=item get_queueid_from_matches: blank/undefined queueid <dump of line> using
+<dump of rule>
+
+=item get_queueid_from_matches: $queueid !~ __QUEUEID__ <dump of line> using
+<dump of rule>
+
+=item get_connection_by_pid: no connection for $pid
+
+=item make_connection_by_pid: $pid exists <dump of connection>
+
+=item delete_connection_by_pid: $pid doesn't exist
+
+=back
+
 
 
 =head1 CONFIGURATION AND ENVIRONMENT
@@ -3185,19 +3469,27 @@ None known thus far.
 
 =head1 BUGS AND LIMITATIONS
 
-A list of known problems with the module, together with some indication
-whether they are likely to be fixed in an upcoming release.
+This parser currently parses Postfix 2.2.x and 2.3.x log files; log files from
+earlier and later versions may not be parsed properly.
 
-Also a list of restrictions on the features the module does provide: 
-data types that cannot be handled, performance issues and the circumstances
-in which they may arise, practical limitations on the size of data sets, 
-special cases that are not (yet) handled, etc.
+It's highly likely that you'll need to write rules to parse some of your log
+lines, especially if you use check_{client,helo,sender,recipient}_,maps.  If you
+do write some rules, or improve existing rules, please send the rules to John
+Tobin <tobinjt@cs.tcd.ie> for inclusion in future versions of the parser.
 
-The initial template usually just has:
+There are no rules for the B<virtual> or B<lmtp> delivery agents.
+
+The parser may use large amounts of memory if you logs have many mails which
+stay in the queue for a long time.
+
+If you modify the rules table in the database you may find that previously
+dumped state tables have references to the wrong rules; this would only occur if
+you changed the id field of rules.
 
 There are no known bugs in this module. 
-Please report problems to <Maintainer name(s)>  (<contact address>)
-Patches are welcome.
+
+Please report problems and/or improvements to John Tobin <tobinjt@cs.tcd.ie>;
+patches and/or new rules are welcome.
 
 =head1 SEE ALSO
 
@@ -3210,7 +3502,7 @@ John Tobin <tobinjt@cs.tcd.ie>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2006-2007 John Tobin <tobinjt@cs.tcd.ie>.  All rights reserved.
+Copyright (c) 2006-2008 John Tobin <tobinjt@cs.tcd.ie>.  All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
