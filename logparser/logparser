@@ -49,6 +49,7 @@ print_timing(q{Loaded modules}, q{}, tv_interval($start_time, $finished_loading)
 
 warn qq{vim: set foldmethod=marker :\n};
 my $parser = ASO::Parser->new($parser_options);
+$parser->load_rules();
 my $parser_created = [gettimeofday()];
 print_timing(q{Parser created}, q{}, tv_interval($finished_loading, $parser_created));
 
@@ -325,6 +326,16 @@ even a slight run time increase.  Default is to save the minimum data required.
 =item --timing-data FILE
 
 Save timing data to FILE.
+
+=item --year YEAR
+
+When parsing log lines from previous years you must specify the year the log
+lines are from.
+
+Parse::Syslog will discard log lines which appear to come from the future.
+If today is 2008/01/01, and you're parsing log lines from 2007/06/01, because
+the year is not included in the log line, the syslog parser will assume the log
+line is from B<2008>/06/01, decide it's from the future, and will discard it.
 
 =back
 

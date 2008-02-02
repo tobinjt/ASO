@@ -22,6 +22,9 @@ This documentation refers to ASO::Parser version $Id$
             # other options if required
         });
 
+    # Load rules from the database.
+    $parser->load_rules();
+
     # Load previously saved state if there is any.
     $parser->load_state($statefilename);
 
@@ -205,12 +208,15 @@ in new()).
 =cut
 
 sub options_for_new {
+    my @date = localtime;
+    my $year = $date[5] + 1900;
     return {
         optional_argument   => {
             sort_rules              => q{normal},
             username                => undef,
             password                => undef,
             debug_results           => undef,
+            year                    => $year,
         },
         optional_toggle     => {
             discard_compiled_regex  => 0,
@@ -257,7 +263,7 @@ sub init_globals {
     $self->{reject_warning}   = qr/$self->{reject_warning}/mx;
 
     # The data to dump in dump_state()
-    $self->{data_to_dump} = [qw(queueids connections timeout_queueids)];
+    $self->{data_to_dump}     = [qw(queueids connections timeout_queueids)];
     # All mail starts off in %connections, unless submitted locally by
     # sendmail/postdrop, and then moves into %queueids if it gets a queueid.
     $self->{connections}      = {};
@@ -317,13 +323,6 @@ sub init_globals {
     $self->{NUMBER_REQUIRED}          = 1;
     $self->{result_cols_names}        = $mock_result->result_cols_columns();
     $self->{connection_cols_names}    = $mock_conn->connection_cols_columns();
-    # Load the rules, and collate them by program, so that later we'll only try
-    # rules for the program that logged the line.
-    $self->{rules}            = [$self->load_rules()];
-    my %rules_by_program;
-    map {        $rules_by_program{$_->{program}} = []; }   @{$self->{rules}};
-    map { push @{$rules_by_program{$_->{program}}}, $_; }   @{$self->{rules}};
-    $self->{rules_by_program} = \%rules_by_program;
 
     return $self;
 }
@@ -457,7 +456,7 @@ sub parse {
     if (not $logfile_fh) {
         $self->my_die(qq{parse: failed to open $logfile: $!\n});
     }
-    my $syslog = Parse::Syslog->new($logfile_fh, year => 2007);
+    my $syslog = Parse::Syslog->new($logfile_fh, year => $self->{year});
     if (not $syslog) {
         $self->my_die(q{parse: failed creating syslog parser for }
             . qq{$logfile: $@\n});
@@ -1671,7 +1670,13 @@ connection_cols and connection_data.
 
 Discarding the compiled regex if discard_compiled_regex is set.
 
+=item *
+
+Collating rules by program.
+
 =back
+
+Saves rules in $self->{rules} and collated rules in $self->{rules_by_program}.
 
 =back
 
@@ -1795,7 +1800,15 @@ sub load_rules {
 
     # Regardless of the sort order we always respect priority; not doing so
     # would break the rule set.
-    return sort { $b->{priority} <=> $a->{priority} } @results;
+    @results = sort { $b->{priority} <=> $a->{priority} } @results;
+
+    # Collate rules by program, so that later we'll only try rules for the
+    # program that logged the line.
+    my %rules_by_program;
+    map {        $rules_by_program{$_->{program}} = []; } @results;
+    map { push @{$rules_by_program{$_->{program}}}, $_; } @results;
+    $self->{rules}            = \@results;
+    $self->{rules_by_program} = \%rules_by_program;
 }
 
 =over 4
