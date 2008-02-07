@@ -279,7 +279,7 @@ build/stats-normal-shuffle-reverse-include.tex: \
 		build/stats-normal-reverse-stddev.txt build/stats-normal-reverse-stddev-22_62-68.txt build/stats-normal-reverse-stddev-other.txt
 	perl mk-stats-cached-discarded-include $^ > "$@" || (rm -f "$@"; false)
 
-build/restriction-table-include.tex: ../sql/db.sq3
+build/restriction-table-include.tex:
 	perl mk-restriction-summary-table > "$@" || (rm -f "$@"; false)
 
 # Build stats from the directory created by gen-stats.

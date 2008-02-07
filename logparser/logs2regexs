@@ -141,6 +141,10 @@ sub replace_regexs {
         print $tempfile $_;
     }
 
+    # This is important for small files, because we reopen this temporary file
+    # later, so we need to ensure that all data has been flushed to the kernel
+    # (not necessarily to disk, but definitely to the kernel).
+    $tempfile->flush();
     return ($tempfile, $num_lines);
 }
 

@@ -32,7 +32,7 @@ test.%: ../../../../logs/mail.log-%
 	make INPUT='"$<"'                 STATE='"state"'         OUTPUT='"warnings"'         test-real
 
 test-real:
-	date; perl logparser --out-statefile ${STATE} ${INPUT} 2> ${OUTPUT}; date
+	date; perl logparser --year 2007 --skip_inserting_results --out-statefile ${STATE} ${INPUT} 2> ${OUTPUT}; date
 
 ../sql/create-tables-sqlite3-generated.sql: ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm
 	(cd ../sql && perl make_schema > "$@")

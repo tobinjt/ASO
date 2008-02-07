@@ -197,10 +197,11 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- <  sharyn.davies@cs.tcd.ie>: Recipient address rejected: User unknown in local recipient table; from=<newsletter@globalmediaserver.com> to=<??sharyn.davies@cs.tcd.ie> proto=ESMTP helo=<mail1.globalmediaserver.com>
+-- <greedea@cs.tcd.ie>: Recipient address rejected: User unknown in local recipient table; from=<<>@inprima.locaweb.com.br> to=<greedea@cs.tcd.ie> proto=ESMTP helo=<hm22.locaweb.com.br>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
-    VALUES('A weird address was rejected', 'A weird address was rejected by Postfix, which escaped it in one part of the message, but not in the other',
+    VALUES('A weird address was rejected', 'A weird address was rejected by Postfix, and may have been escaped',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <([^>]+)>: Recipient address rejected: User unknown in local recipient table; from=<(__SENDER__)> to=<[^>]+> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(.*?)>: Recipient address rejected: User unknown in local recipient table; from=<(.*?)> to=<.*?> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -358,6 +359,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('Greylisted', 'Client greylisted; see http://www.greylisting.org/ for more details',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__HOSTNAME__)\[(__IP__)\]>: Client host rejected: Greylisted, see (http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 9, data = 7, sender = 8',
+        'helo = 10, client_hostname = 5, client_ip= 6',
+        'REJECTION',
+        1,
+        'REJECTED',
+        'check_policy_service'
+);
+
+-- NOQUEUE: reject: RCPT from hm22.locaweb.com.br[200.234.196.44]: 450 4.7.1 <hm22.locaweb.com.br[200.234.196.44]>: Client host rejected: Greylisted, see http://isg.ee.ethz.ch/tools/postgrey/help/cs.tcd.ie.html; from=<<>@inprima.locaweb.com.br> to=<mary.sharp@cs.tcd.ie> proto=ESMTP helo=<hm22.locaweb.com.br>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+    VALUES('Greylisted (weird addresses)', 'Client greylisted; see http://www.greylisting.org/ for more details (weird addresses)',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <(__HOSTNAME__)\[(__IP__)\]>: Client host rejected: Greylisted, see (http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+); from=<(.*?)> to=<(.*?)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 9, data = 7, sender = 8',
         'helo = 10, client_hostname = 5, client_ip= 6',
         'REJECTION',
@@ -874,6 +888,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'check_sender_access'
 );
 
+
 -- }}}
 
 -- SMTPD ACCEPT RULES {{{1
@@ -940,6 +955,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('qmgr processing mail', 'qmgr is going to deliver this mail',
         'postfix/qmgr',
         '^(__QUEUEID__): from=<(__SENDER__)>, size=(\d+), nrcpt=(\d+) \(queue active\)$',
+        'sender = 2, size = 3',
+        '',
+        'MAIL_PICKED_FOR_DELIVERY',
+        1,
+        'INFO'
+);
+
+-- A93F138A1: from=<<>@inprima.locaweb.com.br>, size=15535, nrcpt=1 (queue active)
+-- 6508A4317: from=<florenzaaluin@callisupply.com>, size=2656, nrcpt=1 (queue active)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('qmgr processing mail (weird from address)', 'qmgr is going to deliver this mail (weird from address)',
+        'postfix/qmgr',
+        '^(__QUEUEID__): from=<(.*?), size=\d+, nrcpt=\d+ \(queue active\)$',
         'sender = 2, size = 3',
         '',
         'MAIL_PICKED_FOR_DELIVERY',
@@ -1085,7 +1113,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- 7A06F3489: to=<azo@www.instantweb.com>, relay=www.instantweb.com[206.185.24.12], delay=68210, status=deferred (host www.instantweb.com[206.185.24.12] said: 451 qq write error or disk full (#4.3.0) (in reply to end of DATA command))
 -- B697043F0: to=<matthew@sammon.info>, orig_to=<matthew.sammon@cs.tcd.ie>, relay=mail.hosting365.ie[82.195.128.132], delay=1, status=deferred (host mail.hosting365.ie[82.195.128.132] said: 450 <matthew@sammon.info>: Recipient address rejected: Greylisted for 5 minutes (in reply to RCPT TO command))
--- DDF6A3489: to=<economie-recherche@region-bretagne.fr>, relay=rain-pdl.megalis.org[217.109.171.200], delay=1, status=deferred (host rain-pdl.megalis.org[217.109.171.200] said: 450 <economie-recherche@region-bretagne.fr>: Recipient address rejected: Greylisted for 180 seco nds (see http://isg.ee.ethz.ch/tools/postgrey/help/region-bretagne.fr.html) (in reply to RCPT TO command))
+-- DDF6A3489: to=<economie-recherche@region-bretagne.fr>, relay=rain-pdl.megalis.org[217.109.171.200], delay=1, status=deferred (host rain-pdl.megalis.org[217.109.171.200] said: 450 <economie-recherche@region-bretagne.fr>: Recipient address rejected: Greylisted for 180 seconds (see http://isg.ee.ethz.ch/tools/postgrey/help/region-bretagne.fr.html) (in reply to RCPT TO command))
 -- EF2AE438D: to=<k.brown@cs.ucc.ie>, relay=mail6.ucc.ie[143.239.1.36], delay=11, status=deferred (host mail6.ucc.ie[143.239.1.36] said: 451 4.3.2 Please try again later (in reply to MAIL FROM command))
 -- 0A6634382: to=<ala.biometry@rret.com>, relay=smtp.getontheweb.com[66.36.236.47], delay=57719, status=deferred (host smtp.getontheweb.com[66.36.236.47] said: 451 qqt failure (#4.3.0) (in reply to DATA command))
 -- 2CD5C3D8F: to=<gordon.power@gmail.com>, relay=gmail-smtp-in.l.google.com[66.249.93.114]:25, conn_use=3, delay=0.58, delays=0.05/0/0.29/0.23, dsn=4.2.1, status=deferred (host gmail-smtp-in.l.google.com[66.249.93.114] said: 450-4.2.1 The Gmail user you are trying to contact is receiving 450-4.2.1 mail at a rate that prevents additional messages from 450-4.2.1 being delivered. Please resend your message at a later 450-4.2.1 time; if the user is able to receive mail at that time, 450 4.2.1 your message will be delivered. s1si6984646uge (in reply to RCPT TO command))
