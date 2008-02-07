@@ -31,7 +31,7 @@ for log in $( < "$loglist" ); do
     cat "$log" > /dev/null
     for i in $( seq 1 10 ); do
         echo "$filename: $i" 1>&2
-        perl logparser --out-statefile "$state" $in_state --timing-data "$dir/timing.$filename.$i" "$log" 2> "$dir/warnings.$filename.$i"
+        perl logparser $LOGPARSER_SWITCHES --year 2007 --out-statefile "$state" $in_state --timing-data "$dir/timing.$filename.$i" "$log" 2> "$dir/warnings.$filename.$i"
         sync
         sleep 1
     done

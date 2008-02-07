@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -u -e
+
+LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=normal " bash gen-stats /home/tobinjt/stats-normal  ../logparser/logs-some
+LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=shuffle" bash gen-stats /home/tobinjt/stats-shuffle ../logparser/logs-some
+LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=reverse" bash gen-stats /home/tobinjt/stats-reverse ../logparser/logs-some
+LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=normal  --discard_compiled_regex" bash gen-stats /home/tobinjt/stats-normal-regex ../logparser/logs-some
