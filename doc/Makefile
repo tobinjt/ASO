@@ -135,6 +135,7 @@ logparser.deps: \
 				build/stats-cached-discarded-include-for-graph.tex			\
 				build/stats-normal-filesize-line-count-include.tex			\
 				build/stats-normal-shuffle-reverse-include.tex				\
+				build/restriction-table-include.tex							\
 				\
 				build/logparser-flow-chart-part-1.pdf						\
 				build/logparser-flow-chart-part-1.ps						\
@@ -277,6 +278,9 @@ build/stats-normal-shuffle-reverse-include.tex: \
 		build/stats-normal-shuffle-stddev.txt build/stats-normal-shuffle-stddev-22_62-68.txt build/stats-normal-shuffle-stddev-other.txt \
 		build/stats-normal-reverse-stddev.txt build/stats-normal-reverse-stddev-22_62-68.txt build/stats-normal-reverse-stddev-other.txt
 	perl mk-stats-cached-discarded-include $^ > "$@" || (rm -f "$@"; false)
+
+build/restriction-table-include.tex: ../sql/db.sq3
+	perl mk-restriction-summary-table > "$@" || (rm -f "$@"; false)
 
 # Build stats from the directory created by gen-stats.
 build/stats-normal.txt: stats-normal

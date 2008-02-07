@@ -1,0 +1,30 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use List::Util qw(sum);
+use IO::File;
+
+my $data_pipe = IO::File->new(q{bash mk-restriction-summary-data |})
+    or die qq{$0: failed opening pipe from mk-restriction-summary-data: $!};
+
+my %data;
+while (<$data_pipe>) {
+    chomp;
+    my ($key, $value) = split /\|/, $_;
+    $data{$key} = $value;
+}
+
+print q(\begin{tabular}[]{lr}) . qq{\n};
+print qq{Restriction type & Total rejections \\\\\n};
+
+$data{q{Total rejections}} = sum(values %data);
+foreach my $key (sort { $data{$a} <=> $data{$b} || $a cmp $b } keys %data) {
+    print qq{$key & $data{$key} \\\\\n};
+}
+
+print q(\end{tabular}) . qq{\n};
+

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+set -u
+
+sqlite3 ../sql/db.sq3 <<'SQL'
+select "Unknown recipients",    hits_total      from rules where name = "Unknown recipient";
+select "Unknown sender",        hits_total      from rules where name = "Unknown sender";
+select "\RBL{}s",               sum(hits_total) from rules where restriction_name = "reject_rbl_client";
+select "Greylisting",           hits_total      from rules where name = "Greylisted";
+select "Non-\FQDN{} HELO",      hits_total      from rules where name = "Non-FQDN HELO";
+SQL

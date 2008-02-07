@@ -85,6 +85,14 @@
     \hspace*{2em}%
 }
 
+\newcommand{\numberOFlogFILES}[0]{%
+    93%
+}
+
+\newcommand{\numberOFrules}[0]{%
+    142%
+}
+
 % This may keep hyperref happy about the Abstract entry in the table of
 % contents.
 \newcounter{dummy}
@@ -187,11 +195,12 @@ the algorithm, and further complications whose solution completes the
 algorithm.
 
 Section~\ref{parsing coverage} analyses the coverage the parser achieves
-over a set of 93 log files taken from a mail server handling mail for over
-1000 users.  Coverage is described both in terms of the fraction of lines
-parsed and the fraction of mails and connections successfully reconstructed
-by the parsing algorithm, including dealing with false negatives and a
-discussion of the difficulties in identifying false positives.
+over a set of \numberOFlogFILES{} log files taken from a mail server
+handling mail for over 1000 users.  Coverage is described both in terms of
+the fraction of lines parsed and the fraction of mails and connections
+successfully reconstructed by the parsing algorithm, including dealing with
+false negatives and a discussion of the difficulties in identifying false
+positives.
 
 Section~\ref{limitations-improvements} lists the limitations of the
 algorithm, then suggests some ways of dealing with the limitations, with
@@ -588,8 +597,8 @@ encountered scenarios are:
         compromised machine on the \ISP{}'s network.  Greylisting will
         slowly become less useful, but it does block a large percentage of
         spam mail at the moment; the most effective restrictions over the
-        93 log files used in testing the parser are shown in
-        table~\refwithpage{Summary of rejections}.  Greylisting is
+        \numberOFlogFILES{} log files used in testing the parser are shown
+        in table~\refwithpage{Summary of rejections}.  Greylisting is
         obviously worth using, at least at the moment, particularly when
         you factor in Greylisting's position as the final restriction which
         a mail must overcome: Greylisting only takes effect for mails which
@@ -597,15 +606,7 @@ encountered scenarios are:
 
         \begin{table}[ht]
             \caption{Summary of rejections}\label{Summary of rejections}
-            \begin{tabular}[]{lr}
-                Restriction type    & Total rejections  \\
-                Total rejections    & 5283739           \\
-                Unknown recipient   & 2338000           \\
-                Unknown sender      & 864148            \\
-                \RBL{}s             & 807185            \\
-                Greylisting         & 497244            \\
-                Non-\FQDN{} HELO    & 403652            \\
-            \end{tabular}
+            \input{build/restriction-table-include.tex}
         \end{table}
 
     \item Using a scoring system such as
@@ -719,17 +720,17 @@ program's entire parsing algorithm, identify the correct location to
 change, and make the appropriate changes without adversely affecting
 parsing, particularly as there may be edge cases which are not immediately
 obvious.\footnote{See \sectionref{yet-more-aborted-delivery-attempts} for a
-complication which occurs only four times in 93 log files tested.}
-Requiring changes to the parsing algorithm also complicates upgrades, as
-the changes must be preserved during the upgrade, and may clash with
-changes made by the developer.  \parsername{} allows the user to add new
-rules to the database without changing the parsing algorithm, unless the
-new log lines to be parsed require functionality not already provided by
-the algorithm.  If the new log lines do require new functionality, new
-actions can be added to the parser without modifying existing actions or
-other parts of the algorithm; only in the rare case that the new actions
-require support from other sections of the code will more extensive changes
-be required.
+complication which occurs only four times in \numberOFlogFILES{} log files
+tested.} Requiring changes to the parsing algorithm also complicates
+upgrades, as the changes must be preserved during the upgrade, and may
+clash with changes made by the developer.  \parsername{} allows the user to
+add new rules to the database without changing the parsing algorithm,
+unless the new log lines to be parsed require functionality not already
+provided by the algorithm.  If the new log lines do require new
+functionality, new actions can be added to the parser without modifying
+existing actions or other parts of the algorithm; only in the rare case
+that the new actions require support from other sections of the code will
+more extensive changes be required.
 
 There is some similarity between the parser's design and William Wood's
 \ATN{}~\cite{atns, nlpip}, a tool used in Computational Linguistics for
@@ -1428,9 +1429,10 @@ Parsing efficiency is an obvious concern when the parser routinely needs to
 deal with 75 MB log files containing 300,000 log lines (for a small mail
 server --- large scale mail servers would have much larger log files on a
 daily basis).  When generating the data for the graphs included in
-appendix~\refwithpage{graphs}, 93 log files (totaling 10.08 GB, 60.72
-million lines) were each parsed 10 times, the first run discarded, and the
-remaining 9 runs averaged.  The first run is discarded for two reasons:
+appendix~\refwithpage{graphs}, \numberOFlogFILES{} log files (totaling
+10.08 GB, 60.72 million lines) were each parsed 10 times, the first run
+discarded, and the remaining 9 runs averaged.  The first run is discarded
+for two reasons:
 
 \begin{enumerate}
 
@@ -1472,13 +1474,13 @@ graph~\refwithpage{execution time vs file size vs number lines factor}.
 
 Rule ordering was mentioned in \sectionref{rule attributes} and will be
 covered in greater detail in this section.  At the time of writing there
-are 139 different rules, with the top 10\% matching the vast majority of
-the log lines, and the remaining log lines split across the other 90\% of
-the rules (as shown in graph~\refwithpage{rule hits graph}).  Assuming that
-the distribution of log lines is reasonably steady over time, program
-efficiency should benefit from trying more frequently matching rules before
-those which match less frequently.  To test this hypothesis three full test
-runs were performed with different rule orderings:
+are \numberOFrules{} different rules, with the top 10\% matching the vast
+majority of the log lines, and the remaining log lines split across the
+other 90\% of the rules (as shown in graph~\refwithpage{rule hits graph}).
+Assuming that the distribution of log lines is reasonably steady over time,
+program efficiency should benefit from trying more frequently matching
+rules before those which match less frequently.  To test this hypothesis
+three full test runs were performed with different rule orderings:
 
 \begin{description}
 
@@ -2614,15 +2616,16 @@ SMTPD\_DIED and SMTPD\_WATCHDOG\@.
 Occasionally a log file will have out of order log lines which cannot be
 dealt with by the techniques described in \sectionref{tracking re-injected
 mail}, \sectionref{discarding cleanup lines} or \sectionref{pickup logging
-after cleanup}.  In the 93 log files used for testing this occurs only five
-times in 60,721,709 log lines, but for completeness of the algorithm it
-should be dealt with.  The five occurrences in the test log files have the
-same characteristics: the \daemon{local} log line showing delivery to a
-local mailbox occurs after the \daemon{qmgr} log line showing removal of
-the mail from the queue because delivery is completed.  This causes
-problems: the mail is not complete, so entry into the database fails; a new
-mail is created when the \daemon{local} line is parsed and remains in the
-state tables; four warnings are issued per pair of out of order log lines.
+after cleanup}.  In the \numberOFlogFILES{} log files used for testing this
+occurs only five times in 60,721,709 log lines, but for completeness of the
+algorithm it should be dealt with.  The five occurrences in the test log
+files have the same characteristics: the \daemon{local} log line showing
+delivery to a local mailbox occurs after the \daemon{qmgr} log line showing
+removal of the mail from the queue because delivery is completed.  This
+causes problems: the mail is not complete, so entry into the database
+fails; a new mail is created when the \daemon{local} line is parsed and
+remains in the state tables; four warnings are issued per pair of out of
+order log lines.
 
 The solution to this problem is to examine the list of programs which have
 logged messages for each mail, comparing the list against a table of
@@ -2676,13 +2679,13 @@ This check applies to accepted mails only, not to rejected mails.
 
 The aborted delivery attempts described in
 \sectionref{aborted-delivery-attempts} occur frequently, but the aborted
-delivery attempts described in this section only occur four times in the 93
-log files used for testing.  The symptoms are the same as in
-\sectionref{aborted-delivery-attempts}, except that there \textit{is\/} a
-\daemon{cleanup} log line; there does not appear to be anything in the log
-file to explain why there are no further log messages.  The only way to
-detect these mails is to periodically scan all mails in the state tables,
-deleting any mails displaying the following characteristics:
+delivery attempts described in this section only occur four times in the
+\numberOFlogFILES{} log files used for testing.  The symptoms are the same
+as in \sectionref{aborted-delivery-attempts}, except that there
+\textit{is\/} a \daemon{cleanup} log line; there does not appear to be
+anything in the log file to explain why there are no further log messages.
+The only way to detect these mails is to periodically scan all mails in the
+state tables, deleting any mails displaying the following characteristics:
 
 \begin{itemize}
 
@@ -2776,29 +2779,30 @@ Full coverage of log lines requires the following:
 
 Full coverage of log lines is easy to achieve yet hard to maintain.  It is
 easy to achieve full coverage for a limited set of log files (at the time
-of writing the parser has 139 rules, fully parsing 93 contiguous log files
-from Postfix 2.2 and 2.3), and new rules are easy to add.  Maintaining full
-coverage is hard because other servers have different restrictions with
-custom messages, \RBL{} messages change over time, major releases of
-Postfix change warning messages (usually adding more information), etc.,\
-so over time the log lines drift and change.  Graph~\refwithpage{rule hits
-graph} shows the number of hits for each rule over all 93 log files; it's
-obvious that a small number of rules match the vast majority of the lines,
-and more than half the rules match fewer than 100 times.
+of writing the parser has \numberOFrules{} rules, fully parsing
+\numberOFlogFILES{} contiguous log files from Postfix 2.2 and 2.3), and new
+rules are easy to add.  Maintaining full coverage is hard because other
+servers have different restrictions with custom messages, \RBL{} messages
+change over time, major releases of Postfix change warning messages
+(usually adding more information), etc.,\ so over time the log lines drift
+and change.  Graph~\refwithpage{rule hits graph} shows the number of hits
+for each rule over all \numberOFlogFILES{} log files; it's obvious that a
+small number of rules match the vast majority of the lines, and more than
+half the rules match fewer than 100 times.
 
 XXX PICK A RANDOM SAMPLE OF LOG LINES AND ENSURE THEY ARE PARSED
 PROPERLY\@.
 
 Warnings are issued for any lines which are not parsed; no warnings are
-issued for unparsed lines while testing with the 93 test log files, so it
-can be safely concluded that there are zero false negatives.  False
-positives are harder to quantify: short of examining each of the 60,721,709
-log lines and determining which \regex{} parsed it, there is no way to be
-sure that every line was parsed by the correct \regex{}, making it
-impossible to quantify the false positive rate.  The author is confident
-that the false positive rate is extremely low, approaching if not reaching
-zero, because the \regexes{} used are as specific as possible and care has
-been taken to ensure that there are no unintentionally overlapping
+issued for unparsed lines while testing with the \numberOFlogFILES{} test
+log files, so it can be safely concluded that there are zero false
+negatives.  False positives are harder to quantify: short of examining each
+of the 60,721,709 log lines and determining which \regex{} parsed it, there
+is no way to be sure that every line was parsed by the correct \regex{},
+making it impossible to quantify the false positive rate.  The author is
+confident that the false positive rate is extremely low, approaching if not
+reaching zero, because the \regexes{} used are as specific as possible and
+care has been taken to ensure that there are no unintentionally overlapping
 \regexes{}.
 
 \subsection{Mails covered}
@@ -2823,20 +2827,20 @@ warnings when parsing, and when finished parsing the state table should
 only contain entries for mails which had yet to be delivered when the log
 files ended, or started before the log files began.
 
-At the time of writing the parser is being tested with 93 log files.  There
-are 5 warnings produced, but because the parser errs on the side of
-producing more warnings rather than fewer those 5 warnings represent 3
-instances of 1 problem: 3 connections started before the first log file, so
-their initial log entries are missing, leading to warnings when their log
-lines are parsed.
+At the time of writing the parser is being tested with \numberOFlogFILES{}
+log files.  There are 5 warnings produced, but because the parser errs on
+the side of producing more warnings rather than fewer those 5 warnings
+represent 3 instances of 1 problem: 3 connections started before the first
+log file, so their initial log entries are missing, leading to warnings
+when their log lines are parsed.
 
 The state tables contain entries for mails not yet delivered when the
 parser finishes execution.  Ideally all they should contain are mails which
 are awaiting delivery after the period covered by the logs, though they may
 also contain mails whose initial entries are not contained in the logs.
 Any other entries are evidence of a failure in parsing or an aberration in
-the logs.  After parsing the 93 test log files the state tables contain 18
-entries, breaking down into:
+the logs.  After parsing the \numberOFlogFILES{} test log files the state
+tables contain 18 entries, breaking down into:
 
 \begin{itemize}
 
