@@ -52,8 +52,9 @@ while (<>) {
         next READ;
     }
 
-    if (m/^\s*$/) {
+    if (m/^\s*$/ or m/\);\s*$/) {
         # End of the SQL paragraph.
+        $current_block .= $_;
         run_sql($current_block);
         $current_block = q{};
         $line_number = $. + 1;
@@ -194,13 +195,14 @@ statement line.  The following won't do what you expect:
 
     delete from foo; delete from bar; delete from baz;
 
-The first statement will be executed, the following two will be ignored.  For
-this reason setup-database splits the input into paragraphs and feeds each
-paragraph individually to the database.  It B<does not> attempt to split lines
-containing multiple statements, because that would require proper, database
-specific, SQL parsing.  If you're using SQLite3 you'll need to separate
-statements with a blank line; other databases may handle multiple statements at
-once.
+The first statement will be executed, the following two will be ignored (it does
+work properly when using the sqlite3 command line client).  For this reason
+setup-database splits the input into paragraphs and feeds each paragraph
+individually to the database.  Paragraphs are separated by blank lines, or a
+line ending in B<);>.  It B<does not> attempt to split lines containing multiple
+statements, because that would require proper, database specific, SQL parsing.
+The splitting is not expected to be perfect, it's just enough for the author's
+needs.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
@@ -208,8 +210,8 @@ None.
 
 =head1 DEPENDENCIES
 
-Standard Perl modules: Getopt::Long, Pod::Usage, IO::File, DBI, DBD::foo -
-whichever foo is appropriate for your database.
+Standard Perl modules: Getopt::Long, Pod::Usage, IO::File, DBI, DBD::I<foo> -
+whichever I<foo> is appropriate for your database.
 
 =head1 INCOMPATIBILITIES
 
