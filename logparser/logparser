@@ -316,6 +316,15 @@ Parse log lines, but don't run the rule's action.  Useful for testing new rules,
 as no new data will be added to the database but warnings will still be issued
 for unparsed lines.  Execution is also much faster.  Default is to run actions.
 
+=item --print_matching_regex
+
+Print the regex and the line on each successful match, in the format:
+
+  REGEX !!!! LINE
+
+This might be useful to verify that a line is being matched by the regex you
+expect.  This option still takes effect when B<--parse_lines_only> is specified.
+
 =item --debug_results
 
 Save extra data in each result to aid in debugging.  The data will not be stored

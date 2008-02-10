@@ -236,6 +236,7 @@ sub options_for_new {
             # run time.
             skip_inserting_results  => 0,
             parse_lines_only        => 0,
+            print_matching_regex    => 0,
         },
         required_argument   => {
             data_source             => undef,
@@ -647,6 +648,9 @@ sub parse_line {
         # shift the array forward so they're aligned
         unshift @matches, undef;
 
+        if ($self->{print_matching_regex}) {
+            print $rule->{regex_orig}, q{ !!!! }, $line->{text}, qq{\n};
+        }
         if ($self->{parse_lines_only}) {
             return;
         }

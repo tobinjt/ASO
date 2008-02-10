@@ -129,3 +129,7 @@ pod-coverage:
 
 todo:
 	ack [X]XX . ../ASO
+
+.PHONY: random-sample-logs-regex-check
+random-sample-logs-regex-check:
+	perl logparser --out-statefile /dev/null --print_matching_regex --year 2007 --parse_lines_only random-sample-logs-regex-check | diff -u random-sample-logs-regex-output -
