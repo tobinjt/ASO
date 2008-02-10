@@ -187,7 +187,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Unknown recipient', 'The recipient address is unknown on our system',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: User unknown(?: in local recipient table)?; from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: User unknown(?: in \w+ recipient table)?; from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -201,7 +201,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
     VALUES('A weird address was rejected', 'A weird address was rejected by Postfix, and may have been escaped',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(.*?)>: Recipient address rejected: User unknown in local recipient table; from=<(.*?)> to=<.*?> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(.*?)>: Recipient address rejected: User unknown in \w+ recipient table; from=<(.*?)> to=<.*?> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -215,7 +215,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Unknown sender', 'The sender address is unknown on our system',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: User unknown in local recipient table; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: User unknown in \w+ recipient table; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -228,7 +228,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
     VALUES('Unknown sender (escaped)', 'The sender address is unknown on our system (postfix escaped it)',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(.*)>: Sender address rejected: User unknown in local recipient table; from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(.*)>: Sender address rejected: User unknown in \w+ recipient table; from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
