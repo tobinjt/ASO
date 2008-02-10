@@ -132,4 +132,6 @@ todo:
 
 .PHONY: random-sample-logs-regex-check
 random-sample-logs-regex-check:
+	make db
 	perl logparser --out-statefile /dev/null --print_matching_regex --year 2007 --parse_lines_only random-sample-logs-regex-check | diff -u random-sample-logs-regex-output -
+	sqlite3 -separator ' ' ../sql/db.sq3 'select "Number of rules hit:", count(name) from rules where hits > 0;'
