@@ -39,6 +39,7 @@ test-real:
 
 db: ../sql/create-tables-sqlite3-generated.sql
 	(cd ../sql/ && rm -f db.sq3 && perl setup-database create-tables-sqlite3-generated.sql populate-rules.sql)
+	sqlite3 ../sql/db.sq3 'select name, regex from rules where regex not like "^%$$"';
 
 db-clean:
 	(cd ../sql/ && perl setup-database cleanup.sql)
@@ -50,12 +51,12 @@ PROFILE_TEMP=../../profile_temp
 profile:
 	rm -rf "${PROFILE_TEMP}"
 	mkdir -p "${PROFILE_TEMP}"
-	tar cf - .. | tar xf - -C "${PROFILE_TEMP}"
+	tar cf - ../logparser ../ASO ../sql | tar xf - -C "${PROFILE_TEMP}"
 	make -C "${PROFILE_TEMP}/logparser" profile2
 
 profile2:
 	echo "profiling started"; date
-	echo "This will take over an hour - 70 minutes or so last time."
+	echo "This will take over half an hour"
 	for profile in Profile DProf SmallProf Cover; do    \
 		make "profile.$$profile";                       \
 		mv "warnings" "warnings.$$profile";             \
@@ -73,13 +74,13 @@ DPROFPP=dprofpp
 profile.DProf.stats:
 	# Process tmon.out in various ways
 	# This has a running time of roughly 400% of make test
-	time nice --adjustment=19 ${DPROFPP} -l > ${DPROF_OUT}.by-calls
+	time ${DPROFPP} -l > ${DPROF_OUT}.by-calls
 	# This has a running time of roughly 200% of make test
-	time nice --adjustment=19 ${DPROFPP}    > ${DPROF_OUT}.top-15
+	time ${DPROFPP}    > ${DPROF_OUT}.top-15
 	# This has a running time of roughly 400% of make test
-	time nice --adjustment=19 ${DPROFPP} -S > ${DPROF_OUT}.call-tree-merged
+	time ${DPROFPP} -S > ${DPROF_OUT}.call-tree-merged
 	# This has a running time of roughly 200% of make test
-	time nice --adjustment=19 ${DPROFPP} -v > ${DPROF_OUT}.by-avg-time
+	time ${DPROFPP} -v > ${DPROF_OUT}.by-avg-time
 
 profile.DProf:
 	# Devel::DProf; use dprofpp to do something useful with tmon.out
