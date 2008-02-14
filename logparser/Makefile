@@ -58,6 +58,7 @@ profile2:
 	echo "profiling started"; date
 	echo "This will take over half an hour"
 	for profile in Profile DProf SmallProf Cover; do    \
+		make db;										\
 		make "profile.$$profile";                       \
 		mv "warnings" "warnings.$$profile";             \
 		mv "state" "state.$$profile";                   \

@@ -227,7 +227,6 @@ sub options_for_new {
             sort_rules              => q{normal},
             username                => undef,
             password                => undef,
-            debug_results           => undef,
             year                    => $year,
         },
         optional_toggle     => {
@@ -237,6 +236,7 @@ sub options_for_new {
             skip_inserting_results  => 0,
             parse_lines_only        => 0,
             print_matching_regex    => 0,
+            debug_results           => 0,
         },
         required_argument   => {
             data_source             => undef,
