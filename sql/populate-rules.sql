@@ -368,7 +368,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- NOQUEUE: reject: RCPT from hm22.locaweb.com.br[200.234.196.44]: 450 4.7.1 <hm22.locaweb.com.br[200.234.196.44]>: Client host rejected: Greylisted, see http://isg.ee.ethz.ch/tools/postgrey/help/cs.tcd.ie.html; from=<<>@inprima.locaweb.com.br> to=<mary.sharp@cs.tcd.ie> proto=ESMTP helo=<hm22.locaweb.com.br>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, priority, restriction_name)
     VALUES('Greylisted (weird addresses)', 'Client greylisted; see http://www.greylisting.org/ for more details (weird addresses)',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__HOSTNAME__)\[(__IP__)\]>: Client host rejected: Greylisted, see (http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+); from=<(.*?)> to=<(.*?)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -377,6 +377,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
+        -1,
         'check_policy_service'
 );
 
@@ -964,14 +965,15 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- A93F138A1: from=<<>@inprima.locaweb.com.br>, size=15535, nrcpt=1 (queue active)
 -- 6508A4317: from=<florenzaaluin@callisupply.com>, size=2656, nrcpt=1 (queue active)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action)
     VALUES('qmgr processing mail (weird from address)', 'qmgr is going to deliver this mail (weird from address)',
         'postfix/qmgr',
-        '^(__QUEUEID__): from=<(.*?), size=\d+, nrcpt=\d+ \(queue active\)$',
+        '^(__QUEUEID__): from=<(.*?)>, size=(\d+), nrcpt=\d+ \(queue active\)$',
         'sender = 2, size = 3',
         '',
         'MAIL_PICKED_FOR_DELIVERY',
         1,
+        -1,
         'INFO'
 );
 
