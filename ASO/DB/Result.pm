@@ -104,6 +104,10 @@ use base qw{ASO::DB::Base};
 our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
 
 my %cols = (
+    id              => {
+        sql             => q{NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE},
+        type            => q{integer},
+    },
     # Reference to connections->id
     connection_id   => {
         sql             => q{NOT NULL},
@@ -237,7 +241,7 @@ sub table_name {
 __PACKAGE__->load_components(qw(PK::Auto Core));
 __PACKAGE__->table(table_name());
 __PACKAGE__->add_columns(
-    keys %cols
+    grep { exists $cols{$_}->{sql} } keys %cols
 );
 __PACKAGE__->set_primary_key(qw(connection_id rule_id));
 # Foreign keys: this table references other tables.

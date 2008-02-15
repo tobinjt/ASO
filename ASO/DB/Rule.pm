@@ -309,7 +309,7 @@ sub table_name {
 __PACKAGE__->load_components(qw(PK::Auto Core));
 __PACKAGE__->table(table_name());
 __PACKAGE__->add_columns(
-    keys %cols
+    grep { exists $cols{$_}->{sql} } keys %cols
 );
 __PACKAGE__->set_primary_key(q{id});
 
