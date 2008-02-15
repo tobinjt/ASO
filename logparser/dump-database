@@ -1,0 +1,45 @@
+#!/usr/bin/env perl
+
+# Dump the rules, connections and results tables from the database.
+# $Id$
+
+use strict;
+use warnings;
+
+use lib qw(..);
+use ASO::DB;
+
+my $dbix = ASO::DB->connect(
+    q{dbi:SQLite:dbname=../sql/db.sq3},
+    undef,
+    undef,
+    {AutoCommit => 1},
+);
+
+# Dump rules first.
+my $rules = $dbix->resultset(q{Rule})->search(
+    {}, 
+    { order_by => q{id} }
+);
+while (my $rule = $rules->next()) {
+    print row_to_string($rule), qq{\n};
+}
+
+# Now dump connections and results.
+my $connections = $dbix->resultset(q{Connection})->search(
+    {}, 
+    { order_by => q{id} }
+);
+while (my $connection = $connections->next()) {
+    print row_to_string($connection), qq{\n};
+    foreach my $result ($connection->results()) {
+        print qq{    }, row_to_string($result), qq{\n};
+    }
+}
+
+sub row_to_string {
+    my ($row) = @_;
+    my %columns = $row->get_columns({ order_by => q{id} });
+    # XXX a better separator would be nice.
+    return join q{, }, map { $columns{$_} || q{} } sort keys %columns;
+}
