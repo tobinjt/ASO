@@ -332,6 +332,12 @@ in the database, but it will be shown when connections are dumped for any
 reason.  There is extra memory overhead associated with saving this data, and
 even a slight run time increase.  Default is to save the minimum data required.
 
+=item --dump_committed_connections
+
+Dump each connection that is committed.  This might be useful for serious
+debugging, or verifying the parser's behaviour after changing the parser or
+rules.
+
 =item --timing-data FILE
 
 Save timing data to FILE.

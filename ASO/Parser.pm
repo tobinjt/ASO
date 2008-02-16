@@ -233,10 +233,11 @@ sub options_for_new {
             discard_compiled_regex  => 0,
             # Skip inserting results into the database, because it quadruples
             # run time.
-            skip_inserting_results  => 0,
-            parse_lines_only        => 0,
-            print_matching_regex    => 0,
-            debug_results           => 0,
+            skip_inserting_results      => 0,
+            parse_lines_only            => 0,
+            print_matching_regex        => 0,
+            debug_results               => 0,
+            dump_committed_connections  => 0,
         },
         required_argument   => {
             data_source             => undef,
@@ -2654,6 +2655,10 @@ sub commit_connection {
     if ($self->{skip_inserting_results}) {
         $connection->{committed} = 1;
         return;
+    }
+
+    if ($self->{dump_committed_connections}) {
+        $self->my_warn(q{Committing: }, $self->dump_connection($connection));
     }
 
     if ($self->{num_connections_uncommitted} == 0) {
