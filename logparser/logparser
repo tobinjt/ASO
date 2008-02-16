@@ -12,7 +12,6 @@ BEGIN {
 }
 
 use lib q{..};
-use ASO::DB;
 use ASO::Parser;
 use Getopt::Long;
 use Pod::Usage;
@@ -248,7 +247,9 @@ This documentation refers to logparser version $Id$
 logparser is a thin wrapper around L<ASO::Parser> - it handles parsing of
 multiple files, saving and loading state, plus any other housekeeping required
 by L<ASO::Parser>.  It also performs various profiling related tasks, depending
-on the profiling module, if any, in use.
+on the profiling module, if any, in use.  L<ASO::Parser> utilises
+L<IO::Uncompress::AnyUncompress> to read compressed files; see its documentation
+for which compression formats it supports.
 
 =head1 OPTIONS
 
@@ -376,10 +377,17 @@ add it to the distribution.
 
 =head1 DEPENDENCIES
 
-Modules packaged with logparser: ASO::DB, ASO::Parser (both have additional
-dependencies, see their documentation for details).
+Modules packaged with logparser: L<ASO::Parser> (which has its own
+dependencies).
 
-Standard Perl modules: Getopt::Long, Pod::Usage, File::Temp.
+Standard Perl modules: L<Getopt::Long>, L<Pod::Usage>, L<File::Temp>,
+L<Time::HiRes>.
+
+Additional Perl modules: L<IO::Uncompress::AnyUncompress>.
+
+=head1 SEE ALSO
+
+L<IO::Uncompress::AnyUncompress>
 
 =head1 INCOMPATIBILITIES
 

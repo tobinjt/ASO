@@ -67,6 +67,7 @@ use Data::Dumper;
 use Regexp::Common qw(net);
 use List::Util qw(shuffle);
 use Data::Compare;
+use IO::Uncompress::AnyUncompress;
 
 our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
 
@@ -453,11 +454,13 @@ sub create_progress_bar {
 
 =item $parser->parse($logfile)
 
-Parses the logfile, ignoring any lines logged by programs the ruleset doesn't
+Parses $logfile, ignoring any lines logged by programs the ruleset doesn't
 contain rules for.  Lines which aren't parsed will be warned about; warnings may
 also be generated for a myriad of other reasons, see DIAGNOSTICS for more
 information.  Data gathered from the logs will be inserted into the database
-(depending on the value of skip_inserting_results).  Always returns true.
+(depending on the value of skip_inserting_results).  Always returns true.  Uses
+L<IO::Uncompress::AnyUncompress> to support reading compresses files; see its
+documentation for which compression formats it supports.
 
 =back
 
@@ -470,7 +473,12 @@ sub parse {
     if (not $logfile_fh) {
         $self->my_die(qq{parse: failed to open $logfile: $!\n});
     }
-    my $syslog = Parse::Syslog->new($logfile_fh, year => $self->{year});
+    my $uncompressing_fh = IO::Uncompress::AnyUncompress->new($logfile_fh);
+    if (not $uncompressing_fh) {
+        $self->my_die(q{parse: IO::Uncompress::AnyUncompress failed with}
+            . qq{ $logfile: $IO::Uncompress::AnyUncompress::AnyUncompressError\n});
+    }
+    my $syslog = Parse::Syslog->new($uncompressing_fh, year => $self->{year});
     if (not $syslog) {
         $self->my_die(q{parse: failed creating syslog parser for }
             . qq{$logfile: $@\n});
@@ -3464,13 +3472,14 @@ module's documentation for details.
 
 =head1 DEPENDENCIES
 
-Standard modules shipped with Perl: IO::File, Carp, Data::Dumper,
-Regexp::Common, List::Util.
+Standard modules shipped with Perl: L<IO::File>, L<Carp>, L<Data::Dumper>,
+L<List::Util>.
 
-Modules packaged with ASO::Parser: ASO::DB, ASO::ProgressBar.
+Modules packaged with ASO::Parser: L<ASO::DB>, L<ASO::ProgressBar>.
 
-External modules: Parse::Syslog, Regexp::Common, DBIx::Class (which has many
-dependencies), DBI, DBD::whatever, Data::Compare.
+External modules: L<Parse::Syslog>, L<Regexp::Common>, L<DBIx::Class> (which has many
+dependencies), L<DBI>, DBD::foo (whee foo is your database), L<Data::Compare>,
+L<IO::Uncompress::AnyUncompress>.
 
 =head1 INCOMPATIBILITIES
 
