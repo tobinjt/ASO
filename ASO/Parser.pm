@@ -2650,15 +2650,15 @@ sub commit_connection {
         return;
     }
 
+    if ($self->{dump_committed_connections}) {
+        $self->my_warn(q{Committing: }, $self->dump_connection($connection));
+    }
+
     # Occasionally we want to test without committing to the database, because 
     # committing roughly quadruples the run time.
     if ($self->{skip_inserting_results}) {
         $connection->{committed} = 1;
         return;
-    }
-
-    if ($self->{dump_committed_connections}) {
-        $self->my_warn(q{Committing: }, $self->dump_connection($connection));
     }
 
     if ($self->{num_connections_uncommitted} == 0) {
