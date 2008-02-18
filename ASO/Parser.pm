@@ -377,6 +377,12 @@ sub create_valid_combos {
         # Sent from remote client, remote delivery (relay for internal clients)
         [qw(                             postfix/smtp postfix/smtpd)],
     );
+    # Special cases: 
+    push @valid_combos,
+        # Mail accepted via SMTP, deleted by postsuper before any further
+        # processing.  postfix/postsuper is explicitly included so that mail
+        # with just postfix/smtpd won't be accepted by itself.
+        [qw(postfix/postsuper postfix/smtpd)];
 
     # These two programs should be present for every mail.
     map { push @{$_}, qw(postfix/cleanup postfix/qmgr); } @valid_combos;
@@ -1972,11 +1978,11 @@ TRACKED_HEADER
 
         # Append the untracked members (usually the majority).
         $time = localtime;
-        $num_keys = keys %tracked;
-        print $filehandle <<"TRACKED_HEADER";
+        $num_keys = keys %untracked;
+        print $filehandle <<"UNTRACKED_HEADER";
 ## Appending dump of untracked $data_source data ($num_keys entries)
 ## $time
-TRACKED_HEADER
+UNTRACKED_HEADER
         foreach my $untracked_queueid (sort keys %untracked) {
             # This is pretty ugly looking, but should result in 
             #   $queueids{q{38C1F4493}}
