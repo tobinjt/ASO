@@ -1786,7 +1786,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         '',
         'smtp_code = 554',
-        'COMMIT',
+        'DELETE',
         1,
         'DELETED'
 );

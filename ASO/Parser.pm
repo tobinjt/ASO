@@ -318,6 +318,7 @@ sub init_globals {
         SMTPD_DIED
         SMTPD_WATCHDOG
         BOUNCE
+        DELETE
     ));
 
     # Used in fixup_connection() to verify data.
@@ -1381,6 +1382,40 @@ sub BOUNCE {
     delete $bounce_con->{faked};
 
     return;
+}
+
+=over 4
+
+=item DELETE
+
+Handle a mail being deleted by postsuper; this needs to be dealt with specially
+because sometimes the recipient won't have been logged yet, and we need to fake
+a value.  Calls COMMIT() to do the real work.
+
+=back
+
+=cut
+
+sub DELETE {
+    my ($self, $rule, $line, $matches) = @_;
+
+    my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
+    my $connection = $self->get_connection_by_queueid($queueid);
+    my $recipient_found = 0;
+    foreach my $result (@{$connection->{results}}) {
+        if (exists $result->{recipient}) {
+            $recipient_found++;
+        }
+    }
+    $self->save($connection, $line, $rule, $matches);
+    # Directly fiddle with the last result if we didn't find a recipient.
+    if (not $recipient_found) {
+        $connection->{results}->[-1]->{recipient} = <<"MESSAGE";
+(recipient unknown; was mail deleted by postsuper before recipient data became available)
+MESSAGE
+    }
+
+    return $self->COMMIT($rule, $line, $matches);
 }
 
 =over  4
