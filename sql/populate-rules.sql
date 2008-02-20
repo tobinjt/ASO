@@ -890,6 +890,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 
+-- Client host rejected: Don't want this mail; from=<> to=<cricket@cs.tcd.ie> proto=ESMTP helo=<lg12x37.cs.tcd.ie>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+    VALUES('Rejecting we do not want', 'Rejecting mail which is unwanted for one reason or another',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <__HOSTNAME__\[__IP__\]>: Client host rejected: Don.t want this mail; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'sender = 5, recipient = 6',
+        'helo = 7',
+        'REJECTION',
+        1,
+        'REJECTED',
+        'check_sender_access'
+);
+
 -- }}}
 
 -- SMTPD ACCEPT RULES {{{1
@@ -1040,6 +1053,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         1,
         10,
         'INFO'
+);
+
+-- warning: qmgr_active_corrupt: save corrupt file queue active id CF4E648F5: No such file or directory
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('QMGR logged a warning', 'QMGR logged a warning; we should probably try to do something with this is future',
+        'postfix/qmgr',
+        '^warning: .+$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
 );
 
 -- 1}}}
