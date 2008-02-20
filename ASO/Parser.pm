@@ -2602,10 +2602,16 @@ sub save {
 
     # Populate connection.
     # CONNECTION_DATA
-    $self->update_hash($connection->{connection},
+    $self->update_hash(
+        $connection->{connection},
         $self->{c_cols_silent_overwrite},
-        $rule->{connection_data}, $self->{c_cols_silent_discard},
-        $rule, $line, $connection, q{save: connection_data});
+        $rule->{connection_data},
+        $self->{c_cols_silent_discard},
+        $rule,
+        $line,
+        $connection,
+        q{save: connection_data}
+    );
     if (not exists $connection->{start}) {
         $connection->{start} = localtime $line->{timestamp};
     }
@@ -2620,10 +2626,16 @@ sub save {
         $c_cols_updates{$c_col}
             = $matches->[$rule->{connection_cols}->{$c_col}];
     }
-    $self->update_hash($connection->{connection},
+    $self->update_hash(
+        $connection->{connection},
         $self->{c_cols_silent_overwrite},
-        \%c_cols_updates, {}, $rule, $line, $connection,
-        q{save: connection_cols});
+        \%c_cols_updates,
+        $self->{c_cols_silent_discard},
+        $rule,
+        $line,
+        $connection,
+        q{save: connection_cols}
+    );
 
 
     # queueid saving.
