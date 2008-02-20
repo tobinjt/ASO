@@ -1332,8 +1332,7 @@ sub SMTPD_DIED {
         $self->save($connection, $line, $rule, $matches);
         $self->tidy_after_timeout($connection);
     }
-    my $regex = $self->get_result_col($rule, $matches, q{pid_regex});
-    return $self->handle_dead_smtpd($line, q{SMTPD_DIED}, $regex);
+    return $self->handle_dead_smtpd($line, q{SMTPD_DIED}, $rule);
 }
 
 =over  4
@@ -1557,8 +1556,15 @@ delete_dead_smtpd() if the connection exists, returns silently otherwise.
 =cut
 
 sub handle_dead_smtpd {
-    my ($self, $line, $action, $regex) = @_;
+    my ($self, $line, $action, $rule) = @_;
 
+    # NOTE: this kinda breaks the encapsulation, but feck it, I'm not writing
+    # another accessor unless something like this is going to be used elsewhere.
+    my $regex = $rule->{result_data}->{pid_regex};
+    if (not defined $regex) {
+        $self->my_die(qq{handle_dead_smtpd: rule doesn't define pid_regex},
+            $self->dump_rule($rule));
+    }
     if ($line->{text} !~ m/$regex/) {
         $self->my_warn(qq{$action: regex >>$regex<< doesn't match }
             . qq{line: $line->{text}\n});
