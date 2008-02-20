@@ -125,8 +125,6 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
 \end{abstract}
 
-XXX COVERAGE\@.
-
 \newpage
 \tableofcontents
 \listoffigures
@@ -2864,9 +2862,6 @@ warnings when parsing, and when finished parsing the state table should
 only contain entries for mails which had yet to be delivered when the log
 files ended, or started before the log files began.
 
-XXX PICK A RANDOM SAMPLE OF LOG LINES AND ENSURE THEY ARE PARSED
-PROPERLY\@.
-
 At the time of writing the parser is being tested with \numberOFlogFILES{}
 log files.  There are 5 warnings produced, but because the parser errs on
 the side of producing more warnings rather than fewer those 5 warnings
@@ -2915,21 +2910,46 @@ evidence that the false positive rate is quite low:
         that a log line would be associated with the wrong connection.
 
     \item When dealing with the complications described in
-        \sectionref{complications} \sectionref{additional complications}
-        the solutions are as specific and restrictive as possible, with the
-        goal of minimising the number of false positives.  In addition the
-        solution to the \textit{Out of order log files\/} problem described
-        in \sectionref{out of order log lines} imposes conditions which
-        each reassembled mail must comply with to be acceptable.
+        \sectionref{complications} and \sectionref{additional
+        complications} the solutions are as specific and restrictive as
+        possible, with the goal of minimising the number of false
+        positives.  In addition the solution to the \textit{Out of order
+        log files\/} problem described in \sectionref{out of order log
+        lines} imposes conditions which each reassembled mail must comply
+        with to be acceptable.
 
     \item Every effort has been made while developing to make the parser as
         precise, demanding and particular as possible.
 
 \end{itemize}
 
-Despite the lack of numerical evidence, the author is confident that the
-false positive rate when reconstructing a mail is exceedingly low, if not
-approaching zero.
+Whereas verifying by inspection that the parser correctly deals with all
+60,721,709 lines in the test logs is infeasible, verifying a subset of
+those logs is a tractable, if extremely time consuming, task.  A sample of
+logs was obtained by randomly selecting a log file:
+
+\verb!    perl -Mstrict -Mwarnings -MList::Util=shuffle \!\newline
+\verb!            -e 'print [shuffle(@ARGV)]->[0];'!
+
+The first 6000 lines of this log file (roughly 0.01\% of the total) was
+extracted:
+
+\verb!    sed -n -e '1,6000p' logfile > test-log-segment!
+
+It is important that the log lines used are contiguous so that all log
+entries are present for as many of the connections/mails as possible.  This
+log segment was parsed with all debugging options enabled, resulting in
+167,448 lines of output (27.908 lines of output per line of input).  All
+167,448 lines were examined in conjunction with the input log and a dump of
+the resulting database, verifying that for each of the input lines the
+parser used the correct rule, executed the correct action, which in turn
+produced the correct result, and inserted the correct data in the database.
+The log segment produced 4 warnings, 10 mails remaining in the state
+tables, and 1625 connections entered in the database.
+
+Given the circumstantial and experimental evidence detailed above, the
+author is confident that the false positive rate when reconstructing a mail
+is exceedingly low, if not approaching zero.
 
 \subsection{Conclusion}
 
