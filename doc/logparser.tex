@@ -90,7 +90,7 @@
 }
 
 \newcommand{\numberOFrules}[0]{%
-    142%
+    146%
 }
 
 % This may keep hyperref happy about the Abstract entry in the table of
@@ -124,6 +124,8 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
     are.
 
 \end{abstract}
+
+XXX COVERAGE\@.
 
 \newpage
 \tableofcontents
@@ -1125,8 +1127,8 @@ fields:
     \item [helo] The hostname used in the HELO command.  The HELO
         occasionally changes during a connection, presumably because spam
         or virus senders think it's a good idea.  By default Postfix only
-        logs the HELO when it rejects an \SMTP{} command, but it is quite
-        easy to rectify this:
+        logs the HELO hostname when it rejects an \SMTP{} command, but it
+        is quite easy to rectify this:
 
 \label{logging helo}
 
@@ -1144,13 +1146,18 @@ fields:
         Although \texttt{smtpd\_helo\_restrictions} seems like the natural
         place to log the HELO hostname, there won't be a queueid associated
         with the mail for the first recipient, so that log line cannot be
-        associated with the correct mail.  There is guaranteed to be
+        associated with the correct mail.  There is guaranteed to be a
         queueid when the DATA command has been reached, and thus it will be
         logged by any restrictions taking effect in
         \texttt{smtpd\_data\_restrictions}.  There is no difficulty in
         specifying a HELO-based restriction in
         \texttt{smtpd\_data\_restrictions}, Postfix will perform the check
         correctly.
+
+        Logging the HELO hostname in this fashion also prevents the
+        complication described in \sectionref{Mail deleted before delivery
+        is attempted} from occurring, because when the HELO hostname is
+        logged one recipient address will be logged also.
 
     \item [queueid] The queueid of the mail if the connection represents an
         accepted mail, or \texttt{NOQUEUE} otherwise.
@@ -2227,6 +2234,13 @@ The actions:
         or by another parent, and issues appropriate warnings in either
         case.
 
+    \item [DELETE] Deals with mail deleted by the administrator using the
+        administrative command \daemon{postsuper}.  This action adds a
+        dummy recipient address if required, then invokes the COMMIT action
+        to handle adding the mail to the database.  The complication this
+        action deals with is described fully in \sectionref{Mail deleted
+        before delivery is attempted}.  
+
 \end{description}
 
 \subsection{Adding new actions}
@@ -2702,6 +2716,22 @@ Postfix would delay delivery of a mail in the queue.\footnote{This may be a
 problem if Postfix is not running for an extended period of time.}  The
 state tables are scanned for mails matching the characteristics above each
 time the end of a log file is reached, and matching mails are deleted.
+
+\subsubsection{Mail deleted before delivery is attempted}
+
+\label{Mail deleted before delivery is attempted}
+
+Postfix logs the recipient address when delivery of a mail is attempted, so
+if delivery has yet to be attempted the parser cannot determine the
+recipient address or addresses.  This is a problem when mail is arriving
+faster than Postfix can attempt delivery, and the administrator deletes
+some of the mail (because it's the result of a mail loop, mail bomb, or
+joe-job) before Postfix has had a chance to try to deliver it.  In this
+case the recipient address will not have been logged, so a dummy recipient
+address needs to be added, as every mail is required to have at least one
+recipient.  This complication is generally observed in few log files, but
+typically when it does occur there will be many instances of it, closely
+grouped.
 
 \subsection{Conclusion}
 
