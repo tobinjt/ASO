@@ -278,7 +278,7 @@ sub init_globals {
     $self->{reject_warning}   = qr/$self->{reject_warning}/mx;
 
     # The data to dump in dump_state()
-    $self->{data_to_dump}     = [qw(queueids connections timeout_queueids)];
+    $self->{data_to_dump}     = [qw(queueids connections timeout_queueids bounce_queueids)];
     # All mail starts off in %connections, unless submitted locally by
     # sendmail/postdrop, and then moves into %queueids if it gets a queueid.
     $self->{connections}      = {};
@@ -291,6 +291,10 @@ sub init_globals {
     # try to track those queueids where the timeout happens before cleanup logs,
     # and then discard the next cleanup line for that queueid.
     $self->{timeout_queueids} = {};
+    # Similarly when there's particularly high load the bounce line is sometimes
+    # logged after delivery of the bounce notification.  Cache bounce_queueids
+    # here so we can detect that and not create a bogus connection.
+    $self->{bounce_queueids}  = {};
     # The timestamp of the last log line parsed.  Used for cleaning out
     # $self->{timeout_queueids}, and possibly other uses in future.
     $self->{last_timestamp}   = 0;
@@ -939,6 +943,17 @@ sub COMMIT {
         $self->maybe_commit_children($connection);
     }
 
+    if (exists $connection->{bounce_notification}) {
+        if (exists $self->{bounce_queueids}->{$connection->{queueid}}) {
+            $self->my_warn(
+                qq{$connection->{queueid} already exists in bounce_queueids},
+                $self->dump_connection(
+                    $self->{bounce_queueids}->{$connection->{queueid}})
+            );
+        }
+        $self->{bounce_queueids}->{$connection->{queueid}} = $connection;
+    }
+
     $self->delete_connection_by_queueid($queueid);
     return;
 }
@@ -1376,9 +1391,23 @@ sub BOUNCE {
         $self->save($connection, $line, $rule, $matches);
     }
     my $bounce_queueid = $self->get_result_col($rule, $matches, q{child});
-    my $bounce_con = $self->get_or_make_connection_by_queueid($bounce_queueid);
-    $bounce_con->{bounce_notification} = 1;
-    delete $bounce_con->{faked};
+    my $bounce_con_needed = 1;
+    if (exists $self->{bounce_queueids}->{$bounce_queueid}) {
+        # Require the start time of the bounce mail to be within 10 seconds of
+        # the timestamp of this line.
+        if ($self->{bounce_queueids}->{$bounce_queueid}->{connection}->{start} >
+            ($line->{timestamp} - 10)) {
+            $bounce_con_needed = 0;
+        }
+        # The cached connection can be dumped now, regardless of whether we're
+        # creating one or not.
+        delete $self->{bounce_queueids}->{$bounce_queueid};
+    }
+    if ($bounce_con_needed) {
+        my $bounce_con = $self->get_or_make_connection_by_queueid($bounce_queueid);
+        $bounce_con->{bounce_notification} = 1;
+        delete $bounce_con->{faked};
+    }
 
     return;
 }
@@ -1979,6 +2008,7 @@ sub dump_state {
     my $state = q{};
 
     $self->prune_timeout_queueids();
+    $self->prune_bounce_queueids();
 
     local $Data::Dumper::Sortkeys = 1;
     print $filehandle <<'PREAMBLE';
@@ -2149,6 +2179,36 @@ sub prune_timeout_queueids {
         if ($connection->{results}->[-1]->{timestamp}
                 < ($self->{last_timestamp} - (10 * 60))) {
             delete $self->{timeout_queueids}->{$queueid};
+            $count++;
+        }
+    }
+
+    return $count;
+}
+
+=over 4
+
+=item $self->prune_bounce_queueids()
+
+Remove any connection in $self->{bounce_queueids} more than 10 minutes older
+than the timestamp of the last log line parsed, so they don't accumulate
+forever.  Called from dump_state() before dumping.  Returns the number of
+connections deleted from $self->{bounce_queueids}.
+
+=back
+
+=cut
+
+sub prune_bounce_queueids {
+    my ($self) = @_;
+    my $count = 0;
+
+    # This is dependant on the time difference used in MAIL_PICKED_FOR_DELIVERY.
+    foreach my $queueid (keys %{$self->{bounce_queueids}}) {
+        my $connection = $self->{bounce_queueids}->{$queueid};
+        if ($connection->{results}->[-1]->{timestamp}
+                < ($self->{last_timestamp} - (10 * 60))) {
+            delete $self->{bounce_queueids}->{$queueid};
             $count++;
         }
     }
