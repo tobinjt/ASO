@@ -84,7 +84,11 @@ sub replace_regexs {
     );
     my @regexs = (
         q/from=<(__SENDER__)>/,
-        q/to=<(__RECIPIENT__)>(?:, orig_to=<__RECIPIENT__>,)?/,
+        # We need to=blah twice, because it appears with a comma and optional
+        # orig_to=blah in some places, and in others there's no comma and no
+        # orig_to=blah.
+        q/to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)?/,
+        q/to=<(__RECIPIENT__)>/,
         q/helo=<(__HELO__)>/,
         q/<__RECIPIENT__>: Recipient address rejected:/,
         q/<__SENDER__>: Sender address rejected:/,
