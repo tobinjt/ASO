@@ -16,6 +16,8 @@ use ASO::Parser;
 use Getopt::Long;
 use Pod::Usage;
 use File::Temp qw(tempfile);
+use Number::Format qw(format_bytes);
+use File::stat;
 
 # Required under Windows.
 binmode STDOUT;
@@ -58,8 +60,16 @@ if ($Options->{q{in-statefile}}) {
 my $state_loaded = [gettimeofday()];
 print_timing(q{State loaded}, q{}, tv_interval($parser_created, $state_loaded));
 
+my $num_logs = scalar @logs;
+# Start at one because that's what people expect.
+my $num_logs_parsed = 1;
 foreach my $logfile (@logs) {
-    timewarn(qq{Starting to read $logfile\n});
+    my $stat = stat $logfile
+        or die qq{$0: failed stating $logfile: $!\n};
+    my $size = format_bytes($stat->size()) . q{B};
+    print qq{Starting to read $logfile: $size, $num_logs_parsed/$num_logs\n};
+    $num_logs_parsed++;
+
     my $parse_starting = [gettimeofday()];
     $parser->parse($logfile);
     my $parse_finished = [gettimeofday()];
@@ -381,9 +391,9 @@ Modules packaged with logparser: L<ASO::Parser> (which has its own
 dependencies).
 
 Standard Perl modules: L<Getopt::Long>, L<Pod::Usage>, L<File::Temp>,
-L<Time::HiRes>.
+L<Time::HiRes>, L<File::stat>.
 
-Additional Perl modules: L<IO::Uncompress::AnyUncompress>.
+Additional Perl modules: L<IO::Uncompress::AnyUncompress>, L<Number::Format>.
 
 =head1 SEE ALSO
 
