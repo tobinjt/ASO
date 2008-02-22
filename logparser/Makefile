@@ -136,3 +136,14 @@ random-sample-logs-regex-check:
 	make db
 	perl logparser --out-statefile /dev/null --print_matching_regex --year 2007 --parse_lines_only random-sample-logs-regex-check | diff -u random-sample-logs-regex-output -
 	sqlite3 -separator ' ' ../sql/db.sq3 'select "Number of rules hit:", count(name) from rules where hits > 0;'
+
+.PHONY: test-logs
+test-logs:
+	make db
+	perl logparser --year 2007 --debug_results --dump_committed_connections --out-statefile test-logs.state test-logs 2> test-logs.warnings
+	perl dump-database > test-logs.database-dump
+
+gzipped-logs:
+	make db
+	perl logparser --skip_inserting_results --year 2007 --debug_results --out-statefile state.gzipped-logs                                        ../../../../logs/mail.log-2007*.gz 2> warnings.gzipped-logs
+	perl logparser --skip_inserting_results --year 2008 --debug_results --out-statefile state.gzipped-logs-2008 --in-statefile state.gzipped-logs ../../../../logs/mail.log-2008*.gz 2> warnings.gzipped-logs-2008
