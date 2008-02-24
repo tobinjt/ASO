@@ -943,7 +943,11 @@ sub COMMIT {
         $self->maybe_commit_children($connection);
     }
 
-    if (exists $connection->{bounce_notification}) {
+    # Add the mail to bounce_queueids if it's a bounce notification and the
+    # bounce line hasn't been seen for it.
+    if (exists $connection->{bounce_notification}
+            and not exists $connection->{bounce_line_seen}) {
+        # Warn if the queueid is already present.
         if (exists $self->{bounce_queueids}->{$connection->{queueid}}) {
             $self->my_warn(
                 qq{$connection->{queueid} already exists in bounce_queueids},
@@ -1392,20 +1396,34 @@ sub BOUNCE {
     }
     my $bounce_queueid = $self->get_result_col($rule, $matches, q{child});
     my $bounce_con_needed = 1;
+    # If there is an entry in bounce_queueids, and it's recent, we don't need to
+    # create a new connection.  Delete the entry from bounce_queueids whether a
+    # new connection is created or not.
     if (exists $self->{bounce_queueids}->{$bounce_queueid}) {
         # Require the start time of the bounce mail to be within 10 seconds of
         # the timestamp of this line.
-        if ($self->{bounce_queueids}->{$bounce_queueid}->{connection}->{start} >
-            ($line->{timestamp} - 10)) {
+        my $old_bounce = $self->{bounce_queueids}->{$bounce_queueid};
+        if ($old_bounce->{connection}->{start} > ($line->{timestamp} - 10)) {
             $bounce_con_needed = 0;
         }
         # The cached connection can be dumped now, regardless of whether we're
         # creating one or not.
         delete $self->{bounce_queueids}->{$bounce_queueid};
     }
+    # If we don't have a cached connection, create one.  If we did have a cached
+    # connection, extract it if it's still in the state tables.
+    my $bounce_con;
     if ($bounce_con_needed) {
-        my $bounce_con = $self->get_or_make_connection_by_queueid($bounce_queueid);
+        $bounce_con = $self->get_or_make_connection_by_queueid($bounce_queueid);
+    } elsif ($self->queueid_exists($bounce_queueid)) {
+        $bounce_con = $self->get_connection_by_queueid($bounce_queueid);
+    }
+    # If we created or found a connection, mark it as a bounce notification, and
+    # set bounce_line_seen; COMMIT shouldn't add it to bounce_queueids if that
+    # exists.
+    if ($bounce_con) {
         $bounce_con->{bounce_notification} = 1;
+        $bounce_con->{bounce_line_seen} = 1;
         delete $bounce_con->{faked};
     }
 
@@ -2203,11 +2221,11 @@ sub prune_bounce_queueids {
     my ($self) = @_;
     my $count = 0;
 
-    # This is dependant on the time difference used in MAIL_PICKED_FOR_DELIVERY.
+    # 10 seconds is used in BOUNCE.
     foreach my $queueid (keys %{$self->{bounce_queueids}}) {
         my $connection = $self->{bounce_queueids}->{$queueid};
         if ($connection->{results}->[-1]->{timestamp}
-                < ($self->{last_timestamp} - (10 * 60))) {
+                < ($self->{last_timestamp} - 10)) {
             delete $self->{bounce_queueids}->{$queueid};
             $count++;
         }
