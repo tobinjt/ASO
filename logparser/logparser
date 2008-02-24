@@ -18,6 +18,7 @@ use Pod::Usage;
 use File::Temp qw(tempfile);
 use Number::Format qw(format_bytes);
 use File::stat;
+use File::Spec::Functions qw(splitpath);
 
 # Required under Windows.
 binmode STDOUT;
@@ -81,7 +82,13 @@ foreach my $logfile (@logs) {
     print_timing(qq{Post parse}, $logfile,
         tv_interval($parse_finished, $post_parsing_finished));
 
-    my $statefile = IO::File->new(q{>} . $Options->{q{out-statefile}})
+    my $statefile_name = $Options->{q{out-statefile}};
+    if ($Options->{q{individual-state-files}}) {
+        my ($volume, $dir, $file) = splitpath($logfile);
+        $statefile_name .= q{-} . $file;
+    }
+
+    my $statefile = IO::File->new(q{>} . $statefile_name)
         or die qq{Failed to open $Options->{q{out-statefile}}: $!\n};
     $parser->dump_state($statefile);
     my $dump_finished = [gettimeofday()];
@@ -162,6 +169,7 @@ sub get_options {
     my %logparser_options = (
         q{in-statefile|i=s}         => undef,
         q{out-statefile|o=s}        => q{state},
+        q{individual-state-files}   => 0,
         q{timing-data|t=s}          => undef,
         q{help|h}                   => 0,
         q{version|v}                => 0,
@@ -278,6 +286,13 @@ Load state from a previous run from FILE.
 Save state from this run to FILE.  If this option is not given state will be
 saved to a file named 'state' in the current directory.
 
+=item --individual-state-files
+
+Instead of reusing the same state file when saving state, use one per logfile.
+The directory component of the log file is stripped off, and the resulting
+filename (plus a separating dash) is appended to the filename given to the
+B<--out-statefile> option.
+
 =item --data_source STRING
 
 Specifies the database to use when loading rules and saving results.  Defaults
@@ -391,7 +406,7 @@ Modules packaged with logparser: L<ASO::Parser> (which has its own
 dependencies).
 
 Standard Perl modules: L<Getopt::Long>, L<Pod::Usage>, L<File::Temp>,
-L<Time::HiRes>, L<File::stat>.
+L<Time::HiRes>, L<File::stat>, L<File::Spec::Functions>.
 
 Additional Perl modules: L<IO::Uncompress::AnyUncompress>, L<Number::Format>.
 
