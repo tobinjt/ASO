@@ -3016,7 +3016,7 @@ sub get_connection_by_queueid {
     my ($self, $queueid) = @_;
 
     if ($queueid eq q{NOQUEUE}) {
-        $self->warn(q{get_connection_by_queueid: }
+        $self->my_warn(q{get_connection_by_queueid: }
             . qq{inappropriate queueid $queueid});
     }
 
