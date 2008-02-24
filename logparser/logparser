@@ -85,6 +85,7 @@ foreach my $logfile (@logs) {
     my $statefile_name = $Options->{q{out-statefile}};
     if ($Options->{q{individual-state-files}}) {
         my ($volume, $dir, $file) = splitpath($logfile);
+        $file =~ s/(.gz|.bz2|.zip|.lzo)$//;
         $statefile_name .= q{-} . $file;
     }
 
@@ -291,7 +292,9 @@ saved to a file named 'state' in the current directory.
 Instead of reusing the same state file when saving state, use one per logfile.
 The directory component of the log file is stripped off, and the resulting
 filename (plus a separating dash) is appended to the filename given to the
-B<--out-statefile> option.
+B<--out-statefile> option.  If the logfile is compressed, a suffix of   If the
+logfile is compressed, a suffix of   If the logfile is compressed, a suffix of
+.gz, .bz2, .zip, or .lzo will be removed, to avoid confusion.
 
 =item --data_source STRING
 
