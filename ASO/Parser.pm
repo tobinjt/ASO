@@ -793,7 +793,6 @@ sub DISCONNECT {
         # they don't hang around, taking up memory uselessly and causing queueid
         # clashes occasionally.
         if (not exists $mail->{programs}->{q{postfix/cleanup}}
-                and $mail->{programs}->{q{postfix/smtpd}} == 2
                 and $self->queueid_exists($mail->{queueid})
                 ) {
             my $mail_by_queueid = $self->get_connection_by_queueid(
