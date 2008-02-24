@@ -1154,8 +1154,9 @@ fields:
 
         Logging the HELO hostname in this fashion also prevents the
         complication described in \sectionref{Mail deleted before delivery
-        is attempted} from occurring, because when the HELO hostname is
-        logged one recipient address will be logged also.
+        is attempted} from occurring when, but only in the case where there
+        is a single recipient; in that case the recipient address will be
+        logged also.
 
     \item [queueid] The queueid of the mail if the connection represents an
         accepted mail, or \texttt{NOQUEUE} otherwise.
