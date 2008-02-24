@@ -299,10 +299,11 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- Service unavailable; Client host [220.104.147.28] blocked using zen.spamhaus.org; http://www.spamhaus.org/query/bl?ip=220.104.147.28; from=<sakuran_b0@yahoo.co.jp> to=<stephen.barrett@cs.tcd.ie> proto=SMTP helo=<eruirutkjshfk.com>
 -- Service unavailable; Client host [201.231.83.38] blocked using zen.spamhaus.org; from=<contact@digitalav.com> to=<gerry@cs.tcd.ie> proto=SMTP helo=<38-83-231-201.fibertel.com.ar>
 -- Service unavailable; Client host [141.146.5.10] blocked using zen.spamhaus.org; http://www.spamhaus.org/SBL/sbl.lasso?query=SBL56587; from=<replies@oracle-mail.com> to=<TOBINJT@CS.TCD.IE> proto=ESMTP helo=<acsebinet200.oracleeblast.com>
+-- Service unavailable; Client host [72.5.205.6] blocked using zen.spamhaus.org; http://www.spamhaus.org/SBL/sbl.lasso?query=SBL45324; from=<info@BreakthroughExperts.com> to=<vjcahill@dsg.cs.tcd.ie> proto=ESMTP helo=<BreakthroughExperts.com>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Blacklisted by SpamHaus Zen', 'The client IP address is blacklisted by SpamHaus Zen',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__IP__)\]) blocked using zen.spamhaus.org; (?:(?>(http://www.spamhaus.org/(?:query/bl\?ip=\5|SBL/sbl.lasso?query=[^\s]+))); )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__IP__)\]) blocked using zen.spamhaus.org; (?:(http://www.spamhaus.org/(?:query/bl\?ip=\5|SBL/sbl.lasso\?query=[^\s]+)); )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 8, data = 6, sender = 7',
         'helo = 9, client_ip = 5',
         'REJECTION',
@@ -445,6 +446,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         1,
         'REJECTED',
         'check_recipient_mx_access'
+);
+
+-- <andr @webworker.com>: Sender address rejected: Address uses MX in private address space (192.168.0.0/16); from=<andr?@webworker.com> to=<chi@cs.tcd.ie> proto=ESMTP helo=<p54B071E9.dip.t-dialin.net>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+    VALUES('Sender MX in private address space (192.168.0.0/16) (weird address)', 'The MX for sender domain is in private address space (192.168.0.0/16), so cannot be contacted (weird address)',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 6, sender = 5',
+        'helo = 7',
+        'REJECTION',
+        1,
+        'REJECTED',
+        'check_sender_mx_access'
 );
 
 -- <aeneasdecathlon@rotnot.com>: Sender address rejected: Address uses MX in private address space (192.168.0.0/16); from=<aeneasdecathlon@rotnot.com> to=<MCCARTHY@CS.tcd.ie> proto=ESMTP helo=<vms1.tcd.ie>
@@ -604,7 +618,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'check_helo_access'
 );
 
--- <cs.tcd.ie>: Helo command rejected: You are not in cs.tcd.ie; from=<van9219@yahoo.co.jp> to=<david.ocallaghan@cs.tcd.ie> proto=SMTP helo=<cs.tcd.ie>
+-- NOQUEUE: reject: RCPT from pc792.cs.tcd.ie[134.226.40.104]: 550 5.7.1 <Igorb@infogateonline.com>: Recipient address rejected: Mail to this address bounces; from=<www-data@yossarian.cs.tcd.ie> to=<Igorb@infogateonline.com> proto=ESMTP helo=<pc792.cs.tcd.ie>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+    VALUES('Misc recipient blocks', 'Misc recipient blocks used when necessary',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: (Mail to this address bounces); from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 5, sender = 7, data = 6',
+        'helo = 8',
+        'REJECTION',
+        1,
+        'REJECTED',
+        'check_recipient_access'
+);
+
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Misc emergency blocks', 'Misc blocks used when necessary',
         'postfix/smtpd',
@@ -1131,6 +1157,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORED'
 );
 
+-- 7E7CB38EB: to=<vee08-pc-owner@>, relay=none, delay=0.57, delays=0.45/0.12/0/0, dsn=5.1.3, status=bounced (bad address syntax)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('QMGR bounced a mail due to bad address syntax', 'QMGR bounced a mail due to bad address syntax',
+        'postfix/qmgr',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=bounced \(bad address syntax\)$',
+        '',
+        '',
+        'SAVE_BY_QUEUEID',
+        0,
+        'INFO'
+);
+
 -- 1}}}
 
 
@@ -1177,7 +1215,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
     VALUES('connect refused', 'postfix tried to connect to a remote smtp server, but the connection was refused',
         'postfix/smtp',
-        '^connect to (__HOSTNAME__)\[(__IP__)\]: Connection (?:refused|reset by peer) \(port \d+\)$',
+        '^connect to (__HOSTNAME__)\[(__IP__)\]: Connection (?:refused|reset by peer)(?: \(port \d+\))?$',
         '',
         'server_hostname = 1, server_ip = 2',
         'client_hostname = localhost, client_ip = 127.0.0.1',
@@ -1193,7 +1231,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
     VALUES('mail delayed', 'the connection timed out while trying to deliver mail',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(?:none|__HOSTNAME__\[__IP__\](?::\d+)?), (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:conversation with|connect to) (__HOSTNAME__)\[(__IP__)\](?:: Connection timed out| timed out while receiving the initial server greeting|Connection reset by peer)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(?:none|__HOSTNAME__\[__IP__\](?::\d+)?), (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:conversation with|connect to) (__HOSTNAME__)\[(__IP__)\](?:: Connection timed out| timed out while receiving the initial server greeting| Connection reset by peer)\)$',
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
@@ -1236,11 +1274,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'BOUNCED'
 );
 
+-- E3F5149BB: to=<lricker@mta.ca>, relay=none, delay=0.2, delays=0.03/0.17/0/0, dsn=4.4.3, status=deferred (delivery temporarily suspended: Host or domain name not found. Name service error for name=mta.ca type=MX: Host not found, try again)
 -- B028035EB: to=<Iain@fibernetix.com>, relay=none, delay=282964, status=deferred (Host or domain name not found. Name service error for name=fibernetix.com type=MX: Host not found, try again)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Recipient MX not found (try again)', 'No MX server for the recipient was found (try again, temporary failure)',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:Host or domain name not found. )?Name service error for name=(__HOSTNAME__) type=(?:A|AAAA|MX): Host not found, try again\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:delivery temporarily suspended: )?(?:Host or domain name not found. )?Name service error for name=(__HOSTNAME__) type=(?:A|AAAA|MX): Host not found, try again\)$',
         'recipient = 2',
         'server_hostname = 3',
         'smtp_code = 554',
