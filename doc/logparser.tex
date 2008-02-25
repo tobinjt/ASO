@@ -90,7 +90,7 @@
 }
 
 \newcommand{\numberOFrules}[0]{%
-    146%
+    157%
 }
 
 % This may keep hyperref happy about the Abstract entry in the table of
@@ -2136,7 +2136,10 @@ The actions:
         creation of bounce messages.  This action creates a new mail if
         necessary; if the mail already exists the unknown origin flag will
         be removed.  The action also marks the mail as a bounce
-        notification.
+        notification.  To deal with complication \sectionref{Further out of
+        order log lines} this action checks a cache of recent bounce mails
+        to avoid creating bogus bounce mails when lines are logged out of
+        order.
 
     \item [CLONE] Multiple mails may be accepted on a single connection, so
         each time a mail is accepted the connection's state table entry
@@ -2399,22 +2402,12 @@ clear, so once again heuristics are required to identify when this
 behaviour occurs.  In this case a list of all mails accepted during a
 connection is saved in the connection state, and the accepted mails are
 examined when the disconnection action is executed.  Each mail is checked
-for the following characteristics:
+for the following: is the mail missing its \daemon{cleanup} log message?
+Every mail which passes through Postfix will have a \daemon{cleanup} line;
+lack of a \daemon{cleanup} line is a sure sign the mail didn't make it too
+far.
 
-\begin{itemize}
-
-    \item Is the mail missing its \daemon{cleanup} log message?  Every mail
-        which passes through Postfix will have a \daemon{cleanup} line;
-        lack of a \daemon{cleanup} line is a sure sign the mail didn't make
-        it too far.
-
-    \item Were there exactly two \daemon{smtpd} log lines for the mail?
-        There should be a connection line and a mail accepted line, nothing
-        else.
-
-\end{itemize}
-
-If both checks are successful then the mail is assumed to be one of the
+If this check is successful then the mail is assumed to be one of the
 offending bogus mails and is discarded.  There will be no further entries
 logged for such mails, so without identifying and discarding them they
 accumulate in the state table and will cause clashes if the queueid is
@@ -2731,6 +2724,36 @@ address needs to be added, as every mail is required to have at least one
 recipient.  This complication is generally observed in few log files, but
 typically when it does occur there will be many instances of it, closely
 grouped.
+
+\subsubsection{Further out of order log lines}
+
+\label{Further out of order log lines}
+
+This is yet another complication which only occurs during periods of
+extremely high load, when process scheduling vagaries and even hard disk
+access times cause strange behaviour.  In this complication bounce
+notification mails are created, delivered and deleted from the queue,
+\textit{before\/} the log line from \daemon{bounce} is logged.  To deal
+with this the COMMIT action maintains a cache of recently committed bounce
+notification mails, which the BOUNCE action subsequently checks if the
+bounce mail isn't already in the state tables. If a mail exists in the
+cache under the correct queueid, and its start time is less than ten
+seconds before the timestamp of the bounce log line, it is assumed that the
+bounce notification mail has already been processed and the BOUNCE action
+does not create one.  If the queueid exists it is removed from the cache,
+as it has either just been used or it is too old to use in future.  Whether
+the BOUNCE action creates a mail or finds one existing in the state tables,
+it flags the mail as having been seen by the BOUNCE action; if this flag is
+present the COMMIT action will not add the mail to the cache of recent
+bounce notification mails.\footnote{This is not required to correctly deal
+with the complication, but is an optimisation to reduce memory usage of the
+parser; on the occasions the author has observed this action occurring
+there have been a huge number of bounce notification mails generated; if
+every bounce notification mail was cached it would dramatically increase
+the memory requirements of the parser.}  The cache of bounce notification
+mails will be pruned whenever the parser's state is saved, though if the
+size of the cache ever becomes a problem it could be pruned periodically to
+keep it in check.
 
 \subsection{Conclusion}
 
