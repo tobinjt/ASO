@@ -174,25 +174,36 @@ beyond those conceived of by the author.
 \vspace{1em}\noindent\textbf{Layout of the paper:}
 
 Section~\ref{background} provides background information useful in
-understanding the paper, parser and algorithm.
+understanding the paper, parser and algorithm.  It introduces the idea of
+using a database schema as an \API{}, providing an interface to the data
+gathered that is language-neutral.  The unusual separation of rules,
+actions and algorithm is discussed, giving the reasons that approach was
+taken when designing the parser.
 
 This algorithm requires a database for storing both the rules used when
 parsing and the results gleaned from parsing.  The database schema used is
-described in section~\ref{database schema}, explaining in detail the tables
+described in \sectionref{database schema}, explaining in detail the tables
 used for storing the data gleaned from the logs and the table that stores
 the rules.
 
 Section~\ref{rules} discusses the parsing rules in detail, explaining the
 purpose and usage of each field in a rule, referring to an example rule and
-sample data it matches successfully against.  This section concludes with a
-discussion of rule efficiency concerns.
+sample data it matches successfully against.  The pros and cons of
+overlapping rules are discussed, including techniques for detecting
+unintentional overlaps.  Rule efficiency concerns are discussed, in
+particular the optimisations used by the algorithm, with reference to the
+graphs in appendix~\refwithpage{graphs}.  The final section is a
+description of using the tools provided with the parser to generate a
+\regex{} from related log lines for new rules.
 
-Section~\ref{parsing-algorithm} contains the meat of the paper, describing
+Section~\ref{parsing-algorithm} contains the core of the paper, describing
 a naive parsing algorithm and the complications encountered which shaped
-the full algorithm, followed by a comprehensive explanation of the
-different stages of the algorithm, the actions taken during execution of
-the algorithm, and further complications whose solution completes the
-algorithm.
+the full algorithm.  A flow chart and a discussion of the emergent
+behaviour exhibited by the algorithm accompanies a comprehensive
+explanation of the different stages of the algorithm.  The actions taken
+during execution of the algorithm are described, followed by the process of
+adding a new action.  The section concludes with an in-depth description of
+the further complications and their solutions which complete the algorithm.
 
 Section~\ref{parsing coverage} analyses the coverage the parser achieves
 over a set of \numberOFlogFILES{} log files taken from a mail server
@@ -200,26 +211,28 @@ handling mail for over 1000 users.  Coverage is described both in terms of
 the fraction of lines parsed and the fraction of mails and connections
 successfully reconstructed by the parsing algorithm, including dealing with
 false negatives and a discussion of the difficulties in identifying false
-positives.
+positives.  A random sampling of log lines are parsed, and the correctness
+of the results manually verified, as part of determining the coverage of
+the parser.
 
 Section~\ref{limitations-improvements} lists the limitations of the
-algorithm, then suggests some ways of dealing with the limitations, with
-the goal of improving parsing and reproduction of the journey a mail takes
-through Postfix.
+algorithm, then suggests some ways of dealing with them, with the goal of
+improving parsing and reproduction of the journey a mail takes through
+Postfix.
 
-Section~\ref{conclusion} is contains the paper's conclusion.
+Section~\ref{conclusion} contains the paper's conclusion.
 
 Appendix~\ref{other-parsers} discusses other parsers and why they were
 deemed unsuitable for the task, including why they could not be improved or
 expanded upon.
 
 The bibliography contains references to the resources used in developing
-the algorithm, writing the program and preparing this paper.  Also listed
+the algorithm, writing the program, and preparing this paper.  Also listed
 are some additional resources expected to be helpful in understanding
 \SMTP{}, Postfix, anti-spam techniques, or the paper.
 
 Appendix~\ref{graphs} contains graphs illustrating the topics previously
-discussed in section~\ref{rule efficiency}, rule efficiency, and explains
+discussed in \sectionref{rule efficiency}, rule efficiency, and explains
 the irregularities observed in these graphs.
 
 Appendix~\ref{Glossary} provides a glossary of terms used in the paper.
@@ -2674,6 +2687,12 @@ both.
     \item [\daemon{smtp}, \daemon{smtpd}:] Mail accepted from a remote
         client, then remotely delivered (typically relaying mail for
         clients on the local network).
+
+    \item [\daemon{smtpd}, \daemon{postsuper}:] Mail accepted from a remote
+        client, then deleted by the administrator before any delivery
+        attempt (administrator deleting unwanted mail, typically due to a
+        mail loop or joe-job).  Notice that \daemon{postsuper} is required,
+        not optional, for this combination.
 
 \end{description}
 
