@@ -303,7 +303,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Blacklisted by SpamHaus Zen', 'The client IP address is blacklisted by SpamHaus Zen',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__IP__)\]) blocked using zen.spamhaus.org; (?:(http://www.spamhaus.org/(?:query/bl\?ip=\5|SBL/sbl.lasso\?query=[^\s]+)); )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__IP__)\]) blocked using zen.spamhaus.org; (?:((?:http://www.spamhaus.org/(?:query/bl\?ip=\5|SBL/sbl.lasso\?query=[^\s]+))| / )+; )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 8, data = 6, sender = 7',
         'helo = 9, client_ip = 5',
         'REJECTION',
@@ -449,7 +449,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- <andr @webworker.com>: Sender address rejected: Address uses MX in private address space (192.168.0.0/16); from=<andr?@webworker.com> to=<chi@cs.tcd.ie> proto=ESMTP helo=<p54B071E9.dip.t-dialin.net>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
     VALUES('Sender MX in private address space (192.168.0.0/16) (weird address)', 'The MX for sender domain is in private address space (192.168.0.0/16), so cannot be contacted (weird address)',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -457,6 +457,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'helo = 7',
         'REJECTION',
         1,
+        -5,
         'REJECTED',
         'check_sender_mx_access'
 );
@@ -553,6 +554,20 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'check_sender_mx_access'
 );
 
+-- <honor 37dieter@cathousemails.com>: Sender address rejected: Address uses MX in "this" address space (0.0.0.0/8); from=<honor?37dieter@cathousemails.com> to=<htewari@cs.tcd.ie> proto=ESMTP helo=<88-174.2-85.cust.bluewin.ch>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
+    VALUES('Sender MX in "this" address space (0.0.0.0/8) (weird addresses)', 'The MX for sender domain is in "this" address space (0.0.0.0/8), so cannot be contacted (weird addresses)',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in "this" address space \(0.0.0.0/8\); from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 6, sender = 5',
+        'helo = 7',
+        'REJECTION',
+        1,
+        -5,
+        'REJECTED',
+        'check_sender_mx_access'
+);
+
 -- <af53eec9@verpiss-dich.de>: Recipient address rejected: Address uses MX in loopback address space (127.0.0.0/8); from=<cbsrlkhaigye@allsaintsfan.com> to=<af53eec9@verpiss-dich.de> proto=SMTP helo=<127.0.0.1>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Recipient MX in loopback address space (127.0.0.0/8)', 'The MX for recipient domain is in loopback address space (127.0.0.0/8), so cannot be contacted',
@@ -584,6 +599,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('Sender MX in reserved address space (240.0.0.0/4)', 'The MX for sender domain is in reserved address space (240.0.0.0/4), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in reserved address space \(240.0.0.0/4\); from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 6, sender = 5',
+        'helo = 7',
+        'REJECTION',
+        1,
+        'REJECTED',
+        'check_sender_mx_access'
+);
+
+-- <selby.dalzell@uldgalleriet.dk>: Sender address rejected: Address uses MX in multicast address space (224.0.0.0/4); from=<selby.dalzell@uldgalleriet.dk> to=<stephen.mcsweeney@cs.tcd.ie> proto=ESMTP helo=<host81-154-224-236.range81-154.btcentralplus.com>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+    VALUES('Sender MX in multicast address space (224.0.0.0/4)', 'The MX for sender domain is in multicast address space (224.0.0.0/4), so cannot be contacted',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <__SENDER__>: Sender address rejected: Address uses MX in multicast address space \(224.0.0.0/4\); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -667,6 +695,20 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'helo = 7',
         'REJECTION',
         1,
+        'REJECTED',
+        'reject_unauth_destination'
+);
+
+-- < <vinny.reynolds@cs.tcd.ie>,  patrick.o'donnell@aberdeen-asset.com@cs.tcd.ie>: Relay access denied; from=<Niall.Roche@esb.ie> to=< <vinny.reynolds@cs.tcd.ie>,  patrick.o'donnell@aberdeen-asset.com@cs.tcd.ie> proto=ESMTP helo=<genuse3.esb.ie>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
+    VALUES('Relaying denied (weird address)', 'Client tried to use us as an open relay (weird address)',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <(.*)>: Relay access denied; from=<(__SENDER__)> to=<.*> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 5, sender = 6',
+        'helo = 7',
+        'REJECTION',
+        1,
+        -5,
         'REJECTED',
         'reject_unauth_destination'
 );
@@ -890,6 +932,20 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'reject_unknown_sender_domain'
 );
 
+-- <      @web70210.mail.krs.yahoo.com>: Sender address rejected: Malformed DNS server reply; from=<??????@web70210.mail.krs.yahoo.com> to=<stephen.farrell@cs.tcd.ie> proto=ESMTP helo=<sp789011>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
+    VALUES('Malformed DNS reply (weird sender address)', 'The DNS reply was malformed when checking the sender domain (weird address)',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Malformed DNS server reply; from=<(__SENDER__)> to=<.*> proto=E?SMTP helo=<(__HELO__)>$',
+        'sender = 6, recipient = 5',
+        'helo = 7',
+        'REJECTION',
+        1,
+        -5,
+        'REJECTED',
+        'reject_unknown_sender_domain'
+);
+
 -- <Gunter_LetitiaV@bionorthernireland.com>: Sender address rejected: Malformed DNS server reply; from=<Gunter_LetitiaV@bionorthernireland.com> to=<donnelly@cs.tcd.ie> proto=SMTP helo=<2D87008>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Malformed DNS reply (sender)', 'The DNS reply was malformed when checking the sender domain',
@@ -1015,14 +1071,16 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'INFO'
 );
 
+-- 513CE38EB: warn: RCPT from mail.hibernianwindpower.ie[87.198.212.129]: Logging HELO; from=<Niall.Roche@esb.ie> to=< <vinny.reynolds@cs.tcd.ie>,  patrick.o'donnell@aberdeen-asset.com@cs.tcd.ie> proto=ESMTP helo=<genuse3.esb.ie>
 -- NOQUEUE: warn: RCPT from apollo.niss.gov.ua[194.93.188.130]: Logging HELO; from=<<>@apollo.niss.gov.ua> to=<tithed7@cs.tcd.ie> proto=ESMTP helo=<apollo.niss.gov.ua>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, priority, queueid, postfix_action)
     VALUES('Logging HELO (weird address)', 'HELO logged to provide additional data (weird address)',
         'postfix/smtpd',
-        '^(__QUEUEID__): warn: (?:__SHORT_CMD__|DATA) from (__HOSTNAME__)\[(__IP__)\]: Logging HELO; from=<(.*)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^(__QUEUEID__): warn: (?:__SHORT_CMD__|DATA) from (__HOSTNAME__)\[(__IP__)\]: Logging HELO; from=<(.*)> to=<(.*)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 4, recipient = 5',
         'client_hostname = 2, client_ip = 3, helo = 6',
         'SAVE_BY_QUEUEID',
+        -5,
         1,
         'INFO'
 );
@@ -1033,6 +1091,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'postfix/smtpd',
         '^(__QUEUEID__): warn: (?:__SHORT_CMD__|DATA) from (__HOSTNAME__)\[(__IP__)\]: Logging HELO; from=<(__SENDER__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 4',
+        'client_hostname = 2, client_ip = 3, helo = 5',
+        'SAVE_BY_QUEUEID',
+        1,
+        'INFO'
+);
+
+-- 5A40338B2: hold: DATA from bkanemac3.cs.tcd.ie[134.226.40.156]: <help@cs.tcd.ie>: Recipient address triggers HOLD action; from=<kanebt@cs.tcd.ie> to=<help@cs.tcd.ie> proto=ESMTP helo=<[134.226.40.156]>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Recipient addresses triggers HOLD action', 'The recipient addresses causes the mail to be moved to the hold queue',
+        'postfix/smtpd',
+        '^(__QUEUEID__): hold: DATA from (__HOSTNAME__)\[(__IP__)\]: <(__RECIPIENT__)>: Recipient address triggers HOLD action; from=<(__SENDER__)> to=<(\4)> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 4, sender = 3',
         'client_hostname = 2, client_ip = 3, helo = 5',
         'SAVE_BY_QUEUEID',
         1,
@@ -1162,10 +1232,48 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('QMGR bounced a mail due to bad address syntax', 'QMGR bounced a mail due to bad address syntax',
         'postfix/qmgr',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=bounced \(bad address syntax\)$',
+        'recipient = 5',
+        '',
+        'SAVE_BY_QUEUEID',
+        1,
+        'INFO'
+);
+
+-- E3F5149BB: to=<lricker@mta.ca>, relay=none, delay=0.2, delays=0.03/0.17/0/0, dsn=4.4.3, status=deferred (delivery temporarily suspended: Host or domain name not found. Name service error for name=mta.ca type=MX: Host not found, try again)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
+    VALUES('Recipient MX not found by qmgr (try again)', 'No MX server for the recipient was found by qmgr (try again, temporary failure)',
+        'postfix/qmgr',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:delivery temporarily suspended: )?(?:Host or domain name not found. )?Name service error for name=(__HOSTNAME__) type=(?:A|AAAA|MX): Host not found, try again\)$',
+        'recipient = 2',
+        'server_hostname = 3',
+        'smtp_code = 554',
+        'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
+        'SAVE_BY_QUEUEID',
+        1,
+        'INFO'
+);
+
+-- fatal: AF2B13D8C: timeout receiving delivery status from transport: local
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Timeout recieving delivery status from transport', 'Timeout recieving delivery status from transport',
+        'postfix/qmgr',
+        '^fatal: (__QUEUEID__): timeout receiving delivery status from transport: \w+$',
         '',
         '',
         'SAVE_BY_QUEUEID',
-        0,
+        1,
+        'INFO'
+);
+
+-- 2C372447F: to=<melanie.bouroche@cs.tcd.ie>, relay=none, delay=4.5, delays=1.4/3.1/0/0, dsn=4.3.0, status=deferred (unknown mail transport error)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Delivery deferred because of a problem with the delivery agent', 'Delivery deferred because of a problem with the delivery agent',
+        'postfix/qmgr',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=deferred \(unknown mail transport error\)$',
+        'recipient = 2',
+        '',
+        'SAVE_BY_QUEUEID',
+        1,
         'INFO'
 );
 
@@ -1231,7 +1339,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
     VALUES('mail delayed', 'the connection timed out while trying to deliver mail',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(?:none|__HOSTNAME__\[__IP__\](?::\d+)?), (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:conversation with|connect to) (__HOSTNAME__)\[(__IP__)\](?:: Connection timed out| timed out while receiving the initial server greeting| Connection reset by peer)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(?:none|__HOSTNAME__\[__IP__\](?::\d+)?), (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:conversation with|connect to) (__HOSTNAME__)\[(__IP__)\]: (?:Connection timed out|timed out while receiving the initial server greeting|Connection reset by peer)\)$',
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
@@ -1274,7 +1382,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'BOUNCED'
 );
 
--- E3F5149BB: to=<lricker@mta.ca>, relay=none, delay=0.2, delays=0.03/0.17/0/0, dsn=4.4.3, status=deferred (delivery temporarily suspended: Host or domain name not found. Name service error for name=mta.ca type=MX: Host not found, try again)
 -- B028035EB: to=<Iain@fibernetix.com>, relay=none, delay=282964, status=deferred (Host or domain name not found. Name service error for name=fibernetix.com type=MX: Host not found, try again)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Recipient MX not found (try again)', 'No MX server for the recipient was found (try again, temporary failure)',
@@ -1656,6 +1763,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'INFO'
 );
 
+-- connect to alamut.cs.tcd.ie[2001:770:10:200:210:22ff:fefe:57c1]: Network is unreachable (port 25)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Network unreachable', 'The remote network is unreachable',
+        'postfix/smtp',
+        '^connect to (__HOSTNAME__)\[(__IP__)\]: Network is unreachable(?: \(port \d+\))?$',
+        '',
+        '',
+        'IGNORE',
+        1,
+        'IGNORED'
+);
+
 -- }}}
 
 
@@ -1734,7 +1853,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Postifx warning about something', 'Postfix has logged a warning; probably it should be investigated',
         'postfix/local',
-        '^warning: (?:required alias not found: .*|pipe_command_read: read time limit exceeded)$',
+        '^warning: (?:required alias not found: .*|pipe_command_read: read time limit exceeded|premature end-of-input on .* socket while reading input attribute name|__QUEUEID__: defer service failure)$',
         '',
         '',
         'IGNORE',
@@ -1878,7 +1997,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(?:__RECIPIENT__)>,)? relay=local, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=bounced \((Command time limit exceeded: .+)\)$',
         'recipient = 2, data = 3',
         '',
-        'BOUNCE',
+        'SAVE_BY_QUEUEID',
         1,
         'BOUNCED'
 );
@@ -1954,6 +2073,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORED'
 );
 
+-- Released from hold: 3 messages
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Messages released from the hold queue', 'Postsuper released messages from the hold queue',
+        'postfix/postsuper',
+        '^Released from hold: 3 messages$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
 -- }}}
 
 -- CLEANUP RULES {{{1
@@ -2006,11 +2137,23 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORED'
 );
 
--- fatal: watchdog timeout
+-- warning: pipe_command_read: read time limit exceeded
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
-    VALUES('Watchdog timeout in cleanup', 'Something went wrong in cleanup',
+    VALUES('Cleanup timed out waiting for data from a pipe', 'Cleanup timed out waiting for data from a pipe',
         'postfix/cleanup',
         '^warning: pipe_command_read: read time limit exceeded$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+-- fatal: watchdog timeout
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Cleanup interrupted by watchdog timer', 'Cleanup interrupted by watchdog timer, it must have gotten hung up on a system call',
+        'postfix/cleanup',
+        '^fatal: watchdog timeout$',
         '',
         '',
         'IGNORE',
