@@ -2305,7 +2305,7 @@ __RESTRICTION_START__ matches:
 
 __SHORT_CMD__ matches:
 
-    /(?:CONNECT|HELO|EHLO|AUTH|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN)/gx;
+    /(?:CONNECT|HELO|EHLO|AUTH|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN|XFORWARD|XCLIENT|XVERP)/gx;
 
 These are the short form of commands, and are used when Postfix logs a lost
 connection or timeout.  It deliberately excludes DATA, because there are
@@ -2367,7 +2367,7 @@ sub filter_regex {
     $regex =~ s/__COMMAND__             /(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gmx;
     # DATA is deliberately excluded here because there are more specific rules
     # for DATA.
-    $regex =~ s/__SHORT_CMD__           /(?:CONNECT|HELO|EHLO|AUTH|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN)/gmx;
+    $regex =~ s/__SHORT_CMD__           /(?:CONNECT|HELO|EHLO|AUTH|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN|XFORWARD|XCLIENT|XVERP)/gmx;
     $regex =~ s/__DELAYS__              /delays=(?:[\\d.]+\/){3}[\\d.]+, /gmx;
     $regex =~ s/__DELAY__               /delay=\\d+(?:\\.\\d+)?, /gmx;
     $regex =~ s/__DSN__                 /\\d\\.\\d\\.\\d/gmx;
