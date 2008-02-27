@@ -90,7 +90,7 @@
 }
 
 \newcommand{\numberOFrules}[0]{%
-    157%
+    168%
 }
 
 % This may keep hyperref happy about the Abstract entry in the table of
@@ -1169,7 +1169,8 @@ fields:
         complication described in \sectionref{Mail deleted before delivery
         is attempted} from occurring when, but only in the case where there
         is a single recipient; in that case the recipient address will be
-        logged also.
+        logged also, but when there are multiple recipients none are
+        logged.
 
     \item [queueid] The queueid of the mail if the connection represents an
         accepted mail, or \texttt{NOQUEUE} otherwise.
@@ -2167,6 +2168,13 @@ The actions:
         table entry (indexed by \daemon{smtpd} \pid{}) and save both the
         client hostname and \IP{} address.
 
+    \item [DELETE] Deals with mail deleted by the administrator using the
+        administrative command \daemon{postsuper}.  This action adds a
+        dummy recipient address if required, then invokes the COMMIT action
+        to handle adding the mail to the database.  The complication this
+        action deals with is described fully in \sectionref{Mail deleted
+        before delivery is attempted}.  
+
     \item [DISCONNECT] Deal with the remote client disconnecting: enter the
         connection in the database, perform any required cleanup, and
         delete the connection from the state tables.
@@ -2248,13 +2256,6 @@ The actions:
         checks if the child has already been tracked, either by this parent
         or by another parent, and issues appropriate warnings in either
         case.
-
-    \item [DELETE] Deals with mail deleted by the administrator using the
-        administrative command \daemon{postsuper}.  This action adds a
-        dummy recipient address if required, then invokes the COMMIT action
-        to handle adding the mail to the database.  The complication this
-        action deals with is described fully in \sectionref{Mail deleted
-        before delivery is attempted}.  
 
 \end{description}
 
@@ -3043,9 +3044,10 @@ always room for improvement.
         more mails are rejected and a subsequent mail is accepted; it will
         appear in the database as one mail with lots of rejections followed
         by acceptance (this has already been mentioned in
-        \sectionref{connection reuse}).  I don't believe it's possible to
-        make this distinction given the data Postfix logs, though it might
-        be possible to write a policy server to provide additional logging.
+        \sectionref{connection reuse}).  It doesn't appear to be possible
+        to make this distinction given the data Postfix logs, though it
+        might be possible to write a policy server to provide additional
+        logging.
 
     \item The program will not detect parsing the same log file twice,
         resulting in the database containing duplicate entries.
