@@ -147,18 +147,18 @@ generated some graphs to clearly illustrate the point to management or
 users.\footnote{This was the author's first real foray into processing
 Postfix logs.}  Very few will have performed in-depth parsing and analysis
 of their logs, where the parsing must correlate the log lines
-per-connection or per-queueid rather than processing lines independently.
-One of the barriers to this type of processing is the unstructured nature
-of Postfix logs, where each log line was added on an ad hoc basis as a
-requirement was discovered or new functionality was added.\footnote{A
-history of all changes made to Postfix is distributed with the source code,
-available from \url{http://www.postfix.org/}} Further complication arises
-because the set of rejection messages is not fixed: new messages can be
-added by the administrator with custom checks; every \RBL{} returns a
-different explanatory message; policy servers may log different messages
-depending on the characteristics of the connection; there are many ways in
-which the log lines may differ between servers, even within the same
-organisation --- servers may be configured differently, or running
+per-connection or per-queueid rather than processing log lines
+independently.  One of the barriers to this type of processing is the
+unstructured nature of Postfix logs, where each log line was added on an ad
+hoc basis as a requirement was discovered or new functionality was
+added.\footnote{A history of all changes made to Postfix is distributed
+with the source code, available from \url{http://www.postfix.org/}} Further
+complication arises because the set of rejection messages is not fixed: new
+messages can be added by the administrator with custom checks; every \RBL{}
+returns a different explanatory message; policy servers may log different
+messages depending on the characteristics of the connection; there are many
+ways in which the log lines may differ between servers, even within the
+same organisation --- servers may be configured differently, or running
 different version of Postfix.  This paper documents the difficult process
 of parsing Postfix logs, presenting a program which parses logs and places
 the resulting data into a database for later use.  The gathered data can
@@ -183,9 +183,9 @@ taken when designing the parser.
 
 This algorithm requires a database for storing both the rules used when
 parsing and the results gleaned from parsing.  The database schema used is
-described in section~\refwithpage{database schema}, explaining in detail the tables
-used for storing the data gleaned from the logs and the table that stores
-the rules.
+described in section~\refwithpage{database schema}, explaining in detail
+the tables used for storing the data gleaned from the logs and the table
+that stores the rules.
 
 Section~\ref{rules} discusses the parsing rules in detail, explaining the
 purpose and usage of each field in a rule, referring to an example rule and
@@ -203,14 +203,14 @@ shaped the full algorithm.  A flow chart and a discussion of the emergent
 behaviour exhibited by the algorithm accompanies a comprehensive
 explanation of the different stages of the algorithm.  The actions taken
 during execution of the algorithm are described, followed by the process of
-adding a new action.  The section concludes with an in-depth description
-of the further complications discovered and their solutions which complete
-the algorithm.
+adding a new action.  The section concludes with an in-depth description of
+the further complications discovered and their solutions which complete the
+algorithm.
 
 Section~\ref{parsing coverage} analyses the coverage the parser achieves
 over a set of \numberOFlogFILES{} log files taken from a mail server
 handling mail for over 700 users.  Coverage is described both in terms of
-the fraction of lines parsed and the fraction of mails and connections
+the fraction of log lines parsed and the fraction of mails and connections
 successfully reconstructed by the parsing algorithm, including dealing with
 false negatives and a discussion of the difficulties in identifying false
 positives.  A random sampling of log lines was parsed, and the correctness
@@ -324,7 +324,7 @@ SELECT name, description, restriction_name, hits,
 
 These database queries yield summary statistics about the efficiency of
 spam avoidance techniques that is far less feasible to assess directly from
-log files without prior pre-processing into a database along the lines
+log files without prior pre-processing into a database in the fashion
 proposed, implemented and tested herein.
 
 \subsection{Database as Application Programming Interface}
@@ -743,8 +743,8 @@ three parts:
         method of associating log lines and actions.  Rules are described
         in detail in \sectionref{rules}.
 
-    \item [actions] Are invoked to deal with a log line once the line has
-        been identified by the rules: modifying data structures, handing
+    \item [actions] Are invoked to deal with a log line once it has been
+        identified by the rules: modifying data structures, handing
         complications, and saving data to the database.  The actions
         perform the work of reconstructing the journey a mail takes through
         Postfix.  Full details of actions can be found in
@@ -772,7 +772,7 @@ source code (significantly lowering the barrier to entry for new or casual
 users who need to parse new log lines), and greatly simplifies both actions
 and rules.  Decoupling also creates a clear separation of functionality:
 rules handle low level details of identifying log lines and extracting data
-from a line, whereas the actions handle the higher level details of
+from a log line, whereas the actions handle the higher level details of
 following the path a mail takes through Postfix, assembling the required
 data before storing it, dealing with complications arising, etc.
 
@@ -789,7 +789,7 @@ parse new log lines without modifying the core parsing algorithm.  Although
 this may seem like a trivial point, is it substantially more difficult to
 understand a program's entire parsing algorithm, identify the correct
 location to change and make the appropriate changes, versus adding a new
-rule with the action to invoke, a \regex{} to match the lines, and the
+rule with the action to invoke, a \regex{} to match the log lines, and the
 specification of the data to extract.  Bear in mind that the changes must
 be made without adversely affecting existing parsing, particularly as there
 may be edge cases which are not immediately obvious.\footnote{See
@@ -1055,9 +1055,9 @@ particular result, eliminating one potential source of confusion.
 Rules are discussed in detail in \sectionref{rules}, but the structure of
 the rules table is covered here.  Rules are created by the user, not the
 parser, and will not be modified by the parser (except for the hits and
-hits\_total fields).  Rules parse the individual lines, extracting data to
-be saved in the connections and results tables, and specifying action to
-take for that line.
+hits\_total fields).  Rules parse the individual log lines, extracting data
+to be saved in the connections and results tables, and specifying action to
+take for that log line.
 
 Each rule defines the following:
 
@@ -1078,9 +1078,9 @@ Each rule defines the following:
         \texttt{REJECTION}, other rules should have an empty string.
 
     \item [postfix\_action] This is the action Postfix must have taken to
-        generate this line.  This field is mostly ignored, but two values
-        (IGNORED and INFO) have special meaning, as described below in the
-        list of typical values.\label{postfix_action}
+        generate this log line.  This field is mostly ignored, but two
+        values (IGNORED and INFO) have special meaning, as described below
+        in the list of typical values.\label{postfix_action}
 
         \begin{description}
 
@@ -1126,14 +1126,15 @@ Each rule defines the following:
 
         \end{description}
 
-        Uninteresting lines are parsed so that any lines the parser isn't
-        capable of handling become immediately obvious errors.
+        Uninteresting log lines are parsed so that any lines the parser
+        isn't capable of handling become immediately obvious errors.
 
     \item [program] The program (\daemon{smtpd}, \daemon{qmgr}, etc.) whose
         log lines the rule applies to.  This avoids needlessly trying rules
-        which won't match the line, or worse, might match unintentionally.
-        Rules whose program is \texttt{*} will be tried against any lines
-        which aren't parsed by program specific rules.
+        which won't match the log line, or worse, might match
+        unintentionally.  Rules whose program is \texttt{*} will be tried
+        against any log lines which aren't parsed by program specific
+        rules.
 
     \item [regex] The \regex{} to match the log line against.  The \regex{}
         will first have several keywords expanded: this simplifies reading
@@ -1177,7 +1178,8 @@ Each rule defines the following:
         assignment.
 
     \item [action] The action that will be invoked when this rule matches a
-        line; a full list can be found in \sectionref{actions-in-detail}.
+        log line; a full list can be found in
+        \sectionref{actions-in-detail}.
 
     \item [queueid] Specifies the matching capture from the \regex{} which
         gives the queueid, or zero if the log line doesn't contain a
@@ -1334,8 +1336,8 @@ connection, though there may be many results per connection.
     \item [data] A field available for anything not covered by other
         fields, e.g.\ the rejection message from an \RBL{}\@.
 
-    \item [timestamp] The time the line was logged, in seconds since the
-        epoch.
+    \item [timestamp] The time the log line was logged, in seconds since
+        the epoch.
 
 \end{description}
 
@@ -1362,11 +1364,11 @@ overlapping rules, and techniques to detect and deal with such rules.  An
 example rule and a log line it would match are provided, plus a description
 of how the fields in the rule\footnote{The details of the table containing
 the rules have already been described in \sectionref{rule attributes}.} are
-used when matching a line and subsequently performing the requested action.
-The section continues with a discussion of rule efficiency concerns,
-referring to the graphs in \sectionref{graphs}, and finishes with an
-explanation of the algorithm used to generate new \regexes{} from unparsed
-lines.
+used when matching a log line and subsequently performing the requested
+action.  The section continues with a discussion of rule efficiency
+concerns, referring to the graphs in \sectionref{graphs}, and finishes with
+an explanation of the algorithm used to generate new \regexes{} from
+unparsed lines.
 
 Please refer to \sectionref{parser design} for a discussion of why the
 rules and actions have been separated in the parser's design.
@@ -1385,13 +1387,14 @@ parser:
         program.\footnote{There are also generic rules which are used when
         parsing log lines produced by any Postfix program, but only if
         there are also rules specific to that program, and those rules have
-        already have been tried and failed on the current line.}  Any given
-        rule will only be used to parse a subset of the log lines, and any
-        given log line will only be parsed by a subset of the rules.
+        already have been tried and failed on the current log line.}  Any
+        given rule will only be used to parse a subset of the log lines,
+        and any given log line will only be parsed by a subset of the
+        rules.
 
     \item The first matching rule wins: no further rules are tried against
-        that line, but there is a facility for ordering the rules so that
-        more specific rules can be tried first.
+        that log line, but there is a facility for ordering the rules so
+        that more specific rules can be tried first.
 
     \item Rules are completely self-contained and can be understood in
         isolation, without reference to any other rules.
@@ -1423,9 +1426,9 @@ responsibility is left to the author of the rules.  Unintentionally
 overlapping rules lead to inconsistent parsing and data extraction because
 the order in which rules are tried against each line may change between log
 files, and the first matching rule wins.  Overlapping rules are frequently
-a requirement, allowing a more specific rule to match some lines and a more
-general rule to match the majority, e.g.\ separating \SMTP{} delivery to
-specific sites from \SMTP{} delivery to the rest of the world.  The
+a requirement, allowing a more specific rule to match some log lines and a
+more general rule to match the majority, e.g.\ separating \SMTP{} delivery
+to specific sites from \SMTP{} delivery to the rest of the world.  The
 algorithm provides a facility for ordering overlapping rules: the priority
 field in each rule (defaults to zero).  Rules are sorted by priority,
 highest first, and then rules with the same priority are sorted by the
@@ -1514,11 +1517,11 @@ connection\_cols start at 5.  The various fields are used as follows;
         for the user's benefit.
 
     \item [program and regex:] If the program in the rule equals the
-        program which logged the line a match using the \regex{} will be
-        attempted against the line; if the match is successful the action
-        will be executed, if not the next rule will be tried.  If the
-        program-specific rules don't match the log line, the parser will
-        fall back to generic rules; if those rules are unsuccessful a
+        program which logged the log line a match using the \regex{} will
+        be attempted against the log line; if the match is successful the
+        action will be executed, if not the next rule will be tried.  If
+        the program-specific rules don't match the log line, the parser
+        will fall back to generic rules; if those rules are unsuccessful a
         warning will be issued.
 
     \item [action:] will be executed if the \regex{} matches successfully
@@ -1529,7 +1532,7 @@ connection\_cols start at 5.  The various fields are used as follows;
         save data matched by the \regex{}.
 
     \item [queueid:] The index of the capture in the \regex{} which
-        supplies the queueid, or zero if the line does not contain a
+        supplies the queueid, or zero if the log line does not contain a
         queueid.  This allows the correct mail can be found by queueid and
         actions performed on it.
 
@@ -1552,9 +1555,10 @@ deal with 75 MB log files containing 300,000 log lines (generated daily on
 a mail server handling mail for approximately 700 users --- large scale
 mail servers would have much larger log files on a daily basis).  When
 generating the data for the graphs included in \sectionref{graphs},
-\numberOFlogFILES{} log files (totaling 10.08 GB, 60.72 million lines) were
-each parsed 10 times, the first run discarded, and the execution time for
-the remaining 9 runs averaged.  The first run is discarded for two reasons:
+\numberOFlogFILES{} log files (totaling 10.08 GB, 60.72 million log lines)
+were each parsed 10 times, the first run discarded, and the execution time
+for the remaining 9 runs averaged.  The first run is discarded for two
+reasons:
 
 \begin{enumerate}
 
@@ -1578,20 +1582,20 @@ An important property of a parser is how execution time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
 Graph~\refwithpage{execution time vs file size vs number of lines graph}
 shows the execution time in seconds, file size in MB and tens of thousands
-of lines per log file.  All three lines run roughly in parallel, giving a
-visual impression that the algorithm scales linearly with input size.  This
-impression is borne out by graph~\refwithpage{execution time vs file size
-vs number lines factor}, which plots the ratio of file size vs execution
-time and ratio of number of lines vs execution time (higher is
-better).\footnote{Table~\refwithpage{execution time vs file size vs number
-lines factor table} shows the ratios for different breakdowns of the log
-files.}  As the reader can see the ratios are quite tightly banded, showing
-that the algorithm scales linearly: the much larger log files between
-points 60 and 70 on the X axis in graph~\refwithpage{execution time vs file
-size vs number of lines graph} actually cause the ratio to increase, rather
-than decrease.  The strange behaviour where larger log files are parsed
-more efficiently is explained fully in \sectionref{Why are there dips in
-the graphs?}.  
+of log lines per log file.  All three lines run roughly in parallel, giving
+a visual impression that the algorithm scales linearly with input size.
+This impression is borne out by graph~\refwithpage{execution time vs file
+size vs number lines factor}, which plots the ratio of file size vs
+execution time and ratio of number of log lines vs execution time (higher
+is better).\footnote{Table~\refwithpage{execution time vs file size vs
+number lines factor table} shows the ratios for different breakdowns of the
+log files.}  As the reader can see the ratios are quite tightly banded,
+showing that the algorithm scales linearly: the much larger log files
+between points 60 and 70 on the X axis in graph~\refwithpage{execution time
+vs file size vs number of lines graph} actually cause the ratio to
+increase, rather than decrease.  The strange behaviour where larger log
+files are parsed more efficiently is explained fully in \sectionref{Why are
+there dips in the graphs?}.  
 
 \subsubsection{Rule ordering for efficiency}
 
@@ -1662,17 +1666,17 @@ parsing of new log lines, the parser's design separates parsing rules from
 parsing actions: adding new actions is difficult, but adding new rules to
 parse new rejection messages is trivial (and also occurs much more
 frequently).  The implementation provides a program to ease the process of
-creating new rules from unparsed lines, based on the algorithm developed by
-Risto Vaarandi~\cite{risto-vaarandi} for his \SLCT{}~\cite{slct-paper}.
-The differences between the two algorithms will be outlined as part of the
-general explanation below.
+creating new rules from unparsed log lines, based on the algorithm
+developed by Risto Vaarandi~\cite{risto-vaarandi} for his
+\SLCT{}~\cite{slct-paper}.  The differences between the two algorithms will
+be outlined as part of the general explanation below.
 
 The core of the algorithm is quite simple: log lines are generally created
 by substituting variable words into a fixed pattern, and analysis of the
 frequency with which each word occurs can be used to determine whether the
 word is variable or part of the fixed pattern.  This classification can be
 used to group similar log lines and generate a \regex{} to match each group
-of lines.
+of log lines.
 
 There are 4 steps in the algorithm:
 
@@ -1680,7 +1684,7 @@ There are 4 steps in the algorithm:
 
     \item [Pre-process the file]  The new algorithm leverages the knowledge
         gained while writing rules and performs a large number of
-        substitutions on the input lines, replacing commonly occurring
+        substitutions on the log input lines, replacing commonly occurring
         variable terms (e.g.\ email addresses, \IP{} addresses, the
         standard start of rejection messages, etc.) with \regex{} keywords
         which the parser will expand when it loads the rule (see the
@@ -1692,23 +1696,23 @@ There are 4 steps in the algorithm:
         In the original algorithm the purpose of the preprocessing stage
         was to reduce the memory consumption of the program.  In the first
         pass it generated a hash from a small range of values for each word
-        of each line, incrementing a counter for each hash.  The counters
-        will be used in the next pass to filter out words: if the word's
-        hash does not have a high frequency, the word itself cannot have a
-        high frequency, and there is no need to maintain a counter for it,
-        reducing the number of counters and thus the program's memory
-        consumption.
+        of each log line, incrementing a counter for each hash.  The
+        counters will be used in the next pass to filter out words: if the
+        word's hash does not have a high frequency, the word itself cannot
+        have a high frequency, and there is no need to maintain a counter
+        for it, reducing the number of counters and thus the program's
+        memory consumption.
 
-    \item [Calculate word frequencies]  The position of words within a line
-        is important: a common word does not indicate similarity between
-        lines unless it occupies the same position within both
-        lines.\footnote{If a variable term within a line contains spaces,
-        it will appear to the algorithm as two words rather than one.  This
-        will alter the position of subsequent words, so a word occurring in
-        different positions in two log lines \textit{may\/} indicate
-        similarity, but the algorithm does not attempt to deal with this
-        possibility.}  The algorithm maintains a counter for each
-        \textit{(word, word's position within the line)\/} tuple,
+    \item [Calculate word frequencies]  The position of words within a log
+        line is important: a common word does not indicate similarity
+        between log lines unless it occupies the same position within both
+        log lines.\footnote{If a variable term within a line contains
+        spaces, it will appear to the algorithm as two words rather than
+        one.  This will alter the position of subsequent words, so a word
+        occurring in different positions in two log lines \textit{may\/}
+        indicate similarity, but the algorithm does not attempt to deal
+        with this possibility.}  The algorithm maintains a counter for each
+        \textit{(word, word's position within the log line)\/} tuple,
         incrementing it each time that word occurs in that position.
 
         The original algorithm only maintains counters for words whose hash
@@ -1721,10 +1725,10 @@ There are 4 steps in the algorithm:
         for.
 
     \item [Classify words based on their frequency]  The frequency of each
-        \textit{(word, word's position within the line)\/} tuple is
+        \textit{(word, word's position within the log line)\/} tuple is
         checked: if its frequency is greater than the threshold supplied by
-        the user (1\% of all lines is generally a good starting point) it
-        is classified as a fixed word, otherwise it is classified as a
+        the user (1\% of all log lines is generally a good starting point)
+        it is classified as a fixed word, otherwise it is classified as a
         variable term.  If a variable term appears sufficiently often it
         will be classified as a fixed term, but that should be noticed by
         the user when reviewing the new \regexes{}.  Variable terms are
@@ -1732,39 +1736,40 @@ There are 4 steps in the algorithm:
         character.  
 
     \item [Build regexes]  The words are reassembled to produce a \regex{}
-        matching the line, and a counter is maintained for each \regex{}.
-        Contiguous sequences of \texttt{.+} in the newly reassembled
-        \regexes{} are collapsed to a single \texttt{.+}; any resulting
-        duplicate \regexes{} are combined, and their counters added.  If
-        the frequency of a \regex{} is lower than the threshold supplied by
-        the user the \regex{} is discarded.\footnote{This is a second
-        threshold, independent of the threshold used to differentiate
-        between fixed and variable words, but once again 1\% of input lines
-        is a good starting point; obviously the threshold depends on the
-        number and type of input lines.}  The new \regexes{} are printed
-        for the user to add to the database, either as new rules or merged
-        into the \regexes{} of existing rules; the counter for each
-        \regex{} is also printed, giving the user an indication of how many
-        of the input lines that \regex{} should match.  Discarding
-        \regexes{} will result in some of the input lines not being
-        matched; this utility should be run again once the unmatched lines
-        have been isolated by running the parser, including the new
-        \regexes{}, with the same input which produced the original set of
-        unparsed lines.
+        matching the log line, and a counter is maintained for each
+        \regex{}.  Contiguous sequences of \texttt{.+} in the newly
+        reassembled \regexes{} are collapsed to a single \texttt{.+}; any
+        resulting duplicate \regexes{} are combined, and their counters
+        added.  If the frequency of a \regex{} is lower than the threshold
+        supplied by the user the \regex{} is discarded.\footnote{This is a
+        second threshold, independent of the threshold used to
+        differentiate between fixed and variable words, but once again 1\%
+        of input log lines is a good starting point; obviously the
+        threshold depends on the number and type of input log lines.}  The
+        new \regexes{} are printed for the user to add to the database,
+        either as new rules or merged into the \regexes{} of existing
+        rules; the counter for each \regex{} is also printed, giving the
+        user an indication of how many of the input log lines that \regex{}
+        should match.  Discarding \regexes{} will result in some of the
+        input log lines not being matched; this utility should be run again
+        once the unmatched log lines have been isolated by running the
+        parser, including the new \regexes{}, with the same input which
+        produced the original set of unparsed log lines.
 
 \end{description}
 
 A second utility is also provided which reads a list of new \regexes{} and
-the input given to the first utility.  It tries to match each input line
-against each \regex{}, counting the number of lines which match each
-\regex{}, warning the user if an input line is matched by more than one
-\regex{}, and additionally warning if an input line is not matched by any
-\regex{}.  It displays a summary of how many input lines each \regex{}
-matched, comparing it to the expected number of matches; this provides the
-user with an easy method of checking if the \regexes{} produced by the
-first utility are correctly matching the input lines they are based upon.
-A future version of this utility will also group input lines by \regex{},
-so the user can tweak the \regexes{} if required.
+the input given to the first utility.  It tries to match each input log
+line against each \regex{}, counting the number of log lines which match
+each \regex{}, warning the user if an input log line is matched by more
+than one \regex{}, and additionally warning if an input log line is not
+matched by any \regex{}.  It displays a summary of how many input log lines
+each \regex{} matched, comparing it to the expected number of matches; this
+provides the user with an easy method of checking if the \regexes{}
+produced by the first utility are correctly matching the input log lines
+they are based upon.  A future version of this utility will also group
+input log lines by \regex{}, so the user can tweak the \regexes{} if
+required.
 
 \subsection{Conclusion}
 
@@ -1792,7 +1797,7 @@ This section dealt with the rules used in parsing Postfix log files:
         appendix~\refwithpage{graphs}.
 
     \item This section finished with an explanation of the algorithm used
-        to generate a new \regex{} from unparsed lines.
+        to generate a new \regex{} from unparsed log lines.
 
 \end{itemize}
 
@@ -1970,8 +1975,8 @@ to be exposed.
 
 Process scheduling can have a still more confusing effect: quite often the
 child mail will be created, delivered and entirely finished with
-\textbf{before} the parent logs the creation line!  Thus mails flagged as
-coming from an unknown origin cannot be entered into the database when
+\textbf{before} the parent logs the creation log line!  Thus mails flagged
+as coming from an unknown origin cannot be entered into the database when
 their final log line is parsed; instead they must be marked as ready for
 entry and subsequently entered by the parent mail once it has been
 identified.
@@ -2954,10 +2959,11 @@ Parsing a log line is a three stage process:
 
 \begin{enumerate}
 
-    \item Check if there are any rules for the program which produced the
-        log line; if not then skip the line.
+    \item Check if there are any rules for the Postfix component which
+        produced the log line; if not then skip the log line.
 
-    \item Try each rule until a matching rule is found.
+    \item Try each rule until a matching rule is found; if no match is
+        issue a warning and move to the next log line.
 
     \item Execute the action specified by the rule.
 
@@ -2967,20 +2973,20 @@ Full coverage of log lines requires the following:
 
 \begin{enumerate}
 
-    \item Each program of interest must have at least one rule or its log
-        lines will be silently skipped; in the extreme case of zero rules
-        the parser would happily skip every log line.  There may be any
-        number of log lines from other programs intermingled in the log
-        file, and there are some Postfix programs which don't produce any
-        log lines of interest.
+    \item Each Postfix component whose log lines are of interest must have
+        at least one rule or its log lines will be silently skipped; in the
+        extreme case of zero rules the parser would happily skip every log
+        line.  There may be any number of log lines from other programs
+        intermingled in the log file, and there are some Postfix programs
+        which don't produce any log lines of interest.
 
-    \item There must be a rule to match each different line produced by
-        each program; if a line is not successfully matched the parser will
-        issue a warning.  Rules should be as specific and tightly bound as
-        possible to ensure accurate parsing:\footnote{A rule which matches
-        zero or more of any character will successfully parse every log
-        line, but not in a meaningful way.} most log lines contain fixed
-        strings and have a rigid pattern, so this is not a problem.
+    \item There must be a rule to match each different log line produced by
+        each program; if a log line is not successfully matched the parser
+        will issue a warning.  Rules should be as specific and tightly
+        bound as possible to ensure accurate parsing:\footnote{A rule which
+        matches zero or more of any character will successfully parse every
+        log line, but not in a meaningful way.} most log lines contain
+        fixed strings and have a rigid pattern, so this is not a problem.
 
     \item The appropriate action to take --- discussed in
         \sectionref{mails-covered}.
@@ -2989,7 +2995,7 @@ Full coverage of log lines requires the following:
 
 Full coverage of log lines is easy to achieve yet hard to maintain.  It is
 easy to achieve full coverage for a limited set of log files (at the time
-of writing the parser has \numberOFrules{} rules, fully parsing
+of writing the parser is tested with \numberOFrules{} rules, fully parsing
 \numberOFlogFILES{} contiguous log files from Postfix 2.2 and 2.3), and new
 rules are easy to add.  Maintaining full coverage is hard because other
 servers have different restrictions with custom messages, \RBL{} messages
@@ -3000,15 +3006,15 @@ for each rule over all \numberOFlogFILES{} log files; it's obvious that a
 small number of rules match the vast majority of the lines, and more than
 half the rules match fewer than 100 times.
 
-Warnings are issued for any lines which are not parsed; no warnings are
-issued for unparsed lines while testing with the \numberOFlogFILES{} test
-log files, so it can be safely concluded that there are zero false
+Warnings are issued for any log lines which are not parsed; no warnings are
+issued for unparsed log lines while testing with the \numberOFlogFILES{}
+test log files, so it can be safely concluded that there are zero false
 negatives.  False positives are harder to quantify: short of examining each
 of the 60,721,709 log lines and determining which \regex{} parsed it, there
 is no way to be sure that every line was parsed by the correct \regex{},
 making it impossible to quantify the false positive rate; however a random
 sample of 6039 log lines was parsed and the results checked manually to
-ensure that the correct \regex{} parsed each line.  The sample was
+ensure that the correct \regex{} parsed each log line.  The sample was
 generated by running the following command:
 
 \verb!    perl -e 'print if (rand 1 < 0.0001)' -n LOG_FILES!
@@ -3027,22 +3033,23 @@ other log files).
 \label{mails-covered}
 
 Coverage of mails is much more difficult to determine accurately than
-coverage of lines.  The parser can dump its state tables in a human
+coverage of log lines.  The parser can dump its state tables in a human
 readable form; examining these tables with reference to the log files is
 the best way to detect mails which were not handled properly (many of the
 complications discussed in \sectionref{additional complications} were
 detected in this way).  The parser issues warnings when it detects any
 errors, some of which may alert the user to a problem, e.g.\ when a queueid
 is reused before the previous mail is fully dealt with, when a queueid or
-\pid{} is not found,\footnote{There will often be warnings about a missing
-queueid or \pid{} in the first few hundred or thousand log lines because
-the earlier log lines for those connections or mails are in the previous
-log file; loading the saved state from the previous log file will solve
-this problem.} or when there are problems tracking a child mail (see
-\sectionref{tracking re-injected mail}).  There should be few or no
-warnings when parsing, and when finished parsing the state table should
-only contain entries for mails which had yet to be delivered when the log
-files ended, or started before the log files began.
+\pid{} is not found in the state tables,\footnote{There will often be
+warnings about a missing queueid or \pid{} in the first few hundred or
+thousand log lines because the earlier log lines for those connections or
+mails are in the previous log file; loading the saved state from the
+previous log file will solve this problem.} or when there are problems
+tracking a child mail (see \sectionref{tracking re-injected mail}).  There
+should be few or no warnings when parsing, and when finished parsing the
+state table should only contain entries for mails which had yet to be
+delivered when the log files ended, or were accepted before the log files
+began.
 
 At the time of writing the parser is being tested with \numberOFlogFILES{}
 log files.  There are 5 warnings produced, but because the parser errs on
@@ -3062,7 +3069,7 @@ tables contain 18 entries, breaking down into:
 \begin{itemize}
 
     \item 1 connection which started only seconds before the logs ended and
-        had not yet completed.
+        had not yet been fully transferred from client to server.
 
     \item 1 mail which had been accepted only seconds before the logs ended
         and had not yet been delivered.
@@ -3088,7 +3095,7 @@ evidence that the false positive rate is quite low:
         produced during the test runs.
 
     \item Queueids and \pids{} naturally group together log lines belonging
-        to one mail or connection, respectively; it is extremely unlikely
+        to one mail or connection respectively; it is extremely unlikely
         that a log line would be associated with the wrong connection.
 
     \item When dealing with the complications described in
@@ -3096,7 +3103,7 @@ evidence that the false positive rate is quite low:
         complications} the solutions are as specific and restrictive as
         possible, with the goal of minimising the number of false
         positives.  In addition the solution to the \textit{Out of order
-        log files\/} problem described in \sectionref{out of order log
+        log files\/} complication described in \sectionref{out of order log
         lines} imposes conditions which each reassembled mail must comply
         with to be acceptable.
 
@@ -3113,21 +3120,28 @@ logs was obtained by randomly selecting a log file:
 \verb!    perl -Mstrict -Mwarnings -MList::Util=shuffle \!\newline
 \verb!            -e 'print [shuffle(@ARGV)]->[0];'!
 
-The first 6000 lines of this log file (roughly 0.01\% of the total) was
-extracted:
+The first 6000 lines of this log file (roughly 0.01\% of the total number
+of log lines used in testing) was extracted:
 
 \verb!    sed -n -e '1,6000p' logfile > test-log-segment!
 
 It is important that the log lines used are contiguous so that all log
-entries are present for as many of the connections/mails as possible.  This
-log segment was parsed with all debugging options enabled, resulting in
-167,448 lines of output (27.908 lines of output per line of input).  All
-167,448 lines were examined in conjunction with the input log and a dump of
-the resulting database, verifying that for each of the input lines the
-parser used the correct rule, executed the correct action, which in turn
-produced the correct result, and inserted the correct data in the database.
-The log segment produced 4 warnings, 10 mails remaining in the state
-tables, and 1625 connections entered in the database.
+entries are present for as many of the connections as possible.  This log
+segment was parsed with all debugging options enabled, resulting in 167,448
+lines of output.\footnote{A mean of 27.908 lines of output per line of
+input; each connection has 30 debugging lines, plus 21 debugging lines per
+result.  Connections which have been cloned will have the cloned connection
+in their debugging output, plus another 33 debugging lines.  Those numbers
+are approximate, and may vary $\pm{}$ 2.  There is a linear relationship
+between the number of log lines and debugging lines: $33(connections) +
+30(accepted~~mails) + 21(results)$.  This formula is an approximation only,
+and has not been rigorously verified.}  All 167,448 lines were examined in
+conjunction with the input log and a dump of the resulting database,
+verifying that for each of the input lines the parser used the correct rule
+and executed the correct action, which in turn produced the correct result
+and inserted the correct data in the database.  The log segment produced 4
+warnings, 10 mails remaining in the state tables, and 1625 connections
+correctly entered in the database.
 
 Given the circumstantial and experimental evidence detailed above, the
 author is confident that the false positive rate when reconstructing a mail
@@ -3136,23 +3150,23 @@ is exceedingly low, if not approaching zero.
 \subsection{Conclusion}
 
 Parser coverage is divided into two topics in this section: log lines
-covered, and mails covered.  The former is initially more important, as the
+covered and mails covered.  The former is initially more important, as the
 parser must successfully parse every line if it is to be complete, but
 subsequently the latter takes precedence because reproducing the path a
 mail takes through Postfix is the aim of the parser.  Increasing the
-percentage of log lines parsed is relatively simple and not intrusive:
+percentage of log lines parsed is relatively simple and non-intrusive:
 adding new rules or modifying existing rules is simplified by the
-separation of rules and algorithm.  Improving the logical coverage is
-harder, as the actions taken by Postfix must be reconstructed, and the new
-sequence of actions integrated into the existing model without breaking
-the existing sequences.  Detecting a deficiency in the parsing algorithm is
-also significantly harder than detecting unparsed log lines, as the parser
-will warn about any unparsed line, whereas discovering a flaw in the
-parser requires understanding of the warnings produced and the mails
-remaining in the state table.  Rectifying a flaw in the parser requires an
-understanding of both the parser and Postfix's logs, and investigative work
-to determine the cause of the deficiency, followed by further examination
-of the logs in developing a solution.
+separation of rules, actions and framework.  Improving the logical coverage
+is harder, as the actions taken by Postfix must be reconstructed by the
+author, and the new sequence of actions integrated into the existing model
+without breaking the existing parsing.  Detecting a deficiency in the
+parsing algorithm is also significantly harder than detecting unparsed log
+lines, as the parser will warn about any unparsed line, whereas discovering
+a flaw in the parser requires understanding of the warnings produced and
+the mails remaining in the state table.  Rectifying a flaw in the parser
+requires an understanding of both the parser and Postfix's logs, and
+investigative work to determine the cause of the deficiency, followed by
+further examination of the logs in developing a solution.
 
 \section{Limitations and possible improvements}
 
@@ -3173,10 +3187,10 @@ always room for improvement.
         rules.
 
     \item It appears that the hostname used in the HELO command is not
-        logged if the mail is accepted.\footnote{Tested with Postfix 2.2.10
-        and 2.3.11; this may possibly have changed in Postfix 2.4.}
-        Rectifying this has already been described in \sectionref{logging
-        helo}.
+        logged if the mail is accepted.\footnote{Tested with Postfix
+        2.2.10, 2.3.11 and 2.4.7; this may possibly have changed in Postfix
+        2.5.}  Rectifying this has already been described in
+        \sectionref{logging helo}.
 
     \item The algorithm does not distinguish between mails where one or
         more mails are rejected and a subsequent mail is accepted; it will
@@ -3206,7 +3220,7 @@ always room for improvement.
 
 \begin{itemize}
 
-    \item Write the policy server referred to in limitation 3 above.
+    \item Investigate and write the policy server referred to in limitation 3 above.
 
 \end{itemize}
 
