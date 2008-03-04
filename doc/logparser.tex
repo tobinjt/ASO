@@ -125,6 +125,8 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
 \end{abstract}
 
+XXX COMPARE SAVING RESULTS TO RAM DISK VERSUS SAVING TO HARD DISK\@.
+
 \newpage
 \tableofcontents
 \listoffigures
@@ -207,7 +209,7 @@ the algorithm.
 
 Section~\ref{parsing coverage} analyses the coverage the parser achieves
 over a set of \numberOFlogFILES{} log files taken from a mail server
-handling mail for over 1000 users.  Coverage is described both in terms of
+handling mail for over 700 users.  Coverage is described both in terms of
 the fraction of lines parsed and the fraction of mails and connections
 successfully reconstructed by the parsing algorithm, including dealing with
 false negatives and a discussion of the difficulties in identifying false
@@ -1354,15 +1356,16 @@ reports and/or statistics.
 \subsection{Introduction}
 
 This section discusses the rules used in parsing Postfix log files,
-starting with rule characteristics, continuing with detecting and dealing
-with overlapping rules, and the problems they can cause.  An example rule
-and a line it would match are provided, plus a description of how the
-fields in the rule are used when matching and performing the action (the
-details of the table containing the rules have already been described in
-\sectionref{rule attributes},).  This section continues with a discussion
-of rule efficiency concerns, referring to the graphs in
-\sectionref{graphs}, and finishes with an explanation of the algorithm used
-to generate a new \regex{} from unparsed lines.
+starting with rule characteristics, followed by the problems caused by
+overlapping rules, and techniques to detect and deal with such rules.  An
+example rule and a log line it would match are provided, plus a description
+of how the fields in the rule\footnote{The details of the table containing
+the rules have already been described in \sectionref{rule attributes}.} are
+used when matching a line and subsequently performing the requested action.
+The section continues with a discussion of rule efficiency concerns,
+referring to the graphs in \sectionref{graphs}, and finishes with an
+explanation of the algorithm used to generate new \regexes{} from unparsed
+lines.
 
 Please refer to \sectionref{parser design} for a discussion of why the
 rules and actions have been separated in the parser's design.
@@ -1370,7 +1373,6 @@ rules and actions have been separated in the parser's design.
 \subsection{Rule characteristics}
 
 \label{rule characteristics}
-
 
 Rule have certain characteristics which may help in understanding the
 parser:
@@ -1381,14 +1383,14 @@ parser:
         only be used when parsing log lines produced by that
         program.\footnote{There are also generic rules which are used when
         parsing log lines produced by any Postfix program, but only if
-        there are also rules specific to that program, and those rules must
+        there are also rules specific to that program, and those rules have
         already have been tried and failed on the current line.}  Any given
         rule will only be used to parse a subset of the log lines, and any
         given log line will only be parsed by a subset of the rules.
 
     \item The first matching rule wins: no further rules are tried against
-        that line, but there is a facility for specifying the order of
-        rules so that more specific rules can be tried first.
+        that line, but there is a facility for ordering the rules so that
+        more specific rules can be tried first.
 
     \item Rules are completely self-contained and can be understood in
         isolation, without reference to any other rules.
@@ -1411,17 +1413,17 @@ $\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
 \label{overlapping rules}
 
 The parser does not try to detect overlapping rules;\footnote{It may be
-possible to parse each rule's \regex{}, and determine if any overlap.  The
+possible to parse each rule's \regex{} and determine if any overlap.  The
 author has not attempted to do this: such a project by itself would
 probably qualify for a PhD, and may involve solving the Halting
 Problem~\cite{Wikipedia-halting-problem} and circumventing the
 Church-Turing Thesis~\cite{Wikipedia-church-turing-thesis}.} that
 responsibility is left to the author of the rules.  Unintentionally
 overlapping rules lead to inconsistent parsing and data extraction because
-the order in which rules are tried against each line is unspecified, and
-the first matching rule wins.  Overlapping rules are frequently a
-requirement, allowing a more specific rule to match some lines and a more
-general rule to match the majority, e.g.\ separating \SMTP{} delivery to a
+the order in which rules are tried against each line may change between log
+files, and the first matching rule wins.  Overlapping rules are frequently
+a requirement, allowing a more specific rule to match some lines and a more
+general rule to match the majority, e.g.\ separating \SMTP{} delivery to
 specific sites from \SMTP{} delivery to the rest of the world.  The
 algorithm provides a facility for ordering overlapping rules: the priority
 field in each rule (defaults to zero).  Rules are sorted by priority,
@@ -1429,7 +1431,8 @@ highest first, and then rules with the same priority are sorted by the
 number of successful matches when parsing the previous log file.  Negative
 priorities may be useful for catchall rules.
 
-Detecting overlapping rules is difficult, but the following may be helpful:
+Detecting overlapping rules is difficult, but the following approaches may
+be helpful:
 
 \begin{itemize}
 
@@ -1439,18 +1442,18 @@ Detecting overlapping rules is difficult, but the following may be helpful:
     \item Compare the results of parsing using sorted, shuffled and
         reversed rules.\footnote{See \sectionref{rule efficiency} for more
         details of sorting the rules.}  Parse a number of log files using
-        normal sorting, dump a textual representation of the connections
-        and results tables, and delete everything from those tables.
-        Repeat with shuffled and reversed sorting.  If there are no
-        overlapping rules the tables from each run will be identical;
-        differences indicate overlapping rules.  Which rules overlap can be
-        determined by examining the differences in the tables: each result
-        contains the id of the rule which created it, so the rule
-        referenced in the normal table overlaps with the rule referenced in
-        the reversed table.  Unfortunately this method cannot prove the
-        absence of overlapping rules; it can detect overlapping rules, but
-        only if there are log lines in the input files which match more
-        than one rule.
+        normal sorting, then dump a textual representation of the rules,
+        connections and results tables.  Repeat with shuffled and reversed
+        rules, starting with a fresh database.  If there are no overlapping
+        rules the tables from each run will be identical; differences
+        indicate overlapping rules.  Which rules overlap can be determined
+        by examining the differences in the tables: each result contains a
+        reference to the rule which created it, if the references differ
+        between runs the two rules referenced in the differing records
+        overlap.  Unfortunately this method cannot prove the absence of
+        overlapping rules; it can detect overlapping rules, but only if
+        there are log lines in the input files which match more than one
+        rule.
 
 \end{itemize}
 
@@ -1466,11 +1469,10 @@ full details see~\cite{reject-unknown-sender-domain}).
 This rule would match the following log line:
 
 \begin{verbatim}
-NOQUEUE: reject: RCPT from example.com[10.1.1.1]:
-  550 <foo@example.com>: Sender address rejected:
-  Domain not found; from=<foo@example.com>
-  to=<info@example.net> proto=SMTP
-  helo=<smtp.example.com>
+NOQUEUE: reject: RCPT from example.com[10.1.1.1]: 550
+  <foo@example.com>: Sender address rejected: Domain not found;
+  from=<foo@example.com> to=<info@example.net>
+  proto=SMTP helo=<smtp.example.com>
 \end{verbatim}
 
 % Don't reformat this!
@@ -1500,7 +1502,9 @@ priority            & 0                                                 \\
 
 \vspace{1em}
 
-The various fields are used as follows;
+Additional data will be captured automatically when the \regex{} contains 
+\_\_RESTRICTION\_START\_\_, hence the capture numbers in result\_cols and
+connection\_cols start at 5.  The various fields are used as follows;
 
 \begin{description}
 
@@ -1509,11 +1513,12 @@ The various fields are used as follows;
         for the user's benefit.
 
     \item [program and regex:] If the program in the rule equals the
-        program which logged the line the \regex{} will be tried against
-        the line; if the match is successful the action will be executed,
-        if not the next rule will be tried.  If the program-specific rules
-        don't match the log line, the generic rules will be tried in the
-        same way.
+        program which logged the line a match using the \regex{} will be
+        attempted against the line; if the match is successful the action
+        will be executed, if not the next rule will be tried.  If the
+        program-specific rules don't match the log line, the parser will
+        fall back to generic rules; if those rules are unsuccessful a
+        warning will be issued.
 
     \item [action:] will be executed if the \regex{} matches successfully
         (see \sectionref{actions-in-detail} for full details).
@@ -1522,21 +1527,19 @@ The various fields are used as follows;
         connection\_data:] are \newline used by the action to extract and
         save data matched by the \regex{}.
 
-    \item [queueid:] The index of the field in the \regex{} which captured
-        the queueid, or zero if the line does not contain a queueid.  This
-        allows the correct mail can be found by queueid and actions
-        performed on it.
+    \item [queueid:] The index of the capture in the \regex{} which
+        supplies the queueid, or zero if the line does not contain a
+        queueid.  This allows the correct mail can be found by queueid and
+        actions performed on it.
 
     \item [hits, hits\_total and priority:] hits and priority are used in
         ordering the rules (see \sectionref{rule ordering for efficiency});
         hits is set to the number of successful matches at the end of the
-        parsing run, and hits\_total has hits added to it, but is otherwise
-        unused by the algorithm.
+        parsing run; hits\_total is the sum of hits over every parsing run,
+        but is otherwise unused by the algorithm.
 
 \end{description}
 
-Additional fields are captured by \_\_RESTRICTION\_START\_\_, hence the
-fields in result\_cols and connection\_cols start at 5 in the example.
 
 
 \subsection{Rule efficiency}
@@ -1544,13 +1547,13 @@ fields in result\_cols and connection\_cols start at 5 in the example.
 \label{rule efficiency}
 
 Parsing efficiency is an obvious concern when the parser routinely needs to
-deal with 75 MB log files containing 300,000 log lines (for a small mail
-server --- large scale mail servers would have much larger log files on a
-daily basis).  When generating the data for the graphs included in
-appendix~\refwithpage{graphs}, \numberOFlogFILES{} log files (totaling
-10.08 GB, 60.72 million lines) were each parsed 10 times, the first run
-discarded, and the remaining 9 runs averaged.  The first run is discarded
-for two reasons:
+deal with 75 MB log files containing 300,000 log lines (generated daily on
+a mail server handling mail for approximately 700 users --- large scale
+mail servers would have much larger log files on a daily basis).  When
+generating the data for the graphs included in \sectionref{graphs},
+\numberOFlogFILES{} log files (totaling 10.08 GB, 60.72 million lines) were
+each parsed 10 times, the first run discarded, and the execution time for
+the remaining 9 runs averaged.  The first run is discarded for two reasons:
 
 \begin{enumerate}
 
@@ -1565,26 +1568,29 @@ for two reasons:
 
 Saving results to the database was disabled for the test runs, as that
 dominates the run time of the program, and the tests are aimed at measuring
-the speed of the parser rather than the speed of the database.
+the speed of the parser rather than the speed of the database and the disks
+the database is stored on.
 
 \subsubsection{Algorithmic complexity}
 
-An important property of a parser is how execution time scales with input
-size: does it scale linearly, polynomially, or exponentially?
+An important property of a parser is how execution time scales relative to
+input size: does it scale linearly, polynomially, or exponentially?
 Graph~\refwithpage{execution time vs file size vs number of lines graph}
 shows the execution time in seconds, file size in MB and tens of thousands
-of lines per log file per log file.  All three lines run roughly in
-parallel, giving a visual impression that the algorithm scales linearly
-with input size.  This impression is borne out by
-graph~\refwithpage{execution time vs file size vs number lines factor},
-which plots the ratio of file size vs execution time and number of lines vs
-execution time.  As the reader can see, the ratios are quite tightly
-banded, showing that the algorithm scales linearly: the much larger log
-files between points 60 and 70 on the X axis in
-graph~\refwithpage{execution time vs file size vs number of lines graph}
-don't cause any abnormality in the corresponding points in
-graph~\refwithpage{execution time vs file size vs number lines factor}.
-
+of lines per log file.  All three lines run roughly in parallel, giving a
+visual impression that the algorithm scales linearly with input size.  This
+impression is borne out by graph~\refwithpage{execution time vs file size
+vs number lines factor}, which plots the ratio of file size vs execution
+time and ratio of number of lines vs execution time (higher is
+better).\footnote{Table~\refwithpage{execution time vs file size vs number
+lines factor table} shows the ratios for different breakdowns of the log
+files.}  As the reader can see the ratios are quite tightly banded, showing
+that the algorithm scales linearly: the much larger log files between
+points 60 and 70 on the X axis in graph~\refwithpage{execution time vs file
+size vs number of lines graph} actually cause the ratio to increase, rather
+than decrease.  The strange behaviour where larger log files are parsed
+more efficiently is explained fully in \sectionref{Why are there dips in
+the graphs?}.  
 
 \subsubsection{Rule ordering for efficiency}
 
@@ -1612,17 +1618,18 @@ three full test runs were performed with different rule orderings:
         log file in the test run.  This is intended to represent an
         unsorted rule set.
 
-    \item [reverse] Hypothetically the least optimal order: the most
-        frequently matching rules will be tried last.
+    \item [reverse] Hypothetically the worst order: the most frequently
+        matching rules will be tried last.
 
 \end{description}
 
 Graphs~\refwithpage{percentage increase of shuffled over normal}
 and~\refwithpage{percentage increase of reversed over normal} show the
-percentage increase of execution times (mean and standard deviation are
-shown in table~\refwithpage{Regex caching/discarding with different groups
-of log files}).  Overall this provides a modest but worthwhile
-performance increase.
+percentage increase of execution times, with table~\refwithpage{Execution
+time increase for different rule orderings} showing the mean increases for
+different groupings of logs.  Overall this provides a modest but worthwhile
+performance increase of approximately 9\%, for a small investment in time
+and programming.
 
 \subsubsection{Caching each regex}
 
@@ -1662,8 +1669,9 @@ general explanation below.
 The core of the algorithm is quite simple: log lines are generally created
 by substituting variable words into a fixed pattern, and analysis of the
 frequency with which each word occurs can be used to determine whether the
-word is fixed or variable.  This classification can be used to group
-similar log lines and generate a \regex{} to match each group of lines.
+word is variable or part of the fixed pattern.  This classification can be
+used to group similar log lines and generate a \regex{} to match each group
+of lines.
 
 There are 4 steps in the algorithm:
 
@@ -1676,19 +1684,18 @@ There are 4 steps in the algorithm:
         standard start of rejection messages, etc.) with \regex{} keywords
         which the parser will expand when it loads the rule (see the
         \regex{} entry in \sectionref{rule attributes}).  The purpose of
-        this phase is to utilise the existing knowledge to create more
-        accurate \regexes{}.  The new log lines are written to a temporary
-        file, which all subsequent stages use instead of the original input
-        file.
+        this phase is to utilise existing knowledge to create more accurate
+        \regexes{}.  The new log lines are written to a temporary file,
+        which all subsequent stages use instead of the original input file.
 
         In the original algorithm the purpose of the preprocessing stage
         was to reduce the memory consumption of the program.  In the first
         pass it generated a hash from a small range of values for each word
         of each line, incrementing a counter for each hash.  The counters
-        will later be used to filter out words: if the word's hash does not
-        have a high frequency, the word itself cannot have a high
-        frequency, and there is no need to maintain a counter for it,
-        reducing the number of counters and thus the programme's memory
+        will be used in the next pass to filter out words: if the word's
+        hash does not have a high frequency, the word itself cannot have a
+        high frequency, and there is no need to maintain a counter for it,
+        reducing the number of counters and thus the program's memory
         consumption.
 
     \item [Calculate word frequencies]  The position of words within a line
@@ -1697,14 +1704,14 @@ There are 4 steps in the algorithm:
         lines.\footnote{If a variable term within a line contains spaces,
         it will appear to the algorithm as two words rather than one.  This
         will alter the position of subsequent words, so a word occurring in
-        different positions in two log lines may indicate similarity, but
-        the algorithm does not attempt to deal with this possibility.}  The
-        algorithm maintains a counter for each \textit{(word, word's
-        position within the line)\/} tuple, incrementing it each time that
-        word occurs in that position.
+        different positions in two log lines \textit{may\/} indicate
+        similarity, but the algorithm does not attempt to deal with this
+        possibility.}  The algorithm maintains a counter for each
+        \textit{(word, word's position within the line)\/} tuple,
+        incrementing it each time that word occurs in that position.
 
         The original algorithm only maintains counters for words whose hash
-        result has a high frequency from the previous phase; this reduces
+        result from the previous phase has a high frequency; this reduces
         the number of counters maintained by the algorithm, reducing the
         memory requirements of the algorithm.  The modified algorithm omits
         this check because the majority of unique or infrequently occurring
@@ -1717,27 +1724,32 @@ There are 4 steps in the algorithm:
         checked: if its frequency is greater than the threshold supplied by
         the user (1\% of all lines is generally a good starting point) it
         is classified as a fixed word, otherwise it is classified as a
-        variable term.  Variable terms are replaced by \texttt{.+}, which
-        means to match zero or more of any character.  
+        variable term.  If a variable term appears sufficiently often it
+        will be classified as a fixed term, but that should be noticed by
+        the user when reviewing the new \regexes{}.  Variable terms are
+        replaced by \texttt{.+}, which means to match zero or more of any
+        character.  
 
     \item [Build regexes]  The words are reassembled to produce a \regex{}
         matching the line, and a counter is maintained for each \regex{}.
         Contiguous sequences of \texttt{.+} in the newly reassembled
         \regexes{} are collapsed to a single \texttt{.+}; any resulting
-        duplicate \regexes{} are combined, and their counters summed.  If
+        duplicate \regexes{} are combined, and their counters added.  If
         the frequency of a \regex{} is lower than the threshold supplied by
-        the user the \regex{} is discarded.\footnote{This is a second,
-        independent threshold, but once again 1\% of input lines is a good
-        starting point; obviously the threshold depends on the number and
-        type of input lines.}  The new \regexes{} are printed for the user
-        to add to the database, either as new rules or merged into the
-        \regexes{} of existing rules; the counter for each \regex{} is also
-        printed, giving the user an indication of how many of the input
-        lines that \regex{} should match.  Discarding \regexes{} will
-        result in some of the input lines not being matched; this utility
-        should be run again once the unmatched lines have been isolated by
-        running the parser, including the new \regexes{}, with the same
-        input which produced the original set of unparsed lines.
+        the user the \regex{} is discarded.\footnote{This is a second
+        threshold, independent of the threshold used to differentiate
+        between fixed and variable words, but once again 1\% of input lines
+        is a good starting point; obviously the threshold depends on the
+        number and type of input lines.}  The new \regexes{} are printed
+        for the user to add to the database, either as new rules or merged
+        into the \regexes{} of existing rules; the counter for each
+        \regex{} is also printed, giving the user an indication of how many
+        of the input lines that \regex{} should match.  Discarding
+        \regexes{} will result in some of the input lines not being
+        matched; this utility should be run again once the unmatched lines
+        have been isolated by running the parser, including the new
+        \regexes{}, with the same input which produced the original set of
+        unparsed lines.
 
 \end{description}
 
@@ -1767,10 +1779,10 @@ This section dealt with the rules used in parsing Postfix log files:
 
     \item An example log line and the rule matching it illustrated a
         description of how the fields in the rule are used both in the
-        matching phase and the subsequent action that is executed.
+        matching phase and the action that is subsequently executed.
 
-    \item The database table containing the rules is dealt with in
-        \sectionref{rule attributes}, and is not duplicated in this
+    \item The structure of the database table containing the rules is dealt
+        with in \sectionref{rule attributes}, and is not duplicated in this
         section.
 
     \item The topic of rule efficiency was discussed next, covering the
@@ -3752,6 +3764,10 @@ shuffled over normal}{percentage increase of shuffled over normal}
 \showgraph{build/plot-normal-reverse-factor}{Percentage increase of
 reversed over normal}{percentage increase of reversed over normal}
 
+\showtable{build/stats-normal-shuffle-reverse-include}{Execution time
+increase for different rule orderings}{Execution time increase for
+different rule orderings}
+
 \subsubsection{Why are there dips in the graphs?}
 \label{Why are there dips in the graphs?}
 
@@ -3846,12 +3862,9 @@ the ordering is shuffled varies between the optimum and nadir, and the
 performance varies proportionally.
 
 The difference between logs with a mail loop and logs without can be seen
-in table~\refwithpage{Rule ordering with and without a mail loop} showing
-the increases for the different rule orderings and combinations of log
-files:
-
-\showtable{build/stats-normal-shuffle-reverse-include}{Rule ordering with
-and without a mail loop}{Rule ordering with and without a mail loop}
+in table~\refwithpage{Execution time increase for different rule orderings}
+showing the increases for the different rule orderings and combinations of
+log files:
 
 
 
