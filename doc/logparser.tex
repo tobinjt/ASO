@@ -2164,6 +2164,8 @@ after the parent mail.
 
 \subsubsection{Emergent behaviour}
 
+\label{Emergent behaviour}
+
 The rules and actions exhibit emergent behaviour~\cite{Wikipedia-Emergence}
 which is far more complicated than the behaviour encoded in the algorithm.
 The top-level parser could be written in pseudo-code like so (with
@@ -3235,62 +3237,72 @@ improvements which may be implemented in the future.
 \label{conclusion}
 
 Parsing Postfix logs appears at first sight to be an almost trivial task,
-especially given previous experience in parsing logs, but it turns out to
-be a much more taxing project than initially expected.  The variety and
-breadth of log lines produced by Postfix is quite surprising, as a quick
-survey of sample log files gives the impression that the number of distinct
-log lines is quite small; this impression is due to the uneven distribution
-exhibited by logs produced in normal operation (see graph~\refwithpage{rule
-hits graph} for a vivid illustration of this).  
+especially if one has previous experience in parsing logs, but it turns out
+to be a much more taxing project than initially expected.  The variety and
+breadth of log lines produced by Postfix is quite surprising, because a
+quick survey of sample log files gives the impression that the number of
+distinct log lines is quite small; this impression is due to the uneven
+distribution exhibited by logs produced in normal operation (see
+graph~\refwithpage{rule hits graph} for a vivid illustration of this).  
 
 
 Given the diverse nature of the log lines and the ease with which
 administrators can cause new lines to be logged (\sectionref{postfix
 background}), enabling users to easily extend the parser to deal with new
 log lines is a design imperative (\sectionref{parser design}).  Despite the
-resulting initial increase in complexity the job is quite tractable, though
-it does raise interesting efficiency and optimisation questions (answered
-in \sectionref{rule efficiency}).  Providing a tool (\sectionref{creating
-new rules}) to ease the generation of \regexes{} from unparsed log lines
-should greatly help users add rules to parse formerly unparsed lines.
+resulting initial increase in complexity the task is quite tractable,
+though it does raise interesting efficiency and optimisation questions
+(answered in \sectionref{rule efficiency}).  Providing a tool
+(\sectionref{creating new rules}) to ease the generation of \regexes{} from
+unparsed log lines should greatly help users add rules to parse formerly
+unparsed log lines.
 
 
 The implementation not only substantially eases the parsing of new log
-lines, it makes adding new actions (\sectionref{parsing-algorithm}) an
-almost trivial task.  The simplicity of adding a new action
-(\sectionref{adding new actions}) frees the implementor from worrying about
-how their action might disrupt parsing of other lines or the behaviour of
-other actions, allowing their concentration to be focused on correctly
-implementing their action.
+lines, it makes adding new actions (\sectionref{adding new actions}) a
+relatively easy task.  The simplicity of adding a new action frees the
+implementor from worrying about how their action might disrupt parsing of
+other log lines or the behaviour of other actions, allowing their
+concentration to focus on correctly implementing their new action.
 
 
-The division of the parser into rules and actions is unusual because it
-divides the two so completely; although parsers are often divided (lex and
-yacc~\cite{lex-and-yacc} based parsers being an obvious example), the parts
-are usually quite internally interdependent, and will be combined into a
-complete parser by the compilation process; in contrast \parsername{} keeps
-the rules and actions separate until the parser runs.  XXX EXTEND THIS\@;
-SOMETHING ABOUT THE CONTROL FLOW BEING DIFFERENT, I.E. RULE DETERMINES
-ACTION, RATHER THAN ACTION EXPECTING INPUT\@.
+The division of the parser into rules, actions and framework is unusual
+because rules are separated so completely from the actions and framework;
+although parsers are often divided (lex and yacc~\cite{lex-and-yacc} based
+parsers being an obvious example), the parts are usually quite internally
+interdependent, and will be combined into a complete parser by the
+compilation process; in contrast \parsername{} keeps the rules and actions
+separate until the parser runs.  The actions and framework are not as
+completely separated, as the actions depend on services provided by the
+framework; however the actions and framework are not tightly integrated: it
+would be possible, with some work, to completely separate the two.
+
+XXX EXTEND THIS\@; SOMETHING ABOUT THE CONTROL FLOW BEING UNUSUAL, I.E.\
+RULE DETERMINES ACTION, RATHER THAN ACTION EXPECTING INPUT\@.
 
 
-The emergent behaviour~\cite{Wikipedia-Emergence} exhibited by the rules
-and actions is also interesting, and is discussed beside the flow chart
-depicting said emergent behaviour (\sectionref{flow-chart}).  This emergent
-behaviour greatly eases 
+The emergent behaviour~\cite{Wikipedia-Emergence} (\sectionref{Emergent
+behaviour}) exhibited by the rules and actions is also interesting, and is
+discussed after the flow chart (\sectionref{flow-chart}) and explanation of
+the paths through the parser.  This emergent behaviour greatly eases adding
+new actions (\sectionref{adding new actions}), as the actions do not have
+to be inserted into an explicit flow of control; new actions will naturally
+find their place in the paths through the parser available to a mail.
 
 
 The real difficulties arise once the parser is successfully dealing with
 90\% of the log lines, as the irregularities and complications previously
 explained only begin to become apparent once the vast majority of log lines
-have been parsed successfully.  Dealing with numerous, infrequently
-occurring log lines is a simple task, albeit tiresome, whereas dealing with
-mails where information appears to be missing is much more grueling.
-Trawling through the logs, looking for something out of the ordinary,
-possibly hundreds or even thousands of lines away from the last mention of
-the queueid in question, is extremely time consuming and error prone.  In
-many cases the task is not to spot the line which is unusual, but to spot
-that a line normally present is missing.  In all cases the evidence must be
+have been parsed successfully.  Adding new rules to deal with numerous,
+infrequently occurring log lines is a simple task, albeit tiresome (though
+alleviated by the tool described in \sectionref{adding new actions}),
+whereas dealing with mails where information appears to be missing is much
+more grueling.  Trawling through the logs, looking for something out of the
+ordinary, possibly hundreds or even thousands of lines away from the last
+mention of the queueid in question, is extremely time consuming and error
+prone.  In some cases the task is not to spot the line which is unusual,
+but to spot that a line normally present is missing, i.e.\ to realise that
+one line amongst hundreds is absent.  In all cases the evidence must be
 used to construct a hypothesis to explain the irregularities, and that
 hypothesis must then be tested in the parser; if successful the parser must
 be modified to deal with the irregularities, without adversely affecting
@@ -3300,6 +3312,17 @@ described in, and that order closely resembles the frequency with which
 they occur; the most frequently occurring complications dominate the
 warning messages produced, and so naturally they are the first
 complications to be dealt with.
+
+A parser's ability to correctly parse it's input is extremely important;
+the parser's coverage of its test log files is discussed in
+\sectionref{parsing coverage}.  Both its success at parsing individual log
+lines (\sectionref{log-lines-covered}) and its correctness in
+reconstructing each mail's journey through Postfix
+(\sectionref{mails-covered}) are described in detail, including the results
+of manually verifying the correct parsing of a subset of the test log
+files.
+
+\newpage
 
 \appendix
 
