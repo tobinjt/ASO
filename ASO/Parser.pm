@@ -3106,9 +3106,11 @@ sub get_connection_by_queueid {
 =item $self->make_connection_by_queueid($queueid, %attributes)
 
 Creates and returns a new connection, saving it into the state table under
-$queueid,  %attributes will be used to initialise the new connection; there are
+$queueid, %attributes will be used to initialise the new connection; there are
 no restrictions on what can be present in %attributes.  Warns if you try to use
-NOQUEUE as the queueid.
+NOQUEUE as the queueid.  If the queueid already exists, the existing mail will
+be removed if the timestamp of its last result is old enough; in either case a
+warning will be issued.
 
 =back
 
@@ -3123,8 +3125,17 @@ sub make_connection_by_queueid {
     }
 
     if ($self->queueid_exists($queueid)) {
-        $self->my_warn(qq{make_connection_by_queueid: $queueid exists\n},
-            $self->dump_connection($self->get_connection_by_queueid($queueid)));
+        my $old_con = $self->get_connection_by_queueid($queueid);
+        if (($old_con->{results}->[-1]->{timestamp} + (24 * 60 * 60))
+                < $self->{last_timestamp}) {
+            # Assume it's old
+            $self->my_warn(q{make_connection_by_queueid: }
+                    . qq{removing old mail $queueid\n},
+                $self->dump_connection($old_con));
+        } else {
+            $self->my_warn(qq{make_connection_by_queueid: $queueid exists\n},
+                $self->dump_connection($old_con));
+        }
     }
     my $connection = $self->make_connection(queueid => $queueid, %attributes);
     $self->{queueids}->{$queueid} = $connection;
