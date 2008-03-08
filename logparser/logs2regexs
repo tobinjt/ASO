@@ -155,7 +155,11 @@ sub compile_regexs {
     foreach my $regex (@regexs) {
         if (ref $regex) {
             my ($unfiltered_regex, $replacement) = @$regex;
-            my $filtered_regex = ASO::Parser::filter_regex(undef, $unfiltered_regex);
+            # Sneakily use undef instead of an ASO::Parser object.
+            # Make filtered_regex() use strict regex components, to avoid greedy
+            # matching problems.
+            my $filtered_regex = ASO::Parser::filter_regex(
+                undef, $unfiltered_regex, 1);
             push @regex_pairs, [$replacement, qr/$filtered_regex/];
         } else {
             my $filtered_regex = ASO::Parser::filter_regex(undef, $regex);

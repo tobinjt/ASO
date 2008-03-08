@@ -2280,16 +2280,20 @@ sub prune_queueids {
         }
     }
 
+    if ($count) {
+        $self->my_warn(qq{prune_queueids: deleted $count connections\n});
+    }
+
     return $count;
 }
 
 =over 4
 
-=item $self->filter_regex($regex)
+=item $self->filter_regex($regex, $strict)
 
 Substitutes certain keywords in the regex with regex snippets, e.g.
-__SMTP_CODE__ is replaced with \d{3}.  Every regex loaded from the database will
-be processed by filter_regex(), allowing each regex to be largely
+__SMTP_CODE__ is replaced with C<\d{3}>.  Every regex loaded from the database
+will be processed by filter_regex(), allowing each regex to be largely
 self-documenting, be far simpler than it would otherwise have been, and allowing
 bugs in the regex components to be fixed in one place only.
 
@@ -2313,12 +2317,18 @@ separate rules matching lost connections or timeouts after DATA.
 
 The other names should be reasonably self-explanatory.
 
+$strict makes some regex components more restrictive about what they match, e.g.
+__SENDER__ changes from C<.*?> to C<< [^>]*? >>; B<logs2regexs> needs the more
+restrictive regex components, because it uses them in isolation, whereas
+ASO::Parser needs the less restrictive components to match email addresses like
+B<< <>@example.com >>.
+
 =back
 
 =cut
 
 sub filter_regex {
-    my ($self, $regex) = @_;
+    my ($self, $regex, $strict) = @_;
 
     # I'm deliberately allowing a trailing . in $hostname_re.
     my $hostname_re = qr/(?:unknown|(?:[-.\w]+))/mx;
@@ -2352,7 +2362,11 @@ sub filter_regex {
 #   This doesn't work, as it matches valid addresses, not real world addresses.
 #   $regex =~ s/__EMAIL__               /$RE{Email}{Address}/gx;
 #   Wibble: from=<<>@inprima.locaweb.com.br>; just match anything as an address.
-    $regex =~ s/__EMAIL__               /[^>]*?/gmx;
+    if ($strict) {
+        $regex =~ s/__EMAIL__           /[^>]*?/gmx;
+    } else {
+        $regex =~ s/__EMAIL__           /.*?/gmx;
+    }
     # This doesn't match, for varous reason - I think numeric subnets are one.
     #$regex =~ s/__HOSTNAME__           /$RE{net}{domain}{-nospace}/gx;
     $regex =~ s/__HOSTNAME__            /$hostname_re/gmx;
@@ -2721,7 +2735,7 @@ sub save {
         if ($queueid ne q{NOQUEUE}) {
             if (exists $connection->{queueid}
                     and $connection->{queueid} ne $queueid) {
-                $self->my_warn(qq{save: queueid change: }
+                $self->my_warn(q{save: queueid change: }
                     . qq{was $connection->{queueid}, }
                     . qq{now $queueid\n},
                     $self->dump_connection($connection));
