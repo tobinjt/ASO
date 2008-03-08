@@ -277,12 +277,14 @@ sub init_globals {
             $self->filter_regex(q{^__QUEUEID__:\sreject_warning:});
     $self->{reject_warning}   = qr/$self->{reject_warning}/mx;
 
-    # The data to dump in dump_state()
-    $self->{data_to_dump}     = [qw(queueids connections timeout_queueids bounce_queueids)];
+    # The data we maintain, and why (will also be dumped in dump_state())
+    $self->{data_to_dump}     = [qw(queueids connections
+                                    timeout_queueids bounce_queueids
+                                    postsuper_deleted_queueids)];
+    map { $self->{$_} = {} } @{$self->{data_to_dump}};
     # All mail starts off in %connections, unless submitted locally by
     # sendmail/postdrop, and then moves into %queueids if it gets a queueid.
-    $self->{connections}      = {};
-    $self->{queueids}         = {};
+    # 
     # When a connection with a sending client times out during the DATA phase,
     # Postfix will have allocated a queueid for the mail.  We need to discard
     # that mail, which is done in the TIMEOUT action.  Unfortunately, in maybe
@@ -290,11 +292,18 @@ sub init_globals {
     # disconnection, leading to faked mails in the state table.  I'm going to
     # try to track those queueids where the timeout happens before cleanup logs,
     # and then discard the next cleanup line for that queueid.
-    $self->{timeout_queueids} = {};
+    # 
     # Similarly when there's particularly high load the bounce line is sometimes
     # logged after delivery of the bounce notification.  Cache bounce_queueids
     # here so we can detect that and not create a bogus connection.
-    $self->{bounce_queueids}  = {};
+    # 
+    # Occasionally mail currently being delivered will be deleted by postsuper;
+    # maintain a cache of recently deleted mail in postsuper_deleted_queueids so
+    # that SAVE_BY_QUEUEID can check the cache and discard lines for recently
+    # deleted mail.  There's a loss of information here, particularly if the log
+    # line is smtp delivering to a proxy and in future we start connecting pre-
+    # and post-proxy queueids.
+
     # The timestamp of the last log line parsed.  Used for cleaning out
     # $self->{timeout_queueids}, and possibly other uses in future.
     $self->{last_timestamp}   = 0;
@@ -849,6 +858,20 @@ but failed is_valid_program_combination(), COMMIT() will be attempted again.
 sub SAVE_BY_QUEUEID {
     my ($self, $rule, $line, $matches) = @_;
     my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
+    # Deal with this mail being deleted mid-delivery.
+    if (not $self->queueid_exists($queueid)) {
+        my $deleted_con = delete $self->{postsuper_deleted_queueids}->{$queueid};
+        # if the connection exists in the cache, and it ended less than 5
+        # minutes before the current line, assume the current line is for the
+        # deleted connection and discard it.
+        if (defined $deleted_con 
+                and ($deleted_con->{connection}->{end}
+                    > ($line->{timestamp} - 300))) {
+            return;
+        }
+        # If the mail wasn't cached, and doesn't exist in the state tables, just
+        # fall through and a warning will be issued.
+    }
     my $connection = $self->get_connection_by_queueid($queueid);
 
     if (exists $connection->{invalid_program_combination}) {
@@ -1435,7 +1458,11 @@ sub BOUNCE {
 
 Handle a mail being deleted by postsuper; this needs to be dealt with specially
 because sometimes the recipient won't have been logged yet, and we need to fake
-a value.  Calls COMMIT() to do the real work.
+a value.  Calls COMMIT() to do the real work.  Adds deleted connections to the
+cache in postsuper_deleted_queueids; when a mail currently being delivered is
+deleted, we get log messages for the mail after this action finished and the
+mail has been removed from the state tables.  SAVE_BY_QUEUEID will check
+postsuper_deleted_queueids and discard the log line if the queueid if found.
 
 =back
 
@@ -1446,13 +1473,17 @@ sub DELETE {
 
     my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
     my $connection = $self->get_connection_by_queueid($queueid);
+    $self->save($connection, $line, $rule, $matches);
+    # Cache for SAVE_BY_QUEUEID to check, to avoid creating a new connection
+    # after this one has been deleted.
+    $self->{postsuper_deleted_queueids}->{$queueid} = $connection;
+
     my $recipient_found = 0;
     foreach my $result (@{$connection->{results}}) {
         if (exists $result->{recipient}) {
             $recipient_found++;
         }
     }
-    $self->save($connection, $line, $rule, $matches);
     # Directly fiddle with the last result if we didn't find a recipient.
     if (not $recipient_found) {
         $connection->{results}->[-1]->{recipient} = <<"MESSAGE";
@@ -2026,6 +2057,7 @@ sub dump_state {
 
     $self->prune_timeout_queueids();
     $self->prune_bounce_queueids();
+    $self->prune_postsuper_deleted_queueids();
 
     local $Data::Dumper::Sortkeys = 1;
     print $filehandle <<'PREAMBLE';
@@ -2092,12 +2124,13 @@ UNTRACKED_HEADER
 FOOTER
     }
 
-    my $results = join q{, },
+    my $results = join qq{,\n} . q{ } x 12,
         map { qq{q($_) => \\\%$_} }
             @{$self->{data_to_dump}};
     print $filehandle <<"POSTAMBLE";
 
-    return ($results);
+    return ($results
+    );
 }
 
 use warnings q{redefine};
@@ -2172,6 +2205,37 @@ subroutine which does exactly this, so in general the calling sequence will be:
 =back
 
 =cut
+
+=over 4
+
+=item $self->prune_postsuper_deleted_queueids()
+
+Remove any connection in $self->{postsuper_deleted_queueids} more than 10
+minutes older than the timestamp of the last log line parsed, so they don't
+accumulate forever.  Called from dump_state() before dumping.  Returns the
+number of connections deleted from $self->{postsuper_deleted_queueids}.
+
+=back
+
+=cut
+
+sub prune_postsuper_deleted_queueids {
+    my ($self) = @_;
+    my $count = 0;
+
+    # This is dependant on the time difference used in SAVE_BY_QUEUEID.
+    foreach my $queueid (keys %{$self->{postsuper_deleted_queueids}}) {
+        my $connection = $self->{postsuper_deleted_queueids}->{$queueid};
+        if ($connection->{results}->[-1]->{timestamp}
+                < ($self->{last_timestamp} - (5 * 60))) {
+            delete $self->{postsuper_deleted_queueids}->{$queueid};
+            $count++;
+        }
+    }
+    $self->my_warn(qq{prune_postsuper_deleted_queueids: $count\n});
+
+    return $count;
+}
 
 =over 4
 

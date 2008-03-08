@@ -2886,7 +2886,7 @@ case the recipient address will not have been logged, so a dummy recipient
 address needs to be added, as every mail is required to have at least one
 recipient.  This complication has been observed in few log files, but
 typically when it does occur there will be many instances of it, closely
-grouped.
+grouped.  The DELETE action is responsible for handling this complication.
 
 \subsubsection{Further out of order log lines}
 
@@ -2917,6 +2917,36 @@ the memory requirements of the parser.}  The cache of bounce notification
 mails will be pruned whenever the parser's state is saved, though if the
 size of the cache ever becomes a problem it could be pruned periodically to
 keep the size in check.
+
+\subsubsection{Mails deleted during delivery}
+
+\label{Mails deleted during delivery}
+
+The administrator can delete mails using \daemon{postsuper}; occasionally
+mails in the process of being delivered will be deleted.  This results in
+the log lines from the delivery agent (\daemon{local}, \daemon{virtual} or
+\daemon{smtp}) appearing in the log file \textit{after\/} the mail has been
+removed from the state tables and saved in the database.  The DELETE action
+adds deleted mails to a cache, which is checked by the SAVE\_BY\_QUEUEID
+action, and the current log line discarded if the following conditions are
+met:
+
+\begin{enumerate}
+
+    \item The queueid is not found in the state tables. 
+        
+    \item The queueid is found in the cache of deleted mails.
+        
+    \item The timestamp of the log line is within 5 minutes of the end time
+        of the mail.
+
+\end{enumerate}
+
+Sadly this solution involves discarding some data, but the complication
+only arises eight times (tightly grouped in one log file, which is not in
+the group used for testing); if this complication occurred more frequently
+it might be desirable to find the mail in the database and add the log
+line to it.
 
 \subsection{Conclusion}
 
@@ -3215,13 +3245,20 @@ always room for improvement.
         separate, the parser can easily be instructed to use a different
         database to store the results in.
 
+    \item The solution to complication \sectionref{Mails deleted during
+        delivery} involves discarding data.
+
 \end{enumerate}
 
 \subsection{Possible improvements}
 
 \begin{itemize}
 
-    \item Investigate and write the policy server referred to in limitation 3 above.
+    \item Investigate and write the policy server referred to in limitation
+        3 above.
+
+    \item Improve the solution to complication \sectionref{Mails deleted
+        during delivery} so that data is not discarded.
 
 \end{itemize}
 
