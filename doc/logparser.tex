@@ -125,8 +125,6 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
 \end{abstract}
 
-XXX COMPARE SAVING RESULTS TO RAM DISK VERSUS SAVING TO HARD DISK\@.
-
 \newpage
 \tableofcontents
 \listoffigures
@@ -201,11 +199,12 @@ Section~\ref{parsing-algorithm} contains the core of the paper, describing
 a naive parsing algorithm and the complications initially encountered which
 shaped the full algorithm.  A flow chart and a discussion of the emergent
 behaviour exhibited by the algorithm accompanies a comprehensive
-explanation of the different stages of the algorithm.  The actions taken
-during execution of the algorithm are described, followed by the process of
-adding a new action.  The section concludes with an in-depth description of
-the further complications discovered and their solutions which complete the
-algorithm.
+explanation of the different stages of the initial algorithm.  The
+framework which actions and rules fit into is documented, then the actions
+taken during execution of the algorithm are described, followed by the
+process of adding a new action.  The section concludes with an in-depth
+description of the further complications discovered and their solutions
+which complete the parser.
 
 Section~\ref{parsing coverage} analyses the coverage the parser achieves
 over a set of \numberOFlogFILES{} log files taken from a mail server
@@ -3231,6 +3230,7 @@ always room for improvement.
 This section has covered the limitations of the parser and possible
 improvements which may be implemented in the future.
 
+% XXX SHOULD I HAVE THIS \newpage?
 \newpage
 \section{Conclusion}
 
@@ -3313,14 +3313,13 @@ they occur; the most frequently occurring complications dominate the
 warning messages produced, and so naturally they are the first
 complications to be dealt with.
 
-A parser's ability to correctly parse it's input is extremely important;
-the parser's coverage of its test log files is discussed in
-\sectionref{parsing coverage}.  Both its success at parsing individual log
-lines (\sectionref{log-lines-covered}) and its correctness in
-reconstructing each mail's journey through Postfix
-(\sectionref{mails-covered}) are described in detail, including the results
-of manually verifying the correct parsing of a subset of the test log
-files.
+A parser's ability to correctly parse its input is extremely important; the
+parser's coverage of its test log files is discussed in \sectionref{parsing
+coverage}.  Both its success at parsing individual log lines
+(\sectionref{log-lines-covered}) and its correctness in reconstructing each
+mail's journey through Postfix (\sectionref{mails-covered}) are described
+in detail, including the results of manually verifying the correct parsing
+of a subset of the test log files.
 
 \newpage
 
@@ -3762,6 +3761,8 @@ understanding of Postfix logs achieved by \parsername{}.
 \section{Graphs}
 
 \label{graphs}
+
+XXX COMPARE SAVING RESULTS TO RAM DISK VERSUS SAVING TO HARD DISK\@.
 
 \renewcommand{\figurename}{Graph}
 
