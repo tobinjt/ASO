@@ -145,5 +145,5 @@ test-logs:
 
 gzipped-logs:
 	make db
-	perl logparser --skip_inserting_results --year 2007 --debug_results --out-statefile state.gzipped-logs      --individual-state-files                                                     ../../../../logs/mail.log-20070[5-9]*.gz ../../../../logs/mail.log-20071*.gz   2> warnings.gzipped-logs
-	perl logparser --skip_inserting_results --year 2008 --debug_results --out-statefile state.gzipped-logs-2008 --individual-state-files --in-statefile state.gzipped-logs-mail.log-20071231 ../../../../logs/mail.log-2008*.gz                                             2> warnings.gzipped-logs-2008
+	perl logparser --skip_inserting_results --year 2007 --debug_results --out-statefile state.gzipped-logs      --individual-state-files                                                     ../../../../logs/mail.log-2007*.gz 2> warnings.gzipped-logs
+	perl logparser --skip_inserting_results --year 2008 --debug_results --out-statefile state.gzipped-logs-2008 --individual-state-files --in-statefile state.gzipped-logs-mail.log-20071231 ../../../../logs/mail.log-2008*.gz 2> warnings.gzipped-logs-2008
