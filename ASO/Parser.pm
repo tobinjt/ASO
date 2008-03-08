@@ -549,7 +549,7 @@ sub parse {
 =item $parser->post_parsing()
 
 Do anything that needs to be done after parsing: currently it just runs 
-$self->prune_queueids().
+$self->prune_aborted_mails().
 
 =back
 
@@ -558,7 +558,7 @@ $self->prune_queueids().
 sub post_parsing {
     my ($self) = @_;
 
-    return $self->prune_queueids();
+    return $self->prune_aborted_mails();
 }
 
 =over 4
@@ -2299,7 +2299,7 @@ sub prune_bounce_queueids {
 
 =over 4
 
-=item $self->prune_queueids()
+=item $self->prune_aborted_mails()
 
 Remove any connection in $self->{queueids} which doesn't have any entries after
 the cleanup log line and is more than 12 hours older than the timestamp of the
@@ -2313,7 +2313,7 @@ these mails accumulating.  Returns the number of connections deleted.
 
 =cut
 
-sub prune_queueids {
+sub prune_aborted_mails {
     my ($self) = @_;
 
     # Anything earlier this is old.
@@ -2329,7 +2329,7 @@ sub prune_queueids {
     foreach my $connection ($self->get_all_connections_by_queueid()) {
         # Occasionally we have a connection with no results.  Weird.
         if (scalar @{$connection->{results}} == 0) {
-            $self->my_warn(q{prune_queueids: connection with zero results!},
+            $self->my_warn(q{prune_aborted_mails: connection with zero results!},
                 $self->dump_connection($connection));
             next QUEUEID;
         }
@@ -2342,10 +2342,6 @@ sub prune_queueids {
             $self->delete_connection_by_queueid($connection->{queueid});
             $count++;
         }
-    }
-
-    if ($count) {
-        $self->my_warn(qq{prune_queueids: deleted $count connections\n});
     }
 
     return $count;
