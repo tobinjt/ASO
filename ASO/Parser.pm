@@ -3129,8 +3129,9 @@ sub make_connection_by_queueid {
         if (($old_con->{results}->[-1]->{timestamp} + (24 * 60 * 60))
                 < $self->{last_timestamp}) {
             # Assume it's old
-            $self->my_warn(q{make_connection_by_queueid: }
-                    . qq{removing old mail $queueid\n},
+            $self->my_warn(qq{make_connection_by_queueid: $queueid: }
+                    . q{removing old mail; maybe some of its log lines }
+                    . qq{are in previous log files?\n},
                 $self->dump_connection($old_con));
         } else {
             $self->my_warn(qq{make_connection_by_queueid: $queueid exists\n},
