@@ -369,20 +369,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'check_policy_service'
 );
 
--- NOQUEUE: reject: RCPT from hm22.locaweb.com.br[200.234.196.44]: 450 4.7.1 <hm22.locaweb.com.br[200.234.196.44]>: Client host rejected: Greylisted, see http://isg.ee.ethz.ch/tools/postgrey/help/cs.tcd.ie.html; from=<<>@inprima.locaweb.com.br> to=<mary.sharp@cs.tcd.ie> proto=ESMTP helo=<hm22.locaweb.com.br>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, priority, restriction_name)
-    VALUES('Greylisted (weird addresses)', 'Client greylisted; see http://www.greylisting.org/ for more details (weird addresses)',
-        'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__HOSTNAME__)\[(__IP__)\]>: Client host rejected: Greylisted, see (http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+); from=<(.*?)> to=<(.*?)> proto=E?SMTP helo=<(__HELO__)>$',
-        'recipient = 9, data = 7, sender = 8',
-        'helo = 10, client_hostname = 5, client_ip= 6',
-        'REJECTION',
-        1,
-        'REJECTED',
-        -1,
-        'check_policy_service'
-);
-
 -- <nicholas@seaton.biz>: Sender address rejected: Address uses MX in loopback address space (127.0.0.0/8); from=<nicholas@seaton.biz> to=<gillian.long@cs.tcd.ie> proto=ESMTP helo=<friend>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Sender MX in loopback address space', 'The MX for sender domain is in loopback address space, so cannot be contacted',
@@ -446,20 +432,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         1,
         'REJECTED',
         'check_recipient_mx_access'
-);
-
--- <andr @webworker.com>: Sender address rejected: Address uses MX in private address space (192.168.0.0/16); from=<andr?@webworker.com> to=<chi@cs.tcd.ie> proto=ESMTP helo=<p54B071E9.dip.t-dialin.net>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
-    VALUES('Sender MX in private address space (192.168.0.0/16) (weird address)', 'The MX for sender domain is in private address space (192.168.0.0/16), so cannot be contacted (weird address)',
-        'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
-        'recipient = 6, sender = 5',
-        'helo = 7',
-        'REJECTION',
-        1,
-        -5,
-        'REJECTED',
-        'check_sender_mx_access'
 );
 
 -- <aeneasdecathlon@rotnot.com>: Sender address rejected: Address uses MX in private address space (192.168.0.0/16); from=<aeneasdecathlon@rotnot.com> to=<MCCARTHY@CS.tcd.ie> proto=ESMTP helo=<vms1.tcd.ie>
@@ -550,20 +522,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'helo = 7',
         'REJECTION',
         1,
-        'REJECTED',
-        'check_sender_mx_access'
-);
-
--- <honor 37dieter@cathousemails.com>: Sender address rejected: Address uses MX in "this" address space (0.0.0.0/8); from=<honor?37dieter@cathousemails.com> to=<htewari@cs.tcd.ie> proto=ESMTP helo=<88-174.2-85.cust.bluewin.ch>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
-    VALUES('Sender MX in "this" address space (0.0.0.0/8) (weird addresses)', 'The MX for sender domain is in "this" address space (0.0.0.0/8), so cannot be contacted (weird addresses)',
-        'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in "this" address space \(0.0.0.0/8\); from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
-        'recipient = 6, sender = 5',
-        'helo = 7',
-        'REJECTION',
-        1,
-        -5,
         'REJECTED',
         'check_sender_mx_access'
 );
@@ -695,20 +653,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'helo = 7',
         'REJECTION',
         1,
-        'REJECTED',
-        'reject_unauth_destination'
-);
-
--- < <vinny.reynolds@cs.tcd.ie>,  patrick.o'donnell@aberdeen-asset.com@cs.tcd.ie>: Relay access denied; from=<Niall.Roche@esb.ie> to=< <vinny.reynolds@cs.tcd.ie>,  patrick.o'donnell@aberdeen-asset.com@cs.tcd.ie> proto=ESMTP helo=<genuse3.esb.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
-    VALUES('Relaying denied (weird address)', 'Client tried to use us as an open relay (weird address)',
-        'postfix/smtpd',
-        '^__RESTRICTION_START__ <(.*)>: Relay access denied; from=<(__SENDER__)> to=<.*> proto=E?SMTP helo=<(__HELO__)>$',
-        'recipient = 5, sender = 6',
-        'helo = 7',
-        'REJECTION',
-        1,
-        -5,
         'REJECTED',
         'reject_unauth_destination'
 );
@@ -932,20 +876,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'reject_unknown_sender_domain'
 );
 
--- <      @web70210.mail.krs.yahoo.com>: Sender address rejected: Malformed DNS server reply; from=<??????@web70210.mail.krs.yahoo.com> to=<stephen.farrell@cs.tcd.ie> proto=ESMTP helo=<sp789011>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
-    VALUES('Malformed DNS reply (weird sender address)', 'The DNS reply was malformed when checking the sender domain (weird address)',
-        'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Malformed DNS server reply; from=<(__SENDER__)> to=<.*> proto=E?SMTP helo=<(__HELO__)>$',
-        'sender = 6, recipient = 5',
-        'helo = 7',
-        'REJECTION',
-        1,
-        -5,
-        'REJECTED',
-        'reject_unknown_sender_domain'
-);
-
 -- <Gunter_LetitiaV@bionorthernireland.com>: Sender address rejected: Malformed DNS server reply; from=<Gunter_LetitiaV@bionorthernireland.com> to=<donnelly@cs.tcd.ie> proto=SMTP helo=<2D87008>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Malformed DNS reply (sender)', 'The DNS reply was malformed when checking the sender domain',
@@ -1071,20 +1001,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'INFO'
 );
 
--- 513CE38EB: warn: RCPT from mail.hibernianwindpower.ie[87.198.212.129]: Logging HELO; from=<Niall.Roche@esb.ie> to=< <vinny.reynolds@cs.tcd.ie>,  patrick.o'donnell@aberdeen-asset.com@cs.tcd.ie> proto=ESMTP helo=<genuse3.esb.ie>
--- NOQUEUE: warn: RCPT from apollo.niss.gov.ua[194.93.188.130]: Logging HELO; from=<<>@apollo.niss.gov.ua> to=<tithed7@cs.tcd.ie> proto=ESMTP helo=<apollo.niss.gov.ua>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, priority, queueid, postfix_action)
-    VALUES('Logging HELO (weird address)', 'HELO logged to provide additional data (weird address)',
-        'postfix/smtpd',
-        '^(__QUEUEID__): warn: (?:__SHORT_CMD__|DATA) from (__HOSTNAME__)\[(__IP__)\]: Logging HELO; from=<(.*)> to=<(.*)> proto=E?SMTP helo=<(__HELO__)>$',
-        'sender = 4, recipient = 5',
-        'client_hostname = 2, client_ip = 3, helo = 6',
-        'SAVE_BY_QUEUEID',
-        -5,
-        1,
-        'INFO'
-);
-
 -- D54C63203: warn: DATA from lists-outbound.sourceforge.net[66.35.250.225]: Logging HELO; from=<gumstix-users-bounces@lists.sourceforge.net> proto=ESMTP helo=<lists-outbound.sourceforge.net>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Logging HELO (no recipien address)', 'HELO logged to provide additional data (no recipient address)',
@@ -1133,20 +1049,6 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         'MAIL_PICKED_FOR_DELIVERY',
         1,
-        'INFO'
-);
-
--- A93F138A1: from=<<>@inprima.locaweb.com.br>, size=15535, nrcpt=1 (queue active)
--- 6508A4317: from=<florenzaaluin@callisupply.com>, size=2656, nrcpt=1 (queue active)
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action)
-    VALUES('qmgr processing mail (weird from address)', 'qmgr is going to deliver this mail (weird from address)',
-        'postfix/qmgr',
-        '^(__QUEUEID__): from=<(.*?)>, size=(\d+), nrcpt=\d+ \(queue active\)$',
-        'sender = 2, size = 3',
-        '',
-        'MAIL_PICKED_FOR_DELIVERY',
-        1,
-        -1,
         'INFO'
 );
 
