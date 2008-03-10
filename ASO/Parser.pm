@@ -266,7 +266,7 @@ sub init_globals {
     # Used in $self->my_warn() and $self->my_die() to report the logfile we're
     # currently parsing.
     $self->{current_logfile}  = q{INITIALISATION};
-    local $.                  = 0;
+    $.                        = 0;
 
     # Used to validate queueids in get_queueid_from_matches() and in
     # maybe_remove_faked() to check if a message-id contains a queueid.
@@ -1366,7 +1366,7 @@ sub SMTPD_DIED {
         $self->save($connection, $line, $rule, $matches);
         $self->tidy_after_timeout($connection);
     }
-    return $self->handle_dead_smtpd($line, q{SMTPD_DIED}, $rule);
+    return $self->handle_dead_smtpd($rule, $line, $matches, q{SMTPD_DIED});
 }
 
 =over  4
@@ -1615,33 +1615,26 @@ sub tidy_after_timeout {
 
 =over  4
 
-=item $self->handle_dead_smtpd($line, $action, $regex)
+=item $self->handle_dead_smtpd($rule, $line, $matches, $action);
 
-Deals with an smtpd dying or being killed.  Matches $regex against $line->{text}
-and uses $1 as the pid.  Uses $action in error messages.  Calls
-delete_dead_smtpd() if the connection exists, returns silently otherwise.
+Deals with an smtpd dying or being killed.  The pid needs to be captured by the
+rule's regex; the number of the capture is specified by B<pid> in result_cols.
+Uses $action in error messages.  Calls delete_dead_smtpd() if the connection
+exists, returns silently otherwise.
 
 =back
 
 =cut
 
 sub handle_dead_smtpd {
-    my ($self, $line, $action, $rule) = @_;
+    my ($self, $rule, $line, $matches, $action) = @_;
 
-    # NOTE: this kinda breaks the encapsulation, but feck it, I'm not writing
-    # another accessor unless something like this is going to be used elsewhere.
-    my $regex = $rule->{result_data}->{pid_regex};
-    if (not defined $regex) {
-        $self->my_die(qq{handle_dead_smtpd: rule doesn't define pid_regex},
+    my $pid_capture = $rule->{result_cols}->{pid};
+    if (not defined $pid_capture) {
+        $self->my_die(qq{handle_dead_smtpd: rule doesn't define pid},
             $self->dump_rule($rule));
     }
-    if ($line->{text} !~ m/$regex/) {
-        $self->my_warn(qq{$action: regex >>$regex<< doesn't match }
-            . qq{line: $line->{text}\n});
-        return;
-    }
-
-    my $pid = $1;
+    my $pid = $matches->[$pid_capture];
     if (not $self->pid_exists($pid)) {
         return;
     }

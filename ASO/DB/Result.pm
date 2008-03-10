@@ -181,7 +181,7 @@ my %cols = (
         result_cols     => 1,
     },
     # used in SMTPD_DIED
-    pid_regex       => {
+    pid             => {
         result_cols     => 1,
     },
 );
