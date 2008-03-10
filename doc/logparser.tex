@@ -1150,8 +1150,8 @@ Each rule defines the following:
         each regex}.
 
     \item [result\_cols, connection\_cols] Specifies how the fields in the
-        log line will be extracted from the log line.  The format is:
-        \newline \texttt{smtp\_code = 1; recipient = 2, sender = 4;}
+        log line will be extracted.  The format is:
+        \newline \tab{} \texttt{smtp\_code = 1; recipient = 2, sender = 4;}
         \newline i.e.\ semi-colon or comma separated assignment statements,
         with the variable name on the left and the matching capture from
         the \regex{} on the right hand side.  The list of acceptable
@@ -1162,8 +1162,9 @@ Each rule defines the following:
         \texttt{result\_cols: sender, recipient, smtp\_code, message\_id,
         \newline \tab{} size,} and \texttt{data}
 
-        Additionally \texttt{pid\_regex} and \texttt{child} are used by the
-        \texttt{TRACK, BOUNCE} and \texttt{SMTPD\_DIED} actions.
+        Additionally \texttt{child} and \texttt{pid} are used respectively
+        by the \texttt{TRACK}, \texttt{BOUNCE} and \texttt{SMTPD\_DIED}
+        actions.
 
     \item [result\_data, connection\_data] Sometimes rules need to supply a
         piece of data which isn't present in the log line: e.g.\ setting
