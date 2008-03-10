@@ -977,6 +977,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- This has a high priority so that it supercedes the following rule, catching
 -- uselessly logged HELOs.
 -- NOQUEUE: warn: RCPT from unknown[200.42.252.162]: Logging HELO; from=<apple@cs.tcd.ie> to=<apple@cs.tcd.ie> proto=ESMTP helo=<200.42.252.162>
+-- NOQUEUE: warn: RCPT from apollo.niss.gov.ua[194.93.188.130]: Logging HELO; from=<<>@apollo.niss.gov.ua> to=<tithed7@cs.tcd.ie> proto=ESMTP helo=<apollo.niss.gov.ua>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action)
     VALUES('Logging HELO (ignored)', 'HELO logged to provide additional data (ignored, an improved version is now in use)',
         'postfix/smtpd',
@@ -1208,7 +1209,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- 1C8E84317: to=<dolan@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=8, status=sent (250 2.6.0 Ok, id=00218-02, from MTA([127.0.0.1]:11025): 250 Ok: queued as 2677C43FD)
 -- 730AC43FD: to=<grid-ireland-alert@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=0, status=sent (250 2.6.0 Ok, id=15759-01-2, from MTA([127.0.0.1]:11025): 250 Ok: queued as A3B7C4403)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action)
-    VALUES('mail being filtered', 'mail has been passed to a proxy  for filtering',
+    VALUES('mail being filtered', 'mail has been passed to a proxy for filtering',
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=127.0.0.1\[127.0.0.1\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=sent \(((250) .*)\)$',
         'recipient = 2, smtp_code = 4, data = 3',
@@ -1241,7 +1242,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
     VALUES('mail delayed', 'the connection timed out while trying to deliver mail',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(?:none|__HOSTNAME__\[__IP__\](?::\d+)?), (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:conversation with|connect to) (__HOSTNAME__)\[(__IP__)\]: (?:Connection timed out|timed out while receiving the initial server greeting|Connection reset by peer)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(?:none|__HOSTNAME__\[__IP__\](?::\d+)?), (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:conversation with|connect to) (__HOSTNAME__)\[(__IP__)\](?::)? (?:Connection timed out|timed out while receiving the initial server greeting|Connection reset by peer)\)$',
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
@@ -1643,11 +1644,11 @@ VALUES('Lost connection after data', 'Lost connection after end-of-data - messag
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Malformed DNS reply, or no data', 'The DNS reply was malformed, or the requested record was not found',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced \(((?:Host or domain name not found. )?Name service error for name=__HOSTNAME__ type=(?:A|AAAA|MX): (?:Malformed name server reply|Host found but no data record of requested type))\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced \(((?:Host or domain name not found. )?Name service error for name=(__HOSTNAME__) type=(?:A|AAAA|MX): (?:Malformed name server reply|Host found but no data record of requested type))\)$',
         'recipient = 2, data = 3',
-        '',
+        'server_hostname = 4',
         'smtp_code = 554',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
+        'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
         'SAVE_BY_QUEUEID',
         1,
         'BOUNCED'
