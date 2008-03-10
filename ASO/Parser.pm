@@ -969,14 +969,7 @@ sub COMMIT {
     # bounce line hasn't been seen for it.
     if (exists $connection->{bounce_notification}
             and not exists $connection->{bounce_line_seen}) {
-        # Warn if the queueid is already present.
-        if (exists $self->{bounce_queueids}->{$connection->{queueid}}) {
-            $self->my_warn(
-                qq{$connection->{queueid} already exists in bounce_queueids},
-                $self->dump_connection(
-                    $self->{bounce_queueids}->{$connection->{queueid}})
-            );
-        }
+        # Unconditionally replace the previous entry.
         $self->{bounce_queueids}->{$connection->{queueid}} = $connection;
     }
 
@@ -2232,7 +2225,6 @@ sub prune_postsuper_deleted_queueids {
             $count++;
         }
     }
-    $self->my_warn(qq{prune_postsuper_deleted_queueids: $count\n});
 
     return $count;
 }
