@@ -580,15 +580,15 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- Server configuration problem; from=<Trav-Buys@easytriprep.com> to=<mary.sharp@cs.tcd.ie> proto=ESMTP helo=<mail.easytriprep.com>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
-    VALUES('Local server configuration program', 'There is a problem wit hthe configuration of the local mail server, so mail is not being accepted',
+    VALUES('Local server configuration program', 'There is a problem with the configuration of the local mail server, so mail is not being accepted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ Server configuration problem; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ Server configuration (?:problem|error); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
         1,
         'REJECTED',
-        'Internal misconfiguration'
+        'Server misconfiguration'
 );
 
 -- <cs.tcd.ie>: Helo command rejected: You are not in cs.tcd.ie; from=<van9219@yahoo.co.jp> to=<david.ocallaghan@cs.tcd.ie> proto=SMTP helo=<cs.tcd.ie>
@@ -807,10 +807,11 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 
 -- <DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<bounce-523207-288@lists.tmforum.org> to=<vwade@cs.tcd.ie> proto=SMTP helo=<lists.tmforum.org>
 -- <DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<daffy982@livedoor.com> to=<tfernand@cs.tcd.ie> proto=ESMTP helo=<adler.ims.uni-stuttgart.de>
+-- <DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<vwade@cs.tcd.ie> proto=ESMTP helo=<webmail.cs.tcd.ie>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Bad pipelining', 'The client tried to use pipelining before Postfix allowed it',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<(__SENDER__)> (?:to=<(__RECIPIENT__)> )?proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
         'REJECTION',
@@ -953,6 +954,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         1,
         'REJECTED',
         'check_sender_access'
+);
+
+-- <unknown[87.192.55.104]>: Client host rejected: TOO MANY CONNECTIONS; proto=SMTP
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+    VALUES('Rejecting client which connects too many times', 'Rejecting client which connects too many times',
+        'postfix/smtpd',
+        '^(__QUEUEID__): reject: CONNECT from (__HOSTNAME__)\[(__IP__)\]: 554 5.7.1 <__HOSTNAME__\[__IP__\]>: Client host rejected: TOO MANY CONNECTIONS; proto=E?SMTP$',
+        '',
+        'client_hostname = 2, client_ip = 3',
+        'REJECTION',
+        1,
+        'REJECTED',
+        'check_client_access'
 );
 
 -- }}}
@@ -1739,6 +1753,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'INFO'
 );
 
+-- BEAA25406B: to=<mcbridej@cs.tcd.ie>, relay=local, delay=0.09, delays=0.03/0/0/0.06, dsn=4.3.0, status=deferred (error reading forwarding file: Permission denied)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Local delivery agent could not open user .forward file', 'Local delivery agent could not open user .forward file',
+        'postfix/local',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(?:__RECIPIENT__)>,)? relay=local, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=deferred \(error reading forwarding file: Permission denied\)$',
+        'recipient = 2, data = 3',
+        '',
+        'SAVE_BY_QUEUEID',
+        1,
+        'INFO'
+);
+
 -- 609504400: to=<gap@cs.tcd.ie>, relay=local, delay=0, status=bounced (mail forwarding loop for gap@cs.tcd.ie)
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action)
     VALUES('Mail forwarding loop', 'Postfix bounced a mail due to a mail forwarding loop',
@@ -1756,7 +1782,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Postifx warning about something', 'Postfix has logged a warning; probably it should be investigated',
         'postfix/local',
-        '^warning: (?:required alias not found: .*|pipe_command_read: read time limit exceeded|premature end-of-input on .* socket while reading input attribute name|__QUEUEID__: defer service failure)$',
+        '^warning: (?:required alias not found: .*|pipe_command_read: read time limit exceeded|premature end-of-input on .* socket while reading input attribute name|__QUEUEID__: defer service failure|close file .*.forward: Permission denied)$',
         '',
         '',
         'IGNORE',
@@ -1988,6 +2014,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORED'
 );
 
+-- Renamed to match inode number: 19 messages
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Postfix renamed messages in queue to match inodes', 'Postfix renamed some mails in the queue to match their inode numbers; this generally happens after the queue is backed up and restored',
+        'postfix/postsuper',
+        '^(?:Renamed to match inode number: \d+ messages|warning: QUEUE FILE NAMES WERE CHANGED TO MATCH INODE NUMBERS)$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
 -- }}}
 
 -- CLEANUP RULES {{{1
@@ -2057,6 +2095,18 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('Cleanup interrupted by watchdog timer', 'Cleanup interrupted by watchdog timer, it must have gotten hung up on a system call',
         'postfix/cleanup',
         '^fatal: watchdog timeout$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
+
+-- table cdb:/mail/postfix/etc/grid.ie-aliases(0,lock|fold_fix) has changed -- restarting
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Postfix/cleanup noticed a table changed', 'Postfix/cleanup noticed that a lookup table has changed, so it is restarting',
+        'postfix/cleanup',
+        '^table .* has changed -- restarting$',
         '',
         '',
         'IGNORE',
