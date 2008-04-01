@@ -1954,7 +1954,7 @@ Multiple independent mails may be delivered during one connection: this
 requires the algorithm to clone the current data as soon as a mail is
 accepted, so that subsequent mails won't trample over each other's data.
 This must be done every time a mail is accepted, as it's impossible to tell
-in advance which connections will accept multiple mails.  Happily once the
+in advance which connections will accept multiple mails.  Happily, once the
 mail has been accepted log entries won't be correlated by \pid{} for that
 mail any more (its queueid will be used instead), so there isn't any
 ambiguity about which mail a given log line belongs
@@ -1997,12 +1997,27 @@ Subsequently the parent mail will log the creation of the child mail:
 \texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline
 delay=0, status=sent (forwarded as 56F5B43FD)}
 
-Unfortunately while all log lines from an individual process appear in
+The child mail has been created with queueid \texttt{56F5B43FD}.  Different
+delivery methods result in different log lines:
+
+\begin{description}
+
+    \item [Re-injected for forwarding:] forwarded as 56F5B43FD
+
+    \item [Delivered to a remote \SMTP{} server:] 250 Ok: queued as
+        BD07D3C49
+
+    \item [Local delivery:] delivered to command:
+        /mail/procmail/bin/procmail -p -t /mail/procmail/etc/procmailrc
+
+\end{description}
+
+Unfortunately, while all log lines from an individual process appear in
 chronological order, the order in which log lines from different processes
 are interleaved is subject to the vagaries of process scheduling.  In
-addition the first log line belonging to the child mail (the log line cited
-above belongs to the parent mail) is logged by \daemon{qmgr}, so the order
-also depends on how busy \daemon{qmgr} is.\footnote{Postfix is quite
+addition, the first log line belonging to the child mail (the log line
+cited above belongs to the parent mail) is logged by \daemon{qmgr}, so the
+order also depends on how busy \daemon{qmgr} is.\footnote{Postfix is quite
 paranoid about mail delivery, an excellent characteristic for an \MTA{} to
 possess, so it won't log that the child has been created until it is
 absolutely certain that the mail has been written to disk.}
@@ -2013,11 +2028,13 @@ coming from an unknown origin, and subsequently clear the flag if and when
 the origin of the mail becomes clear.  Obviously the parser could omit
 checking of where mails originate from, but the author believes that it is
 better to require an explicit source, as bugs in the parser are more likely
-to be exposed.
+to be exposed; such checks helped to identify the complications described
+in \sectionref{discarding cleanup lines} and \sectionref{pickup logging
+after cleanup}.
 
 Process scheduling can have a still more confusing effect: quite often the
 child mail will be created, delivered and entirely finished with
-\textbf{before} the parent logs the creation log line!  Thus mails flagged
+\textbf{before} the parent logs the creation log line!  Thus, mails flagged
 as coming from an unknown origin cannot be entered into the database when
 their final log line is parsed; instead they must be marked as ready for
 entry and subsequently entered by the parent mail once it has been
@@ -2460,7 +2477,7 @@ effort can be focused on the correctness of their action.  The only
 negative aspect is that the process involves editing the parser source
 code, which makes upgrading to a later version of the parser more
 difficult, though by no means impossible.  If the author of the new action
-wishes they can take advantage of the parser's object oriented
+wishes, they can take advantage of the parser's object oriented
 implementation~\cite{Wikipedia-object-orientation} by subclassing it and
 implementing their changes in the derived class, allowing future upgrading
 of the parser with greatly reduced chance of conflicts.\footnote{The real
@@ -2503,7 +2520,7 @@ these complications caused the parser to operate incorrectly, generating
 either warning messages or leaving mails in the state table.  The frequency
 of occurrence is much higher at the start of the list, with the first
 complication occurring several orders of magnitude more frequently than the
-last.  When deciding which problem to address next the most common was
+last.  When deciding which problem to address next, the most common was
 always chosen, as resolving the most common problem would yield the biggest
 improvement in the parser, prune the greatest number of mails from
 the state tables and error messages, and make the remaining problems more
@@ -2546,8 +2563,9 @@ must be used to identify bounce notifications, and those heuristics are:
 
 \end{enumerate}
 
-Once a mail has been identified as a bounce notification the unknown origin
-flag is cleared and the mail can be cleaned up and entered in the database.
+Once a mail has been identified as a bounce notification, the unknown
+origin flag is cleared and the mail can be cleaned up and entered in the
+database.
 
 There is a small chance that a mail will be incorrectly identified as a
 bounce notification, as the heuristics used may be too broad.  For this to
@@ -2567,10 +2585,10 @@ occur the following conditions would have to be met:
 \end{enumerate}
 
 The most likely cause of mis-identification is if a mail generated
-internally by Postfix is identified as a bounce notification when it is a
-different type of message; arguably this is a benefit rather than a
-drawback, as other mails generated internally by Postfix will be handled
-correctly.
+internally by Postfix is identified as a bounce notification but it is
+actually a different type of message; arguably this is a benefit rather
+than a drawback, as other mails generated internally by Postfix will be
+handled correctly.
 
 Postfix 2.3 (and hopefully subsequent versions) log the creation of a
 bounce message.
@@ -2588,11 +2606,11 @@ the \SMTP{} session:
 
 \begin{verbatim}
     EHLO client.hostname
-    MAIL FROM: <sender@address>
-    RCPT TO: <recipient@address>
+    MAIL FROM: <sender@example.com>
+    RCPT TO: <recipient@example.com>
     RSET
-    MAIL FROM: <sender@address>
-    RCPT TO: <recipient@address>
+    MAIL FROM: <sender@example.com>
+    RCPT TO: <recipient@example.com>
     DATA
 \end{verbatim}
 
@@ -2629,7 +2647,7 @@ the CLONE action where a list of cloned connections is maintained.
 Some mail clients disconnect abruptly if a second or subsequent recipient
 is rejected; they may also disconnect after other errors, but such
 disconnections are either unimportant or are handled elsewhere in the
-parser (\sectionref{timeouts-during-data-phase}).  Sadly Postfix doesn't
+parser (\sectionref{timeouts-during-data-phase}).  Sadly, Postfix doesn't
 log a message saying the mail has been discarded, as should be expected by
 now.  The checks to identify this happening are:
 
@@ -2678,34 +2696,28 @@ following in the TIMEOUT action:
         results.
 
     \item If no mails have been accepted yet nothing needs to be done; the
-        TIMEOUT action ends.  The TIMEOUT action is dependant on the CLONE
-        action keeping a list of all mails accepted on each connection.
+        TIMEOUT action ends.  
 
-    \item \ESMTP{} pipelining allows the client to send MAIL FROM, RCPT TO
-        and DATA commands in one packet, instead of sending each command
-        individually and waiting for the reply before sending subsequent
-        commands.  If pipelining is used and Postfix rejects any command
-        there is no way for the client to tell which command was rejected.
-        Some clients make no attempt to recover and disconnect uncleanly;
-        others presumably stop pipelining and restart the mail sending
-        operation.  The client could attempt to parse the error message,
-        but that would be extremely error prone, whereas not pipelining
-        makes the cause of the error message obvious.
-
-        XXX CHECK IF THE DESCRIPTION ABOVE IS CORRECT\@.
-
-        A timeout may thus apply either to an accepted mail or a rejected
-        mail.  To distinguish between the two cases the algorithm compares
-        the timestamp of the last accepted mail against the timestamp of
-        the last line logged by \daemon{smtpd} for that connection.  If the
-        \daemon{smtpd} timestamp is later there was a rejection between the
-        accepted mail and the timeout, therefore the timeout applies to a
-        rejected mail; the timeout has already been recorded so the timeout
-        action finishes.  If the mail acceptance timestamp is greater then
-        the timeout applies to the just-accepted mail, which will be
-        discarded.
-
+    \item If one or more recipients have been accepted Postfix will have
+        allocated a queueid for the incoming mail, and there will be a mail
+        in the state tables which needs to be dealt with.
+        
 \end{enumerate}
+
+A timeout may thus apply either to an accepted mail or a rejected mail.  To
+distinguish between the two cases the algorithm compares the timestamp of
+the last accepted mail against the timestamp of the last line logged by
+\daemon{smtpd} for that connection (the TIMEOUT action is dependant on the
+CLONE action keeping a list of all mails accepted on each connection).  If
+the mail acceptance timestamp is later then the timeout applies to the
+just-accepted mail, which will be discarded.  If the \daemon{smtpd}
+timestamp is later there was a rejection between the accepted mail and the
+timeout: the action assumes that the timeout applies to a rejected delivery
+attempt and finishes.  This assumption is not necessarily correct, because
+Postfix may have accepted an earlier recipient and rejected a later one, in
+which case the timeout applies to the accepted mail, which should be
+discarded.  This has not been a problem in practice, though it may be in
+future.
 
 This complication is further complicated by the presence of out of order
 \daemon{cleanup} lines: see \sectionref{discarding cleanup lines} for
@@ -2739,10 +2751,11 @@ meets the following requirements:
 
     \item The timestamp of the \daemon{cleanup} line must be within ten
         minutes of the mail acceptance timestamp.  Timeouts happen after
-        five minutes, but some data may have been transferred slowly, and
-        empirical evidence shows that ten minutes is not unreasonable;
-        hopefully it is a good compromise between false positives and false
-        negatives.
+        five minutes, but some data may have been transferred slowly
+        (perhaps because either the client or server is suffering from
+        network congestion or rate limiting), and empirical evidence shows
+        that ten minutes is not unreasonable; hopefully it is a good
+        compromise between false positives and false negatives.
 
 \end{itemize}
 
@@ -2797,7 +2810,8 @@ several reasons for this infrequent occurrence:
         if there is sufficient data, and deleted.  The queueid state table
         is untouched.
 
-    \item Sometimes a \daemon{smtpd} is killed by a signal, so its active
+    \item Sometimes a \daemon{smtpd} is killed by a signal (sent by Postfix
+        for some reason, by the administrator, or by the OS), so its active
         connection must be cleaned up, entered in the database if there is
         sufficient data, and deleted from the connections state table.
 
@@ -3275,6 +3289,11 @@ always room for improvement.
         might be possible to write a policy server to provide additional
         logging.
 
+    \item The TIMEOUT action uses potentially incorrect heuristics to
+        decide whether the timeout applies to an accepted mail or not,
+        potentially leaving a mail in the state tables
+        (\sectionref{timeouts-during-data-phase}).
+
     \item The program will not detect parsing the same log file twice,
         resulting in the database containing duplicate entries.
 
@@ -3302,6 +3321,10 @@ always room for improvement.
 
     \item Improve the solution to complication \sectionref{Mails deleted
         during delivery} so that data is not discarded.
+
+    \item Improve the heuristics used in
+        \sectionref{timeouts-during-data-phase}, or develop another
+        solution, to avoid incorrectly leaving a mail in the state tables.
 
 \end{itemize}
 
