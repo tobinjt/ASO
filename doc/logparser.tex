@@ -1150,9 +1150,10 @@ Each rule defines the following:
             \item [IGNORED] An action which is not only uninteresting in
                 itself, but which also provides no useful data.
 
-            \item [POSTFIX\_RELOAD] The administrator has caused Postfix to
-                start or stop, and all existing \daemon{smtpd} processes
-                will be terminated.
+            \item [POSTFIX\_RELOAD] The administrator has instructed
+                Postfix to start or stop, and all existing \daemon{smtpd}
+                processes will be terminated.  This does not negatively
+                impact on the logs or mail queued by Postfix for delivery.
 
             \item [PROCESSING] \daemon{cleanup} is processing a mail ---
                 see~\cite{postfix-cleanup} for details of the processing
@@ -1213,17 +1214,19 @@ Each rule defines the following:
         \texttt{connection\_cols}, except that arbitrary
         data\footnote{Commas and semi-colons cannot be escaped and thus
         cannot be used.  This is intended for use with small amounts of
-        data rather than large amounts, so dealing with escape sequences
-        seemed unnecessary.} is permitted on the right hand side of the
-        assignment.
+        data rather than large amounts in any one rule, so dealing with
+        escape sequences was deemed unnecessary.} is permitted on the right
+        hand side of the assignment.
 
     \item [action] The action that will be invoked when this rule matches a
-        log line; a full list can be found in
-        \sectionref{actions-in-detail}.
+        log line; a full list of actions and the parameters they are
+        invoked with can be found in \sectionref{actions-in-detail}.
 
     \item [queueid] Specifies the matching capture from the \regex{} which
         gives the queueid, or zero if the log line doesn't contain a
-        queueid.
+        queueid.  Many log lines won't contain a queueid, e.g.\ rejections
+        logged before a mail has been accepted (a queueid won't have been
+        allocated), or log lines which aren't tied to one particular mail.
 
     \item [hits] This counter is maintained for every rule and incremented
         each time the rule successfully matches.  At the start of each run
@@ -1317,7 +1320,7 @@ fields:
         accepted mail, or \texttt{NOQUEUE} otherwise.
 
     \item [start] The timestamp of the first log line, in seconds since the
-        epoch.
+        epoch (explained in the glossary, appendix~\refwithpage{Glossary}).
 
     \item [end] The timestamp of the last log line, in seconds since the
         epoch.
@@ -1362,7 +1365,7 @@ connection, though there may be many results per connection.
 
     \item [sender] The sender's email address.  This can change during one
         single connection, when the connection is reused to send multiple
-        mails.
+        mails.  XXX BETTER EXPLANATION\@.
 
     \item [recipient] The recipient address; there may be multiple
         recipient addresses per mail, but only one per result.
@@ -1439,8 +1442,7 @@ parser:
     \item Rules are completely self-contained and can be understood in
         isolation, without reference to any other rules.
 
-    \item There are no sub-rules, so rules have linear computational
-        complexity.
+    \item Rule processing time is a linear function of the number of rules.
 
 \end{itemize}
 
@@ -1510,7 +1512,7 @@ mail from a sender address because the appropriate \DNS{} entries are
 missing, i.e.\ mail could not be delivered to the sender's address (for
 full details see~\cite{reject-unknown-sender-domain}).
 
-This rule would match the following log line:
+The example rule below would match the following log line:
 
 \begin{verbatim}
 NOQUEUE: reject: RCPT from example.com[10.1.1.1]: 550
@@ -1625,7 +1627,7 @@ shows the execution time in seconds, file size in MB and tens of thousands
 of log lines per log file.  All three lines run roughly in parallel, giving
 a visual impression that the algorithm scales linearly with input size.
 This impression is borne out by graph~\refwithpage{execution time vs file
-size vs number lines factor}, which plots the ratio of file size vs
+size vs number lines factor} which plots the ratio of file size vs
 execution time and ratio of number of log lines vs execution time (higher
 is better).\footnote{Table~\refwithpage{execution time vs file size vs
 number lines factor table} shows the ratios for different breakdowns of the
