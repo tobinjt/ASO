@@ -130,7 +130,16 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
 \end{abstract}
 
-XXX PICK A NAME AND INTRODUCE IT\@.
+XXX EITHER PICK A BETTER WORD OR GIVE A BETTER EXPLANATION OF EMERGENT
+BEHAVIOUR --- SECTIONS 5.4.4 AND 8\@.
+
+XXX FIGURE OUT THE CAUSE OF THE ABORTED DELIVERY ATTEMPTS IN SECTION
+5.8.2\@.
+
+XXX TEST OTHER PARSERS ON THE 93 TEST LOG FILES\@.
+
+XXX POSSIBLE CONFERENCES\@: SIGAI IN BRITAIN, AND AICS'S AI-2008 (CAMBRIDGE
+IN DECEMBER)\@.
 
 \newpage
 \tableofcontents
@@ -166,18 +175,18 @@ servers may log different messages depending on the characteristics of the
 connection; there are many ways in which the log lines may differ between
 servers, even within the same organisation --- servers may be configured
 differently, or running different version of Postfix.  This paper documents
-the difficult process of parsing Postfix logs, presenting a program which
-parses logs and places the resulting data into a database for later use.
-The gathered data can then be used to optimise current anti-spam measures,
-provide a baseline to test new anti-spam measures against, or to produce
-statistics showing how effective those measures are.  There are numerous
-other uses for such data: improving server performance by identifying
-troublesome destinations and reconfiguring appropriately; identifying
-regular high volume uses (e.g.\ customer newsletters) and restricting those
-uses to off-peak times; detecting virus outbreaks which propagate via
-email; as a base for billing customers on a shared server.  Preserving the
-raw data enables users to develop a multitude of uses far beyond those
-conceived of by the author.
+the difficult process of parsing Postfix logs, presenting \PLP{}, a program
+which parses logs and places the resulting data into a database for later
+use.  The gathered data can then be used to optimise current anti-spam
+measures, provide a baseline to test new anti-spam measures against, or to
+produce statistics showing how effective those measures are.  There are
+numerous other uses for such data: improving server performance by
+identifying troublesome destinations and reconfiguring appropriately;
+identifying regular high volume uses (e.g.\ customer newsletters) and
+restricting those uses to off-peak times; detecting virus outbreaks which
+propagate via email; as a base for billing customers on a shared server.
+Preserving the raw data enables users to develop a multitude of uses far
+beyond those conceived of by the author.
 
 \vspace{1em}\noindent\textbf{Layout of the paper:}
 
@@ -271,6 +280,8 @@ appendix~\refwithpage{other-parsers}), finishing with a review of
 previously published research in this area.
 
 \subsection{Motivation}
+
+\label{motivation}
 
 This paper and the program it describes are part of a larger project to
 optimise a server's Postfix restrictions, generate statistics and graphs,
@@ -537,10 +548,15 @@ of an \MTA{}\@: receive mail, send mail, local delivery of mail, etc. ---
 full details can be found at~\cite{postfix-overview}.  Each log line
 contains the name of the Postfix program which produced it, and this
 information is used when determining which rules should be used to parse
-each log line (see \sectionref{rule characteristics} for details.)  This
+each log line (see \sectionref{rule characteristics} for details).  This
 design has positive security implications also: those components which
-interact with other hosts are not privileged, and those components which
-are privileged do not interact with other hosts.
+interact with other hosts are not privileged,\footnote{Privilege in this
+case means the power to perform actions that are limited to the
+administrator, and not available to ordinary users.} so bugs in those
+components will not give an attacker extra privileges; those components
+which are privileged do not interact with other hosts, making it much more
+difficult for an attacker to exploit any bugs which may exist in those
+components.
 
 \subsubsection{Mixing and matching Postfix restrictions}
 
@@ -1363,9 +1379,10 @@ connection, though there may be many results per connection.
         the code is faked based on the success or failure represented by
         the log line.
 
-    \item [sender] The sender's email address.  This can change during one
-        single connection, when the connection is reused to send multiple
-        mails.  XXX BETTER EXPLANATION\@.
+    \item [sender] The sender's email address.  Because multiple mails may
+        be delivered during one connection, there may be different sender
+        addresses in the results for one connection; however there should
+        not be different sender addresses in the results for one email.
 
     \item [recipient] The recipient address; there may be multiple
         recipient addresses per mail, but only one per result.
@@ -2584,11 +2601,10 @@ occur the following conditions would have to be met:
 
 \end{enumerate}
 
-The most likely cause of mis-identification is if a mail generated
-internally by Postfix is identified as a bounce notification but it is
-actually a different type of message; arguably this is a benefit rather
-than a drawback, as other mails generated internally by Postfix will be
-handled correctly.
+If a mail is mis-classified as a bounce message it will almost certainly
+have been generated internally by Postfix; arguably mis-classification in
+this case is a benefit rather than a drawback, as other mails generated
+internally by Postfix will be handled correctly.
 
 Postfix 2.3 (and hopefully subsequent versions) log the creation of a
 bounce message.
@@ -3446,14 +3462,29 @@ difficult to find ten parsers to review for this project, and the
 functionality offered ranges from quite basic to much more mature,
 depending on the needs of the creator.  The programs are not reviewed from
 an independent viewpoint; the objective is to compare and contrast each
-program with \parsername{}.  One important difference between \parsername{}
-and the parsers reviewed is that only \parsername{} makes it possible to
-parse new log lines without modifying the core parsing algorithm; see
-\sectionref{why separate rules, actions and framework?} for a discussion of
-why the separation of rules from the algorithm is beneficial.
+program with \parsername{}.  There are some important differences between
+\parsername{} and the parsers reviewed here:
 
+\begin{enumerate}
+
+    \item Only \parsername{} makes it possible to parse new log lines
+        without modifying the core parsing algorithm; see \sectionref{why
+        separate rules, actions and framework?} for a discussion of why the
+        separation of rules from the algorithm is beneficial.
+
+    \item \parsername{} does not provide any reporting based on the data it
+        gathers.  This is by design: the parser is responsible for parsing
+        logs and extracting data --- further processing of that data is a
+        separate concern, deferred to another program.  Using an \SQL{}
+        database simplifies the process of generating such reports; some
+        simple examples are given in \sectionref{motivation}.
+
+\end{enumerate}
 
 \subsection{Parsers reviewed}
+
+In this section text in italics is a quote extracted from the appropriate
+program's documentation.
 
 \begin{description}
 
@@ -3491,32 +3522,34 @@ why the separation of rules from the algorithm is beneficial.
         Its data extraction facilities are quite limited, though it does
         extract three different sets of data for Postfix (one is beta as of
         2007/12/04), but they do not appear to be interlinked, nor does it
-        save sufficient data for the purposes of this project.  No attempt
-        is made to correlate log lines or deal with the difficulties
-        documented in \sectionref{complications} \sectionref{additional
-        complications}.\footnote{If any attempt is made there is no
-        reference to it in the documentation available on the website.} The
-        source code is available in an obfuscated form only (presumably for
-        a fee), and the product is quite expensive, as it requires a
-        license per report which is to be generated; in contrast
-        \parsername{} is free and the code is freely available.  The web
-        interface allows creation of dynamic reports based on any field,
-        but due to the associated cost the author has not experimented with
-        it.  Presumably, as the company charges per report the user wishes
-        to generate, the data store (if there is one) is deliberately
-        inaccessible and undocumented to prevent the user bypassing the
-        program and generating their own reports.
+        save sufficient data for the purposes of this project.\footnote{The
+        data extracted by Sawmill is described later in this review, and
+        the data extracted by \PLP{} is described in
+        \sectionref{connections table} and \sectionref{results table}.}  No
+        attempt is made to correlate log lines or deal with the
+        difficulties documented in \sectionref{complications}
+        \sectionref{additional complications}.\footnote{If any attempt is
+        made there is no reference to it in the documentation available on
+        the website.} The source code is available in an obfuscated form
+        only (presumably for a fee), and the product is quite expensive, as
+        it requires a license per report which is to be generated; in
+        contrast \parsername{} is free and the code is freely available.
+        The web interface allows creation of dynamic reports based on any
+        field, but due to the associated cost the author has not
+        experimented with it.  Presumably, as the company charges per
+        report the user wishes to generate, the data store (if there is
+        one) is deliberately inaccessible and undocumented to prevent the
+        user bypassing the program and generating their own reports.
 
         \url{http://www.thesawmill.co.uk/formats/postfix.html} \newline
         Fields extracted: from, to, server, UID, relay, status, number of
         recipients, origin hostname, origin \IP{} and virus.  The fields
-        \textit{server}, \textit{uid\/} and \textit{virus\/} are not
-        explained in their documentation: \textit{server\/} is probably the
-        server the mail is delivered to, and \textit{uid\/} might be the
-        uid of the user submitting mail locally.  Postfix does not perform
-        any form of virus checking (though it has many options for
-        cooperating with an external virus scanner), so the
-        \textit{virus\/} field is a mystery.
+        \texttt{server}, \texttt{uid} and \texttt{virus} are not explained
+        in their documentation: \texttt{server} is probably the server the
+        mail is delivered to, and \texttt{uid} might be the uid of the user
+        submitting mail locally.  Postfix does not perform any form of
+        virus checking (though it has many options for cooperating with an
+        external virus scanner), so the \texttt{virus} field is a mystery.
 
         \url{http://www.thesawmill.co.uk/formats/postfix_ii.html} \newline
         Fields extracted: from, to, \RBL{}, client hostname and client
@@ -4183,11 +4216,11 @@ rule hits accumulated during a single test run of the parser.
 }}
 
 \glossary{name={cleanup},description={
-    Cleanup processes all incoming mail, sitting between qmgr and the
-    programs which accept mail (smtpd and pickup).  It removes duplicate
-    recipient addresses, inserts missing headers, and optionally rewrites
-    addresses if configured to do so.  The definitive
-    documentation is \url{http://www.postfix.org/cleanup.8.html}.
+    Cleanup processes all incoming mail after it has been accepted and
+    before it is delivered.  It removes duplicate recipient addresses,
+    inserts missing headers, and optionally rewrites addresses if
+    configured to do so.  The definitive documentation is
+    \url{http://www.postfix.org/cleanup.8.html}.
 }}
 
 \glossary{name={lmtp},description={
