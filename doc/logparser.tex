@@ -224,17 +224,16 @@ process of adding a new action.  The section concludes with an in-depth
 description of the further complications discovered and their solutions
 which complete the parser.
 
-XXX HOW MANY MAILS PER DAY\@?
-
 Section~\ref{parsing coverage} analyses the coverage the parser achieves
 over a set of \numberOFlogFILES{} log files taken from a mail server
-handling mail for over 700 users.  Coverage is described both in terms of
-the fraction of log lines parsed and the fraction of mails and connections
-successfully reconstructed by the parsing algorithm, including dealing with
-false negatives and a discussion of the difficulties in identifying false
-positives.  A random sampling of log lines was parsed, and the correctness
-of the results manually verified, as part of determining the coverage of
-the parser.
+handling mail for over 700 users, averaging 8500 mails per day
+(graph~\refwithpage{Mails received per day}).  Coverage is described both
+in terms of the fraction of log lines parsed and the fraction of mails and
+connections successfully reconstructed by the parsing algorithm, including
+dealing with false negatives and a discussion of the difficulties in
+identifying false positives.  A random sampling of log lines was parsed,
+and the correctness of the results manually verified, as part of
+determining the coverage of the parser.
 
 Section~\ref{limitations-improvements} lists the limitations of the
 algorithm, then suggests some ways of dealing with them, with the goal of
@@ -3916,8 +3915,10 @@ performance scales linearly with input size.  The impact of rule ordering
 is shown in \sectionref{rule ordering graphs}, and the anomalous dips and
 peaks apparent in some graphs are explained.  The third group of graphs
 vividly shows the huge impact that caching compiled \regexes{} has on
-parser performance.  This section concludes with a breakdown of the rule
-hits accumulated during a single test run of the parser.
+parser performance.  Miscellaneous graphs are presented in the final group
+of graphs; these graphs are referenced from various places in the test.
+This section concludes with a breakdown of the rule hits accumulated during
+a single test run of the parser.
 
 \subsection{Parser scalability}
 
@@ -4139,17 +4140,38 @@ high}
 
 \clearpage
 
+
+
+\subsection{Miscellaneous graphs}
+
+\label{Miscellaneous graphs}
+
+\showgraph{build/plot-mails-received}{Mails received per day}{Mails
+received per day}
+
+As expected there are far more mails received on weekdays than at weekends.
+Note that this graph and the table below show the number of mails received
+by \SMTP{} only; in particular the mail loops noticeable in other graphs
+do not contribute to these figures.
+
+\showtable{build/mails-received-include-for-graph}{Number of mails received
+per day: statistics}{Number of mails received per day: statistics}
+
+\clearpage
+
 \subsection{Conclusion}
 
 The graphs presented in this section illustrate the topics discussed in
 \sectionref{rule efficiency}.  The first collection of graphs are about
 parser scalability, showing the linear relationship between execution time
-and input size.  \sectionref{rule ordering graphs} relates to the effect of
-rule ordering on execution time, and the unexpected consequences of
+and input size.  \sectionref{rule ordering graphs} demonstrates the effect
+of rule ordering on execution time, and the unexpected consequences of
 specific inputs.  The necessity of caching compiled \regexes{} is attested
 to by the third group of graphs, where the difference between caching and
-discarding is staggering.  This section concluded with a breakdown of the
-rule hits accumulated during a single test run of the parser.
+discarding is staggering.  The penultimate section contains a breakdown of
+the rule hits accumulated during a single test run of the parser.
+Miscellaneous graphs expected to be useful are collected in the final
+section.  
 
 
 % This fools the syntax highlighting so we get a new fold here, but it

@@ -140,7 +140,10 @@ logparser.deps: \
 				build/logparser-flow-chart-part-1.pdf						\
 				build/logparser-flow-chart-part-1.ps						\
 				build/logparser-flow-chart-part-2.pdf						\
-				build/logparser-flow-chart-part-2.ps
+				build/logparser-flow-chart-part-2.ps						\
+				build/plot-mails-received.ps								\
+				build/plot-mails-received.pdf								\
+				build/mails-received-include-for-graph.tex
 	touch "$@"
 
 build/logparser-flow-chart-%.pdf: logparser-flow-chart-%.dot
@@ -281,6 +284,25 @@ build/stats-normal-shuffle-reverse-include.tex: \
 
 build/restriction-table-include.tex:
 	perl mk-restriction-summary-table > "$@" || (rm -f "$@"; false)
+
+# Number of mails received per day
+build/mails-received-stats.txt: mails-received.txt
+	awk '{print $$2}' "$<" | perl ../stats/stddev > "$@"
+	echo "Row: All days" >> "$@"
+
+build/mails-received-weekends-stats.txt: mails-received.txt
+	awk '((NR % 7) == 2) || ((NR % 7) == 3) { print $$2 }' "$<" | perl ../stats/stddev > "$@"
+	echo "Row: Weekend days" >> "$@"
+
+build/mails-received-weekdays-stats.txt: mails-received.txt
+	awk '((NR % 7) != 2) && ((NR % 7) != 3) { print $$2 }' "$<" | perl ../stats/stddev > "$@"
+	echo "Row: Week days" >> "$@"
+
+build/mails-received-include-for-graph.tex: build/mails-received-stats.txt			\
+											build/mails-received-weekdays-stats.txt	\
+											build/mails-received-weekends-stats.txt
+	perl mk-stats-cached-discarded-include $^ > "$@"
+	sed -i -e 's/\\%//g' "$@" || (rm -f "$@"; false)
 
 # Build stats from the directory created by gen-stats.
 build/stats-normal.txt: stats-normal
