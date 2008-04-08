@@ -130,9 +130,6 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
 \end{abstract}
 
-XXX EITHER PICK A BETTER WORD OR GIVE A BETTER EXPLANATION OF EMERGENT
-BEHAVIOUR --- SECTIONS 5.4.4 AND 8\@.
-
 XXX FIGURE OUT THE CAUSE OF THE ABORTED DELIVERY ATTEMPTS IN SECTION
 5.8.2\@.
 
@@ -2242,9 +2239,9 @@ after the parent mail.
 \label{Emergent behaviour}
 
 The rules and actions exhibit emergent behaviour~\cite{Wikipedia-Emergence}
-which is far more complicated than the behaviour encoded in the algorithm.
-The top-level parser could be written in pseudo-code like so (with
-indentation level indicating flow control):
+which is far more complicated than the behaviour explicitly encoded in the
+algorithm.  The top-level parser could be written in pseudo-code like so
+(with indentation level indicating flow control):
 
 \begin{verbatim}
 for each line in the input files:
@@ -2283,17 +2280,31 @@ Several more states and corresponding branches are omitted for the sake of
 clarity (these extra states are caused by solving the complications
 described in \sectionref{additional complications}).
 
-The solution to the complication in \sectionref{out of order log lines}
-(out of order log lines) requires a list of the acceptable combinations of
-Postfix programs a mail can pass through; however this does not correspond
-to the \textit{actions\/} a mail must pass through.  Before that
-complication was overcome, i.e.\ for the majority of the development of
+The actions introduce some of the complexity seen in the flow chart: all
+explicit branches and the transitions between some stages (19--20,
+21--22--23--24) in the second half of the flow chart
+(figure~\refwithpage{flow chart image part 2}) are encoded within the
+actions; the transitions between the other stages (16--17, 24--25) in the
+second half arise from the interaction between actions
+
+However the transitions between stages in the first half of the flow chart
+(figure~\refwithpage{flow chart image part 1}) are not encoded anywhere in
+the parser; the transitions are determined by the ordering of log lines in
+the log file.  The complexity of the first 12 stages in the flow chart
+emerges from the interaction of simple rules and actions, easing the
+process of adding new actions (described in \sectionref{adding new
+actions}), as there is no requirement to explicitly insert the action into
+an algorithmic version of the flow chart.\footnote{The solution to the
+complication in \sectionref{out of order log lines} (out of order log
+lines) requires a list of the acceptable combinations of Postfix programs a
+mail can pass through; however this does not correspond to the
+\textit{parser actions\/} a mail must pass through.  Before that
+complication was overcome, i.e.\ for the first half of the development of
 this parser, there was nothing in the parser explicitly encoding the states
 or paths a mail could take; no other component in the parser has any need
-for this flow of data to be specified.  This eases the process of adding
-new actions (described in \sectionref{adding new actions}), as there is no
-requirement to explicitly insert the action into an algorithmic version of
-the flow chart.
+for this flow of data to be specified.}
+
+
 
 \subsection{Framework}
 
@@ -3398,18 +3409,25 @@ completely separated, as the actions depend on services provided by the
 framework; however the actions and framework are not tightly integrated: it
 would be possible, with some work, to completely separate the two.
 
-XXX EXTEND THIS\@; SOMETHING ABOUT THE CONTROL FLOW BEING UNUSUAL, I.E.\
-RULE DETERMINES ACTION, RATHER THAN ACTION EXPECTING INPUT\@.
-
 
 The emergent behaviour~\cite{Wikipedia-Emergence} (\sectionref{Emergent
 behaviour}) exhibited by the rules and actions is also interesting, and is
 discussed after the flow chart (\sectionref{flow-chart}) and explanation of
-the paths through the parser.  This emergent behaviour greatly eases adding
-new actions (\sectionref{adding new actions}), as the actions do not have
-to be inserted into an explicit flow of control; new actions will naturally
-find their place in the paths through the parser available to a mail.
+the paths through the parser.  This emergent behaviour greatly eases the
+process of adding new actions (\sectionref{adding new actions}), as the
+actions do not have to be inserted into an explicit flow of control; new
+actions will naturally find their place in the paths through the parser.
 
+The flow of control in this parser is quite different from that of most
+other parsers.  In most traditional parsers the parser has a current state,
+and each state has a fixed set of acceptable next states, with unacceptable
+states causing parsing to fail --- e.g.\ when a \textbf{C} parser sees the
+keyword \textbf{for} it expects to immediately see a left parenthesis, with
+any other input causing parsing to fail.\footnote{Comments will already
+have been removed by the preprocessor.}  This parser is different: the
+rule which matches the next log line for a mail dictates the action that
+will be invoked, which is equivalent to the next state in other parsers;
+thus the next log line for a mail dictates the next state for that mail.
 
 The real difficulties arise once the parser is successfully dealing with
 90\% of the log lines, as the irregularities and complications previously
