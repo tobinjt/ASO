@@ -95,7 +95,15 @@
 }
 
 \newcommand{\numberOFrules}[0]{%
-    161%
+    165%
+}
+
+\newcommand{\numberOFlogLINES}[0]{%
+    60,721,709%
+}
+
+\newcommand{\numberOFlogLINEShuman}[0]{%
+    60.72 million%
 }
 
 % This may keep hyperref happy about the Abstract entry in the table of
@@ -133,14 +141,10 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 XXX FIGURE OUT THE CAUSE OF THE ABORTED DELIVERY ATTEMPTS IN SECTION
 5.8.2\@.
 
-XXX TEST OTHER PARSERS ON THE 93 TEST LOG FILES\@.
-
 XXX POSSIBLE CONFERENCES\@: AICS'S AI-2008 IN CORK, AND SGAI IN CAMBRIDGE
 IN DECEMBER\@.
 
-XXX DOWNLOAD\@: PFLOGSUMM, SAWMILL AND ANTEATER\@.
-
-CHECK PARSING FOR THE FOLLOWING\@:
+XXX TEST OTHER PARSERS ON THE 93 TEST LOG FILES\@:
 
 \begin{enumerate}
 
@@ -148,7 +152,6 @@ CHECK PARSING FOR THE FOLLOWING\@:
     \item Sawmill Universal Log File Analysis and Reporting
     \item Splunk
     \item Isoqlog
-    \item AWStats
     \item Log analyser --- throughput monitor
     \item Anteater
     \item Yet Another Advanced Logfile Analyser
@@ -1632,10 +1635,10 @@ deal with 75 MB log files containing 300,000 log lines (generated daily on
 a mail server handling mail for approximately 700 users --- large scale
 mail servers would have much larger log files on a daily basis).  When
 generating the data for the graphs included in \sectionref{graphs},
-\numberOFlogFILES{} log files (totaling 10.08 GB, 60.72 million log lines)
-were each parsed 10 times, the first run discarded, and the execution time
-for the remaining 9 runs averaged.  The first run is discarded for two
-reasons:
+\numberOFlogFILES{} log files (totaling 10.08 GB, \numberOFlogLINEShuman{}
+log lines) were each parsed 10 times, the first run discarded, and the
+execution time for the remaining 9 runs averaged.  The first run is
+discarded for two reasons:
 
 \begin{enumerate}
 
@@ -3715,6 +3718,35 @@ distinguish between different types of rejection; there is no easy way to
 extend it to handle new log lines.  Although though it does correlate log
 lines by queueid, it does not deal with any of the other complications
 described in this document.
+
+When tested with the \numberOFlogFILES{} test log files AWStats' report
+says it parsed 9,240,075 (88.70\%) log lines out of 10,416,129, with
+1,176,050 (11.29\%) corrupt lines; however there are actually
+\numberOFlogLINES{} lines in the \numberOFlogFILES{} log files.  AWStats
+actually parsed 17.15\% of the input lines, ignoring the remaining 82.85\%.
+The graphs it produces give an overview of mails received for the last
+calendar month, showing:
+
+\begin{itemize}
+
+    \item The number of mails accepted from each host.
+
+    \item How many mails were received by each recipient.
+        
+    \item The average number of mails accepted by the server per day and
+        per hour.
+
+    \item A top ten list of aggregated \SMTP{} error codes, e.g.\ the first
+        entry in the list is: \texttt{Requested mail action not taken:
+        relaying not allowed, unknown recipient user, \ldots}
+
+\end{itemize}
+
+% Parsed lines in file: 10416129
+%  Found 4 dropped records,
+%  Found 1176050 corrupted records,
+%  Found 0 old records,
+%  Found 9240075 new qualified records.
 
 \noindent\url{http://awstats.sourceforge.net/} \newline
 \url{http://awstats.sourceforge.net/awstats.mail.html} \newline
