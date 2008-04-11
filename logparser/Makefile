@@ -143,10 +143,10 @@ test-logs:
 	perl logparser --year 2007 --debug_results --dump_committed_connections --out-statefile test-logs.state test-logs 2> test-logs.warnings
 	perl dump-database > test-logs.database-dump
 
-gzipped-logs:
+all-logs:
 	make db
-	perl logparser --skip_inserting_results --year 2007 --debug_results --out-statefile state.gzipped-logs      --individual-state-files                                                     ../../../../logs/mail.log-2007*.gz 2> warnings.gzipped-logs
-	perl logparser --skip_inserting_results --year 2008 --debug_results --out-statefile state.gzipped-logs-2008 --individual-state-files --in-statefile state.gzipped-logs-mail.log-20071231 ../../../../logs/mail.log-2008*.gz 2> warnings.gzipped-logs-2008
+	perl logparser --skip_inserting_results --year 2007 --debug_results --out-statefile state.all-logs-2007 --individual-state-files                                                     ../../../../logs/mail.log-2007* 2> warnings.all-logs.2007
+	perl logparser --skip_inserting_results --year 2008 --debug_results --out-statefile state.all-logs-2008 --individual-state-files --in-statefile state.all-logs-mail.log-20071231.gz  ../../../../logs/mail.log-2008* 2> warnings.all-logs-2008
 
 .PHONY: unparsed
 unparsed:
