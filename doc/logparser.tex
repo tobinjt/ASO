@@ -145,7 +145,6 @@ XXX TEST OTHER PARSERS ON THE 93 TEST LOG FILES\@:
 
 \begin{enumerate}
 
-    \item Pflogsumm
     \item Sawmill Universal Log File Analysis and Reporting
     \item Splunk
     \item Isoqlog
@@ -3562,11 +3561,39 @@ parsing and reporting are difficult to extend as it is a specialised tool,
 unlike the easily extensible design of \parsername{}.  It does not attempt
 to correlate log lines by queueid or \pid{}, nor does it need to deal with
 the complications encountered during this project.  Pflogsumm produces a
-useful report, and successfully dealt with all the Postfix logs tested
-with, but is not a suitable base for this project.
+useful report, and successfully dealt with the \numberOFlogFILES{} logs
+files tested with,\footnote{The results it reported were not verified, but
+it did not report any errors, and has a very good reputation amongst
+Postfix users.} but is not a suitable base for this project.
+
+Pflogsumm's report includes the following:
+
+\begin{itemize}
+
+    \item Total number of mails accepted, delivered and rejected.  Total
+        bytes of mail accepted and delivered.
+
+    \item Total number of sender and recipient addresses and domains.
+
+    \item Per-hour averages and per-day summaries of the number of mails
+        received, delivered, deferred, bounced and rejected.
+
+    \item For received mail: per-domain totals for mails sent, deferred,
+        average delay, maximum delay and bytes delivered.  For received
+        mail: per-domain totals for mails received and bytes received.
+
+    \item Number of mails and bytes sent and received for each address.
+
+    \item Summary of why mail delivery was deferred or failed, why mails
+        were bounced, why mails were rejected, and warning messages.
+
+\end{itemize}
+
+There are many options available to include or exclude certain sections of
+the report.
 
 \url{http://jimsun.linxnet.com/postfix_contrib.html} \newline (Last checked
-2007/08/13.)
+2008/04/09.)
 
 \subsubsection{Sawmill Universal Log File Analysis and Reporting}
 
@@ -3751,8 +3778,8 @@ calendar month, showing:
 
     \item How many mails were received by each recipient.
         
-    \item The average number of mails accepted by the server per day and
-        per hour.
+    \item The average number of mails accepted by the server per-day and
+        per-hour.
 
     \item A top ten list of aggregated \SMTP{} error codes, e.g.\ the first
         entry in the list is: \texttt{Requested mail action not taken:
