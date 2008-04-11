@@ -18,6 +18,9 @@ if [ ! -f "$loglist" ]; then
 fi
 mkdir -p "$dir"
 
+# Try to load libraries, modules etc in advance.
+perl logparser --help > /dev/null 2>&1 || true
+
 old_state=""
 for log in $( < "$loglist" ); do
     filename=$( basename "$log" )
