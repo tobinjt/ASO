@@ -666,13 +666,13 @@ sub parse_line {
     # Use the program specific rules first, then the generic rules.
     foreach my $rule (@{$self->{rules_by_program}->{$line->{program}}},
             @{$self->{rules_by_program}->{q{*}}}) {
-        if ($line->{text} !~ m/$rule->{regex}/mx) {
+        if ($line->{text} !~ m/$rule->{regex}/) {
             next RULE;
         }
         $rule->{count}++;
 
         # TODO: is there a way I can do this without matching twice??
-        my @matches = ($line->{text} =~ m/$rule->{regex}/mx);
+        my @matches = ($line->{text} =~ m/$rule->{regex}/);
         # regex matches start at one, but array indices start at 0.
         # shift the array forward so they're aligned
         unshift @matches, undef;
@@ -803,6 +803,7 @@ sub DISCONNECT {
         # clashes occasionally.
         if (not exists $mail->{programs}->{q{postfix/cleanup}}
                 and $self->queueid_exists($mail->{queueid})
+                and $mail->{programs}->{q{postfix/smtpd}} == 2
                 ) {
             my $mail_by_queueid = $self->get_connection_by_queueid(
                     $mail->{queueid});
@@ -1999,7 +2000,10 @@ sub dump_rule {
     my ($self, $rule) = @_;
 
     local $Data::Dumper::Sortkeys = 1;
-    return Data::Dumper->Dump([$rule], [q{rule}]);
+    my $dbic_rule = delete $rule->{rule};
+    my $dump = Data::Dumper->Dump([$rule], [q{rule}]);
+    $rule->{rule} = $dbic_rule;
+    return $dump;
 }
 
 =over 4
@@ -3211,7 +3215,9 @@ sub get_queueid_from_matches {
         $self->my_die(qq{get_queueid_from_matches: blank/undefined queueid\n},
             $self->dump_line($line),
             q{using: },
-            $self->dump_rule($rule)
+            $self->dump_rule($rule),
+            q{@matches: },
+            Dumper($matches),
         );
     }
     if ($queueid !~ m/^$self->{queueid_regex}$/mox) {
