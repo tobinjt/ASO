@@ -138,9 +138,6 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
 \end{abstract}
 
-XXX FIGURE OUT THE CAUSE OF THE ABORTED DELIVERY ATTEMPTS IN SECTION
-5.8.2\@.
-
 XXX POSSIBLE CONFERENCES\@: AICS'S AI-2008 IN CORK, AND SGAI IN CAMBRIDGE
 IN DECEMBER\@.
 
@@ -2650,34 +2647,55 @@ This check is performed during the COMMIT action.
 
 \label{aborted-delivery-attempts}
 
-Some mail clients appear\footnote{Due to privacy concerns no attempt has
-been made to identify either the users or the software which exhibits this
-behaviour.} to send the following sequence of commands during
-the \SMTP{} session:
+Some mail clients behave unexpectedly during the \SMTP{} dialogue: the
+client aborts the first delivery attempt after the first recipient is
+accepted, then makes a second delivery attempt for the same recipient which
+it continues with until delivery is complete.  An example dialogue
+exhibiting this behaviour is shown presented below (lines starting with a
+three digit number are sent by the server, the other lines are sent by the
+client):
 
 \begin{verbatim}
-    EHLO client.hostname
-    MAIL FROM: <sender@example.com>
-    RCPT TO: <recipient@example.com>
-    RSET
-    MAIL FROM: <sender@example.com>
-    RCPT TO: <recipient@example.com>
-    DATA
+220 smtp.example.com ESMTP
+EHLO client.example.com
+250-smtp.example.com
+250-PIPELINING
+250-SIZE 15240000
+250-ENHANCEDSTATUSCODES
+250-8BITMIME
+250 DSN
+MAIL FROM: <sender@example.com>
+250 2.1.0 Ok
+RCPT TO: <recipient@example.net>
+250 2.1.5 Ok
+RSET
+250 2.0.0 Ok
+RSET
+250 2.0.0 Ok
+MAIL FROM: <sender@example.com>
+250 2.1.0 Ok
+RCPT TO: <recipient@example.net>
+250 2.1.5 Ok
+DATA
+354 End data with <CR><LF>.<CR><LF>
+The mail transfer is not shown.
+250 2.0.0 Ok: queued as 880223FA69
+QUIT
+221 2.0.0 Bye
 \end{verbatim}
-
-The client aborts the first delivery attempt after the first recipient is
-accepted, then makes a second delivery attempt which it continues with
-until the delivery is complete.
 
 Once again Postfix does not log a message making the client's behaviour
 clear, so once again heuristics are required to identify when this
 behaviour occurs.  In this case a list of all mails accepted during a
 connection is saved in the connection state, and the accepted mails are
 examined when the disconnection action is executed.  Each mail is checked
-for the following: is the mail missing its \daemon{cleanup} log message?
-Every mail which passes through Postfix will have a \daemon{cleanup} line;
-lack of a \daemon{cleanup} line is a sure sign the mail didn't make it too
-far.
+for the following: is the mail missing its \daemon{cleanup} log message,
+and are there exactly two \daemon{smtpd} log lines?  Every mail which
+passes through Postfix will have a \daemon{cleanup} line; lack of a
+\daemon{cleanup} line is a sure sign the mail didn't make it too far.  The
+two \daemon{smtpd} log lines will be a connection log line and a mail
+acceptance log line (Postfix logs acceptance as soon as the first recipient
+has been accepted); XXX IMPROVE THIS ONCE I HAVE BETTER HEURISTICS\@.
 
 If this check is successful then the mail is assumed to be one of the
 offending bogus mails and is discarded.  There will be no further entries
