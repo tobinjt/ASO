@@ -18,6 +18,7 @@ if [ ! -f "$loglist" ]; then
 fi
 mkdir -p "$dir"
 
+make -C ../logparser/ db
 # Try to load libraries, modules etc in advance.
 perl logparser --help > /dev/null 2>&1 || true
 
@@ -33,8 +34,8 @@ for log in $( < "$loglist" ); do
     echo "$filename: cat" 1>&2
     cat "$log" > /dev/null
     for i in $( seq 1 10 ); do
-        echo "$filename: $i" 1>&2
-        perl logparser $LOGPARSER_SWITCHES --year 2007 --out-statefile "$state" $in_state --timing-data "$dir/timing.$filename.$i" "$log" 2> "$dir/warnings.$filename.$i"
+        echo "$filename: $i: $LOGPARSER_SWITCHES" 1>&2
+        perl ../logparser/logparser $LOGPARSER_SWITCHES --year 2007 --out-statefile "$state" $in_state --timing-data "$dir/timing.$filename.$i" "$log" 2> "$dir/warnings.$filename.$i"
         sync
         sleep 1
     done
