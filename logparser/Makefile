@@ -145,7 +145,7 @@ test-logs:
 
 all-logs:
 	make db
-	perl logparser --skip_inserting_results --year 2007 --debug_results --out-statefile state.all-logs-2007 --individual-state-files                                                       ../../../../logs/mail.log-2007* 2> warnings.all-logs.2007
+	perl logparser --skip_inserting_results --year 2007 --debug_results --out-statefile state.all-logs-2007 --individual-state-files                                                       ../../../../logs/mail.log-2007* 2> warnings.all-logs-2007
 	perl logparser --skip_inserting_results --year 2008 --debug_results --out-statefile state.all-logs-2008 --individual-state-files --in-statefile state.all-logs-2007-mail.log-20071231  ../../../../logs/mail.log-2008* 2> warnings.all-logs-2008
 
 .PHONY: unparsed
