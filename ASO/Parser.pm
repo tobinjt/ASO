@@ -3691,8 +3691,29 @@ L<List::Util>.
 Modules packaged with ASO::Parser: L<ASO::DB>, L<ASO::ProgressBar>.
 
 External modules: L<Parse::Syslog>, L<Regexp::Common>, L<DBIx::Class> (which has many
-dependencies), L<DBI>, DBD::foo (whee foo is your database), L<Data::Compare>,
-L<IO::Uncompress::AnyUncompress>.
+dependencies), L<DBI>, DBD::foo (where foo is your database), L<Data::Compare>,
+L<IO::Uncompress::AnyUncompress>.  To read compressed files additional modules
+are required:
+
+=over 4
+
+=item Gzip
+
+L<Compress::Raw::Zlib>, L<IO::Compress::Zlib>
+
+=item Zip
+
+L<IO::Compress::Zip>, L<IO::Compress::Zlib>
+
+=item Bzip2
+
+L<IO::Compress::Bzip2>, L<Compress::Raw::Bzip2>
+
+=item LZOP files
+
+L<IO::Compress::Lzop>, L<Compress::LZO>
+
+=back
 
 =head1 INCOMPATIBILITIES
 
@@ -3700,7 +3721,7 @@ None known thus far.
 
 =head1 BUGS AND LIMITATIONS
 
-This parser currently parses Postfix 2.2.x and 2.3.x log files; log files from
+This parser currently parses Postfix 2.2.x - 2.5.x log files; log files from
 earlier and later versions may not be parsed properly.
 
 It's highly likely that you'll need to write rules to parse some of your log
@@ -3710,12 +3731,23 @@ Tobin <tobinjt@cs.tcd.ie> for inclusion in future versions of the parser.
 
 There are no rules for the B<virtual> or B<lmtp> delivery agents.
 
-The parser may use large amounts of memory if you logs have many mails which
+The parser may use large amounts of memory if your logs have many mails which
 stay in the queue for a long time.
 
 If you modify the rules table in the database you may find that previously
 dumped state tables have references to the wrong rules; this would only occur if
 you changed the id field of rules.
+
+Progress meters are not really accurate when parsing compressed files, as
+they're based on progress reading the compressed file, not progress parsing the
+uncompressed results.
+
+L<IO::Uncompress::AnyUncompress> silently passed through compressed data it
+doesn't have decompression modules for; if the dependencies listed above for
+your compressed file type are not installed then the parser will be trying to
+parse uncompressed garbage.  L<Parse::Syslog> will issue lots of warnings:
+
+    WARNING: line not in syslog format:
 
 There are no known bugs in this module. 
 
