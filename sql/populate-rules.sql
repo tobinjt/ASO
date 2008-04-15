@@ -187,7 +187,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Unknown recipient', 'The recipient address is unknown on our system',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: User unknown(?: in \w+ \w+ table)?; from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: User unknown(?: in \w+ \w+ table)?; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -215,7 +215,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Unknown sender', 'The sender address is unknown on our system',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: User unknown in \w+ \w+ table; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: User unknown in \w+ \w+ table; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -242,7 +242,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Unknown sender domain', 'We do not accept mail from unknown domains',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Domain not found; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Domain not found; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -269,7 +269,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Unknown recipient domain', 'We do not accept mail for unknown domains',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Domain not found; from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Domain not found; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -386,7 +386,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Sender MX in private address space (172.16.0.0/12)', 'The MX for sender domain is in private address space (172.16.0.0/12), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(172.16.0.0/12\); from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(172.16.0.0/12\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -399,7 +399,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Recipient MX in private address space (172.16.0.0/12)', 'The MX for recipient domain is in private address space (172.16.0.0/12), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(172.16.0.0/12\); from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(172.16.0.0/12\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -412,7 +412,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Sender MX in private address space (127.16.0.0/12)', 'The MX for sender domain is in private address space (127.16.0.0/12), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(127.16.0.0/12\); from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(127.16.0.0/12\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -425,7 +425,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Recipient MX in private address space (127.16.0.0/12)', 'The MX for recipient domain is in private address space (127.16.0.0/12), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(127.16.0.0/12\); from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(127.16.0.0/12\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -438,7 +438,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Sender MX in private address space (192.168.0.0/16)', 'The MX for sender domain is in private address space (192.168.0.0/16), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -451,7 +451,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Recipient MX in private address space (192.168.0.0/16)', 'The MX for Recipient domain is in private address space (192.168.0.0/16), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -478,7 +478,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Recipient MX in private address space (10.0.0.0/8)', 'The MX for recipient domain is in private address space (10.0.0.0/8), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(10.0.0.0/8\); from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(10.0.0.0/8\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -491,7 +491,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Sender MX in "local" address space (169.254.0.0/16)', 'The MX for sender domain is in "local" address space (169.254.0.0/16), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in local address space \(169.254.0.0/16\); from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in local address space \(169.254.0.0/16\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -504,7 +504,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Recipient MX in "this" address space (0.0.0.0/8)', 'The MX for recipient domain is in "this" address space (0.0.0.0/8), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in "this" address space \(0.0.0.0/8\); from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in "this" address space \(0.0.0.0/8\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -517,7 +517,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Sender MX in "this" address space (0.0.0.0/8)', 'The MX for sender domain is in "this" address space (0.0.0.0/8), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in "this" address space \(0.0.0.0/8\); from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in "this" address space \(0.0.0.0/8\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -530,7 +530,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Recipient MX in loopback address space (127.0.0.0/8)', 'The MX for recipient domain is in loopback address space (127.0.0.0/8), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in loopback address space \(127.0.0.0/8\); from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in loopback address space \(127.0.0.0/8\); from=<(__SENDER__)> to=<__SENDER__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -543,7 +543,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Sender MX in test address space (192.0.2.0/24)', 'The MX for sender domain is in test address space (192.0.2.0/24), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in test address space \(192.0.2.0/24\); from=<(\5)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in test address space \(192.0.2.0/24\); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -556,7 +556,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Sender MX in reserved address space (240.0.0.0/4)', 'The MX for sender domain is in reserved address space (240.0.0.0/4), so cannot be contacted',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in reserved address space \(240.0.0.0/4\); from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in reserved address space \(240.0.0.0/4\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -608,7 +608,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Misc recipient blocks', 'Misc recipient blocks used when necessary',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: (Mail to this address bounces); from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: (Mail to this address bounces); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 7, data = 6',
         'helo = 8',
         'REJECTION',
@@ -690,7 +690,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Unknown recipient (system user)', 'The recipient address is unknown on our system (system users should not receive mail)',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: recipient address unknown; from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: recipient address unknown; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -703,7 +703,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Unknown sender (system user)', 'The sender address is unknown on our system (system users should not send mail)',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: sender address unknown; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: sender address unknown; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -716,7 +716,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Unknown recipient (user not receiving mail)', 'The recipient address is unknown on our system (user not receiving mail here any more)',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: User no longer receiving mail at this address; from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: User no longer receiving mail at this address; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -743,7 +743,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Unwanted mail to root 2', 'People keep sending us mail for root at their machine (2)',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Recipient address rejected: alias root to some other user, damnit.; from=<(__RECIPIENT__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Recipient address rejected: alias root to some other user, damnit.; from=<(__RECIPIENT__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -769,7 +769,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Non-FQDN recipient', 'Recipient addresses must be in FQDN form, so replies can be sent',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: need fully-qualified address; from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: need fully-qualified address; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
         'REJECTION',
@@ -782,7 +782,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Non-FQDN sender', 'Sender addresses must be in FQDN form, so replies can be sent',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: need fully-qualified address; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: need fully-qualified address; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
         'REJECTION',
@@ -841,7 +841,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Stop flooding users with mail', 'A client was flooding users with unwanted mail',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Stop flooding our users with mail.; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Stop flooding our users with mail.; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
         'REJECTION',
@@ -869,7 +869,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Malformed DNS reply (recipient)', 'The DNS reply was malformed when checking the recipient domain',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Malformed DNS server reply; from=<(__SENDER__)> to=<\5> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Malformed DNS server reply; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 6, recipient = 5',
         'helo = 7',
         'REJECTION',
@@ -882,7 +882,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Malformed DNS reply (sender)', 'The DNS reply was malformed when checking the sender domain',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Malformed DNS server reply; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Malformed DNS server reply; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
         'REJECTION',
@@ -908,7 +908,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Rejecting unused sender address', 'Rejecting an address we know is not used for sending mail',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: This address is not in use.; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: This address is not in use.; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
         'REJECTION',
@@ -921,7 +921,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Rejecting spammer sender address', 'Rejecting an address we know is used for sending spam',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: We don.t want your spam.; from=<\5> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: We don.t want your spam.; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
         'REJECTION',
