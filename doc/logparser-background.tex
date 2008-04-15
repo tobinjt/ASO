@@ -1,0 +1,810 @@
+\section{Background}
+
+\label{background}
+
+\subsection{Introduction}
+
+This section provides background information helpful in understanding the
+remainder of the paper.  It begins with a discussion of the motivation
+underlying the project, followed by some technical information: the use of
+a database as an \API{}\@; a brief introduction to \SMTP{}\@; a longer
+introduction to Postfix, concentrating on the topics most relevant to this
+paper, namely Postfix anti-spam restrictions and policy servers.  The
+assumptions made in designing and implementing the parser are explained, as
+are the conventions used in this paper.  Other projects which attempt to
+parse Postfix logs are summarised (full details are available in
+appendix~\refwithpage{other-parsers}), finishing with a review of
+previously published research in this area.
+
+\subsection{Motivation}
+
+\label{motivation}
+
+This paper and the program it describes are part of a larger project to
+optimise a server's Postfix restrictions, generate statistics and graphs,
+and provide a platform on which new restrictions can be trialled and
+evaluated to see if they are beneficial in the fight against spam.  The
+program parses Postfix logs and populates a database with the data gleaned
+from those logs, providing a consistent and simple view of the logs which
+future tools can utilise.  The gathered data can then be used to optimise
+current anti-spam measures, provide a baseline to test new anti-spam
+measures against, or to produce statistics showing how effective those
+measures are.
+
+A short example of the optimisation possible using data from the database
+is determining which Postfix restrictions reject the highest number of
+mails:
+
+\begin{verbatim}
+SELECT name, description, restriction_name, hits_total
+    FROM rules
+    WHERE postfix_action = 'REJECTED'
+    ORDER BY hits_total DESC;
+\end{verbatim}
+
+If the database supports sub-selects percentages can be obtained:
+\footnote{\SQL{} note: $||$ is the concatenation operator in SQLite3; if
+the database containing the extracted data does not support this syntax,
+then simply remove `` $||$ '$\%$'\hspace{1ex}'' from the query --- the
+results will be the same, just slightly less visually pleasing.}
+
+\begin{verbatim}
+SELECT name, description, restriction_name, hits_total,
+        (hits_total * 100.0 /
+            (SELECT SUM(hits_total)
+                FROM rules
+                WHERE postfix_action = 'REJECTED'
+            )
+        ) || '%' AS percentage
+    FROM rules
+    WHERE postfix_action = 'REJECTED'
+    ORDER BY hits_total DESC;
+\end{verbatim}
+
+Another example is determining which restrictions are not effective: this
+shows which restrictions had fewer than 100 hits on the last log file
+parsed.
+
+\begin{verbatim}
+SELECT name, description, restriction_name, hits,
+        (hits * 100.0 /
+            (SELECT SUM(hits)
+                FROM rules
+                WHERE postfix_action = 'REJECTED'
+            )
+        ) || '%' AS percentage
+    FROM rules
+    WHERE postfix_action = 'REJECTED'
+        AND hits < 100
+    ORDER BY hits ASC;
+\end{verbatim}
+
+These database queries yield summary statistics about the efficiency of
+spam avoidance techniques that is far less feasible to assess directly from
+log files without prior pre-processing into a database in the fashion
+proposed, implemented and tested herein.
+
+\subsection{Database as Application Programming Interface}
+
+\label{database as API}
+
+The database populated by this program provides a simple interface to
+Postfix logs.  Although the interface is a database schema, it is in effect
+quite similar to any other \API{} provided by shared code: it insulates
+both user and provider of the \API{} from changes in the implementation of
+the \API{}\@.  The algorithm implemented by the parser can be improved;
+support can be added for earlier or later releases of Postfix; bugs can be
+fixed or limitations removed from the parser; these changes will not cause
+the user to be negatively impacted.  Statistics and/or graphs can be
+generated from the database; new restrictions can be tested and the results
+inspected; trends in the fight against spam can emerge from historical data
+saved in the database; the parser remains the same as the usage adapts.
+Using a database simplifies writing programs which need to interact with
+the data in several ways:
+
+\begin{enumerate}
+
+    \item The majority of programming languages have existing code
+        available providing access to databases, so the majority of
+        languages will be able to access the results obtained by the
+        parser.  If this parser was written to be utilised as shared code
+        there would be little or no difficulty in using it when writing in
+        the programing language it is implemented in, but every other
+        programing language wishing to utilise it would require an
+        interface layer to be written.  This requirement would drastically
+        reduce the viability of any project wishing to build upon the work
+        of this project.
+
+    \item Databases provide complex querying and sorting functionality to
+        the user without requiring large amounts of programming.  All
+        databases provide a program, of variable complexity and
+        sophistication, which can be used for ad hoc queries with minimal
+        investment of time.
+
+    \item Databases are easily extensible, e.g.:
+
+        \begin{itemize}
+
+            \item Other tables can be added to the database, e.g.\ to cache
+                historical, summary or computed data.
+
+            \item New columns can be added to the tables used by the
+                program, with sufficient DEFAULT clauses or a clever
+                TRIGGER or two.\footnote{Please refer to an \SQL{} guide
+                for explanations of these terms,
+                e.g.~\cite{sql-for-web-nerds}}
+
+            \item A VIEW gives a custom arrangement of data with very
+                little effort.
+
+            \item If the database supports it, access can be granted on a
+                fine-grained basis so that the finance department can
+                produce invoices, the helpdesk can run limited queries as
+                part of dealing with support calls, and the administrators
+                can have full access to the data.
+
+            \item Triggers can be written to perform actions when certain
+                events occur.  In pseudo-\SQL{}\@:
+
+\begin{verbatim}
+CREATE TRIGGER ON INSERT INTO results
+    WHERE sender = 'boss@example.com'
+        AND postfix_action = 'REJECTED'
+    SEND PANIC EMAIL TO 'postmaster@example.com';
+\end{verbatim}
+
+        \end{itemize}
+
+
+    \item \SQL{} is reasonably standard and many people will already be
+        familiar with it; for those unfamiliar with it there are lots of
+        readily available resources from which to learn (a good
+        introduction to \SQL{} can be found at~\cite{sql-for-web-nerds},
+        others are~\cite{w3schools-sql-tutorial, sqlcourse.com}).  Although
+        every vendor implements a different dialect of \SQL{}, the basics
+        are the same everywhere (analogous to the overall similarities and
+        minor differences between Irish English, British English, American
+        English and Australian English).  Depending on the database in use
+        there may be tools available which reduce or remove the requirement
+        to know \SQL{}; for SQLite (the default database used by the
+        implementation) there are several available~\cite{sqlite-guis}.
+
+\end{enumerate}
+
+Storing the results in a database will also increase the efficiency of
+using those results, as the logs need only be parsed once; indeed the
+results may be used by someone with no access to the original logs.
+
+
+
+\subsection{Simple Mail Transfer Protocol}
+\label{SMTP background}
+
+The \SMTPlong{}, originally defined in \RFC{}~821~\cite{RFC821} and updated
+in \RFC{}~2821~\cite{RFC2821}, is used for transferring mail between the
+sending and receiving \MTA{}\@.  It is a simple, human readable, plain text
+protocol, making it quite easy to test and debug problems with it.  Despite
+the simplicity many virus and/or spam sending programs fail to implement it
+properly, so requiring strict adherence to the protocol specification is
+beneficial in protecting against spam and
+viruses.\footnote{\label{footnote:rfc760}Originally all mail servers
+adhered to the principle of \textit{Be liberal in what you accept, and
+conservative in what you send\/} from \RFC{}~760~\cite{rfc760}, but
+unfortunately that principle was written in a friendlier time.  Given the
+deluge of spam that mail servers are subjected to daily, a more appropriate
+maxim could be: \textit{Require strict adherence to \RFC{}~2821; implement
+the strongest restrictions you can; relax the restrictions and adherence
+only when legitimate mail is impeded.\/}  It's not as friendly, nor as
+catchy, but it more accurately reflects the current situation.} A typical
+\SMTP{} conversation resembles the following (the lines starting with a
+three digit number are sent by the server, all other lines are sent by the
+client):
+
+\begin{verbatim}
+220 smtp.example.com ESMTP
+HELO client.example.com
+250 smtp.example.com
+MAIL FROM: <alice@example.com>
+250 2.1.0 Ok
+RCPT TO: <bob@example.com>
+250 2.1.5 Ok
+DATA
+354 End data with <CR><LF>.<CR><LF>
+Message headers and body sent here.
+.
+250 2.0.0 Ok: queued as D7AFA38BA
+QUIT
+221 2.0.0 Bye
+\end{verbatim}
+
+An example deviation from the protocol:
+
+\begin{verbatim}
+220 smtp.example.com ESMTP
+HELO client.example.com
+250 smtp.example.com
+MAIL FROM: Alice N. Other alice@example.com
+501 5.1.7 Bad sender address syntax
+RCPT TO: Bob in Sales/Marketing bob@example.com
+503 5.5.1 Error: need MAIL command
+DATA
+503 5.5.1 Error: need RCPT command
+Message headers and body sent here.
+.
+502 5.5.2 Error: command not recognized
+QUIT
+221 2.0.0 Bye
+\end{verbatim}
+
+This client is so poorly written that not only does it present the sender
+and recipient addresses improperly, it ignores the error messages returned
+by the server and carries on regardless.  There are many spam and virus
+sending programs which are this deficient --- unfortunately others
+(particularly newer programs) were written by competent programmers, or
+utilise competently written programs (e.g.\ Postfix or Sendmail on Unix
+hosts, Microsoft Outlook on Windows hosts).  Traditionally a mail server
+would have done its best to deal with deficient clients, with the intention
+of accepting as much mail destined for its users as
+possible,\footref{footnote:rfc760} e.g.\ by ignoring the absence of a HELO
+command, or accepting sender or recipient addresses which were not enclosed
+in \texttt{<>}.  
+
+A detailed description of \SMTP{} is beyond the scope of this document:
+introductory guides can be found at~\cite{smtp-intro-01, smtp-intro-02}.
+
+\subsection{Postfix}
+
+\label{postfix background}
+
+Postfix is a \MTA{} with the following design aims (in order of
+importance): security, flexibility of configuration, scalability, and high
+performance.  It features extensive, extensible, optional anti-spam
+restrictions, allowing an administrator to deploy those restrictions which
+they judge suitable for their site's needs, rather than a fixed set chosen
+by Postfix's author.  These restrictions can be selectively applied,
+combined and bypassed on a per-client, per-recipient or per-sender basis,
+allowing varying levels of severity and/or permissiveness.  Postfix
+leverages simple lookup tables to support arbitrarily complicated
+user-defined sequences of restrictions and exceptions, with policy
+servers\footnote{Policy servers will be explained in \sectionref{policy
+servers}.} as the ultimate in flexibility.  Administrators can also supply
+their own rejection messages to make it clear to senders why exactly their
+mail was rejected.  Unfortunately this flexibility has a cost: complexity
+in the logs generated.  While it is easy to use standard Unix text
+processing utilities to determine the fate of an individual email,
+following the journey an email takes through Postfix can be quite
+difficult.  The logs tend to follow a 90\%-10\% pattern: 90\% of the time
+the journey is simple, but the other 10\% of the time requires 90\% of the
+code.\footnote{These numbers don't have a solid scientific basis, they're
+based on gut feeling from writing and debugging the software.}
+
+Postfix's design follows the Unix philosophy of \textit{Write programs that
+do one thing and do it well\/}~\cite{unix-philosophy},\footnote{This
+principle was also followed when designing the parser (\sectionref{parser
+design}), notably having separate actions rather than one huge action.} and
+is separated into various component programs to perform the tasks required
+of an \MTA{}\@: receive mail, send mail, local delivery of mail, etc. ---
+full details can be found at~\cite{postfix-overview}.  Each log line
+contains the name of the Postfix program which produced it, and this
+information is used when determining which rules should be used to parse
+each log line (see \sectionref{rule characteristics} for details).  This
+design has positive security implications also: those components which
+interact with other hosts are not privileged,\footnote{Privilege in this
+case means the power to perform actions that are limited to the
+administrator, and not available to ordinary users.} so bugs in those
+components will not give an attacker extra privileges; those components
+which are privileged do not interact with other hosts, making it much more
+difficult for an attacker to exploit any bugs which may exist in those
+components.
+
+\subsubsection{Mixing and matching Postfix restrictions}
+
+Postfix restrictions are documented fully in~\cite{smtpd_access_readme,
+smtpd_per_user_control, policy-servers}, the following is a brief overview
+only.
+
+Postfix uses one restriction list (containing zero or more restrictions)
+for each stage of the \SMTP{} conversation: client connection, HELO
+command, MAIL FROM command, RCPT TO commands, DATA command, and end of
+data.  The appropriate restriction list is evaluated for each stage
+(evaluation will be explained shortly), though by default the restriction
+lists for client connection, HELO and MAIL FROM commands will not be
+evaluated until the first RCPT TO command is received, because some clients
+don't deal properly with rejections before RCPT TO\@; a benefit of this
+delay is that Postfix has more information available when logging the
+rejection.  Postfix uses simple lookup tables as the deciding factor when
+evaluating some restrictions, e.g.\newline
+\tab{}\texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
+\newline The line above can be broken down as follows:
+
+\begin{description}
+
+    \item [check\_client\_access] The name of the restriction to evaluate.
+
+    \item [cidr] The type of the lookup table.
+
+    \item [/etc/postfix/client\_access] The file containing the lookup
+        table.
+
+\end{description}
+
+The restriction \texttt{check\_client\_access} checks whether the \IP{}
+address of the connected client is found in the file and returned the
+associated action if found; the method of searching the file is dependant
+on the type of the file (\texttt{cidr} in the example) --- see
+\cite{postfix-lookup-tables} for more details.  Other restrictions
+determine their result by consulting external sources, e.g.\
+\texttt{reject\_rbl\_client rbl.example.com} checks whether the \IP{}
+address of the client is present in the \RBL{} \texttt{rbl.example.com},
+rejecting the command if the client is listed.
+
+Each restriction is evaluated to produce a result of \textit{reject},
+\textit{permit}, \textit{dunno\/} or the name of another restriction to be
+evaluated.\footnote{Other results are possible, for full details
+see~\cite{smtpd_access_readme, smtpd_per_user_control, policy-servers}.}
+The meaning of \textit{permit\/} and \textit{reject\/} is fairly obvious;
+\textit{dunno\/} means to stop evaluating the current restriction and
+continue processing the remainder of the restriction list, allowing more
+specific cases to be used as exceptions to more general cases.  When the
+result is the name of another restriction Postfix will evaluate the new
+restriction, allowing restrictions to be chosen based on the client \IP{}
+address, HELO hostname, sender address, recipient address, etc.  The
+administrator can define new restrictions as a list of existing
+restrictions, allowing arbitrarily long and complex sequences of lookups,
+restrictions and exceptions.  Postfix tries to protect the administrator in
+as far as is reasonable, e.g.\ the restriction
+\texttt{check\_helo\_mx\_access} cannot cause a mail to be accepted,
+because the parameter it checks (the hostname given in the HELO command) is
+under the control of the remote client.  Despite this, it is possible for
+the administrator to make catastrophic mistakes, e.g.\ rejecting mail for
+all users --- the administrator must remember that \textit{With great
+power comes great responsibility}.
+
+This description is necessarily brief, for further details
+see~\cite{smtpd_access_readme, smtpd_per_user_control, policy-servers}.
+
+
+\subsubsection{Policy servers}
+
+\label{policy servers}
+
+A policy server~\cite{policy-servers} is an external program that accepts
+state information from Postfix for each \SMTP{} command not rejected by an
+earlier restriction; the policy server can utilise that state information
+to implement whatever logic is required.  For example some users can be
+restricted to sending mail on the third Tuesday after pay day only --- this
+example may actually be useful in a payroll system to prevent problems from
+spam or (worse) phishing mails with faked sender addresses.  More commonly
+encountered scenarios are:
+
+\begin{itemize}
+
+    \item Checking \SPF{} records~\cite{openspf, Wikipedia-spf}.
+        \SPF{}\label{spf introduction} records specify which mail servers
+        are allowed to send mail claiming to be from a particular domain.
+        The intention is to reduce spam from faked sender addresses,
+        backscatter~\cite{postfix-backscatter} and
+        joe~jobs~\cite{Wikipedia-joe-job}; however there has been a lot of
+        resistance to the proposal because it breaks or vastly complicates
+        some features of \SMTP{}\@.
+
+    \item Greylisting~\cite{greylisting} is a technique that temporarily
+        rejects mail when the triple of (sender address, recipient address,
+        remote \IP{} address) is unknown; on second and subsequent delivery
+        attempts from that triple the mail will be accepted.  The
+        assumption is that maintaining a list of failed addresses and
+        retrying after a temporary failure is uneconomical for a spam
+        sender, but that a legitimate mail server must retry.  Sadly spam
+        senders are using increasingly complex and well written programs to
+        distribute spam, frequently using an \ISP{} provided \SMTP{} server
+        from a compromised machine on the \ISP{}'s network.  Greylisting
+        will slowly become less useful, but it does block a large
+        percentage of spam mail at the moment; the most effective
+        restrictions over the \numberOFlogFILES{} log files used in testing
+        the parser are shown in table~\refwithpage{Summary of rejections}.
+        Greylisting is obviously worth using, at least at the moment,
+        particularly when you factor in Greylisting's position as the final
+        restriction which a mail must overcome:\footnote{Greylisting is the
+        final restriction a mail must overcome in the configuration used on
+        the mail server the logs were obtained from; an administrator is
+        free to use Greylisting at whichever position in the restriction
+        list they feel is most appropriate for their mail system.}
+        Greylisting only takes effect for mails which have passed every
+        other restriction.
+
+        \begin{table}[ht]
+            \caption{Summary of rejections}\label{Summary of rejections}
+            \input{build/restriction-table-include.tex}
+        \end{table}
+
+    \item Using a scoring system such as
+        Policyd-weight~\cite{policyd-weight} where tests accumulate points
+        against the sending system --- if the eventual score is too high
+        the mail is rejected.  Postfix's restrictions are binary, and the
+        administrator must manually whitelist clients if they are to bypass
+        a restriction; using a threshold which requires hitting several
+        restrictions frees the administrator from whitelisting clients
+        which fall foul of one restriction only.
+
+    \item Rate limiting on a per-sender, per-client or per-recipient basis
+        as performed by Policyd~\cite{policyd}.
+
+\end{itemize}
+
+Example attributes taken from~\cite{policy-servers}:
+
+\begin{tabular}[]{ll}
+
+    request                 & smtpd\_access\_policy     \\
+    protocol\_state         & RCPT                      \\
+    protocol\_name          & SMTP                      \\
+    helo\_name              & some.domain.tld           \\
+    queue\_id               & 8045F2AB23                \\
+    sender                  & foo@bar.tld               \\
+    recipient               & bar@foo.tld               \\
+    recipient\_count        & 0                         \\
+    client\_address         & 1.2.3.4                   \\
+    client\_name            & another.domain.tld        \\
+    reverse\_client\_name   & another.domain.tld        \\
+    instance                & 123.456.7                 \\
+
+\end{tabular}
+
+
+
+\subsection{Assumptions}
+
+The algorithm described and the program implementing it make a small number
+of (hopefully safe and reasonable) assumptions:
+
+\begin{itemize}
+
+    \item The logs are whole and complete: nothing has been removed, either
+        deliberately or accidentally (e.g.\ log rotation gone awry, file
+        system filling up, logging system unable to cope with the volume of
+        logs).  On a well run system it is extremely unlikely that any of
+        these problems will arise, though it is of course possible,
+        particularly when suffering a deluge of spam or a mail loop.
+
+    \item Postfix logs sufficient information to make it possible to
+        accurately reconstruct the actions it has taken.  There are a
+        number of heuristics used when parsing; see
+        \sectionref{identifying-bounce-notifications},
+        \sectionref{aborted-delivery-attempts} and \sectionref{pickup
+        logging after cleanup} for details.
+
+    \item The Postfix queue has not been tampered with, causing unexplained
+        appearance or disappearance of mail.  This may happen if the
+        administrator deletes mail from the queue without using 
+        \daemon{postsuper}, or if there is filesystem corruption.
+
+\end{itemize}
+
+In some ways this task is similar to reverse engineering or replicating a
+black box program based solely on its inputs and outputs.  Although the
+source code is available,\footnote{Reading and understanding the source
+code would require a significant investment of time; the source code for
+Postfix 2.5.1 is 17MB.} there are advantages to treating Postfix as a black
+box while developing the parser:
+
+\begin{itemize}
+
+    \item The parser is developed using real world logs rather than the
+        idealised logs someone would naturally envisage reading the source
+        code.
+
+    \item The source code cannot accurately communicate the variety of
+        orderings in which log lines are written to the log file, as
+        process scheduling independently interferes with logging and other
+        processing.
+
+    \item The parser acts as a second source of information, with the
+        information gathered from empirical evidence.  An interesting
+        project would be to compare the empirical knowledge inherent in the
+        parsing algorithm with the documentation and source code of
+        Postfix.
+
+\end{itemize}
+
+
+\subsection{Parser design}
+
+\label{parser design}
+
+It should be clear from the earlier Postfix background (\sectionref{postfix
+background}) that logs produced by Postfix are not fixed; they vary widely
+from host to host, depending on the set of restrictions chosen by the
+administrator.  With this in mind, one of the parser's design aims was to
+make adding new rules as easy as possible, to enable administrators to
+properly parse their log lines.  To enable this the parser is divided into
+three parts:
+
+\begin{description}
+
+    \item [rules] Rules match individual log lines and determine which
+        actions will be executed.  Rules provide an easily extensible
+        method of associating log lines and actions.  Rules are described
+        in detail in \sectionref{rules}.
+
+    \item [actions] Actions invoked to deal with a log line once it has been
+        identified by the rules: modifying data structures, handing
+        complications, and saving data to the database.  The actions
+        perform the work of reconstructing the journey a mail takes through
+        Postfix.  Full details of actions can be found in
+        \sectionref{parsing-algorithm}, particularly
+        \sectionref{actions-in-detail} and \sectionref{adding new actions}.
+
+    \item [framework] The framework is responsible for loading rules, managing data
+        structures so actions can retrieve them, finding the rule which
+        matches each log line, invoking the correct action, etc.  The
+        framework provides the structure which actions and rules plug into.
+        The framework is not described in detail in this document because
+        it is not particularly interesting, but there is some coverage in
+        \sectionref{framework}.
+
+\end{description}
+
+It may help to think of the rules and actions as components which plug into
+the framework.  
+
+\label{why separate rules, actions and framework?}
+
+Decoupling the parsing rules from the associated actions allows new rules
+to be written and tested without requiring modifications to the parser
+source code (significantly lowering the barrier to entry for new or casual
+users who need to parse new log lines), and greatly simplifies both actions
+and rules.  Decoupling also creates a clear separation of functionality:
+rules handle low level details of identifying log lines and extracting data
+from a log line, whereas the actions handle the higher level details of
+following the path a mail takes through Postfix, assembling the required
+data before storing it, dealing with complications arising, etc.
+
+Decoupling the actions from the framework simplifies both framework and
+actions: the framework provides services to the actions, and doesn't need
+to deal with the complications which arise, or the task of reconstructing a
+mail's journey through Postfix; actions benefit from having services
+provided by the framework, freeing them to concentrate on the task of
+accurately reconstructing each mail's journey through Postfix and dealing
+with the complications described in \sectionref{additional complications}.
+
+Separating the rules from the actions and framework makes it possible to
+parse new log lines without modifying the core parsing algorithm.  Although
+this may seem like a trivial point, is it substantially more difficult to
+understand a program's entire parsing algorithm, identify the correct
+location to change and make the appropriate changes, versus adding a new
+rule with the action to invoke, a \regex{} to match the log lines, and the
+specification of the data to extract.  Bear in mind that the changes must
+be made without adversely affecting existing parsing, particularly as there
+may be edge cases which are not immediately obvious.\footnote{See
+\sectionref{yet-more-aborted-delivery-attempts} for a complication which
+occurs only four times in \numberOFlogFILES{} log files tested.}  Requiring
+changes to the parser's code also complicates upgrades, as the changes
+must be preserved during the upgrade, and may clash with changes made by
+the developer.\footnote{See \sectionref{adding new actions} for how to add
+new actions}  \parsername{} allows the user to add new rules to the
+database without changing the parsing algorithm, unless the new log lines
+to be parsed require functionality not already provided by the algorithm.
+If the new log lines do require new functionality, new actions can be added
+to the parser without modifying existing actions or other parts of the
+algorithm; only in the rare case that the new actions require support from
+other sections of the code will more extensive changes be required.
+
+There is some similarity between the parser's design and William Wood's
+\ATN{}~\cite{atns, nlpip}, a tool used in Computational Linguistics for
+creating grammars to parse or generate sentences.  The resemblance between
+\ATN{} and the parser is accidental, but it is interesting how two
+apparently different approaches share an underlying separation of concerns;
+this appears to be a natural division of responsibility and functionality.
+
+% Do Not Reformat!
+
+\begin{tabular}[]{lll}
+    \textit{\ATN{}\/}   & \textit{Parser\/} & \textit{Similarity\/}     \\
+    Networks            & Algorithm         & Determines the sequence 
+                                              of transitions            \\
+                        &                   & or actions which 
+                                              constitutes a valid       \\
+                        &                   & input.                    \\
+    Transitions         & Actions           & Save data and impose
+                                              conditions the            \\
+                        &                   & input must meet to be
+                                              considered valid.         \\
+    Abbreviations       & Rules             & Responsible for 
+                                              classifying input.        \\
+\end{tabular}
+
+\subsection{Conventions used in the paper}
+
+The words \textit{connection\/} and \textit{mail\/} are often used
+interchangeably in this paper; in general the word used was chosen based on
+the context it appears in.
+
+\subsection{Other Postfix log parsers}
+
+Ten other parsers have been reviewed in
+appendix~\refwithpage{other-parsers} as part of the background research for
+this project.  None of the reviewed parsers perform the type of advanced
+parsing and log correlation described here; all are intended to perform a
+specific parsing and reporting task, rather than be a generic parser,
+extracting data and leaving generation of reports from the data to other
+programs.  Some parsers save the data extracted to a data store but the
+majority discard all data once they have finished running, making
+historical analysis impossible.  The other parsers reviewed all produce a
+report of greater or lesser complexity and detail, whereas the program
+described here doesn't attempt to produce a report at all; that
+responsibility is deferred to a separate program, to be developed later.
+The parsing algorithm and program described here are designed to enable
+much more detailed log analysis by providing a stable platform for
+subsequent programs to develop upon.
+
+
+
+\subsection{Previous research in this area}
+
+\label{prior art}
+
+There only appears to be one prior paper published about parsing Postfix
+log files: \textit{Log Mail Analyzer: Architecture and Practical
+Utilizations\/}~\cite{log-mail-analyser}.  The aim of \LMA{} is quite
+different from this parser: it attempts to present correlated log data in a
+form suitable for a systems administrator to search using the myriad of
+standard Unix text processing utilities already available, producing both a
+\CSV{} file and either a MySQL or Berkeley DB database.  The decision to
+support both \CSV{} and Berkeley DB appears to have been a limiting factor:
+\CSV{} is a very simple format where a record is stored in a single line,
+with fields separated by a comma or other punctuation symbol.  Problems
+with \CSV{} files include the difficulty in escaping separators, providing
+multiple values for a field (e.g.\ multiple recipients), adding new fields,
+and lack of a bundled schema describing the fields.
+
+Berkeley DB only supports storing \textbf{(key, value)} pairs, unlike
+\SQL{} databases which store arbitrary tuples; in the main table the key is
+an integer referred to by secondary tables, and the value used is a \CSV{}
+line containing all of the data for that row.  The secondary by-sender,
+by-recipient, by-date and by-\IP{} tables use the
+sender/recipient/date/\IP{} as the key, and a \CSV{} list of integers
+referring to the main table is the value.  In effect this re-implements
+\SQL{} foreign keys, but without the functionality offered by even the most
+basic of \SQL{} databases (joins, ordering, searches, etc.).  It also
+requires custom code to search on some combination of the above, though the
+authors of \LMA{} did provide some queries: IP-STORY, FROM-STORY,
+DAILY-EMAIL and DAILY-REJECT\@.  Berkeley DB appears to be the least useful
+of the three output formats
+
+The data stored is limited to time and date, hostname and \IP{} address of
+client, \IP{} of server, sender and recipient addresses, \SMTP{} code, and
+size (for accepted mails only).  Handling of multiple recipients, \SMTP{}
+codes or remote servers\footnote{A single mail may be sent to multiple
+remote servers if it was addressed to recipients in different domains, or
+Postfix needs to try multiple servers for one or more recipients.} is not
+explained in the paper; experimental observation shows that multiple
+records are added when there are multiple recipients (sadly the records are
+not associated in any way), and presumably the same approach is taken when
+there are multiple destination servers.
+
+The schema used with the MySQL database is undocumented, but at least it's
+possible to discover the schema with an \SQL{} database, unlike with
+Berkeley DB\@; all \SQL{} databases embed the database schema into the
+database and provide commands for displaying it.  Berkeley DB does not
+embed a schema, as there is neither requirement nor benefit; it only
+provides \textbf{(key, value)} pairs, so any additional structuring of the
+data is imposed by the application, thus it behoves the application to
+document this structure.
+
+Parsing in \LMA{} requires major changes to the code to parse new log lines
+or extract additional data.  It does not appear to deal with any of the
+complications discussed in \sectionref{complications} (initial
+complications) and \sectionref{additional complications} (additional
+complications).  It does not differentiate between different types of
+rejections, so it is not suitable for the purposes of this project; the
+data about which restriction caused the rejection is discarded, whereas an
+important goal of this project is to retain that data to aid optimisation
+and evaluation of Postfix restrictions.  \LMA{} fails to parse Postfix log
+files generated on Solaris hosts because the fields added automatically
+differ from those added on Linux hosts; logs from Solaris hosts (and
+possibly other operating systems) thus require preprocessing before parsing
+by \LMA{}.
+
+\LMA{} does provide some simple reports: IP-STORY, FROM-STORY, DAILY-EMAIL
+and DAILY-REJECT\@.  IP-STORY shows the \CSV{} lines with the specified
+client \IP{} address; FROM-STORY shows the \CSV{} lines with the specified
+sender address; DAILY-EMAIL shows the \CSV{} lines for the specified day.
+DAILY-REJECT initially failed with an error message from the Perl
+interpreter; after making some corrections to the code it worked, and
+produced the \CSV{} lines for the specified day where the \SMTP{} code
+signifies a rejection.  All of these reports are trivially simple to
+produce from the \CSV{} file using the standard Unix tool \texttt{awk},
+e.g.\ the most complicated, DAILY-REJECT, is merely:
+
+\begin{verbatim}
+awk -F\| '$1 ~ /2007-01-26/ && $7 ~ /^[450]|deferred/
+    { print $0; print " "; }' lma_output.txt
+\end{verbatim}
+
+Notes about the command above:
+
+\begin{enumerate}
+
+    \item It outputs an unnecessary line containing only a single space
+        after each matching line, for compatibility with the output of
+        DAILY-REJECT\@.
+
+    \item Some records have an \SMTP{} code of \textit{0}, though this is not a
+        valid \SMTP{} code; presumably this is due to \LMA{} not parsing a
+        line properly.  \LMA{} considers this code to be a rejection, so
+        the command above must, too.
+        
+    \item In a tiny proportion of records the \SMTP{} code is
+        \textit{deferred\/} (again, not a valid code, and most likely due
+        to mis-parsing by \LMA{}); it is treated as a rejection by \LMA{},
+        so the equivalent \texttt{awk} command must do so, too.
+
+\end{enumerate}
+
+There are a number of differences in the output from DAILY-REJECT and the
+\texttt{awk} command:
+
+\begin{itemize}
+
+    \item \LMA{} does not escape or replace the separators used in the
+        \CSV{} records when they are present in sender or recipient
+        addresses, leading to some mangled records; these records are not
+        present in the output from \texttt{awk}.
+
+    \item Where there are multiple records in the \CSV{} file, DAILY-REJECT
+        produces only one output line, whereas the \texttt{awk} command
+        produces all matching lines.
+
+\end{itemize}
+
+In summary, \LMA{} appears to be a proof of concept, written to demonstrate
+the point of their paper (that having this information in an accessible
+fashion is useful to systems administrators), rather than a program
+designed to be extensible and useful in a production environment.
+
+% Literature review notes:
+%
+% Hard-coded parsing, requiring code changes to add more.  Attempts to
+% correlate log lines, saves data to database for data mining purposes.
+% Hard to extend/expand/understand.  Appears to only save: date and hour,
+% \DNS{} name and \IP{} address host, mail server \IP{} address, sender,
+% receiver and e-mail status (sent, rejected).  Undocumented schema.
+% Design decision to use \CSV{} as an intermediate format between the log
+% file and the database seems to have been restrictive.  Appears to require
+% a queueid but majority of log entries (e.g. rejections) lack a queueid.
+% Supports whitelisting \IP{} addresses when parsing logs, but whitelisting
+% when generating reports/data mining would be preferable.  Supporting
+% Berkeley DB is probably limiting the software - an example is the
+% difficulty in searching a pipe-delimited string, so they have
+% re-implemented foreign keys with tables keyed by ip address etc. pointing
+% at the main table - this also won't scale well.  There doesn't appear to
+% be any attempt to deal with the complications I've encountered: their
+% parsing isn't detailed enough to encounter them.  It doesn't run
+% properly; doesn't create any output; throws up errors.
+
+\subsection{Conclusion}
+
+This section has provided background information on several topics relevant
+to the remainder of the paper.  It started with the motivation behind the
+project, continuing with explanations of:
+
+\begin{itemize}
+
+    \item Using a database as an \API{}.
+
+    \item \SMTP{}.
+
+    \item Postfix restrictions and policy servers.
+
+    \item Assumptions made when designing and developing the parser.
+
+    \item A description of a new parser's novel three section design.
+
+    \item Conventions used in this document.
+
+    \item A brief comparison of this parser versus other Postfix parsers.
+
+    \item A review of the literature previously published in this area.
+
+\end{itemize}
+

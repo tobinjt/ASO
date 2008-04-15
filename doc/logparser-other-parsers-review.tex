@@ -1,0 +1,484 @@
+\section{Other Postfix log parsers reviewed}
+
+\label{other-parsers}
+
+\subsection{Introduction}
+
+It is important to compare and contrast newly developed programs,
+algorithms and parsers against those already available, to accurately judge
+what, if any, improvements are delivered by the newcomers.  There are not
+that many previously developed Postfix log parsers, indeed it was quite
+difficult to find ten parsers to review for this project, and the
+functionality offered ranges from quite basic to much more mature,
+depending on the needs of the creator.  The programs are not reviewed from
+an independent viewpoint; the objective is to compare and contrast each
+program with \parsername{}.  There are some important differences between
+\parsername{} and the parsers reviewed here:
+
+\begin{enumerate}
+
+    \item Only \parsername{} makes it possible to parse new log lines
+        without modifying the core parsing algorithm; see \sectionref{why
+        separate rules, actions and framework?} for a discussion of why the
+        separation of the algorithm into rules, actions and framework is
+        beneficial.
+
+    \item \parsername{} does not provide any reporting based on the data it
+        gathers.  This is by design: the parser is responsible for parsing
+        logs and extracting data --- further processing of that data is a
+        separate concern, deferred to another program.  Using an \SQL{}
+        database simplifies the process of generating such reports
+        (discussed in \sectionref{database as API}); some
+        simple examples are given in \sectionref{motivation}.
+
+\end{enumerate}
+
+\subsection{Parsers reviewed}
+
+In this section text in italics is a quote extracted from the documentation
+of the program being reviewed.
+
+
+\subsubsection{Pflogsumm}
+
+\textit{pflogsumm is designed to provide an over-view of Postfix activity,
+with just enough detail to give the administrator a ``heads up'' for
+potential trouble spots.\/}
+
+Pflogsumm produces a report designed for troubleshooting, rather than for
+in-depth analysis.  It does not support saving any data, nor does it
+extract more data than is required for producing the report.  Both the
+parsing and reporting are difficult to extend as it is a specialised tool,
+unlike the easily extensible design of \parsername{}.  It does not attempt
+to correlate log lines by queueid or \pid{}, nor does it need to deal with
+the complications encountered during this project.  Pflogsumm produces a
+useful report, and successfully dealt with the \numberOFlogFILES{} logs
+files tested with,\footnote{The results it reported were not verified, but
+it did not report any errors, and has a very good reputation amongst
+Postfix users.} but is not a suitable base for this project.
+
+Pflogsumm's report includes the following:
+
+\begin{itemize}
+
+    \item Total number of mails accepted, delivered and rejected.  Total
+        bytes of mail accepted and delivered.
+
+    \item Total number of sender and recipient addresses and domains.
+
+    \item Per-hour averages and per-day summaries of the number of mails
+        received, delivered, deferred, bounced and rejected.
+
+    \item For received mail: per-domain totals for mails sent, deferred,
+        average delay, maximum delay and bytes delivered.  For received
+        mail: per-domain totals for mails received and bytes received.
+
+    \item Number of mails and bytes sent and received for each address.
+
+    \item Summary of why mail delivery was deferred or failed, why mails
+        were bounced, why mails were rejected, and warning messages.
+
+\end{itemize}
+
+There are many options available to include or exclude certain sections of
+the report.
+
+\url{http://jimsun.linxnet.com/postfix_contrib.html} \newline (Last checked
+2008/04/09.)
+
+\subsubsection{Sawmill Universal Log File Analysis and Reporting}
+
+\textit{ Sawmill is a Postfix log analyzer (it also support 686 other log
+formats).  It can process log files in Postfix format, and generate dynamic
+statistics from them, analyzing and reporting events.  Sawmill can parse
+Postfix logs, import them into a SQL database (or its own built-in
+database), aggregate them, and generate dynamically filtered reports, all
+through a web interface.  Sawmill can perform Postfix analysis on any
+platform, including Window, Linux, FreeBSD, OpenBSD, Mac OS, Solaris, other
+UNIX, and more.\/}
+
+Sawmill is a general purpose commercial product which parses 687 log file
+formats (correct as of 2007/12/04) and produces reports.  Its data
+extraction facilities are quite limited, though it does extract three
+different sets of data for Postfix (one is beta as of 2007/12/04), but they
+do not appear to be interlinked, nor does it save sufficient data for the
+purposes of this project.\footnote{The data extracted by Sawmill is
+described later in this review, and the data extracted by \PLP{} is
+described in \sectionref{connections table} and \sectionref{results
+table}.}  No attempt is made to correlate log lines or deal with the
+difficulties documented in \sectionref{complications}
+\sectionref{additional complications}.\footnote{If any attempt is made
+there is no reference to it in the documentation available on the website.}
+The source code is available in an obfuscated form only (presumably for a
+fee), and the product is quite expensive, as it requires a license per
+report which is to be generated; in contrast \parsername{} is free and the
+code is freely available.  The web interface allows creation of dynamic
+reports based on any field, but due to the associated cost the author has
+not experimented with it.  Presumably, as the company charges per report
+the user wishes to generate, the data store (if there is one) is
+deliberately inaccessible and undocumented to prevent the user bypassing
+the program and generating their own reports.
+
+\url{http://www.thesawmill.co.uk/formats/postfix.html} \newline Fields
+extracted: from, to, server, UID, relay, status, number of recipients,
+origin hostname, origin \IP{} and virus.  The fields \texttt{server},
+\texttt{uid} and \texttt{virus} are not explained in their documentation:
+\texttt{server} is probably the server the mail is delivered to, and
+\texttt{uid} might be the uid of the user submitting mail locally.  Postfix
+does not perform any form of virus checking (though it has many options for
+cooperating with an external virus scanner), so the \texttt{virus} field is
+a mystery.
+
+\url{http://www.thesawmill.co.uk/formats/postfix_ii.html} \newline Fields
+extracted: from, to, \RBL{}, client hostname and client \IP{}\@.
+
+\url{http://www.thesawmill.co.uk/formats/beta_postfix.html} \newline Fields
+extracted: from, to, client hostname, client \IP{}, relay hostname, relay
+\IP{}, status, response code, \RBL{} and message id.
+
+Even if the three data sets were linked together Sawmill would extract less
+data than \parsername{}, and it does not appear to extract data about
+rejections except when the rejection is caused by an \RBL{} check.
+
+(Last checked 2007/12/04.)
+
+\subsubsection{Splunk}
+
+\textit{Splunk is an IT Search engine. It is software that indexes any
+format of IT data from any source in real time, including logs,
+configurations, scripts, code, messages, traps, alerts, activity reports,
+stack traces and metrics from all of your applications, servers and
+devices. Splunk lets you search, navigate, alert and report on all your IT
+data in real time using an AJAX web interface. You can also share knowledge
+and Splunk solutions with other members of the Splunk community via
+SplunkBase.\/}
+
+Splunk aims to index all an organisation's logs, providing a centralised
+view capable of searching and correlating diverse log sources.  The web
+interface supports complicated searches, providing statistics and graphs in
+real time, a facility not provided by \parsername{} (report generation has
+been deferred to a subsequent program).  Saved searches\footnote{The author
+was unable to save searches, though that may have been due to limitations
+in the free version.} can be run periodically and the results emailed to a
+recipient or sent to a shell script, which presumably can publish the
+results as required (though possibly without the graphs and detailed
+statistics); \parsername{} provides the database and leaves it to the user
+to utilise it in any way, whenever they want, with no restrictions on usage
+of the data.  The interface is optimised for interactive rather than
+automated queries and it does not appear to be possible to write
+independent tools to utilise the Splunk database.  Many types of reports
+are available, though most are variations of a bar or pie chart, with the
+exception of bubble and heatmap graphs.  It is very easy to drill down
+through the graphs to extract a portion of the data (e.g.\ select the hour
+with the largest number of events, then select a particular host, and
+finally a specific address), though it is not possible to search on partial
+words.  The searches are quite fast, though as the free version has a limit
+on the amount of data indexed per day the volume of data to be searched was
+merely 45MB\@; the cheapest licensed version costs \$6000, and still limits
+the volume of data indexed per day.
+
+In the specific case of parsing Postfix logs, Splunk extracts some standard
+fields: to and from addresses, HELO hostname, date, host the logs were
+collected from, and protocol.  It parses the standard syslog fields at the
+beginning of the line, and extracts any \texttt{key=<value>} pairs
+occurring after the standard syslog prologue; these pairs are the fields
+listed above.  Searches can be based on the extracted fields, and all text
+in the line is also available for searching.  \parsername{} extracts
+noticeably more data, though it does not make the full text of the line
+available, and the full power of \SQL{} is available when searching,
+allowing the user to search on arbitrarily complicated conditions.
+
+Splunk is a generic tool, so it lacks any Postfix specific support over and
+above extracting the \texttt{key=<value>} fields; most importantly it makes
+no attempt to correlate log lines by queueid or \pid{}, nor to handle any
+of the myriad complications discussed in this document.
+
+\url{http://www.splunk.com/} \newline (Last checked 2007/09/25.)
+
+\subsubsection{Isoqlog}
+
+\textit{Isoqlog is an MTA log analysis program written in C. It designed to
+scan qmail, postfix, sendmail and exim logfile and produce usage statistics
+in \HTML{} format for viewing through a browser. It produces Top domains
+output according to Sender, Receiver, Total mails and bytes; it keeps your
+main domain mail statistics with regard to Days Top Domain, Top Users
+values for per day, per month and years.\/}
+
+Isoqlog produces a report listing the number of mails sent by each unique
+sender address, and separately the total number of bytes transferred; both
+reports are produced for daily, monthly and annual time spans, but only for
+the domains listed in its configuration file (making it impossible to
+produce reports for every sender domain).  It appears to ignore all log
+lines except for those for the current day, though it does maintain a
+record of data previously extracted, which the newly extracted data is
+merged into (no information is provided on the format of the data store).
+The data extracted appears to be limited to the number of mails sent by
+each sender, unlike the copious amounts of data extracted by \parsername{}.
+It doesn't utilise rejection log lines in any way, so is unsuitable for the
+purposes of this project.  Its parsing is completely inextensible, indeed
+is almost incomprehensible, relying on \texttt{scanf(3)}, fixed offsets and
+low level string manipulation; it is the opposite end of the spectrum to
+\parsernames{} parsing.  It doesn't handle any of the complications
+discussed in this document, doesn't gather the breadth of data required for
+this project, and ignores the majority of log lines produced by Postfix.
+
+\url{http://www.enderunix.org/isoqlog/} \newline (Last checked 2007/08/13.)
+
+\subsubsection{AWStats}
+
+\textit{AWStats is a free powerful and featureful tool that generates
+advanced web, streaming, ftp or mail server statistics, graphically. This
+log analyzer works as a CGI or from command line and shows you all possible
+information your log contains, in few graphical web pages. It uses a
+partial information file to be able to process large log files, often and
+quickly. It can analyze log files from all major server tools like Apache
+log files (NCSA combined/XLF/ELF log format or common/CLF log format),
+WebStar, IIS (W3C log format) and a lot of other web, proxy, wap, streaming
+servers, mail servers and some ftp servers.\/}
+
+AWStats will produce simple graphs for many different services, but
+supporting many different services without special purpose code restricts
+it to supporting the \LCD{}.  The data it will extract from an \MTA{} log
+file is limited in comparison to \parsername{}: \newline \tab{} time2,
+email, email\_r, host, host\_r, method, url, code and bytesd.\newline
+There does not seem to be an explanation of any of those fields in the
+documentation (\parsername{} provides copious documentation).  AWStats has
+no special purpose code to deal with the intricacies of Postfix logs, in
+fact it operates by coercing Postfix logs into Apache\footnote{The Apache
+web server is the most popular HTTP server in use for the past 10 years;
+more information is available at \url{http://httpd.apache.org/}.} format
+log files, for analysis by AWStats' HTTP log file parser.  The converting
+parser only deals with a small portion of the log lines generated by
+Postfix, silently skipping those it cannot deal with, and does not
+distinguish between different types of rejection; there is no easy way to
+extend it to handle new log lines.  Although though it does correlate log
+lines by queueid, it does not deal with any of the other complications
+described in this document.
+
+When tested with the \numberOFlogFILES{} test log files AWStats' report
+says it parsed 9,240,075 (88.70\%) log lines out of 10,416,129, with
+1,176,050 (11.29\%) corrupt lines; however there are actually
+\numberOFlogLINES{} lines in the \numberOFlogFILES{} log files.  AWStats
+actually parsed 17.15\% of the input lines, ignoring the remaining 82.85\%.
+The graphs it produces give an overview of mails received for the last
+calendar month, showing:
+
+\begin{itemize}
+
+    \item The number of mails accepted from each host.
+
+    \item How many mails were received by each recipient.
+        
+    \item The average number of mails accepted by the server per-day and
+        per-hour.
+
+    \item A top ten list of aggregated \SMTP{} error codes, e.g.\ the first
+        entry in the list is: \texttt{Requested mail action not taken:
+        relaying not allowed, unknown recipient user, \ldots}
+
+\end{itemize}
+
+% Parsed lines in file: 10416129
+%  Found 4 dropped records,
+%  Found 1176050 corrupted records,
+%  Found 0 old records,
+%  Found 9240075 new qualified records.
+
+\noindent\url{http://awstats.sourceforge.net/} \newline
+\url{http://awstats.sourceforge.net/awstats.mail.html} \newline
+\url{http://awstats.sourceforge.net/docs/awstats_faq.html#MAIL}
+\newline (Last checked 2007/10/13.)
+
+\subsubsection{Log analyser --- throughput monitor}
+
+This utility tracks the number of events which occurred over a particular
+time and warns if the frequency of events passes a certain threshold.  It's
+designed to provide real time alerts when dictionary attacks, mail loops or
+similar problems occur. It doesn't attempt to extract or save data,
+correlate log lines, or any of the more advanced tasks described in this
+document, because it is not designed to do so.  The user must construct the
+\regexes{} to match significant input lines before it will parse any logs.
+This program was not reviewed in further detail because its aims are so far
+removed from the aims of this project.
+
+\url{http://home.uninet.ee/~ragnar/throughput_monitor/} \newline (Last
+checked 2007/08/13.)
+
+\subsubsection{Anteater}
+
+\textit{The Anteater project is a Mail Traffic Analyser. Anteater supports
+currently the logformat produced by Sendmail and by Postfix. The tool is
+written in 100\% C++ and is very easy to customize. Input, output, and the
+analysis are modular class objects with a clear interface. There are eight
+useful analyse modules, writing the result in plain ASCII or \HTML{}, to
+stdout or to files.\/}
+
+Anteater doesn't have any English documentation so it's difficult, nigh
+impossible, for this author to accurately comment on what analysis it
+performs.  It did not run successfully when tested, and its parsing would
+certainly be out of date as Postfix has evolved considerably since this
+tool was last updated (November 2003).  As it neither ran successfully nor
+has documentation the author can read a detailed review cannot be provided.
+
+\url{http://anteater.drzoom.ch/} \newline (Last checked 2007/08/13.)
+
+\subsubsection{Yet Another Advanced Logfile Analyser}
+
+\textit{yaala is a very flexible analyser for all kinds of logfiles. It
+uses parsers to extract information from a logfile, an SQL-like query
+language to relate the information to each other and an output-module to
+format the information appropriately.\/}
+
+YAALA uses a plugin based system to analyse log files and produce \HTML{}
+output reports, with all the parsing and report generation handled by
+modules.  Using YAALA as a base would be only slightly less work than
+starting from scratch, as both input and output modules would need to be
+written specially; it may even be more work to implement the parser within
+the constraints of YAALA\@.  YAALA supports storing previously gathered
+data using Perl's Storable module~\cite{perl-storable}, so with enough
+knowledge of the data structure YAALA stores it should be possible to
+extract data with another Perl program also using the Storable module;
+\parsername{} uses a well documented database which is accessible from the
+majority of programming languages.
+
+YAALA provides a Postfix parser which extracts the following fields from
+specific log lines:
+
+\noindent\tab{}Aggregations: count (not explained), bytes (sum of bytes
+transferred).\newline \tab{}Keyfields [sic]: incoming\_host,
+outgoing\_host, date, hour, sender, recipient, defer\_count, delay.
+
+YAALA extracts most of the fields \parsername{} does, but it does not
+maintain separate counters for each restriction like \parsername{}; this
+rules out the possibility of using the collected data for  optimisation,
+testing or understanding of restrictions.  YAALA's Postfix parser does not
+deal with the complications explained in this document, though it does
+correlate log lines by queueid.
+
+YAALA provides a mini-language based on \SQL{} that is used when generating
+reports; sample reports can be seen at~\cite{yaala-samples}.  Example
+query: \newline \tab{} \texttt{requests BY file WHERE host =\~{} Google}
+\newline The mini-language is quite limited and cannot be used to extract
+data for external use, merely to create reports.
+
+In summary YAALA provides a Postfix parser which only handles the most
+common Postfix log lines, provides reasonably flexible report generation
+from the limited data extracted, but has no facilities to extract data for
+use in other tools.
+
+\url{http://yaala.org/} \newline (Last checked 2007/10/09.)
+
+\subsubsection{Logparser/Lire}
+
+\textit{As any good system administrator knows, there's a lot more to keep
+track of in an active network than just webservers. Lire is hands down the
+most versatile log analysis software available today. Lire not only keeps
+you informed about your HTTP, FTP, and mail traffic, it also reports on
+your firewalls, your print servers, and your DNS activity. The ever growing
+list of Lire-supported services clearly outstrips any other software, in
+large part thanks to the numerous volunteers who have pioneered many new
+services and features. Lire is a total solution for your log analysis
+needs.\/}
+
+Lire is a general purpose log parser supporting many different types of log
+file.  Its Postfix parser extracts the following data from Postfix logs:
+\textit{The email servers' reports will show you the number of deliveries
+and the volume of email delivered by day, the domains from which you
+receive or send the most emails, the relays most used, etc.\/}; notably
+rejections are not mentioned or dealt with, and unlike \parsername{} there
+is no facility to extend the parser.  It supports multiple output formats
+for generated reports (text, \HTML{}, \PDF{} and Excel 95) but the reports
+do not appear to be customisable; \parsername{} does not produce any
+reports.  Lire supports saving extracted data for later report generation,
+but accessing this data from another application is undocumented; given the
+source code it should be possible, with sufficient time and effort, to
+access the data from an external program.
+
+Like AWStats and Logrep, Lire attempts to correlate log lines by queueid,
+but not by \pid{}, so the complete list of recipients for a mail should be
+available; however its parser extracts only part of the available data and
+makes no attempt to deal with the other complications described in
+\sectionref{complications} \sectionref{additional complications}.
+\parsername{} uses an \SQL{} database to make accessing the extracted data
+as easy as possible.
+
+\url{http://logreport.org/lire.html} \newline (Last checked 2007/10/09.)
+
+\subsubsection{Logrep}
+
+\textit{Logrep is a secure multi-platform framework for the collection,
+extraction, and presentation of information from various log files. It
+features HTML reports, multi dimensional analysis, overview pages, SSH
+communication, and graphs, and supports over 30 popular systems including
+Snort, Squid, Postfix, Apache, Sendmail, syslog, ipchains, iptables, NT
+event logs, Firewall-1, wtmp, xferlog, Oracle listener and Pix.\/}
+
+Logrep extracts roughly half the fields \parsername{} does:
+
+\begin{itemize}
+
+    \item For mail sent and received: from address, size, and time and
+        date.
+
+    \item For mail sent: to addresses, \SMTP{} code, and delay.
+
+    \item For mail received: the hostname of the sender.
+
+\end{itemize}
+
+It also counts the number of log lines parsed and skipped.  Log lines are
+correlated based on the queueid (referred to as sessionname [sic] within
+Logrep), but not by \pid{}.  The parsing is error prone: empty fields are
+saved when the log line doesn't match the \regex{}, though it appears that
+they will not overwrite existing data.  Most notably rejections are
+completely ignored, making it unsuitable for the purposes of this project.
+It doesn't attempt to address any of the complications in
+\sectionref{complications} \sectionref{additional complications} except for
+correlating by queueid.
+
+Logrep does not come with any documentation, though some scant
+documentation is available on its website (\parsername{} provides copious
+documentation).  It requires a web browser to interact with it, ensuring
+that automated log processing will be difficult, whereas automated
+processing is a key part of \parsernames{} design.  Sadly all the author's
+attempts to use Logrep failed, as it was unable to access the log files
+selected; this appears to be a bug rather than operator error.\footnote{If
+it is caused by operator error, the interface needs improvement as the
+(minimal) instructions were followed as closely as possible, and multiple
+attempts were made.}  As parsing failed it wasn't possible to review the
+reports Logrep can generate (available in \HTML{} only), nor to examine the
+(undocumented) format in which it can save extracted data for subsequent
+reuse.
+
+Logrep extracts far less data from Postfix logs than \parsername{},
+completely ignores rejections, is effectively undocumented, doesn't deal
+with the more complicated aspects of Postfix logs, and at the time of
+writing doesn't work properly.
+
+\url{http://www.itefix.no/phpws/index.php} \newline (Last checked
+2007/11/18.)
+
+\subsubsection{Log Mail Analyser}
+
+Please see the previous in-depth discussion of Log Mail Analyser in
+\sectionref{prior art}.
+
+
+\subsection{Conclusion}
+
+While there are other programs available which perform basic Postfix log
+parsing (some to a greater level of detail than others), few attempt to
+correlate log lines by queueid (none correlate by \pid{}) to produce an
+overall record of the journey each mail traverses through Postfix.  None of
+the reviewed parsers collect the breadth of information gathered by
+\parsername{}, nor make it as easy to extend the parser to handle new log
+lines.  Most other parsers immediately generate a report and discard the
+data extracted from the logs; those which don't discard the data retain it
+in a format inaccessible to other tools.  All of the parsers reviewed can
+produce a report of greater or lesser detail and complexity, a facility not
+offered by \parsername{}; reporting is deferred to a subsequent
+application.
+
+The overriding difference between \parsername{} and the other parsers
+reviewed herein is that none of them aim to achieve the high level of
+understanding of Postfix logs achieved by \parsername{}.

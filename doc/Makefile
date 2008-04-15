@@ -2,6 +2,8 @@
 # foo.pdf', otherwise latex will only be run once and it will get very confused.
 all: logparser.pdf
 
+logparser.pdf: logparser-*.tex
+
 run_latex:
 	("${PROGRAM}" -interaction=nonstopmode "${SOURCE}" || rm -f "${DEST}") | tee "${DEST}.out";
 	[ -f "${DEST}" ]

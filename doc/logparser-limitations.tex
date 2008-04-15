@@ -1,0 +1,78 @@
+\section{Limitations and possible improvements}
+
+\label{limitations-improvements}
+
+\subsection{Introduction}
+
+Every piece of software suffers from some limitations and there is almost
+always room for improvement.
+
+\subsection{Limitations}
+
+\begin{enumerate}
+
+    \item Each new Postfix release requires new rules to be written to cope
+        with the new log lines.  Similarly using a new \RBL{}, new policy
+        server or new administrator defined rejection messages require new
+        rules.
+
+    \item It appears that the hostname used in the HELO command is not
+        logged if the mail is accepted.\footnote{Tested with Postfix
+        2.2.10, 2.3.11 and 2.4.7; this may possibly have changed in Postfix
+        2.5.}  Rectifying this has already been described in
+        \sectionref{logging helo}.
+
+    \item The algorithm does not distinguish between mails where one or
+        more mails are rejected and a subsequent mail is accepted; it will
+        appear in the database as one mail with lots of rejections followed
+        by acceptance (this has already been mentioned in
+        \sectionref{connection reuse}).  It doesn't appear to be possible
+        to make this distinction given the data Postfix logs, though it
+        might be possible to write a policy server to provide additional
+        logging.
+
+    \item The TIMEOUT action uses potentially incorrect heuristics to
+        decide whether the timeout applies to an accepted mail or not,
+        potentially leaving a mail in the state tables
+        (\sectionref{timeouts-during-data-phase}).
+
+    \item The program will not detect parsing the same log file twice,
+        resulting in the database containing duplicate entries.
+
+    \item The parser does not distinguish between logs produced by
+        different sources when parsing; all results will be saved to the
+        same database.  This may be viewed as an advantage, as logs from
+        different sources can be combined in the same database, or it may
+        be viewed as a limitation as there is no facility to distinguish
+        between logs from different sources in the same database.  If the
+        results of parsing logs from different sources must remain
+        separate, the parser can easily be instructed to use a different
+        database to store the results in.
+
+    \item The solution to complication \sectionref{Mails deleted during
+        delivery} involves discarding data.
+
+\end{enumerate}
+
+\subsection{Possible improvements}
+
+\begin{itemize}
+
+    \item Investigate and write the policy server referred to in limitation
+        3 above.
+
+    \item Improve the solution to complication \sectionref{Mails deleted
+        during delivery} so that data is not discarded.
+
+    \item Improve the heuristics used in
+        \sectionref{timeouts-during-data-phase}, or develop another
+        solution, to avoid incorrectly leaving a mail in the state tables.
+
+\end{itemize}
+
+\subsection{Conclusion}
+
+This section has covered the limitations of the parser and possible
+improvements which may be implemented in the future.
+
+

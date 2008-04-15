@@ -1,0 +1,276 @@
+\section{Graphs}
+
+\label{graphs}
+
+XXX COMPARE SAVING RESULTS TO RAM DISK VERSUS SAVING TO HARD DISK\@.
+
+\renewcommand{\figurename}{Graph}
+
+\subsection{Introduction}
+
+Graphs are an excellent means of displaying data, transforming a
+meaningless stream of numbers into an easily comprehensible form, where
+anomalies and patterns are immediately obvious.  These graphs are used to
+illustrate the topics discussed in \sectionref{rule efficiency}.  The
+graphs in the first section cover parser scalability, demonstrating that
+performance scales linearly with input size.  The impact of rule ordering
+is shown in \sectionref{rule ordering graphs}, and the anomalous dips and
+peaks apparent in some graphs are explained.  The third group of graphs
+vividly shows the huge impact that caching compiled \regexes{} has on
+parser performance.  Miscellaneous graphs are presented in the final group
+of graphs; these graphs are referenced from various places in the test.
+This section concludes with a breakdown of the rule hits accumulated during
+a single test run of the parser.
+
+\subsection{Parser scalability}
+
+\showgraph{build/plot-normal-filesize-numlines}{Execution time vs file
+size vs number of lines}{execution time vs file size vs number of lines
+graph}
+
+The Y axis in graph~\refwithpage{execution time vs file size vs number of
+lines graph} represents the following:
+
+\begin{enumerate}
+
+    \item The time required, in seconds, to parse the log file.
+
+    \item The size of the log file, in megabytes.
+
+    \item The number of lines in the log file, divided by 10000.
+
+\end{enumerate}
+
+Graph~\refwithpage{execution time vs file size vs number lines factor}
+shows the ratio of execution time vs file size and number of lines (higher
+is better, it means more bytes or lines processed per second).  The ratios
+are quite tightly banded with the exception of log files 22 and 62--68,
+where they are noticeably higher; graph~\refwithpage{execution time vs file
+size vs number lines factor} and table~\refwithpage{execution time vs file
+size vs number lines factor table} show that the parser's execution time
+scales linearly with input size.
+
+\showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file
+size and number of lines to execution time}{execution time vs file size vs
+number lines factor}
+
+\showtable{build/stats-normal-filesize-line-count-include}{Ratio of file
+size \& number of lines to execution time: statistics}{execution time vs
+file size vs number lines factor table}
+
+\clearpage
+
+\subsection{Rule ordering}
+
+\label{rule ordering graphs}
+
+\showgraph{build/plot-normal-shuffle-factor}{Percentage increase of
+shuffled over normal}{percentage increase of shuffled over normal}
+
+\showgraph{build/plot-normal-reverse-factor}{Percentage increase of
+reversed over normal}{percentage increase of reversed over normal}
+
+\showtable{build/stats-normal-shuffle-reverse-include}{Execution time
+increase for different rule orderings}{Execution time increase for
+different rule orderings}
+
+\subsubsection{Why are there dips in the graphs?}
+\label{Why are there dips in the graphs?}
+
+The dips at log files 22 and 62--68 correspond to peaks in log file size in
+graph~\refwithpage{execution time vs file size vs number of lines graph},
+and peaks in graph~\refwithpage{execution time vs file size vs number lines
+factor} (where a peak means that more lines are processed per second, i.e.\
+performance is better).  The explanation for this took some time to arrive
+at, but it turns out to be reasonably simple.  The large log files in
+question were caused by a mail forwarding loop, where the distribution of
+log lines is quite different to normal, resulting in different performance
+characteristics.
+
+The mail loop was set up by a user modifying his mail forwarding to:
+\newline \tab{}\texttt{$\backslash$username, username@domain} \newline This
+instructs Postfix to deliver the mail to the local user, and also forward
+it to the remote address; this is generally not a problem except that the
+remote address in this case is the user's address, creating an infinite
+loop.  To prevent this happening Postfix examines the Delivered-To header
+in the mail, and if the mail has already been delivered to the current
+address it is bounced back to the sender with the error message
+\texttt{mail forwarding loop for username@domain}.  Ordinarily this works
+well, but unfortunately in this case the user noticed they had not received
+any mail in a while and opted to send a test mail to themselves, causing a
+loop not caught by Postfix as described below.
+
+\begin{enumerate}
+
+    \item Postfix accepts a mail from username@domain, for username@domain.
+
+    \item Postfix delivers the mail to the local mailbox and
+        username@domain, as instructed by the user's forwarding
+        instructions. The forwarded mail has a
+        \texttt{Delivered-To:~username@domain} header added, and the
+        envelope sender address is username@domain.  Log lines are added by
+        \daemon{local}, \daemon{qmgr} (twice), \daemon{cleanup} and finally
+        \daemon{pickup}.
+
+    \item Postfix accepts the mail for username@domain, but while
+        delivering it notices that the \texttt{Delivered-To} header already
+        contains the address it's currently delivering to, and therefore
+        sends a bounce notification with sender address \textit{$<>$\/} to
+        the original sender: username@domain.  Log lines are added by
+        \daemon{local}, \daemon{qmgr} (twice) and \daemon{cleanup}.
+
+    \item Postfix accepts the bounce notification and delivers it to both
+        the local mailbox and to username@domain, as instructed by the
+        user's forwarding instructions.  A
+        \texttt{Delivered-To:~username@domain} header is added to the
+        forwarded bounce notification, which now has an envelope sender
+        address of username@domain.  Log lines are added by \daemon{local},
+        \daemon{qmgr} (twice), \daemon{cleanup}, and finally
+        \daemon{pickup}.
+
+    \item Postfix accepts the forwarded bounce notification but while
+        delivering the mail it notices that the \texttt{Delivered-To}
+        header already contains the address currently being delivered to,
+        and sends a bounce notification to the sender: username@domain.
+        Log lines are added by \daemon{local}, \daemon{qmgr} (twice) and
+        \daemon{cleanup}.
+
+    \item Repeat from step two; this will continue indefinitely unless an
+        administrator intervenes and deletes the appropriate mails from the
+        queue.
+
+\end{enumerate}
+
+The sequence described above occurs extremely rapidly because Postfix does
+not have to deliver the mail to an external system, so mails are delivered,
+bounced and generated as fast as the disks can keep up, resulting in a huge
+volume of logs.
+
+The vast majority of log lines when a mail loop occurs are from Postfix
+components which have a small number of rules associated with them, whereas
+in general \daemon{smtpd} adds the majority of log lines, and also has the
+highest number of rules.  \daemon{smtpd} log lines are distributed across
+rules much more evenly than the log lines of \daemon{qmgr}, \daemon{local},
+\daemon{cleanup} or \daemon{pickup}, so the average number of rules
+required to parse a \daemon{smtpd} log line is much higher that the average
+number required to parse other log lines.
+
+These two characteristics combine to reduce the average number or rules
+required to parse a log line when there is a mail loop, as shown by the
+peaks in graph~\refwithpage{execution time vs file size vs number lines
+factor}.  When the rule ordering is reversed the majority of log lines
+generated by a mail loop will be parsed with very few rules, whereas
+without a mail loop the majority of log lines require a large number of
+rules; this leads to a noticeable drop in the average time required to
+parse a log line, as shown in graph~\refwithpage{percentage increase of
+reversed over normal}.  The number of rules which need to be consulted when
+the ordering is shuffled varies between the optimum and nadir, and the
+performance varies proportionally.
+
+The difference between logs with a mail loop and logs without can be seen
+in table~\refwithpage{Execution time increase for different rule orderings}
+showing the increases for the different rule orderings and combinations of
+log files:
+
+
+
+\subsection{Caching regexes}
+
+\label{Caching regexes}
+
+The following graphs show the impact that not caching compiled \regexes{}
+has on parser performance: on typical log files the execution time when not
+caching compiled \regexes{} is 500--600\% of the execution time when
+caching; reversing the perspective shows that cached execution time is
+merely 17--20\% of non-cached execution time.  Caching compiled \regexes{}
+is probably the single most effective optimisation possible in the parser's
+implementation; given that it only required sixteen extra lines of
+reasonably simple code,\footnote{The sixteen lines of code breaks down as
+follows: three lines to add caching, eight lines of error checking and
+reporting, three lines to optionally disable caching for debugging and
+performance measurement, and two lines of comments.} the investment in time
+was minimal.
+
+\showgraph{build/plot-cached-discarded}{Regex: cached vs
+discarded}{normal regex vs discard regex}
+
+\showgraph{build/plot-cached-discarded-factor}{Regex caching: percentage
+execution time increase}{normal regex vs discarded regex factor}
+
+Two large dips can be seen in graph~\refwithpage{normal regex vs discarded
+regex factor} at log files 22 and 62--68, corresponding to the spikes in
+log file size in graphs~\refwithpage{execution time vs file size vs number
+of lines graph} and~\refwithpage{normal regex vs discard regex}.  The
+reason for the anomalous log files has already been explained in
+\sectionref{Why are there dips in the graphs?}.
+
+The distribution of log lines across rules when there is a mail loop is
+much different and the average number of rules consulted per log line is
+much lower; this results in far fewer \regex{} compilations per line than
+when there isn't a mail loop, and a correspondingly decreased execution
+time.  The increases in execution time when not caching \regexes{} for
+different combinations of log files are summarised in the table below:
+
+\showtable{build/stats-cached-discarded-include-for-graph}
+{Regex caching/discarding with different groups of log files}
+{Regex caching/discarding with different groups of log files}
+
+
+\subsection{Rule hits}
+\label{rule hits}
+
+The number of hits per rule is quite unevenly spread, resembling a Power
+Law distribution~\cite{powerlaw}.
+
+\showgraph{build/plot-hits}{Hits per rule}{rule hits graph}
+
+As graph~\refwithpage{rule hits graph} is quite difficult to read it has
+been separated into three sections: low, middle and high.
+
+\showgraph{build/plot-hits-low}{Hits per rule (low)}{hits per rule low}
+
+It is apparent from the low graph (graph~\refwithpage{hits per rule low})
+that some rules have few or no hits; those with zero hits are rules which
+were written to parse log files used during development of the parser but
+not utilised in the test runs performed for this document.
+
+\showgraph{build/plot-hits-middle}{Hits per rule (middle)}{hits per rule
+middle}
+
+\showgraph{build/plot-hits-high}{Hits per rule (high)}{hits per rule
+high}
+
+\clearpage
+
+
+
+\subsection{Miscellaneous graphs}
+
+\label{Miscellaneous graphs}
+
+\showgraph{build/plot-mails-received}{Mails received per day}{Mails
+received per day}
+
+As expected there are far more mails received on weekdays than at weekends.
+Note that this graph and the table below show the number of mails received
+by \SMTP{} only; in particular the mail loops noticeable in other graphs
+do not contribute to these figures.
+
+\showtable{build/mails-received-include-for-graph}{Number of mails received
+per day: statistics}{Number of mails received per day: statistics}
+
+\clearpage
+
+\subsection{Conclusion}
+
+The graphs presented in this section illustrate the topics discussed in
+\sectionref{rule efficiency}.  The first collection of graphs are about
+parser scalability, showing the linear relationship between execution time
+and input size.  \sectionref{rule ordering graphs} demonstrates the effect
+of rule ordering on execution time, and the unexpected consequences of
+specific inputs.  The necessity of caching compiled \regexes{} is attested
+to by the third group of graphs, where the difference between caching and
+discarding is staggering.  The penultimate section contains a breakdown of
+the rule hits accumulated during a single test run of the parser.
+Miscellaneous graphs expected to be useful are collected in the final
+section.  
