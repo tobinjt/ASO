@@ -798,12 +798,21 @@ sub DISCONNECT {
     # Cleanup the mails accepted over this connection.
     CLONED_MAIL:
     foreach my $mail (@{$connection->{cloned_mails}}) {
-        # Try to clear out those mails which only have two smtpd entries, so
-        # they don't hang around, taking up memory uselessly and causing queueid
-        # clashes occasionally.
-        if (not exists $mail->{programs}->{q{postfix/cleanup}}
+        # Try to clear out those mails which only have smtpd entries, so they
+        # don't hang around, taking up memory uselessly and causing queueid
+        # clashes occasionally.  Heuristics:
+        # * smtpd is the only program
+        # * 2 or more smtpd entries
+        # * Queueid exists
+        # * Second result is ACCEPTED
+        # * Subsequent results, if any, are INFO.
+        if (exists $mail->{programs}->{q{postfix/smtpd}}
+                and $mail->{programs}->{q{postfix/smtpd}} >= 2
+                and scalar keys %{$mail->{programs}} == 1
                 and $self->queueid_exists($mail->{queueid})
-                and $mail->{programs}->{q{postfix/smtpd}} == 2
+                and $mail->{results}->[1]->{postfix_action} eq q{ACCEPTED}
+                and not grep { $_->{postfix_action} ne q{INFO} }
+                        @{$mail->{results}}[2 .. $#{$mail->{results}}]
                 ) {
             my $mail_by_queueid = $self->get_connection_by_queueid(
                     $mail->{queueid});
