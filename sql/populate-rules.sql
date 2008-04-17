@@ -1,4 +1,4 @@
--- vim: set foldmethod=marker textwidth=1000 :
+-- vim: set foldmethod=marker textwidth=10000 :
 -- $Id$
 
 DELETE FROM rules;
@@ -157,6 +157,17 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORED'
 );
 
+
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
+    VALUES('Debugging information', 'Debugging information generated when a client matches debug_peer_list',
+        'postfix/smtpd',
+        '^(?:(?:after|before) input_transp_cleanup: cleanup flags = .*|auto_clnt_close: disconnect private/anvil stream|auto_clnt_open: connected to __IP__:\d+|auto_clnt_open: connected to (?:public|private)/.*|before input_transp_cleanup: cleanup flags = enable_header_body_filter enable_automatic_bcc enable_address_mapping enable_milters|check_access: __EMAIL__|check_addr_access: __IP__|check_domain_access: __HOSTNAME__|>>> CHECKING RECIPIENT MAPS <<<|check_mail_access: __EMAIL__|check_namadr_access: name __HOSTNAME__ addr __IP__|check_server_access: MX __EMAIL__|check_table_result: .*|connect to subsystem .+|ctable_locate: install entry key .*|ctable_locate: leave existing entry key .+|ctable_locate: move existing entry key .*|ctable_locate: purge entry key .+|dict_cidr_lookup: .* (?:__HOSTNAME__|__IP__)|dict_pcre_lookup: .*|dns_get_answer: type MX for .*|dns_query: .*|>>> END Client host RESTRICTIONS <<<|>>> END Data command RESTRICTIONS <<<|>>> END Recipient address RESTRICTIONS <<<|event_cancel_timer: .*|event_disable_readwrite: fd \d+|event_enable_read: fd \d+|event_extend: fd \d+|event_request_timer: .*|extract_addr: in: <__EMAIL__>, result: __EMAIL__|extract_addr: input: <__EMAIL__>|fsspace: .: block size \d+, blocks free .+|generic_checks: .*|[<>] __HOSTNAME__\[__IP__\]: .*|input attribute (?:name|value): .*|__IP__:\d+:? wanted attribute: .*|lookup __HOSTNAME__ type MX flags 0|mail_addr_find: __EMAIL__ -> .*|maps_find: (?:canonical_maps|local_recipient_maps|recipient_canonical_maps|virtual_alias_maps): .*|match_hostaddr: __IP__ ~\? \[__IP__\](?:/\d+)?|match_hostaddr: __IP__ ~\? __IP__(?:/\d+)?|match_hostname: __HOSTNAME__ ~\? __IP__(?:/\d+)?|match_hostname: __HOSTNAME__ ~\? \[__IP__\](?:/\d+)?|match_list_match: .+ no match|match_string: .* ~\? .*|name_mask: .*|permit_auth_destination: __EMAIL__|permit_inet_interfaces: __HOSTNAME__ __IP__|permit_mynetworks: __HOSTNAME__ __IP__|private/anvil: wanted attribute: .*|(?:private|public)/.* socket: wanted attribute: .*|rec_put: type .* len \d+ data.*|reject_invalid_hostname: __HOSTNAME__|reject_non_fqdn_address: .+|reject_non_fqdn_hostname: __HOSTNAME__|reject_rbl: Client host __IP__|reject_unauth_destination: __EMAIL__|reject_unauth_pipelining: DATA|reject_unknown_address: __EMAIL__|reject_unknown_client: __HOSTNAME__ __IP__|reject_unknown_mailhost: __HOSTNAME__|resolve_clnt: .*flags= .+|rewrite_clnt: local: __EMAIL__ -> __EMAIL__|send attr .* =.*|smtpd_check_addr: .+|smtpd_check_queue: .*|smtpd_check_rewrite: trying: permit_inet_interfaces|>>> START Client host RESTRICTIONS <<<|>>> START Data command RESTRICTIONS <<<|>>> START Recipient address RESTRICTIONS <<<|trying... \[(__IP__)\]|vstream_buf_get_ready: fd \d* got \d*|vstream_fflush_some: fd \d* flush \d*|watchdog_pat: .*)$',
+        '',
+        '',
+        'IGNORE',
+        0,
+        'IGNORED'
+);
 -- }}}
 
 -- SMTPD FATAL RULES {{{1
@@ -363,6 +374,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__HOSTNAME__)\[(__IP__)\]>: Client host rejected: Greylisted, see (http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 9, data = 7, sender = 8',
         'helo = 10, client_hostname = 5, client_ip= 6',
+        'REJECTION',
+        1,
+        'REJECTED',
+        'check_policy_service'
+);
+
+-- <huggardm@cs.tcd.ie>: Recipient address rejected: Greylisted, see http://postgrey.schweikert.ch/help/cs.tcd.ie.html; from=<fool@foolmail.co.uk> to=<huggardm@cs.tcd.ie> proto=SMTP helo=<maccullagh.maths.tcd.ie>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+    VALUES('Greylisted recipient', 'Recipient greylisted; see http://www.greylisting.org/ for more details',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Greylisted, see (http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+) from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
+        'recipient = 5, data = 6, sender = 7',
+        'helo = 8',
         'REJECTION',
         1,
         'REJECTED',
@@ -753,10 +777,11 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- <localhost.localhost>: Helo command rejected: You are not me; from=<qute1212000@yahoo.it> to=<mads.haahr@cs.tcd.ie> proto=SMTP helo=<localhost.localhost>
+-- <134.226.32.56>: Helo command rejected: You are not me.; from=<lsfeisg.xrseusc@yahoo.com.tw> to=<stephen.farrell@cs.tcd.ie> proto=SMTP helo=<134.226.32.56>
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
     VALUES('Fake localhost HELO', 'The client claimed to be localhost in the HELO command',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__HELO__)>: Helo command rejected: You are not me; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
+        '^__RESTRICTION_START__ <(__HELO__)>: Helo command rejected: You are not me\.?; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
         'recipient = 7, sender = 6',
         'helo = 5',
         'REJECTION',
