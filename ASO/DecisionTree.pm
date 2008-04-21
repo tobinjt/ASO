@@ -144,7 +144,8 @@ sub divideset {
     my ($self, $rows, $column) = @_;
 
     if (@_ != 3) {
-        croak qq{divideset(): expecting three arguments, not } . @_ . qq{\n};
+        my $num_args = @_ - 1;
+        croak qq{divideset(): expecting two arguments, not $num_args\n};
     }
 
     my @true  = grep {     $_->[$column] } @{$rows};
@@ -153,7 +154,7 @@ sub divideset {
     return (\@true, \@false);
 }
 
-=head2 $adt->build_tree(\@rows, \@column_groups, \&score_function)
+=head2 $adt->build_tree(\@rows, \@current_cg, \@original_cg, $current_score, \&score_function)
 
 Recursively build a Decision Tree from @rows, using columns taken from
 @column_groups.  XXX IMPROVE THIS.
@@ -161,39 +162,46 @@ Recursively build a Decision Tree from @rows, using columns taken from
 =cut
 
 sub build_tree {
-    my ($self, $rows, $column_groups, $score_function) = @_;
+    my ($self, $rows, $current_cg, $original_cg, $current_score, $score_function) = @_;
 
-    if (@_ != 4) {
-        croak qq{build_tree(): expecting four arguments, not } . @_ . qq{\n};
+    if (@_ != 6) {
+        my $num_args = @_ - 1;
+        croak qq{build_tree(): expecting five arguments, not $num_args\n};
     }
 
     if (not @{$rows}) {
         return ASO::DecisionTree->new(leaf_node => 1, leaf_branch => $rows);
     }
 
-    if (not @{$column_groups}) {
+    if (not @{$current_cg}) {
         return ASO::DecisionTree->new(leaf_node => 1, leaf_branch => $rows);
     }
-
-    my $current_score = $score_function->($rows);
 
     my ($best_score,    $best_column, $best_true_branch, $best_false_branch)
      = ($current_score, undef,        undef,             undef             );
 
     # Find the best column to divide the rows on.
-    foreach my $column (@{$column_groups->[0]}) {
+    foreach my $column (@{$current_cg->[0]}) {
         my ($true_branch, $false_branch) = $self->divideset($rows, $column);
         # The probability that a random row will be in the true branch.
-        my $true_probability = @{$true_branch} / @{$rows};
+        my $probability = @{$true_branch} / @{$rows};
         # Weight the score of each branch by the probability of a row being in
         # that branch, and sum the weighted branch scores to get the new overall
         # score.
-        my $new_score =
-              ($true_probability       * $score_function->($true_branch))
-            + ((1 - $true_probability) * $score_function->($false_branch));
-        # A lower overall score is better - it means there's lower variation in
-        # the branches after the split.
-        if ($new_score < $best_score) {
+        my $true_score  = $self->$score_function($true_branch,
+                                                 $column,
+                                                 $current_cg,
+                                                 $original_cg);
+        my $false_score = $self->$score_function($false_branch,
+                                                 $column,
+                                                 $current_cg,
+                                                 $original_cg);
+        my $new_score =   ($probability       * $true_score)
+                        + ((1 - $probability) * $false_score);
+        # A higher overall score is better.  Scoring functions need to normalise
+        # their functions so their results are between zero and one, with one
+        # being better.
+        if ($new_score > $best_score) {
             $best_score         = $new_score;
             $best_column        = $column;
             $best_true_branch   = $true_branch;
@@ -203,24 +211,28 @@ sub build_tree {
 
     # If we found a column that's useful for dividing on we recursively divide
     # the true and false branches.
-    if ($best_score < $current_score) {
+    if ($best_score > $current_score) {
         # Create a new column group structure, without the column we're
         # dividing the rows on now.
-        my $reduced_column_groups = dclone($column_groups);
+        my $reduced_cg = dclone($current_cg);
         my @new_column_group = grep { $_ != $best_column }
-                                    @{$reduced_column_groups->[0]};
+                                    @{$reduced_cg->[0]};
         if (not @new_column_group) {
             # We've exhausted the first column group, so drop it.
-            shift @{$reduced_column_groups};
+            shift @{$reduced_cg};
         } else {
-            $reduced_column_groups->[0] = \@new_column_group;
+            $reduced_cg->[0] = \@new_column_group;
         }
 
         my $true_branch  = $self->build_tree($best_true_branch,
-                                             $reduced_column_groups,
+                                             $reduced_cg,
+                                             $original_cg,
+                                             $best_score,
                                              $score_function);
         my $false_branch = $self->build_tree($best_false_branch,
-                                             $reduced_column_groups,
+                                             $reduced_cg,
+                                             $original_cg,
+                                             $best_score,
                                              $score_function);
         return ASO::DecisionTree->new(column        => $best_column,
                                       true_branch   => $true_branch,
@@ -230,10 +242,12 @@ sub build_tree {
     # None of the columns in the current column group were helpful in dividing
     # the rows, so we add them as info nodes and continue with the next column
     # group.
-    my $reduced_column_groups = dclone($column_groups);
-    my $unused_columns = shift @{$reduced_column_groups};
+    my $reduced_cg = dclone($current_cg);
+    my $unused_columns = shift @{$reduced_cg};
     my $new_tree = $self->build_tree($rows,
-                                     $reduced_column_groups,
+                                     $reduced_cg,
+                                     $original_cg,
+                                     $current_score,
                                      $score_function);
     foreach my $column (@{$unused_columns}) {
         $new_tree = ASO::DecisionTree->new(column       => $column,
@@ -243,8 +257,79 @@ sub build_tree {
     return $new_tree;
 }
 
-# XXX I NEED A SCORE FUNCTION.  ENTROPY AND GINI IMPURITY WON'T WORK, BECAUSE
-# NEARLY EVERY ROW WILL END IN A REJECTION.  I NEED REAL DATA TO LOOK AT FIRST.
+=head1 SCORE FUNCTIONS
+
+All score function return a number between zero and one; zero is worse, one is
+better.
+
+=cut
+
+=head2 $adt->rejection_ratio(\@rows, $column, $current_cg, $original_cg)
+
+The fraction of @rows where $column is a rejection.
+
+=cut
+
+sub rejection_ratio {
+    my ($self, $rows, $column, $current_cg, $original_cg) = @_;
+
+    if (@_ != 5) {
+        my $num_args = @_ - 1;
+        croak qq{rejection_ratio(): expecting four arguments, not $num_args\n};
+    }
+
+    my @counts = (0, 0);
+    map { $counts[$_->[$column]]++; } @{$rows};
+
+    return $counts[1] / @{$rows};
+}
+
+=head2 $adt->subsequent_rejections(\@rows, $column, $current_cg, $original_cg)
+
+How many other columns/restrictions in the current column group would reject
+when this column/restriction rejects.
+
+=cut
+
+sub subsequent_rejections {
+    my ($self, $rows, $column, $current_cg, $original_cg) = @_;
+
+    if (@_ != 5) {
+        my $num_args = @_ - 1;
+        croak qq{subsequent_rejections(): expecting four arguments, not $num_args\n};
+    }
+
+    if (@{$current_cg->[0]} == 1) {
+        # There's only one column left - this one.  Fall back ro
+        # rejection_ratio();
+        return $self->rejection_ratio($rows, $column, $current_cg, $original_cg);
+    }
+
+    my $num_other_restrictions = @{$current_cg->[0]} - 1;
+    my ($num_subsequent_rejects, $num_possible_rejects) = (0, 0);
+    ROW:
+    foreach my $row (@{$rows}) {
+        if (not $row->[$column]) {
+            next ROW;
+        }
+        # The total number of possible rejections when this rejection took
+        # effect.
+        $num_possible_rejects += $num_other_restrictions;
+        # The actual number of subsequent rejections in the current column group
+        # when this rejection took effect.
+        $num_subsequent_rejects += grep { $row->[$_]; } @{$current_cg->[0]};
+        # The current column will always be included in the count returned by
+        # grep, so reduce the count by one.
+        $num_subsequent_rejects--;
+    }
+
+    if ($num_possible_rejects == 0) {
+        # This restriction didn't take effect in this group of rows.
+        return 0;
+    }
+
+    return $num_subsequent_rejects / $num_possible_rejects;
+}
 
 =head1 AUTHOR
 
