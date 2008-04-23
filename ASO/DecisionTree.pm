@@ -8,6 +8,8 @@ use Carp;
 use Data::Dumper;
 $Data::Dumper::Sortkeys = 1;
 use Storable qw(dclone);
+use lib qw(..);
+use ASO::DB;
 
 =head1 NAME
 
@@ -316,6 +318,45 @@ An example will hopefully make things clearer:
     }
 
 =cut
+
+sub load_data {
+    my ($package, $dbi_dsn, $username, $password) = @_;
+
+    if (@_ != 4) {
+        my $num_args = @_ - 1;
+        croak qq{load_data(): expecting three arguments, not $num_args\n};
+    }
+
+    my $dbix = ASO::DB->connect(
+        $dbi_dsn,
+        $username,
+        $password,
+        {AutoCommit => 1},
+    );
+
+    # Just printing the columns is 10 times slower than the equivalent SQL; this
+    # is a big improvement because it used to be about 250 times slower.
+    # It would probably help to get back raw results rather than objects.
+    # Paging might help too.
+
+    my (@rows, %rule_id_to_index, %index_to_rule_id);
+    my $search = $dbix->resultset(q{Result})->search(
+        {
+            q{warning}      => 1,
+            q{rule.action}  => q{REJECTION},
+        },
+        {
+            q{join}         => q{rule},
+            q{order_by}     => q{connection_id, rule_id ASC},
+            q{columns}      => [qw(connection_id rule_id)],
+        },
+    );
+
+    while (my $result = $search->next()) {
+        print $result->connection_id()
+              . q{|} . $result->rule_id() . qq{\n};
+    }
+}
 
 =head1 SCORE FUNCTIONS
 
