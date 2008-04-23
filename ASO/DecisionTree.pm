@@ -257,6 +257,66 @@ sub build_tree {
     return $new_tree;
 }
 
+=head2 ASO::DecisionTree->load_data($dbi_dsn, $username, $password)
+
+Connect to the database specified in $dbi_dsn using $username and $password (see
+L<DBI> and L<DBD::foo>, where I<foo> is your database driver, for the format of
+$dbi_dsn).  The database will be queried with something similar to
+
+  SELECT results.connection_id, results.rule_id
+    FROM results, rules
+    WHERE   rules.action = "REJECTION"
+        and results.warning = 1
+        and rules.id = results.rule_id
+    ORDER BY results.connection_id, results.rule_id;
+
+The data for each connection will be accumulated into an array (referred to as
+@row from now on).  Each element of @row represents the presence or absence of a
+particular rule for that connection: the element will be one if the rule is
+present, zero if not.  The index can be looked up in the mapping hashes
+described shortly to determine which rule an element corresponds to.  The
+mappings between array indices and rule ids are the same for every @row.  A rule
+id, and thus a corresponding array index, will only be present if that rule id
+was returned at least once from the search.
+
+Every @row will be added to @rows to be returned; they'll I<probably> be ordered
+by connection id, but that's not guaranteed.  @rows is suitable for passing to
+$adt->build_tree(), $adt->divideset(), or the scoring functions.
+
+Two hashes mapping between rule ids and array indices will be created:
+C<%index_to_rule_id> and C<%rule_id_to_index>.  C<%index_to_rule_id> maps an
+array index to a rule id, and C<rule_id_to_index> maps a rule id to an array
+index.
+
+Returns (\@rows, \%index_to_rule_id, \%rule_id_to_index).
+
+An example will hopefully make things clearer:
+
+    my $dbi_dsn = 'whatever your database requires';
+    my ($username, $password) = qw(user pass);
+
+    my ($rows, $index_to_rule_id, $rule_id_to_index)
+        = ASO::DecisionTree->load_data($dbi_dsn, $username, $password);
+    my $interesting_rule_id = 42;
+    if (not exists $rule_id_to_index->{$interesting_rule_id}) {
+        print "Rule $interesting_rule_id not in results\n";
+    }
+    # Print the first rule present for each connection.
+    # NOTE: the rule orderings don't correspond to the order the rules matched.
+    foreach my $row (@rows) {
+        my $i = 0;
+        # We don't need to check for falling off the end of the array: there
+        # must be at least one rule present for each @row, otherwise the
+        # wouldn't have been any results for that @row and it wouldn't have been
+        # created.
+        while (not $row->[$i]) {
+            $i++;
+        }
+        print "First rule: $index_to_rule_id->{$i}\n";
+    }
+
+=cut
+
 =head1 SCORE FUNCTIONS
 
 All score function return a number between zero and one; zero is worse, one is
