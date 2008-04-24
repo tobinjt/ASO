@@ -156,7 +156,7 @@ sub divideset {
     return (\@true, \@false);
 }
 
-=head2 $adt->build_tree(\@rows, \@current_cg, \@original_cg, $current_score, \&score_function)
+=head2 $adt->build_tree(\@rows, \@current_cg, \@original_cg, $current_score, $score_function)
 
 Recursively build a Decision Tree from @rows, using columns taken from
 @column_groups.  XXX IMPROVE THIS.
@@ -334,12 +334,13 @@ sub load_data {
         {AutoCommit => 1},
     );
 
-    # Just printing the columns is 10 times slower than the equivalent SQL; this
-    # is a big improvement because it used to be about 250 times slower.
-    # It would probably help to get back raw results rather than objects.
-    # Paging might help too.
+    # Just printing the columns is 2-3 times slower than the equivalent SQL;
+    # this is a big improvement because it used to be about 250 times slower.
+    # Paging might help.  To see the generated SQL:
+    #   export DBIC_TRACE="1=/tmp/trace.out"
 
-    my (@rows, %rule_id_to_index, %index_to_rule_id);
+    my @columns = qw(connection_id rule_id);
+    my $ordering = join q{, }, map { qq{$_ ASC} } @columns;
     my $search = $dbix->resultset(q{Result})->search(
         {
             q{warning}      => 1,
@@ -347,14 +348,17 @@ sub load_data {
         },
         {
             q{join}         => q{rule},
-            q{order_by}     => q{connection_id, rule_id ASC},
-            q{columns}      => [qw(connection_id rule_id)],
+            q{order_by}     => $ordering,
+            q{select}       => \@columns,
         },
     );
 
-    while (my $result = $search->next()) {
-        print $result->connection_id()
-              . q{|} . $result->rule_id() . qq{\n};
+    my (@rows, %rule_id_to_index, %index_to_rule_id);
+    # This gets us raw results rather than objects; we must ensure that the
+    # column order in the select line above matches the order here.
+    my $cursor = $search->cursor();
+    while (my ($connection_id, $rule_id) = $cursor->next()) {
+        print qq{$connection_id|$rule_id\n};
     }
 }
 
