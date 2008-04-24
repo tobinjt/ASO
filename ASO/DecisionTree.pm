@@ -354,12 +354,34 @@ sub load_data {
     );
 
     my (@rows, %rule_id_to_index, %index_to_rule_id);
+    my $last_connection_id = -1;
+    my $next_index = 0;
     # This gets us raw results rather than objects; we must ensure that the
     # column order in the select line above matches the order here.
     my $cursor = $search->cursor();
     while (my ($connection_id, $rule_id) = $cursor->next()) {
-        print qq{$connection_id|$rule_id\n};
+        if ($last_connection_id != $connection_id) {
+            $last_connection_id = $connection_id;
+            push @rows, [];
+        }
+        if (not exists $rule_id_to_index{$rule_id}) {
+            $rule_id_to_index{$rule_id} = $next_index;
+            $index_to_rule_id{$next_index} = $rule_id;
+            $next_index++;
+        }
+        $rows[-1]->[$rule_id_to_index{$rule_id}] = 1;
     }
+
+    # Zero-fill the rows.
+    my $row_length = $next_index;
+    foreach my $row (@rows) {
+        # undef -> 0
+        @{$row} = map { $_ || 0 } @{$row};
+        # Extend the rows so they're all the same length.
+        push @{$row}, (0) x ($row_length - @{$row});
+    }
+
+    return (\@rows, \%index_to_rule_id, \%rule_id_to_index);
 }
 
 =head1 SCORE FUNCTIONS
