@@ -145,11 +145,9 @@ None.
 
 =head1 DEPENDENCIES
 
-Standard Perl modules: Carp.
+Standard Perl modules: L<Carp>.
 
-Bundled modules: ASO::DB::Base.
-
-External modules: DBIX::Class.
+External modules: L<DBIx::Class>.
 
 =head1 INCOMPATIBILITIES
 
@@ -166,7 +164,7 @@ John Tobin <tobinjt@cs.tcd.ie>.
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2006-2007 John Tobin <tobinjt@cs.tcd.ie>.  All rights reserved.
+Copyright (c) 2006-2008 John Tobin <tobinjt@cs.tcd.ie>.  All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
