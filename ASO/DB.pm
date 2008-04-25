@@ -89,6 +89,7 @@ use base qw(DBIx::Class::Schema);
 our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
 
 our @classes = qw(
+    ClusterGroup
     Connection
     Result
     Rule

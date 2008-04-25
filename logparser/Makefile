@@ -18,7 +18,7 @@ copy.working:
 	cp -p warnings warnings-working
 	cp -p state    state-working
 
-test: test.20070616
+test: test.20070616.gz
 
 test-list:
 	# We need to double escape the $, otherwise the submake will clobber it.
@@ -34,7 +34,7 @@ test.%: ../../../../logs/mail.log-%
 test-real:
 	date; perl logparser --year 2007 --skip_inserting_results --out-statefile ${STATE} --individual-state-files ${INPUT} 2> ${OUTPUT}; date
 
-../sql/create-tables-sqlite3-generated.sql: ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm
+../sql/create-tables-sqlite3-generated.sql: ../ASO/DB.pm ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm ../ASO/DB/ClusterGroup.pm
 	(cd ../sql && perl make_schema > "$@")
 
 db: ../sql/create-tables-sqlite3-generated.sql

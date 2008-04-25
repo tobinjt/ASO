@@ -259,8 +259,13 @@ my %cols = (
     },
     # The name of the restriction which caused the rejection.
     restriction_name    => {
-        sql                 => q{NOT NULL DEFAULT ''},
+        sql                 => q{},
         type                => q{text},
+    },
+    # Reference to cluster_groups->id.
+    cluster_group_id    => {
+        sql                 => q{},
+        type                => q{integer},
     },
 );
 
@@ -323,6 +328,9 @@ Returns all entries in the results table which are due to this rule.
 # Foreign keys: other tables reference this one.
 __PACKAGE__->has_many(q{results}            => q{ASO::DB::Result}
                                             => q{rule_id});
+# Foreign keys: this table references other tables.
+__PACKAGE__->belongs_to(q{cluster_group}    => q{ASO::DB::ClusterGroup}
+                                            => q{cluster_group_id});
 1;
 
 =head1 DIAGNOSTICS
