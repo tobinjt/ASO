@@ -2157,6 +2157,19 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORED'
 );
 
+-- warning: 03F6E38CA: queue file size limit exceeded
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action)
+    VALUES('Maximum mail size exceeded - probably submitted using sendmail', 'Mail too big - it was probably submitted with the Postfix sendmail command',
+        'postfix/cleanup',
+        '^warning: (__QUEUEID__): queue file size limit exceeded$',
+        '',
+        '',
+        'sender = unknown, recipient = unknown, smtp_code = unknown',
+        'COMMIT',
+        1,
+        'DISCARDED'
+);
+
 -- }}}
 
 -- BOUNCE RULES {{{1
