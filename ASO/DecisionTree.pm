@@ -17,11 +17,11 @@ ASO::DecisionTree - A module implementing the Decision Tree algorithm.
 
 =head1 VERSION
 
-Version 0.01
+This documentation refers to ASO::DB version $Id$
 
 =cut
 
-our $VERSION = '0.01';
+our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
 
 =head1 SYNOPSIS
 
@@ -71,10 +71,10 @@ True if this node is a info node, i.e. it doesn't make a decision.  Info nodes
 are used to retain information about columns which aren't useful in
 classification.
 
-=item info_branch => \@rows
+=item info_branch => $info_adt
 
-The branch to follow when the info_node is true.  The format of @rows is
-described in L</DATA STRUCTURES>.
+The branch to follow when the info_node is true.  This should be an
+ASO::DecisionTree object.
 
 =back
 
@@ -141,8 +141,9 @@ sub new {
 
 =head2 $adt->divideset(\@rows, $column)
 
-Divides @rows into two sets, depending on the value of each row's $column
-element.  The format of @rows is described in L</DATA STRUCTURES>.  Returns (\@true, \@false).
+Divides @rows into two sets, depending on the value of element $column in each
+%row from @rows (formats described in L</DATA STRUCTURES>).  Returns (\@true,
+\@false).
 
 =cut
 
@@ -154,8 +155,8 @@ sub divideset {
         croak qq{divideset(): expecting two arguments, not $num_args\n};
     }
 
-    my @true  = grep {     $_->[$column] } @{$rows};
-    my @false = grep { not $_->[$column] } @{$rows};
+    my @true  = grep {     $_->{results}->[$column] } @{$rows};
+    my @false = grep { not $_->{results}->[$column] } @{$rows};
 
     return (\@true, \@false);
 }
@@ -272,24 +273,26 @@ $dbi_dsn).  The database will be queried with something similar to
 
   SELECT results.connection_id, results.rule_id
     FROM results, rules
-    WHERE   rules.action = "REJECTION"
+    WHERE   rules.action    = "REJECTION"
         and results.warning = 1
-        and rules.id = results.rule_id
+        and rules.id        = results.rule_id
     ORDER BY results.connection_id, results.rule_id;
 
 The data for each connection will be accumulated into an array (referred to as
-@row from now on).  Each element of @row represents the presence or absence of a
-particular rule for that connection: the element will be one if the rule is
-present, zero if not.  The index can be looked up in the mapping hashes
+@results from now on).  Each element of @results represents the presence or
+absence of a particular rule for that connection: the element will be one if the
+rule is present, zero if not.  The index can be looked up in the mapping hashes
 described shortly to determine which rule an element corresponds to.  The
-mappings between array indices and rule ids are the same for every @row.  A rule
-id, and thus a corresponding array index, will only be present if that rule id
-was returned at least once from the search.
+mappings between array indices and rule ids are the same for every @results
+returned from a single call to load_data().  A rule id, and thus a corresponding
+array index, will only be present if that rule id was returned at least once
+from the search.
 
-Every @row will be added to @rows to be returned; they'll I<probably> be ordered
-by connection id, but that's not guaranteed.  @rows is suitable for passing to
-$adt->build_tree(), $adt->divideset(), or the scoring functions, and the format
-is described in L</DATA STRUCTURES>.
+Every @results will be part of a %row; every %row will be added to @rows to be
+returned; they'll I<probably> be ordered by connection id, but that's not
+guaranteed.  @rows is suitable for passing to $adt->build_tree(),
+$adt->divideset(), or the scoring functions, and the format is described in
+L</DATA STRUCTURES>.
 
 Two hashes mapping between rule ids and array indices will be created:
 C<%index_to_rule_id> and C<%rule_id_to_index>.  C<%index_to_rule_id> maps an
@@ -318,7 +321,7 @@ An example will hopefully make things clearer:
         # must be at least one rule present for each @row, otherwise the
         # wouldn't have been any results for that @row and it wouldn't have been
         # created.
-        while (not $row->[$i]) {
+        while (not $row->{results}->[$i]) {
             $i++;
         }
         print "First rule: $index_to_rule_id->{$i}\n";
@@ -369,23 +372,23 @@ sub load_data {
     while (my ($connection_id, $rule_id) = $cursor->next()) {
         if ($last_connection_id != $connection_id) {
             $last_connection_id = $connection_id;
-            push @rows, [];
+            push @rows, { results => [] };
         }
         if (not exists $rule_id_to_index{$rule_id}) {
             $rule_id_to_index{$rule_id} = $next_index;
             $index_to_rule_id{$next_index} = $rule_id;
             $next_index++;
         }
-        $rows[-1]->[$rule_id_to_index{$rule_id}] = 1;
+        $rows[-1]->{results}->[$rule_id_to_index{$rule_id}] = 1;
     }
 
     # Zero-fill the rows.
     my $row_length = $next_index;
     foreach my $row (@rows) {
         # undef -> 0
-        @{$row} = map { $_ || 0 } @{$row};
+        @{$row->{results}} = map { $_ || 0 } @{$row->{results}};
         # Extend the rows so they're all the same length.
-        push @{$row}, (0) x ($row_length - @{$row});
+        push @{$row->{results}}, (0) x ($row_length - @{$row->{results}});
     }
 
     # TODO: Consider collapsing rows at some point.  In a quick test 24621
@@ -419,7 +422,7 @@ sub rejection_ratio {
     }
 
     my @counts = (0, 0);
-    map { $counts[$_->[$column]]++; } @{$rows};
+    map { $counts[$_->{results}->[$column]]++; } @{$rows};
 
     return $counts[1] / @{$rows};
 }
@@ -449,7 +452,7 @@ sub subsequent_rejections {
     my ($num_subsequent_rejects, $num_possible_rejects) = (0, 0);
     ROW:
     foreach my $row (@{$rows}) {
-        if (not $row->[$column]) {
+        if (not $row->{results}->[$column]) {
             next ROW;
         }
         # The total number of possible rejections when this rejection took
@@ -457,7 +460,8 @@ sub subsequent_rejections {
         $num_possible_rejects += $num_other_restrictions;
         # The actual number of subsequent rejections in the current column group
         # when this rejection took effect.
-        $num_subsequent_rejects += grep { $row->[$_]; } @{$current_cg->[0]};
+        $num_subsequent_rejects +=
+            grep { $row->{results}->[$_]; } @{$current_cg->[0]};
         # The current column will always be included in the count returned by
         # grep, so reduce the count by one.
         $num_subsequent_rejects--;
@@ -478,8 +482,6 @@ methods are described below.
 
 =head2 Example data
 
-    Rule 5 produced zero results, connection 1 has one result, connection 2
-    has 2 results, and connection 3 has 3 results.
            | connection 1 | connection 2 | connection 3
     rule 1 | 1            |              | 1
     rule 2 |              |              | 1
@@ -487,33 +489,45 @@ methods are described below.
     rule 4 |              | 1            | 1
     rule 5 |              |              | 
 
+    # There may be other elements in the hashes below; they've been excluded for
+    # clarity.
     @rows = (
     # rule:  1, 3, 4, 2
-            [1, 0, 0, 0],   # connection 1
-            [0, 1, 1, 0],   # connection 2
-            [1, 0, 1, 1],   # connection 3
+            { results => [1, 0, 0, 0] },   # connection 1
+            { results => [0, 1, 1, 0] },   # connection 2
+            { results => [1, 0, 1, 1] },   # connection 3
     );
 
 =head2 @rows
 
-@rows is an array of @row, in no particular order.  L</Example data> shows a
-table and @rows returned for it.
+@rows is an array of %row, in no particular order.  L</Example data> shows a
+table and @rows returned for it.  It helps to think of @rows as a table of
+results, plus some additional data.
 
-=head2 @row
+=head2 %row
 
-@row represents the results for one connection.  Each element in @row
-corresponds to one result and will be either C<0> or C<1>.  The element also
-corresponds to a rule: see L</%rule_id_to_index>.  A rule will only be present
-in @row if there was at least one true result for that rule (not necessarily for
-the connection represented by @row).  @row will have elements for every rule
-which produced results; if a rule did not create a result for the connection
-represented by @row the corresponding element will be set to C<0>.
+%row represents the results for one connection.  %row contains the following
+keys:
 
-L</Example data> shows a table and @rows resulting from it.  Each @row has the
-same number of elements, and has been zero-filled as required.  Rule 2 first
-appears in connection 3, so it is represented by element 3 in each @row; rules 3
-and 4 precede it.  Rule 5 has no results in the connections, so it is not
-present in @rows.
+=over 4
+
+=item @results = %row{results};
+
+Each element in @results corresponds to one result and will be either C<0> or
+C<1>.  The element also corresponds to a rule: see L</%rule_id_to_index>.  A
+rule will only be present in @results if there was at least one true result for
+that rule (not necessarily for the connection represented by @results).
+@results will have elements for every rule which produced results; if a rule did
+not create a result for the connection represented by @results the corresponding
+element will be set to C<0>.
+
+L</Example data> shows a table and @rows resulting from it.  @results for each
+%row has the same number of elements, and has been zero-filled as required.
+Rule 2 first appears in connection 3, so it is represented by element 3 in each
+@results; rules 3 and 4 precede it.  Rule 5 has no results in the connections,
+so it is not present in @results.
+
+=back
 
 =head2 %index_to_rule_id
 
@@ -541,12 +555,13 @@ present in @rows.
 
 =head2 @cluster_groups, @current_cg, @original_cg
 
-Arrays of arrays of indices into @row.  The cluster groups in @cluster_groups[0]
-should be used first when splitting @rows; when those cluster groups have been
-exhausted the cluster groups in @cluster_groups[1] should be used, etc.
-@original_cg is the original @cluster_groups, unmodified by build_tree().
-@current_cg is the remaining cluster groups - those which have been consumed by
-build_tree() have been removed.  This is all handled internally by build_tree().
+Arrays of arrays of indices into @results.  The cluster groups in
+@cluster_groups[0] should be used first when splitting @rows; when those cluster
+groups have been exhausted the cluster groups in @cluster_groups[1] should be
+used, etc.  @original_cg is the original @cluster_groups, unmodified by
+build_tree().  @current_cg is the remaining cluster groups - those which have
+been consumed by build_tree() have been removed.  This is all handled internally
+by build_tree().
 
 =cut
 
