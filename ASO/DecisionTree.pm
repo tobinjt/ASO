@@ -148,7 +148,7 @@ Divides @rows into two sets, depending on the value of element $column in each
 =cut
 
 sub divideset {
-    my ($self, $rows, $column) = @_;
+    my ($package, $rows, $column) = @_;
 
     if (@_ != 3) {
         my $num_args = @_ - 1;
@@ -414,7 +414,7 @@ The fraction of @rows where $column is a rejection.
 =cut
 
 sub rejection_ratio {
-    my ($self, $rows, $column, $current_cg, $original_cg) = @_;
+    my ($package, $rows, $column, $current_cg, $original_cg) = @_;
 
     if (@_ != 5) {
         my $num_args = @_ - 1;
@@ -435,7 +435,7 @@ when this column/restriction rejects.
 =cut
 
 sub subsequent_rejections {
-    my ($self, $rows, $column, $current_cg, $original_cg) = @_;
+    my ($package, $rows, $column, $current_cg, $original_cg) = @_;
 
     if (@_ != 5) {
         my $num_args = @_ - 1;
@@ -445,7 +445,7 @@ sub subsequent_rejections {
     if (@{$current_cg->[0]} == 1) {
         # There's only one column left - this one.  Fall back ro
         # rejection_ratio();
-        return $self->rejection_ratio($rows, $column, $current_cg, $original_cg);
+        return $package->rejection_ratio($rows, $column, $current_cg, $original_cg);
     }
 
     my $num_other_restrictions = @{$current_cg->[0]} - 1;
