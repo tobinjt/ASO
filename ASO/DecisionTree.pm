@@ -36,41 +36,45 @@ modified to work well with the data stored by L<ASO::Parser>.
 
 =cut
 
-=head2 new()
+=head2 ASO::DecisionTree->new()
 
 Create a new ASO::DecisionTree object.  Takes the following arguments:
 
 =over 4
 
-=item column
+=item column => integer
 
 The column in each row which the decision is to be made on.
 
-=item true_branch
+=item true_branch => $true_adt
 
-The branch to follow when the column in the row is true.
+The branch to follow when the column in the row is true.  This should be an
+ASO::DecisionTree object.
 
-=item false_branch
+=item false_branch => $false_adt
 
-The branch to follow when the column in the row is false.
+The branch to follow when the column in the row is false.  This should be an
+ASO::DecisionTree object.
 
-=item leaf_node
+=item leaf_node => boolean
 
 True if this node is a leaf node.
 
-=item leaf_branch
+=item leaf_branch => \@rows
 
-The data associated with the leaf node.
+The data associated with the leaf node.  The format of @rows is described in
+L</DATA STRUCTURES>.
 
-=item info_node
+=item info_node => boolean
 
 True if this node is a info node, i.e. it doesn't make a decision.  Info nodes
 are used to retain information about columns which aren't useful in
 classification.
 
-=item info_branch
+=item info_branch => \@rows
 
-The branch to follow when the info_node is true.
+The branch to follow when the info_node is true.  The format of @rows is
+described in L</DATA STRUCTURES>.
 
 =back
 
@@ -138,7 +142,7 @@ sub new {
 =head2 $adt->divideset(\@rows, $column)
 
 Divides @rows into two sets, depending on the value of each row's $column
-element.  Returns (\@true, \@false).
+element.  The format of @rows is described in L</DATA STRUCTURES>.  Returns (\@true, \@false).
 
 =cut
 
@@ -159,7 +163,8 @@ sub divideset {
 =head2 $adt->build_tree(\@rows, \@current_cg, \@original_cg, $current_score, $score_function)
 
 Recursively build a Decision Tree from @rows, using columns taken from
-@column_groups.  XXX IMPROVE THIS.
+@current_cg.  The format of @rows, @current_cg and @original_cg is described in
+L</DATA STRUCTURES>.  XXX IMPROVE THIS.
 
 =cut
 
@@ -283,14 +288,16 @@ was returned at least once from the search.
 
 Every @row will be added to @rows to be returned; they'll I<probably> be ordered
 by connection id, but that's not guaranteed.  @rows is suitable for passing to
-$adt->build_tree(), $adt->divideset(), or the scoring functions.
+$adt->build_tree(), $adt->divideset(), or the scoring functions, and the format
+is described in L</DATA STRUCTURES>.
 
 Two hashes mapping between rule ids and array indices will be created:
 C<%index_to_rule_id> and C<%rule_id_to_index>.  C<%index_to_rule_id> maps an
 array index to a rule id, and C<rule_id_to_index> maps a rule id to an array
 index.
 
-Returns (\@rows, \%index_to_rule_id, \%rule_id_to_index).
+Returns (\@rows, \%index_to_rule_id, \%rule_id_to_index).  Dies if unable to
+connect to the database.
 
 An example will hopefully make things clearer:
 
@@ -380,6 +387,12 @@ sub load_data {
         # Extend the rows so they're all the same length.
         push @{$row}, (0) x ($row_length - @{$row});
     }
+
+    # TODO: Consider collapsing rows at some point.  In a quick test 24621
+    # original rows collapsed to 172 unique rows.  Need to change the
+    # representation of rows: maybe each row is a hash, containing count and
+    # results?  Other keys can be added as necessary then.  I'll worry about
+    # that stuff when everything else is working.
 
     return (\@rows, \%index_to_rule_id, \%rule_id_to_index);
 }
@@ -497,9 +510,6 @@ L<http://cpanratings.perl.org/d/ASO-DecisionTree>
 L<http://search.cpan.org/dist/ASO-DecisionTree>
 
 =back
-
-
-=head1 ACKNOWLEDGEMENTS
 
 
 =head1 COPYRIGHT & LICENSE
