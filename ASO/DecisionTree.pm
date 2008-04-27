@@ -161,16 +161,16 @@ sub divideset {
     return (\@true, \@false);
 }
 
-=head2 $adt->build_tree(\@rows, \@current_cg, \@original_cg, $current_score, $score_function)
+=head2 ASO::DecisionTree->build_tree(\@rows, \@current_cg, \@original_cg, $current_score, $score_function)
 
 Recursively build a Decision Tree from @rows, using columns taken from
 @current_cg.  The format of @rows, @current_cg and @original_cg is described in
-L</DATA STRUCTURES>.  XXX IMPROVE THIS.
+L</DATA STRUCTURES>.  $score_function is the name of a XXX IMPROVE THIS.
 
 =cut
 
 sub build_tree {
-    my ($self, $rows, $current_cg, $original_cg, $current_score, $score_function) = @_;
+    my ($package, $rows, $current_cg, $original_cg, $current_score, $score_function) = @_;
 
     if (@_ != 6) {
         my $num_args = @_ - 1;
@@ -178,11 +178,11 @@ sub build_tree {
     }
 
     if (not @{$rows}) {
-        return ASO::DecisionTree->new(leaf_node => 1, leaf_branch => $rows);
+        return $package->new(leaf_node => 1, leaf_branch => $rows);
     }
 
     if (not @{$current_cg}) {
-        return ASO::DecisionTree->new(leaf_node => 1, leaf_branch => $rows);
+        return $package->new(leaf_node => 1, leaf_branch => $rows);
     }
 
     my ($best_score,    $best_column, $best_true_branch, $best_false_branch)
@@ -190,20 +190,20 @@ sub build_tree {
 
     # Find the best column to divide the rows on.
     foreach my $column (@{$current_cg->[0]}) {
-        my ($true_branch, $false_branch) = $self->divideset($rows, $column);
+        my ($true_branch, $false_branch) = $package->divideset($rows, $column);
         # The probability that a random row will be in the true branch.
         my $probability = @{$true_branch} / @{$rows};
         # Weight the score of each branch by the probability of a row being in
         # that branch, and sum the weighted branch scores to get the new overall
         # score.
-        my $true_score  = $self->$score_function($true_branch,
-                                                 $column,
-                                                 $current_cg,
-                                                 $original_cg);
-        my $false_score = $self->$score_function($false_branch,
-                                                 $column,
-                                                 $current_cg,
-                                                 $original_cg);
+        my $true_score  = $package->$score_function($true_branch,
+                                                    $column,
+                                                    $current_cg,
+                                                    $original_cg);
+        my $false_score = $package->$score_function($false_branch,
+                                                    $column,
+                                                    $current_cg,
+                                                    $original_cg);
         my $new_score =   ($probability       * $true_score)
                         + ((1 - $probability) * $false_score);
         # A higher overall score is better.  Scoring functions need to normalise
@@ -232,19 +232,19 @@ sub build_tree {
             $reduced_cg->[0] = \@new_column_group;
         }
 
-        my $true_branch  = $self->build_tree($best_true_branch,
-                                             $reduced_cg,
-                                             $original_cg,
-                                             $best_score,
-                                             $score_function);
-        my $false_branch = $self->build_tree($best_false_branch,
-                                             $reduced_cg,
-                                             $original_cg,
-                                             $best_score,
-                                             $score_function);
-        return ASO::DecisionTree->new(column        => $best_column,
-                                      true_branch   => $true_branch,
-                                      false_branch  => $false_branch);
+        my $true_branch  = $package->build_tree($best_true_branch,
+                                                $reduced_cg,
+                                                $original_cg,
+                                                $best_score,
+                                                $score_function);
+        my $false_branch = $package->build_tree($best_false_branch,
+                                                $reduced_cg,
+                                                $original_cg,
+                                                $best_score,
+                                                $score_function);
+        return $package->new(column        => $best_column,
+                             true_branch   => $true_branch,
+                             false_branch  => $false_branch);
     }
 
     # None of the columns in the current column group were helpful in dividing
@@ -252,15 +252,15 @@ sub build_tree {
     # group.
     my $reduced_cg = dclone($current_cg);
     my $unused_columns = shift @{$reduced_cg};
-    my $new_tree = $self->build_tree($rows,
-                                     $reduced_cg,
-                                     $original_cg,
-                                     $current_score,
-                                     $score_function);
+    my $new_tree = $package->build_tree($rows,
+                                        $reduced_cg,
+                                        $original_cg,
+                                        $current_score,
+                                        $score_function);
     foreach my $column (@{$unused_columns}) {
-        $new_tree = ASO::DecisionTree->new(column       => $column,
-                                           info_branch  => $new_tree,
-                                           info_node    => 1);
+        $new_tree = $package->new(column       => $column,
+                                  info_branch  => $new_tree,
+                                  info_node    => 1);
     }
     return $new_tree;
 }
@@ -553,15 +553,22 @@ so it is not present in @results.
         4 => 2,
     );
 
-=head2 @cluster_groups, @current_cg, @original_cg
+=head2 @cluster_groups
 
 Arrays of arrays of indices into @results.  The cluster groups in
 @cluster_groups[0] should be used first when splitting @rows; when those cluster
 groups have been exhausted the cluster groups in @cluster_groups[1] should be
-used, etc.  @original_cg is the original @cluster_groups, unmodified by
-build_tree().  @current_cg is the remaining cluster groups - those which have
-been consumed by build_tree() have been removed.  This is all handled internally
-by build_tree().
+used, etc.  
+
+=head2 @current_cg
+
+@original_cg is the original @cluster_groups, unmodified by build_tree().  
+
+=head2 @original_cg
+
+@current_cg is the remaining cluster groups - those which have been consumed by
+build_tree() have been removed.  @current_cg is modified automatically by
+build_tree() as it recursively builds the tree.
 
 =cut
 
