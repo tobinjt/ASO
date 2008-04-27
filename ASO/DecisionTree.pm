@@ -471,6 +471,85 @@ sub subsequent_rejections {
     return $num_subsequent_rejects / $num_possible_rejects;
 }
 
+=head1 DATA STRUCTURES
+
+The data structures used throughout this module and passed as arguments to
+methods are described below.
+
+=head2 Example data
+
+    Rule 5 produced zero results, connection 1 has one result, connection 2
+    has 2 results, and connection 3 has 3 results.
+           | connection 1 | connection 2 | connection 3
+    rule 1 | 1            |              | 1
+    rule 2 |              |              | 1
+    rule 3 |              | 1            |  
+    rule 4 |              | 1            | 1
+    rule 5 |              |              | 
+
+    @rows = (
+    # rule:  1, 3, 4, 2
+            [1, 0, 0, 0],   # connection 1
+            [0, 1, 1, 0],   # connection 2
+            [1, 0, 1, 1],   # connection 3
+    );
+
+=head2 @rows
+
+@rows is an array of @row, in no particular order.  L</Example data> shows a
+table and @rows returned for it.
+
+=head2 @row
+
+@row represents the results for one connection.  Each element in @row
+corresponds to one result and will be either C<0> or C<1>.  The element also
+corresponds to a rule: see L</%rule_id_to_index>.  A rule will only be present
+in @row if there was at least one true result for that rule (not necessarily for
+the connection represented by @row).  @row will have elements for every rule
+which produced results; if a rule did not create a result for the connection
+represented by @row the corresponding element will be set to C<0>.
+
+L</Example data> shows a table and @rows resulting from it.  Each @row has the
+same number of elements, and has been zero-filled as required.  Rule 2 first
+appears in connection 3, so it is represented by element 3 in each @row; rules 3
+and 4 precede it.  Rule 5 has no results in the connections, so it is not
+present in @rows.
+
+=head2 %index_to_rule_id
+
+%index_to_rule_id maps the index of an element in @row to a rule id.
+%index_to_rule_id for L</Example data> is shown below:
+
+    %index_to_rule_id = (
+        0 => 1,
+        1 => 3,
+        2 => 4,
+        3 => 2,
+    );
+
+=head2 %rule_id_to_index
+
+%rule_id_to_index maps a rule id to the index of an element in @row.
+%rule_id_to_index for L</Example data> is shown below:
+
+    %rule_id_to_index = (
+        1 => 0, 
+        2 => 3,
+        3 => 1,
+        4 => 2,
+    );
+
+=head2 @cluster_groups, @current_cg, @original_cg
+
+Arrays of arrays of indices into @row.  The cluster groups in @cluster_groups[0]
+should be used first when splitting @rows; when those cluster groups have been
+exhausted the cluster groups in @cluster_groups[1] should be used, etc.
+@original_cg is the original @cluster_groups, unmodified by build_tree().
+@current_cg is the remaining cluster groups - those which have been consumed by
+build_tree() have been removed.  This is all handled internally by build_tree().
+
+=cut
+
 =head1 AUTHOR
 
 John Tobin, C<< <tobinjt at cs.tcd.ie> >>
