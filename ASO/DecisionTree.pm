@@ -400,6 +400,58 @@ sub load_data {
     return (\@rows, \%index_to_rule_id, \%rule_id_to_index);
 }
 
+=head2 ASO::DecisionTree->build_cluster_groups($dbi_dsn, $username, $password, \%rule_id_to_index)
+
+Builds and returns the cluster groups structure from the database.  The
+structure returned is an array of arrays of indices (see L</@cluster_groups>);
+the indices should be used to select elements from rows returned by load_data().
+The cluster groups are used in build_tree() to select elements to split @rows
+with; the elements from the first cluster should be used first until exhausted
+or ineffective in splitting the tree, after which the elements from subsequent
+clusters should be used.
+
+Connects to the database using $dbi_dsn, $using and $password - see L<DBI> and
+L<DBD::foo> (your database driver) for details of $dbi_dsn.  Dies if unable to
+connect to the database.  Returns (\@cluster_groups).  %rule_id_to_index should
+have been returned from load_data(); if not the indices in @cluster_groups won't
+match the indices in @rows.
+
+=cut
+
+sub build_cluster_groups {
+    my ($package, $dbi_dsn, $username, $password, $rule_id_to_index) = @_;
+
+    if (@_ != 5) {
+        my $num_args = @_ - 1;
+        croak qq{build_cluster_groups(): }
+              . qq{expecting four arguments, not $num_args\n};
+    }
+
+    my $dbix = ASO::DB->connect(
+        $dbi_dsn,
+        $username,
+        $password,
+        {AutoCommit => 1},
+    );
+
+    my $search = $dbix->resultset(q{Rule})->search(
+        {
+            q{action}   => q{REJECTION},
+        },
+        {
+            q{prefetch} => [qw(cluster_group)],
+        },
+    );
+
+    my @cluster_groups;
+    RULE:
+    while (my $rule = $search->next()) {
+        if (not exists $rule_id_to_index->{$rule->id()}) {
+            next RULE;
+        }
+    }
+}
+
 =head1 SCORE FUNCTIONS
 
 All score function return a number between zero and one; zero is worse, one is
@@ -555,10 +607,41 @@ so it is not present in @results.
 
 =head2 @cluster_groups
 
-Arrays of arrays of indices into @results.  The cluster groups in
-@cluster_groups[0] should be used first when splitting @rows; when those cluster
-groups have been exhausted the cluster groups in @cluster_groups[1] should be
-used, etc.  
+Array of arrays of @cluster_element.  build_tree() will use each
+%cluster_element from $cluster_groups[0] when trying to split @rows to make the
+decision tree; once $cluster_groups[0] is exhausted build_tree() will move on to
+$cluster_groups[1], etc.
+
+=head2 %cluster_element
+
+Represents a single array index to be used when splitting @rows to make the
+decision tree.  Sometimes a %cluster_element represents a restriction which
+isn't present in @results, but which must be included - generally the standard
+C<permit_mynetworks, reject_unauth_destination> restriction pair.  Keys you can
+expect to find:
+
+=over 4
+
+=item column
+
+The column to split on.
+
+=item required
+
+True if this is a required restriction.
+
+=item rule_id
+
+The rule_id of the associated rule.
+
+=item restriction_list
+
+The restriction list the restriction is recommended for - typically
+L<smtpd_recipient_restrictions>.
+
+=back
+
+If C<required> is true C<column> may not be present.
 
 =head2 @current_cg
 
