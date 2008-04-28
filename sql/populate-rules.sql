@@ -195,7 +195,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- <munin@cs.tcd.ie>: Recipient address rejected: User unknown in local recipient table; from=<> to=<munin@cs.tcd.ie> proto=ESMTP helo=<lg12x22.cs.tcd.ie>
 -- <hienes@cs.tcd.ie>: Recipient address rejected: User unknown in local recipient table; from=<BrooksPool@rowcmi.org> to=<hienes@cs.tcd.ie> proto=ESMTP helo=<PETTERH?DNEB?>
 -- <rt@cs.tcd.ie>: Recipient address rejected: User unknown; from=<Leynard563@aikon-trading.com> to=<rt@cs.tcd.ie> proto=ESMTP helo=<imx1.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unknown recipient', 'The recipient address is unknown on our system',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: User unknown(?: in \w+ \w+ table)?; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -204,12 +204,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_unlisted_recipient'
+        'reject_unlisted_recipient',
+        400
 );
 
 -- <  sharyn.davies@cs.tcd.ie>: Recipient address rejected: User unknown in local recipient table; from=<newsletter@globalmediaserver.com> to=<??sharyn.davies@cs.tcd.ie> proto=ESMTP helo=<mail1.globalmediaserver.com>
 -- <greedea@cs.tcd.ie>: Recipient address rejected: User unknown in local recipient table; from=<<>@inprima.locaweb.com.br> to=<greedea@cs.tcd.ie> proto=ESMTP helo=<hm22.locaweb.com.br>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name, cluster_group_id)
     VALUES('A weird address was rejected', 'A weird address was rejected by Postfix, and may have been escaped',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(.*?)>: Recipient address rejected: User unknown in \w+ \w+ table; from=<(.*?)> to=<.*?> proto=E?SMTP helo=<(__HELO__)>$',
@@ -219,11 +220,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         1,
         -1,
         'REJECTED',
-        'reject_unlisted_recipient'
+        'reject_unlisted_recipient',
+        400
 );
 
 -- <munin@cs.tcd.ie>: Sender address rejected: User unknown in local recipient table; from=<munin@cs.tcd.ie> to=<john.tobin@cs.tcd.ie> proto=ESMTP helo=<lg12x36.cs.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unknown sender', 'The sender address is unknown on our system',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: User unknown in \w+ \w+ table; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -232,11 +234,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_unlisted_sender'
+        'reject_unlisted_sender',
+        400
 );
 
 -- <                      >: Sender address rejected: User unknown in local recipient table; from=<??????????????????????> to=<emcmanus@cs.tcd.ie> proto=SMTP helo=<mail.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unknown sender (escaped)', 'The sender address is unknown on our system (postfix escaped it)',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(.*)>: Sender address rejected: User unknown in \w+ \w+ table; from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -246,11 +249,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         1,
         -1,
         'REJECTED',
-        'reject_unlisted_sender'
+        'reject_unlisted_sender',
+        400
 );
 
 -- <ocalladw@toad.toad>: Sender address rejected: Domain not found; from=<ocalladw@toad.toad> to=<submit@bugs.gnome.org> proto=SMTP helo=<toad>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unknown sender domain', 'We do not accept mail from unknown domains',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Domain not found; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -259,11 +263,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_unknown_sender_domain'
+        'reject_unknown_sender_domain',
+        400
 );
 
 -- <                     @thai.co.th>: Sender address rejected: Domain not found; from=<?????????????????????@thai.co.th> to=<faircloc@cs.tcd.ie> proto=SMTP helo=<mail.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, priority, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unknown sender domain (escaped)', 'We do not accept mail from unknown domains (postfix partially escaped it)',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(.*)>: Sender address rejected: Domain not found; from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -273,11 +278,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         1,
         -1,
         'REJECTED',
-        'reject_unknown_sender_domain'
+        'reject_unknown_sender_domain',
+        400
 );
 
 -- <stephen@tjbx.org>: Recipient address rejected: Domain not found; from=<4sdcsaz@nbsanjiang.com> to=<stephen@tjbx.org> proto=ESMTP helo=<nbsanjiang.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unknown recipient domain', 'We do not accept mail for unknown domains',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Domain not found; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -286,7 +292,8 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_unknown_recipient_domain'
+        'reject_unknown_recipient_domain',
+        400
 );
 
 -- Service unavailable; Client host [190.40.116.202] blocked using sbl-xbl.spamhaus.org; from=<taliaferraearl@blackburn-green.com> to=<amjudge@dsg.cs.tcd.ie> proto=SMTP helo=<blackburn-green.com>
@@ -295,7 +302,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 -- Service unavailable; Client host [210.236.32.153] blocked using sbl-xbl.spamhaus.org; http://www.spamhaus.org/SBL/sbl.lasso?query=SBL47877; from=<euyery@linuxmail.org> to=<vinny.cahill@cs.tcd.ie> proto=SMTP helo=<eworuetyberiyneortmweprmuete57197179680.com>
 -- Service unavailable; Client host [204.14.1.123] blocked using sbl-xbl.spamhaus.org; http://www.spamhaus.org/SBL/sbl.lasso?query=SBL27197 / http://www.spamhaus.org/SBL/sbl.lasso?query=SBL47903; from=<tia@baraskaka.com> to=<vjcahill@dsg.cs.tcd.ie> proto=SMTP helo=<customer.optindirectmail.123.sls-hosting.com>
 -- Service unavailable; Client host [82.119.202.142] blocked using sbl-xbl.spamhaus.org; http://www.spamhaus.org/query/bl?ip=82.119.202.142; from=<001topzine-hypertext@123point.net> to=<ecdlf@cs.tcd.ie.> proto=ESMTP helo=<cs.tcd.ie.>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Blacklisted by SpamHaus SBL-XBL', 'The client IP address is blacklisted by SpamHaus SBL-XBL',
         'postfix/smtpd',
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__IP__)\]) blocked using sbl-xbl.spamhaus.org;(?:((?:(?:(?: http://www.spamhaus.org/SBL/sbl.lasso\?query=\w+)|(?: http://www.spamhaus.org/query/bl\?ip=\5))(?: /)?)*);)? (?>from=<(__SENDER__)>) to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -304,14 +311,15 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_rbl_client'
+        'reject_rbl_client',
+        600
 );
 
 -- Service unavailable; Client host [220.104.147.28] blocked using zen.spamhaus.org; http://www.spamhaus.org/query/bl?ip=220.104.147.28; from=<sakuran_b0@yahoo.co.jp> to=<stephen.barrett@cs.tcd.ie> proto=SMTP helo=<eruirutkjshfk.com>
 -- Service unavailable; Client host [201.231.83.38] blocked using zen.spamhaus.org; from=<contact@digitalav.com> to=<gerry@cs.tcd.ie> proto=SMTP helo=<38-83-231-201.fibertel.com.ar>
 -- Service unavailable; Client host [141.146.5.10] blocked using zen.spamhaus.org; http://www.spamhaus.org/SBL/sbl.lasso?query=SBL56587; from=<replies@oracle-mail.com> to=<TOBINJT@CS.TCD.IE> proto=ESMTP helo=<acsebinet200.oracleeblast.com>
 -- Service unavailable; Client host [72.5.205.6] blocked using zen.spamhaus.org; http://www.spamhaus.org/SBL/sbl.lasso?query=SBL45324; from=<info@BreakthroughExperts.com> to=<vjcahill@dsg.cs.tcd.ie> proto=ESMTP helo=<BreakthroughExperts.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Blacklisted by SpamHaus Zen', 'The client IP address is blacklisted by SpamHaus Zen',
         'postfix/smtpd',
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__IP__)\]) blocked using zen.spamhaus.org; (?:((?:http://www.spamhaus.org/(?:query/bl\?ip=\5|SBL/sbl.lasso\?query=[^\s]+))| / )+; )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -320,12 +328,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_rbl_client'
+        'reject_rbl_client',
+        600
 );
 
 -- Service unavailable; Client host [80.236.27.105] blocked using list.dsbl.org; http://dsbl.org/listing?80.236.27.105; from=<mrnpftjx@pacbell.net> to=<tom.irwin@cs.tcd.ie> proto=SMTP helo=<ip-105.net-80-236-27.asnieres.rev.numericable.fr>
 -- Service unavailable; Client host [82.159.196.151] blocked using list.dsbl.org; from=<vrespond@cima.com.my> to=<irwin@cs.tcd.ie> proto=SMTP helo=<pc.bcs>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Blacklisted by DSBL', 'The client IP address is blacklisted by DSBL',
         'postfix/smtpd',
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__IP__)\]) blocked using list.dsbl.org; (?:(?>(http://dsbl.org/listing\?\5);) )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -334,11 +343,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_rbl_client'
+        'reject_rbl_client',
+        600
 );
 
 -- Service unavailable; Client host [148.243.214.52] blocked using relays.ordb.org; This mail was handled by an open relay - please visit <http://ORDB.org/lookup/?host=148.243.214.52>; from=<cw-chai@umail.hinet.net> to=<webmaster@cs.tcd.ie> proto=ESMTP helo=<sicomnet.edu.mx>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Blacklisted by ordb.org', 'The client IP address is blacklisted by ordb.org',
         'postfix/smtpd',
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__IP__)\]) blocked using relays.ordb.org; (?>(This mail was handled by an open relay - please visit <http://ORDB.org/lookup/\?host=\5>);) from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -347,12 +357,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_rbl_client'
+        'reject_rbl_client',
+        600
 );
 
 -- Service unavailable; Client host [60.22.99.9] blocked using cbl.abuseat.org; Blocked - see http://cbl.abuseat.org/lookup.cgi?ip=60.22.99.9; from=<pegbxbsusiiao@cowboyart.net> to=<daokeeff@cs.tcd.ie> proto=SMTP helo=<cowboyart.net>
 -- Service unavailable; Client host [90.194.116.50] blocked using cbl.abuseat.org; from=<lazauear@appleleasing.com> to=<noctor@cs.tcd.ie> proto=SMTP helo=<appleleasing.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Blacklisted by CBL', 'The client IP address is blacklisted by CBL',
         'postfix/smtpd',
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__IP__)\]) blocked using cbl.abuseat.org;(?>( Blocked - see http://cbl.abuseat.org/lookup.cgi\?ip=\5);)? from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -361,14 +372,15 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_rbl_client'
+        'reject_rbl_client',
+        600
 );
 
 -- <31.pool80-103-5.dynamic.uni2.es[80.103.5.31]>: Client host rejected: Greylisted, see http://isg.ee.ethz.ch/tools/postgrey/help/dsg.cs.tcd.ie.html; from=<iqxrgomtl@purinmail.com> to=<skenny@dsg.cs.tcd.ie> proto=SMTP helo=<31.pool80-103-5.dynamic.uni2.es>
 -- <mail.saraholding.com.sa[212.12.166.254]>: Client host rejected: Greylisted, see http://isg.ee.ethz.ch/tools/postgrey/help/cs.tcd.ie.html; from=<lpty@[212.12.166.226]> to=<colin.little@cs.tcd.ie> proto=ESMTP helo=<mail.saraholding.com.sa>
 -- <flow.helderhosting.nl[82.94.236.142]>: Client host rejected: Greylisted, see http://isg.ee.ethz.ch/tools/postgrey/help/cs.tcd.ie.html; from=<www-data@info+spam@helderhosting.nl> to=<siobhan.clarke@cs.tcd.ie> proto=SMTP helo=<flow.helderhosting.nl>
 -- <host10-102.pool82104.interbusiness.it[82.104.102.10]>: Client host rejected: Greylisted, see http://postgrey.schweikert.ch/help/cs.tcd.ie.html; from=<Tania@nis-portal.de> to=<mite-00@cs.tcd.ie> proto=SMTP helo=<host10-102.pool82104.interbusiness.it>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Greylisted', 'Client greylisted; see http://www.greylisting.org/ for more details',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__HOSTNAME__)\[(__IP__)\]>: Client host rejected: Greylisted, see (http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -377,11 +389,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_policy_service'
+        'check_policy_service',
+        600
 );
 
 -- <huggardm@cs.tcd.ie>: Recipient address rejected: Greylisted, see http://postgrey.schweikert.ch/help/cs.tcd.ie.html; from=<fool@foolmail.co.uk> to=<huggardm@cs.tcd.ie> proto=SMTP helo=<maccullagh.maths.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Greylisted recipient', 'Recipient greylisted; see http://www.greylisting.org/ for more details',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Greylisted, see (http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+) from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -390,11 +403,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_policy_service'
+        'check_policy_service',
+        600
 );
 
 -- <nicholas@seaton.biz>: Sender address rejected: Address uses MX in loopback address space (127.0.0.0/8); from=<nicholas@seaton.biz> to=<gillian.long@cs.tcd.ie> proto=ESMTP helo=<friend>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Sender MX in loopback address space', 'The MX for sender domain is in loopback address space, so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in loopback address space \(127.0.0.0/8\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -403,11 +417,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_mx_access'
+        'check_sender_mx_access',
+        400
 );
 
 -- <root@inet.microlins.com.br>: Sender address rejected: Address uses MX in private address space (172.16.0.0/12); from=<root@inet.microlins.com.br> to=<stephen.farrell@cs.tcd.ie> proto=ESMTP helo=<inet.microlins.com.br>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Sender MX in private address space (172.16.0.0/12)', 'The MX for sender domain is in private address space (172.16.0.0/12), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(172.16.0.0/12\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -416,11 +431,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_mx_access'
+        'check_sender_mx_access',
+        400
 );
 
 -- NOQUEUE: reject: RCPT from unknown[123.190.117.163]: 550 5.7.1 <cji1031@scourt.go.kr>: Recipient address rejected: Address uses MX in private address space (172.16.0.0/12); from=<qm73z1@paran.com> to=<cji1031@scourt.go.kr> proto=SMTP helo=<123.190.117.163>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Recipient MX in private address space (172.16.0.0/12)', 'The MX for recipient domain is in private address space (172.16.0.0/12), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(172.16.0.0/12\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -429,11 +445,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_recipient_mx_access'
+        'check_recipient_mx_access',
+        400
 );
 
 -- <aaholi@web009.ahp01.lax.affinity.com>: Sender address rejected: Address uses MX in private address space (127.16.0.0/12); from=<aaholi@web009.ahp01.lax.affinity.com> to=<luzs@cs.tcd.ie> proto=ESMTP helo=<ams006.lax.affinity.com> 
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Sender MX in private address space (127.16.0.0/12)', 'The MX for sender domain is in private address space (127.16.0.0/12), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(127.16.0.0/12\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -442,11 +459,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_mx_access'
+        'check_sender_mx_access',
+        400
 );
 
 -- <hlhbs@china.org.cn>: Recipient address rejected: Address uses MX in private address space (127.16.0.0/12); from=<1221q5@chinachewang.com> to=<hlhbs@china.org.cn> proto=ESMTP helo=<chinachewang.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Recipient MX in private address space (127.16.0.0/12)', 'The MX for recipient domain is in private address space (127.16.0.0/12), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(127.16.0.0/12\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -455,11 +473,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_recipient_mx_access'
+        'check_recipient_mx_access',
+        400
 );
 
 -- <aeneasdecathlon@rotnot.com>: Sender address rejected: Address uses MX in private address space (192.168.0.0/16); from=<aeneasdecathlon@rotnot.com> to=<MCCARTHY@CS.tcd.ie> proto=ESMTP helo=<vms1.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Sender MX in private address space (192.168.0.0/16)', 'The MX for sender domain is in private address space (192.168.0.0/16), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -468,11 +487,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_mx_access'
+        'check_sender_mx_access',
+        400
 );
 
 -- <showh@tdt3.com.tw>: Recipient address rejected: Address uses MX in private address space (192.168.0.0/16); from=<zsl.gzrza@yahoo.com.tw> to=<showh@tdt3.com.tw> proto=SMTP helo=<134.226.32.56>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Recipient MX in private address space (192.168.0.0/16)', 'The MX for Recipient domain is in private address space (192.168.0.0/16), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -481,12 +501,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_recipient_mx_access'
+        'check_recipient_mx_access',
+        400
 );
 
 -- <acornascription@rot.wartesaal.darktech.org>: Sender address rejected: Address uses MX in private address space (10.0.0.0/8); from=<acornascription@rot.wartesaal.darktech.org> to=<gap@cs.tcd.ie> proto=ESMTP helo=<xmx1.tcd.ie>
 -- <artlesslyLumi re's@wildsecretary.com>: Sender address rejected: Address uses MX in private address space (10.0.0.0/8); from=<artlesslyLumi?re's@wildsecretary.com> to=<carol.osullivan@cs.tcd.ie> proto=ESMTP helo=<home.tvscable.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Sender MX in private address space (10.0.0.0/8)', 'The MX for sender domain is in private address space (10.0.0.0/8), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(10.0.0.0/8\); from=<.*?> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -495,11 +516,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_mx_access'
+        'check_sender_mx_access',
+        400
 );
 
 -- <mactusqdx@wartesaal.darktech.org>: Recipient address rejected: Address uses MX in private address space (10.0.0.0/8); from=<bartel@integramed.com> to=<mactusqdx@wartesaal.darktech.org> proto=SMTP helo=<integramed.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Recipient MX in private address space (10.0.0.0/8)', 'The MX for recipient domain is in private address space (10.0.0.0/8), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(10.0.0.0/8\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -508,11 +530,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_recipient_mx_access'
+        'check_recipient_mx_access',
+        400
 );
 
 -- <banihashemian@modares.ac.ir>: Sender address rejected: Address uses MX in local address space (169.254.0.0/16); from=<banihashemian@modares.ac.ir> to=<Elisa.Baniassad@cs.tcd.ie> proto=ESMTP helo=<mail-relay1.cs.ubc.ca>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Sender MX in "local" address space (169.254.0.0/16)', 'The MX for sender domain is in "local" address space (169.254.0.0/16), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in local address space \(169.254.0.0/16\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -521,11 +544,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_mx_access'
+        'check_sender_mx_access',
+        400
 );
 
 -- <sble@corn.kiev.ua>: Recipient address rejected: Address uses MX in "this" address space (0.0.0.0/8); from=<-sol@hinet.net> to=<sble@corn.kiev.ua> proto=SMTP helo=<125-225-33-196.dynamic.hinet.net>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Recipient MX in "this" address space (0.0.0.0/8)', 'The MX for recipient domain is in "this" address space (0.0.0.0/8), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in "this" address space \(0.0.0.0/8\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -534,11 +558,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_mx_access'
+        'check_sender_mx_access',
+        400
 );
 
 -- <lisa@telephonebooth.com>: Sender address rejected: Address uses MX in "this" address space (0.0.0.0/8); from=<lisa@telephonebooth.com> to=<francis.neelamkavil@cs.tcd.ie> proto=SMTP helo=<localhost>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Sender MX in "this" address space (0.0.0.0/8)', 'The MX for sender domain is in "this" address space (0.0.0.0/8), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in "this" address space \(0.0.0.0/8\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -547,11 +572,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_mx_access'
+        'check_sender_mx_access',
+        400
 );
 
 -- <af53eec9@verpiss-dich.de>: Recipient address rejected: Address uses MX in loopback address space (127.0.0.0/8); from=<cbsrlkhaigye@allsaintsfan.com> to=<af53eec9@verpiss-dich.de> proto=SMTP helo=<127.0.0.1>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Recipient MX in loopback address space (127.0.0.0/8)', 'The MX for recipient domain is in loopback address space (127.0.0.0/8), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in loopback address space \(127.0.0.0/8\); from=<(__SENDER__)> to=<__SENDER__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -560,11 +586,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_recipient_mx_access'
+        'check_recipient_mx_access',
+        400
 );
 
 -- <rmurphywgra@itm-inst.com>: Sender address rejected: Address uses MX in test address space (192.0.2.0/24); from=<rmurphywgra@itm-inst.com> to=<noctor@cs.tcd.ie> proto=SMTP helo=<itm-inst.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Sender MX in test address space (192.0.2.0/24)', 'The MX for sender domain is in test address space (192.0.2.0/24), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in test address space \(192.0.2.0/24\); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -573,11 +600,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_mx_access'
+        'check_sender_mx_access',
+        400
 );
 
 -- <ForestSimmspq@rpis.pl>: Sender address rejected: Address uses MX in reserved address space (240.0.0.0/4); from=<ForestSimmspq@rpis.pl> to=<dave.lewis@cs.tcd.ie> proto=ESMTP helo=<xmx1.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Sender MX in reserved address space (240.0.0.0/4)', 'The MX for sender domain is in reserved address space (240.0.0.0/4), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in reserved address space \(240.0.0.0/4\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -586,11 +614,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_mx_access'
+        'check_sender_mx_access',
+        400
 );
 
 -- <selby.dalzell@uldgalleriet.dk>: Sender address rejected: Address uses MX in multicast address space (224.0.0.0/4); from=<selby.dalzell@uldgalleriet.dk> to=<stephen.mcsweeney@cs.tcd.ie> proto=ESMTP helo=<host81-154-224-236.range81-154.btcentralplus.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Sender MX in multicast address space (224.0.0.0/4)', 'The MX for sender domain is in multicast address space (224.0.0.0/4), so cannot be contacted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <__SENDER__>: Sender address rejected: Address uses MX in multicast address space \(224.0.0.0/4\); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -599,11 +628,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_mx_access'
+        'check_sender_mx_access',
+        400
 );
 
 -- Server configuration problem; from=<Trav-Buys@easytriprep.com> to=<mary.sharp@cs.tcd.ie> proto=ESMTP helo=<mail.easytriprep.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Local server configuration program', 'There is a problem with the configuration of the local mail server, so mail is not being accepted',
         'postfix/smtpd',
         '^__RESTRICTION_START__ Server configuration (?:problem|error); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -612,11 +642,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'Server misconfiguration'
+        'Server misconfiguration',
+        1000
 );
 
 -- <cs.tcd.ie>: Helo command rejected: You are not in cs.tcd.ie; from=<van9219@yahoo.co.jp> to=<david.ocallaghan@cs.tcd.ie> proto=SMTP helo=<cs.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Faked CS HELO', 'The client used a CS address in HELO but is not within our network',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__HELO__)>: Helo command rejected: You are not in cs.tcd.ie; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
@@ -625,11 +656,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_helo_access'
+        'check_helo_access',
+        600
 );
 
 -- NOQUEUE: reject: RCPT from pc792.cs.tcd.ie[134.226.40.104]: 550 5.7.1 <Igorb@infogateonline.com>: Recipient address rejected: Mail to this address bounces; from=<www-data@yossarian.cs.tcd.ie> to=<Igorb@infogateonline.com> proto=ESMTP helo=<pc792.cs.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Misc recipient blocks', 'Misc recipient blocks used when necessary',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: (Mail to this address bounces); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -638,10 +670,11 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_recipient_access'
+        'check_recipient_access',
+        400
 );
 
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Misc emergency blocks', 'Misc blocks used when necessary',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <__HOSTNAME__\[__IP__\]>: Client host rejected: (Do something sensible with mail to root.|Please contact John Tobin at 1534|Stop sending phishing scams); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -650,13 +683,14 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_client_access'
+        'check_client_access',
+        400
 );
 
 -- <a-tikx23d9jlacr>: Helo command rejected: need fully-qualified hostname; from=<aprenda06@walla.com> to=<michael.brady@cs.tcd.ie> proto=SMTP helo=<a-tikx23d9jlacr>
 -- <203.162.3.152>: Helo command rejected: need fully-qualified hostname; from=<grid-ireland-ca@cs.tcd.ie> to=<grid-ireland-ca@cs.tcd.ie> proto=ESMTP helo=<203.162.3.152>
 -- <qbic>: Helo command rejected: need fully-qualified hostname; from=<> to=<faircloc@cs.tcd.ie> proto=ESMTP helo=<qbic>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Non-FQDN HELO', 'The hostname given in the HELO command is not fully qualified, i.e. it lacks a domain',
         'postfix/smtpd',
         '^__RESTRICTION_START__ (?><(.*?)>:) Helo command rejected: need fully-qualified hostname; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
@@ -665,12 +699,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_non_fqdn_hostname, reject_non_fqdn_helo_hostname'
+        'reject_non_fqdn_hostname, reject_non_fqdn_helo_hostname',
+        600
 );
 
 -- <among@ecosse.net>: Relay access denied; from=<uvqjnkhcwanbvk@walla.com> to=<among@ecosse.net> proto=SMTP helo=<88-134-149-72-dynip.superkabel.de>
 -- NOQUEUE: reject: RCPT from unknown[222.47.60.114]: 554 5.7.1 < lfelga@visir.is>: Relay access denied; from=<MarKetingsupport@hexun.com> to=<?lfelga@visir.is> proto=SMTP helo=<222.47.60.114>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Relaying denied', 'Client tried to use us as an open relay',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Relay access denied; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -679,11 +714,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_unauth_destination'
+        'permit_mynetworks, reject_unauth_destination',
+        300
 );
 
 -- Client host rejected: cannot find your hostname, [199.84.53.138]; from=<security@e-gold.com.> to=<melanie.bouroche@cs.tcd.ie> proto=ESMTP helo=<DynamicCorp.net>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Rejected client without PTR', 'Client IP address does not have associated PTR record',
         'postfix/smtpd',
         '^__RESTRICTION_START__ Client host rejected: cannot find your hostname, \[__IP__\]; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -692,13 +728,14 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_unknown_client'
+        'reject_unknown_client',
+        400
 );
 
 -- We match anything here because the address is invalid.
 -- <[]>: Helo command rejected: invalid ip address; from=<mrmmpwv@parfive.com> to=<hitesh.tewari@cs.tcd.ie> proto=ESMTP helo=<[]>
 -- <24383590>: Helo command rejected: Invalid name; from=<CBKWPMIUF@hotmail.com> to=<byrne@cs.tcd.ie> proto=SMTP helo=<24383590>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Invalid HELO hostname/ip', 'The hostname/ip used in the HELO command is invalid',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(.*?)>: Helo command rejected: (invalid ip address|Invalid name); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
@@ -707,11 +744,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_invalid_helo_hostname'
+        'reject_invalid_helo_hostname',
+        600
 );
 
 -- <daemon@cs.tcd.ie>: Recipient address rejected: recipient address unknown; from=<> to=<daemon@cs.tcd.ie> proto=ESMTP helo=<lg12x21.cs.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unknown recipient (system user)', 'The recipient address is unknown on our system (system users should not receive mail)',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: recipient address unknown; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -720,11 +758,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_recipient_access'
+        'check_recipient_access',
+        400
 );
 
 -- <daemon@cs.tcd.ie>: Sender address rejected: sender address unknown; from=<daemon@cs.tcd.ie> to=<root@cs.tcd.ie> proto=ESMTP helo=<apex.cs.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unknown sender (system user)', 'The sender address is unknown on our system (system users should not send mail)',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: sender address unknown; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -733,11 +772,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_access'
+        'check_sender_access',
+        400
 );
 
 -- <neville.harris@cs.tcd.ie>: Recipient address rejected: User no longer receiving mail at this address; from=<have@jewelprecision.com> to=<neville.harris@cs.tcd.ie> proto=SMTP helo=<jewelprecision.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unknown recipient (user not receiving mail)', 'The recipient address is unknown on our system (user not receiving mail here any more)',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: User no longer receiving mail at this address; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -746,11 +786,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_recipient_access'
+        'check_recipient_access',
+        400
 );
 
 -- <godiva.cs.tcd.ie[134.226.35.142]>: Client host rejected: Alias root to something useful.; from=<root@godiva.cs.tcd.ie> to=<root@godiva.cs.tcd.ie> proto=SMTP helo=<godiva.cs.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unwanted mail to root', 'People keep sending us mail for root at their machine',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <__HOSTNAME__(?>\[__IP__\]>:) Client host rejected: Alias root to something useful.; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -759,12 +800,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_client_access'
+        'check_client_access',
+        400
 );
 
 -- <root@pc910.cs.tcd.ie>: Recipient address rejected: alias root to some other user, damnit.; from=<root@pc910.cs.tcd.ie> to=<root@pc910.cs.tcd.ie> proto=ESMTP helo=<vangogh.cs.tcd.ie>
 -- <root@pc910.cs.tcd.ie>: Recipient address rejected: alias root to some other user, damnit.; from=<> to=<root@pc910.cs.tcd.ie> proto=ESMTP helo=<vangogh.cs.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unwanted mail to root 2', 'People keep sending us mail for root at their machine (2)',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Recipient address rejected: alias root to some other user, damnit.; from=<(__RECIPIENT__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -773,12 +815,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_client_access'
+        'check_recipient_access',
+        400
 );
 
 -- <localhost.localhost>: Helo command rejected: You are not me; from=<qute1212000@yahoo.it> to=<mads.haahr@cs.tcd.ie> proto=SMTP helo=<localhost.localhost>
 -- <134.226.32.56>: Helo command rejected: You are not me.; from=<lsfeisg.xrseusc@yahoo.com.tw> to=<stephen.farrell@cs.tcd.ie> proto=SMTP helo=<134.226.32.56>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Fake localhost HELO', 'The client claimed to be localhost in the HELO command',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__HELO__)>: Helo command rejected: You are not me\.?; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
@@ -787,11 +830,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_helo_access'
+        'check_helo_access',
+        600
 );
 
 -- <stephen.farrell>: Recipient address rejected: need fully-qualified address; from=<ykkxj.ukf@sfilc.com> to=<stephen.farrell> proto=SMTP helo=<www.BMS96.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Non-FQDN recipient', 'Recipient addresses must be in FQDN form, so replies can be sent',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: need fully-qualified address; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -800,11 +844,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_non_fqdn_sender'
+        'reject_non_fqdn_sender',
+        600
 );
 
 -- <apache>: Sender address rejected: need fully-qualified address; from=<apache> to=<Arthur.Hughes@cs.tcd.ie> proto=ESMTP helo=<najm.tendaweb.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Non-FQDN sender', 'Sender addresses must be in FQDN form, so replies can be sent',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: need fully-qualified address; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -813,12 +858,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_non_fqdn_sender'
+        'reject_non_fqdn_sender',
+        600
 );
 
 -- <DATA>: Data command rejected: Multi-recipient bounce; from=<> proto=SMTP helo=<mail71.messagelabs.com>
 -- <DATA>: Data command rejected: Multi-recipient bounce; from=<> proto=ESMTP helo=<euphrates.qatar.net.qa>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Multi-recipient bounce rejected', 'Any mail from <> should be a bounce, therefore if there is more than one recipient it can be rejected (supposedly it had more than one sender)',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <DATA>: Data command rejected: Multi-recipient bounce; from=<()> proto=E?SMTP helo=<(__HELO__)>$',
@@ -828,13 +874,14 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_multi_recipient_bounce'
+        'reject_multi_recipient_bounce',
+        700
 );
 
 -- <DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<bounce-523207-288@lists.tmforum.org> to=<vwade@cs.tcd.ie> proto=SMTP helo=<lists.tmforum.org>
 -- <DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<daffy982@livedoor.com> to=<tfernand@cs.tcd.ie> proto=ESMTP helo=<adler.ims.uni-stuttgart.de>
 -- <DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<vwade@cs.tcd.ie> proto=ESMTP helo=<webmail.cs.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Bad pipelining', 'The client tried to use pipelining before Postfix allowed it',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<(__SENDER__)> (?:to=<(__RECIPIENT__)> )?proto=E?SMTP helo=<(__HELO__)>$',
@@ -843,13 +890,14 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_unauth_pipelining'
+        'reject_unauth_pipelining',
+        700
 );
 
 -- NOTE: this rejection doesn't start with __RESTRICTION_START__.
 -- NOQUEUE: reject: MAIL from cagraidsvr06.cs.tcd.ie[134.226.53.22]: 552 Message size exceeds fixed limit; proto=ESMTP helo=<cagraidsvr06.cs.tcd.ie>
 -- NOQUEUE: reject: MAIL from cagraidsvr06.cs.tcd.ie[134.226.53.22]: 552 5.3.4 Message size exceeds fixed limit; proto=ESMTP helo=<cagraidsvr06.cs.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Rejected mail too large', 'The client tried to send a mail but it is too big to be accepted.',
         'postfix/smtpd',
         '^(NOQUEUE): reject: MAIL from (__HOSTNAME__)\[(__IP__)\]: (__SMTP_CODE__) (?:__DSN__ )?Message size exceeds fixed limit; proto=ESMTP helo=<(__HELO__)>$',
@@ -859,11 +907,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'message_size_limit'
+        'message_size_limit',
+        1000
 );
 
 -- <info@tiecs.ie>: Sender address rejected: Stop flooding our users with mail.; from=<info@tiecs.ie> to=<tobinjt@cs.tcd.ie> proto=SMTP helo=<wilde.cs.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Stop flooding users with mail', 'A client was flooding users with unwanted mail',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Stop flooding our users with mail.; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -872,12 +921,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_access'
+        'check_sender_access',
+        600
 );
 
 -- NOTE: this rejection doesn't start with __RESTRICTION_START__.
 -- NOQUEUE: reject: CONNECT from localhost[::1]: 554 5.7.1 <localhost[::1]>: Client host rejected: Access denied; proto=SMTP
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Client host rejected for some reason', 'The client was rejected but no reason was specified',
         'postfix/smtpd',
         '^(NOQUEUE): reject: CONNECT from (__HOSTNAME__)\[(__IP__)\]: (__SMTP_CODE__) (?:__DSN__ )?<\2\[\3\]>: Client host rejected: Access denied; proto=E?SMTP$',
@@ -887,11 +937,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_client_access?'
+        'check_client_access',
+        100
 );
 
 -- <angbuchsbaum@yahoo.be>: Recipient address rejected: Malformed DNS server reply; from=<Alena.Moison@cs.tcd.ie> to=<angbuchsbaum@yahoo.be> proto=ESMTP helo=<SECPC2>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Malformed DNS reply (recipient)', 'The DNS reply was malformed when checking the recipient domain',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Malformed DNS server reply; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
@@ -900,11 +951,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_unknown_sender_domain'
+        'reject_unknown_sender_domain',
+        400
 );
 
 -- <Gunter_LetitiaV@bionorthernireland.com>: Sender address rejected: Malformed DNS server reply; from=<Gunter_LetitiaV@bionorthernireland.com> to=<donnelly@cs.tcd.ie> proto=SMTP helo=<2D87008>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Malformed DNS reply (sender)', 'The DNS reply was malformed when checking the sender domain',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Malformed DNS server reply; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -913,11 +965,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'reject_unknown_sender_domain'
+        'reject_unknown_sender_domain',
+        400
 );
 
 -- <relay.ubu.es[193.146.160.3]>: Client host rejected: Please stop sending us unwanted call for papers.; from=<escorchado@ubu.es> to=<kahmad@cs.tcd.ie> proto=ESMTP helo=<virtual310.curris.ubu.es>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unwanted calls for papers', 'The client is spamming us with calls for papers',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__HOSTNAME__)\[(__IP__)\]>: Client host rejected: Please stop sending us unwanted call for papers.; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -926,11 +979,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_client_access'
+        'check_client_access',
+        100
 );
 
 -- <postmaster@cs.tcd.ie>: Sender address rejected: This address is not in use.; from=<postmaster@cs.tcd.ie> to=<caramisgo@yahoo.co.kr> proto=SMTP helo=<dvnpahxwg.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Rejecting unused sender address', 'Rejecting an address we know is not used for sending mail',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: This address is not in use.; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -939,11 +993,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_access'
+        'check_sender_access',
+        400
 );
 
 -- <bassire@venus.made2own.com>: Sender address rejected: We don't want your spam.; from=<bassire@venus.made2own.com> to=<liz.gray@cs.tcd.ie> proto=ESMTP helo=<venus.made2own.com>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Rejecting spammer sender address', 'Rejecting an address we know is used for sending spam',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: We don.t want your spam.; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -952,11 +1007,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_access'
+        'check_sender_access',
+        400
 );
 
 -- Client host rejected: Fix your mail system please, you've filling up our mail queue.; from=<> to=<root@pc910.cs.tcd.ie> proto=ESMTP helo=<pc910.cs.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Rejecting client flooding us with mail', 'Rejecting a client which is flooding us with mail.',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(?:__HOSTNAME__)\[(?:__IP__)\]>: Client host rejected: Fix your mail system please, you.ve filling up our mail queue.; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -965,12 +1021,13 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_access'
+        'check_sender_access',
+        100
 );
 
 
 -- Client host rejected: Don't want this mail; from=<> to=<cricket@cs.tcd.ie> proto=ESMTP helo=<lg12x37.cs.tcd.ie>
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Rejecting we do not want', 'Rejecting mail which is unwanted for one reason or another',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <__HOSTNAME__\[__IP__\]>: Client host rejected: Don.t want this mail; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
@@ -979,11 +1036,12 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_sender_access'
+        'check_sender_access',
+        400
 );
 
 -- <unknown[87.192.55.104]>: Client host rejected: TOO MANY CONNECTIONS; proto=SMTP
-INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Rejecting client which connects too many times', 'Rejecting client which connects too many times',
         'postfix/smtpd',
         '^(__QUEUEID__): reject: CONNECT from (__HOSTNAME__)\[(__IP__)\]: 554 5.7.1 <__HOSTNAME__\[__IP__\]>: Client host rejected: TOO MANY CONNECTIONS; proto=E?SMTP$',
@@ -992,7 +1050,8 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTION',
         1,
         'REJECTED',
-        'check_client_access'
+        'check_client_access',
+        100
 );
 
 -- }}}
@@ -1067,6 +1126,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 );
 
 -- }}}
+
 
 
 -- QMGR RULES {{{1

@@ -38,7 +38,7 @@ test-real:
 	(cd ../sql && perl make_schema > "$@")
 
 db: ../sql/create-tables-sqlite3-generated.sql
-	(cd ../sql/ && rm -f db.sq3 && perl setup-database create-tables-sqlite3-generated.sql populate-rules.sql)
+	(cd ../sql/ && rm -f db.sq3 && perl setup-database create-tables-sqlite3-generated.sql populate-cluster-groups.sql populate-rules.sql)
 	sqlite3 ../sql/db.sq3 'select name, regex from rules where regex not like "^%$$"';
 
 db-clean:
