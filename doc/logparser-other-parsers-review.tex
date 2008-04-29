@@ -256,6 +256,8 @@ low level string manipulation; it is the opposite end of the spectrum to
 \parsernames{} parsing.  It doesn't handle any of the complications
 discussed in this document, doesn't gather the breadth of data required for
 this project, and ignores the majority of log lines produced by Postfix.
+It ignores all log lines earlier than today, so testing with the test log
+files is pointless.
 
 \url{http://www.enderunix.org/isoqlog/} \newline (Last checked 2007/08/13.)
 
@@ -354,6 +356,12 @@ performs.  It did not run successfully when tested, and its parsing would
 certainly be out of date as Postfix has evolved considerably since this
 tool was last updated (November 2003).  As it neither ran successfully nor
 has documentation the author can read a detailed review cannot be provided.
+
+The Debian project (\url{http://www.debian.org/}) provides a manual page
+with the copy of anteater it distributes, so the author was at least able
+to run anteater with the correct arguments; sadly anteater produced zero
+for every statistic, presumably because it was unsuccessful in parsing the
+log lines.
 
 \url{http://anteater.drzoom.ch/} \newline (Last checked 2007/08/13.)
 
