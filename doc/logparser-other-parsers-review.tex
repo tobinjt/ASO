@@ -443,9 +443,32 @@ available; however its parser extracts only part of the available data and
 makes no attempt to deal with the other complications described in
 \sectionref{complications} \sectionref{additional complications}.
 \parsername{} uses an \SQL{} database to make accessing the extracted data
-as easy as possible.
+as easy as possible.  When testing Lire on the \numberOFlogFILES{} test log
+files it performed reasonably well, producing summaries of: 
 
-\url{http://logreport.org/lire.html} \newline (Last checked 2007/10/09.)
+\begin{itemize}
+
+    \item Delivery status and failed deliveries.
+
+    \item Sender and recipient domains and servers.
+
+    \item Number of deliveries and bytes per day and hour.
+
+    \item Recipients by domain.
+
+    \item Deliveries by relays, by size and by delay.
+
+    \item Delays by server and domain.
+
+    \item Most mails exchanged between a pair of correspondents.
+
+\end{itemize}
+
+The numbers it reports appear reasonable, and the subset verified by the
+author were correct.  Lire produces a report with less detail than
+Pflogsumm, and is considerable harder to configure.
+
+\url{http://logreport.org/lire.html} \newline (Last checked 2008/04/29.)
 
 \subsubsection{Logrep}
 
