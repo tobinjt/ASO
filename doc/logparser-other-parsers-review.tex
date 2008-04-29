@@ -166,24 +166,56 @@ statistics); \parsername{} provides the database and leaves it to the user
 to utilise it in any way, whenever they want, with no restrictions on usage
 of the data.  The interface is optimised for interactive rather than
 automated queries and it does not appear to be possible to write
-independent tools to utilise the Splunk database.  Many types of reports
-are available, though most are variations of a bar or pie chart, with the
-exception of bubble and heatmap graphs.  It is very easy to drill down
+independent tools to utilise the Splunk database; there are additional
+reports available on \url{http://www.splunkbase.com/}, but the author was
+unable to find any --- every category was empty, even those which the
+interface claimed had reports available.  Many types of reports are bundled
+with the software, though most are variations of a bar or pie chart, with
+the exception of bubble and heatmap graphs.  It is very easy to drill down
 through the graphs to extract a portion of the data (e.g.\ select the hour
 with the largest number of events, then select a particular host, and
 finally a specific address), though it is not possible to search on partial
-words.  The searches are quite fast, though as the free version has a limit
-on the amount of data indexed per day the volume of data to be searched was
-merely 45MB\@; the cheapest licensed version costs \$6000, and still limits
-the volume of data indexed per day.
+words.
+
+The web interface is quite attractive and easy to use when searching, but
+as an administrator it seems unnecessarily difficult to perform simple
+tasks.  When testing it took roughly 30 minutes to add a single log file to
+be indexed (log files must be indexed before searching), with the downside
+that the log file was copied into a spool directory, doubling the disk
+space usage.  The most suitable test would be to index all log files in a
+particular directory, but after three hours, numerous futile attempts, and
+reading all available documentation the author admitted defeat.  Using the
+\CLI{} was more successful: invoking the command \newline \tab{}
+\texttt{splunk find logs }\textit{log-directory\/}\newline added 40 of the
+\numberOFlogFILES{} log files to the queue for indexing.  Repeated attempts
+enqueued the same 40 log files, without explanation as to why the others
+were excluded.\footnote{The log files appear to have only been indexed
+once; presumably Splunk keeps track of the files it has indexed and
+discards requests to index files for a second time.  This may or may not be
+a useful feature for \parsername{}.} There did not appear to be an option
+to order the log files to ensure they would be processed in the order they
+were created.  Subsequently the author was successful in adding a single
+file at a time using the \CLI{}; a simple loop to add all desired log files
+was sufficient to index all files.  Splunk will periodically check all
+those files for updates unless they are manually removed from its list;
+this may or may not be useful behaviour.  Splunk did not appear to have any
+difficulty in parsing the log files, once instructed to do so.  All
+searches performed using the indexed data returned reasonable results.
+
+Splunk supports reading compressed log files without any configuration by
+the user.  The free version of Splunk limits the volume of data indexed per
+day to 500MB, though a trial Enterprise licence is available which allows
+indexing of up to 5GB of data per day.  The cheapest licensed version costs
+\$5000 (plus \$1000 support), and still limits the volume of data indexed
+per day to 500MB.
 
 In the specific case of parsing Postfix logs, Splunk extracts some standard
 fields: to and from addresses, HELO hostname, date, host the logs were
 collected from, and protocol.  It parses the standard syslog fields at the
 beginning of the line, and extracts any \texttt{key=<value>} pairs
 occurring after the standard syslog prologue; these pairs are the fields
-listed above.  Searches can be based on the extracted fields, and all text
-in the line is also available for searching.  \parsername{} extracts
+listed above.  Searches can be based on the extracted fields, and all the
+text in the line is also available for searching.  \parsername{} extracts
 noticeably more data, though it does not make the full text of the line
 available, and the full power of \SQL{} is available when searching,
 allowing the user to search on arbitrarily complicated conditions.
@@ -191,9 +223,12 @@ allowing the user to search on arbitrarily complicated conditions.
 Splunk is a generic tool, so it lacks any Postfix specific support over and
 above extracting the \texttt{key=<value>} fields; most importantly it makes
 no attempt to correlate log lines by queueid or \pid{}, nor to handle any
-of the myriad complications discussed in this document.
+of the myriad complications discussed in this document.  Some additional
+Postfix reports are supposedly available at
+\url{http://www.splunkbase.com/}, but the author was unable to find them
+(or any other reports).
 
-\url{http://www.splunk.com/} \newline (Last checked 2007/09/25.)
+\url{http://www.splunk.com/} \newline (Last checked 2008/04/29.)
 
 \subsubsection{Isoqlog}
 
