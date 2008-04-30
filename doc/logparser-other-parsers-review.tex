@@ -31,6 +31,20 @@ program with \parsername{}.  There are some important differences between
         (discussed in \sectionref{database as API}); some
         simple examples are given in \sectionref{motivation}.
 
+    \item Most of the parsers silently ignore log lines they cannot handle,
+        whereas \parsername{} complains loudly about every single line it
+        fails to parse.  The exception is AWStats, which outputs the
+        percentage of input lines it was unable to parse, but does not
+        output the lines themselves.
+
+    \item A minor difference is that most parsers don't handle compressed
+        files; both \parsername{} and Splunk handle them transparently,
+        without user intervention; Sawmill and Lire can be configured to
+        support compressed files, but Sawmill exhibits a dramatic slow down
+        when thus configured.  Although this is a minor difference, support
+        for reading compressed log files is quite helpful, as it
+        dramatically reduces the disk space required to store old logs.
+
 \end{enumerate}
 
 \subsection{Parsers reviewed}
@@ -139,6 +153,21 @@ extracted: from, to, client hostname, client \IP{}, relay hostname, relay
 Even if the three data sets were linked together Sawmill would extract less
 data than \parsername{}, and it does not appear to extract data about
 rejections except when the rejection is caused by an \RBL{} check.
+
+When tested with the \numberOFlogFILES{} test log files it performed
+adequately, though the rate it processed log files at did slow down
+noticeably as it progressed.  Sawmill supports reading compressed log files
+but it exhibits a dramatic slow down when doing so: it took six hours to
+parse the first half of the log files; twelve hours to parse the next
+third; after twenty four hours parsing the remaining sixth it crashed due
+to lack of disk space.  On the second parsing attempt the log files were
+uncompressed beforehand and parsing took eight hours.
+
+Sawmill's web interface supports searching on any combination of the fields
+it extracts, but the interface is neither as simple to use nor as
+informative as the interface provided by Splunk.  The administrative
+interface is very easy to use --- it took only five minutes to start
+parsing a directory of log files.
 
 (Last checked 2007/12/04.)
 
@@ -402,12 +431,21 @@ YAALA provides a mini-language based on \SQL{} that is used when generating
 reports; sample reports can be seen at~\cite{yaala-samples}.  Example
 query: \newline \tab{} \texttt{requests BY file WHERE host =\~{} Google}
 \newline The mini-language is quite limited and cannot be used to extract
-data for external use, merely to create reports.
+data for external use, merely to create reports.  Only data selected by the
+query will be saved in the data store; other data will be discarded, and
+removed from the data store if already present.
 
-In summary YAALA provides a Postfix parser which only handles the most
-common Postfix log lines, provides reasonably flexible report generation
-from the limited data extracted, but has no facilities to extract data for
-use in other tools.
+Testing YAALA was unsuccessful because all the select clauses tried
+produced a similar error message:
+\newline\tab{}\texttt{lib/Yaala/Data/Core.pm: Unavailable aggregation
+requested:} \newline\tab{}\texttt{``bytes''. Returning 0.} \newline  The
+underlying reason for this is that YAALA only parsed 408 log lines of
+360632 log lines (0.11\%) in the first log file.
+
+In summary YAALA provides a Postfix parser which only attempts to parse the
+most common Postfix log lines (but fails miserably), provides reasonably
+flexible report generation from the limited data extracted, but has no
+facilities to extract data for use in other tools.
 
 \url{http://yaala.org/} \newline (Last checked 2007/10/09.)
 
