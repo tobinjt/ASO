@@ -197,7 +197,7 @@ of the data.  The interface is optimised for interactive rather than
 automated queries and it does not appear to be possible to write
 independent tools to utilise the Splunk database; there are additional
 reports available on \url{http://www.splunkbase.com/}, but the author was
-unable to find any --- every category was empty, even those which the
+unable to find any: every category was empty, even those which the
 interface claimed had reports available.  Many types of reports are bundled
 with the software, though most are variations of a bar or pie chart, with
 the exception of bubble and heatmap graphs.  It is very easy to drill down
@@ -230,6 +230,14 @@ those files for updates unless they are manually removed from its list;
 this may or may not be useful behaviour.  Splunk did not appear to have any
 difficulty in parsing the log files, once instructed to do so.  All
 searches performed using the indexed data returned reasonable results.
+
+Copious documentation is made available on \url{http://www.splunk.com/},
+but poor organisation and sheer abundance makes it extremely hard to find
+useful information.  Searching using the website's interface confusingly
+tends to return results from old documentation rather than new.  In
+general the documentation appears to have been written by someone
+intimately acquainted with the software and having difficulty understanding
+how a newcomer would approach tasks or the questions they would ask.
 
 Splunk supports reading compressed log files without any configuration by
 the user.  The free version of Splunk limits the volume of data indexed per
@@ -358,7 +366,7 @@ calendar month, showing:
 \url{http://awstats.sourceforge.net/docs/awstats_faq.html#MAIL}
 \newline (Last checked 2007/10/13.)
 
-\subsubsection{Log analyser --- throughput monitor}
+\subsubsection{Throughput monitor}
 
 This utility tracks the number of events which occurred over a particular
 time and warns if the frequency of events passes a certain threshold.  It's
@@ -371,7 +379,7 @@ This program was not reviewed in further detail because its aims are so far
 removed from the aims of this project.
 
 \url{http://home.uninet.ee/~ragnar/throughput_monitor/} \newline (Last
-checked 2007/08/13.)
+checked 2008/05/01.)
 
 \subsubsection{Anteater}
 
@@ -414,7 +422,8 @@ data using Perl's Storable module~\cite{perl-storable}, so with enough
 knowledge of the data structure YAALA stores it should be possible to
 extract data with another Perl program also using the Storable module;
 \parsername{} uses a well documented database which is accessible from the
-majority of programming languages.
+majority of programming languages.  This information was gleaned from the
+source code, as the documentation is sadly lacking.
 
 YAALA provides a Postfix parser which extracts the following fields from
 specific log lines:
@@ -452,7 +461,7 @@ facilities to extract data for use in other tools.
 
 \url{http://yaala.org/} \newline (Last checked 2007/10/09.)
 
-\subsubsection{Logparser/Lire}
+\subsubsection{Lire}
 
 \textit{As any good system administrator knows, there's a lot more to keep
 track of in an active network than just webservers. Lire is hands down the
@@ -574,27 +583,28 @@ Please see the previous in-depth discussion of Log Mail Analyser in
 \subsection{Conclusion}
 
 \begin{table}[ht]
-\begin{tabular}{l|l|l|l|l}
-    Parser              & Parsed     & Data        & Custom        & Compressed \\
-                        & test logs? & store?      & reports?      & logs       \\
-    \hline                                                                      \\
-    Pflogsumm           & Yes        & No          & No            & No         \\
-    Sawmill             & Yes        & Yes         & Searches      & Partially  \\
-    Splunk              & Yes        & Yes         & Searches      & Yes        \\
-                        &            &             & \& reports    &            \\
-    Isoqlog             & No         & Yes         & No            & No         \\
-    AWStats             & Partially  & Yes         & Partially\dag & Yes        \\
-    Throughput monitor  & N/A        & No          & No            & No         \\
-    Anteater            & No         & No          & No            & No         \\
-    YAALA               & No         & Yes\ddag    & Yes           & No         \\
-    Logparser/Lire      & Yes        & Yes         & Yes           & Yes        \\
-    Logrep              & No         & Yes         & No            & No         \\
-    Log Mail Analyser   & No         & Yes         & Partially     & No         \\ 
-    \parsername{}       & Yes        & Yes\dag\dag & No            & Yes        \\
+\begin{tabular}{l|l|l|l|l|l}
+    Parser         & Parsed     & Data        & Custom        & Documentation? & Source \\
+                   & test logs? & store?      & reports?      &                & code?  \\
+    \hline         &            &             &               &                &        \\
+    Pflogsumm      & Yes        & No          & Partial\dag   & Good           & Yes    \\
+    Sawmill        & Yes        & Yes         & Searches      & Reasonable     & No     \\
+    Splunk         & Yes        & Yes         & Searches      & Abundant       & No     \\
+                   &            &             & \& reports    & but poor       &        \\
+    Isoqlog        & No         & Yes         & No            & No             & Yes    \\
+    AWStats        & Partially  & Yes         & Partial\dag   & Good           & Yes    \\
+    Throughput     & N/A        & No          & No            & Brief but      & Yes    \\
+    \tab{}monitor  &            &             &               & good           &        \\
+    Anteater       & No         & No          & No            & No             & Yes    \\
+    YAALA          & No         & Yes\ddag    & Searches      & Poor           & Yes    \\
+    Lire           & Yes        & Yes         & Yes           & Yes            & Yes    \\
+    Logrep         & No         & Yes         & No            & Barely         & Yes    \\
+    \LMA{}         & No         & Yes         & No            & No             & Yes    \\ 
+    \parsername{}  & Yes        & Yes\dag\dag & No            & Yes            & Yes    \\
 \end{tabular}
 
-\dag AWStats can be configured to omit a section from a report, but not to
-add extra sections.
+\dag Sections can be omitted from a report, but extra sections can not be
+added.
 
 \ddag YAALA only stores the data required to produce the latest report;
 other data will be discarded.
@@ -613,11 +623,17 @@ the reviewed parsers collect the breadth of information gathered by
 \parsername{}, nor make it as easy to extend the parser to handle new log
 lines.  Most other parsers immediately generate a report and discard the
 data extracted from the logs; those which don't discard the data retain it
-in a format inaccessible to other tools.  All of the parsers reviewed can
-produce a report of greater or lesser detail and complexity, a facility not
-offered by \parsername{}; reporting is deferred to a subsequent
-application.  Table \refwithpage{Summary of parsers' features} provides a
-summary of the parsers' features.
+in a format inaccessible to other tools.  Nearly all of the parsers
+reviewed can produce a report of greater or lesser detail and complexity, a
+facility not offered by \parsername{}; reporting is deferred to a
+subsequent application.  The quality of the documentation offered by the
+subset of parsers which provide some varies from unusable to good; none of
+the parsers provide any documentation on the format of their data stores
+(if any).  Less than half of the parsers were capable of parsing the
+\numberOFlogFILES{} test log files, and improving or extending the parsers
+would have been quite a difficult task for any of the parsers.  Table
+\refwithpage{Summary of parsers' features} provides a summary of the
+parsers' features.
 
 The overriding difference between \parsername{} and the other parsers
 reviewed herein is that none of them aim to achieve the high level of

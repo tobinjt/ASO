@@ -146,6 +146,7 @@ queueid             & 1                                                 \\
 hits                & 0                                                 \\
 hits\_total         & 0                                                 \\
 priority            & 0                                                 \\
+cluster\_group      & 400                                               \\
 
 \end{tabular}
 
@@ -186,6 +187,10 @@ connection\_cols start at 5.  The various fields are used as follows;
         hits is set to the number of successful matches at the end of the
         parsing run; hits\_total is the sum of hits over every parsing run,
         but is otherwise unused by the algorithm.
+
+    \item [cluster\_group] The cluster\_group attribute is used by the
+        Decision Tree algorithm described in a separate document; the
+        parser does not use it in any way.
 
 \end{description}
 
