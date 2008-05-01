@@ -704,9 +704,11 @@ files generated on Solaris hosts because the fields added automatically
 differ from those added on Linux hosts; logs from Solaris hosts (and
 possibly other operating systems) thus require preprocessing before parsing
 by \LMA{}.  Once the preprocessing has been performed on the
-\numberOFlogFILES{} test log files \LMA{} performs adequately, extracting
-the small amount of information it aims to extract, with reasonable
-results.  XXX CHECK THE RESULTS.
+\numberOFlogFILES{} test log files \LMA{} parses the log files without
+complaint, though it does produce 32 entries in its output file for every
+rejection in the input log file; it also missed some 40\% of delivered
+mail.  Once these glaring deficiencies were discovered the author did not
+spend more time checking the results.
 
 \LMA{} does provide some simple reports: IP-STORY, FROM-STORY, DAILY-EMAIL
 and DAILY-REJECT\@.  IP-STORY shows the \CSV{} lines with the specified
