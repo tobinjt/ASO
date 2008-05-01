@@ -306,8 +306,8 @@ AWStats will produce simple graphs for many different services, but
 supporting many different services without special purpose code restricts
 it to supporting the \LCD{}.  The data it will extract from an \MTA{} log
 file is limited in comparison to \parsername{}: \newline \tab{} time2,
-email, email\_r, host, host\_r, method, url, code and bytesd.\newline
-There does not seem to be an explanation of any of those fields in the
+email, email\_r, host, host\_r, method, url, code and bytesd.\newline There
+does not seem to be an explanation of any of those fields in the
 documentation (\parsername{} provides copious documentation).  AWStats has
 no special purpose code to deal with the intricacies of Postfix logs, in
 fact it operates by coercing Postfix logs into Apache\footnote{The Apache
@@ -319,13 +319,16 @@ Postfix, silently skipping those it cannot deal with, and does not
 distinguish between different types of rejection; there is no easy way to
 extend it to handle new log lines.  Although though it does correlate log
 lines by queueid, it does not deal with any of the other complications
-described in this document.
+described in this document.  AWStats supports saving data but the format of
+the saved data is not documented (as far as the author could tell).  It
+also supports reading compressed log files, but that functionality was not
+tested.
 
 When tested with the \numberOFlogFILES{} test log files AWStats' report
 says it parsed 9,240,075 (88.70\%) log lines out of 10,416,129, with
 1,176,050 (11.29\%) corrupt lines; however there are actually
-\numberOFlogLINES{} lines in the \numberOFlogFILES{} log files.  AWStats
-actually parsed 17.15\% of the input lines, ignoring the remaining 82.85\%.
+\numberOFlogLINES{} lines in the \numberOFlogFILES{} log files, so AWStats
+only parsed 17.15\% of the input lines, ignoring the remaining 82.85\%.
 The graphs it produces give an overview of mails received for the last
 calendar month, showing:
 
@@ -570,6 +573,38 @@ Please see the previous in-depth discussion of Log Mail Analyser in
 
 \subsection{Conclusion}
 
+\begin{table}[ht]
+\begin{tabular}{l|l|l|l|l}
+    Parser              & Parsed     & Data        & Custom        & Compressed \\
+                        & test logs? & store?      & reports?      & logs       \\
+    \hline                                                                      \\
+    Pflogsumm           & Yes        & No          & No            & No         \\
+    Sawmill             & Yes        & Yes         & Searches      & Partially  \\
+    Splunk              & Yes        & Yes         & Searches      & Yes        \\
+                        &            &             & \& reports    &            \\
+    Isoqlog             & No         & Yes         & No            & No         \\
+    AWStats             & Partially  & Yes         & Partially\dag & Yes        \\
+    Throughput monitor  & N/A        & No          & No            & No         \\
+    Anteater            & No         & No          & No            & No         \\
+    YAALA               & No         & Yes\ddag    & Yes           & No         \\
+    Logparser/Lire      & Yes        & Yes         & Yes           & Yes        \\
+    Logrep              & No         & Yes         & No            & No         \\
+    Log Mail Analyser   & Yes        & Yes         & Partially     & No         \\ 
+    \parsername{}       & Yes        & Yes\dag\dag & No            & Yes        \\
+\end{tabular}
+
+\dag AWStats can be configured to omit a section from a report, but not to
+add extra sections.
+
+\ddag YAALA only stores the data required to produce the latest report;
+other data will be discarded.
+
+\dag\dag\parsername{} is the only parser with documentation for its data store.
+
+\caption{Summary of parsers' features}
+\label{Summary of parsers' features}
+\end{table}
+
 While there are other programs available which perform basic Postfix log
 parsing (some to a greater level of detail than others), few attempt to
 correlate log lines by queueid (none correlate by \pid{}) to produce an
@@ -581,7 +616,8 @@ data extracted from the logs; those which don't discard the data retain it
 in a format inaccessible to other tools.  All of the parsers reviewed can
 produce a report of greater or lesser detail and complexity, a facility not
 offered by \parsername{}; reporting is deferred to a subsequent
-application.
+application.  Table \refwithpage{Summary of parsers' features} provides a
+summary of the parsers' features.
 
 The overriding difference between \parsername{} and the other parsers
 reviewed herein is that none of them aim to achieve the high level of

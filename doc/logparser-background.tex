@@ -703,7 +703,10 @@ and evaluation of Postfix restrictions.  \LMA{} fails to parse Postfix log
 files generated on Solaris hosts because the fields added automatically
 differ from those added on Linux hosts; logs from Solaris hosts (and
 possibly other operating systems) thus require preprocessing before parsing
-by \LMA{}.
+by \LMA{}.  Once the preprocessing has been performed on the
+\numberOFlogFILES{} test log files \LMA{} performs adequately, extracting
+the small amount of information it aims to extract, with reasonable
+results.  XXX CHECK THE RESULTS.
 
 \LMA{} does provide some simple reports: IP-STORY, FROM-STORY, DAILY-EMAIL
 and DAILY-REJECT\@.  IP-STORY shows the \CSV{} lines with the specified
