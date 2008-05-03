@@ -770,9 +770,11 @@ This check is performed during the COMMIT action.
 Some mail clients behave unexpectedly during the \SMTP{} dialogue: the
 client aborts the first delivery attempt after the first recipient is
 accepted, then makes a second delivery attempt for the same recipient which
-it continues with until delivery is complete.  An example dialogue
-exhibiting this behaviour is shown presented below (lines starting with a
-three digit number are sent by the server, the other lines are sent by the
+it continues with until delivery is complete.\footnote{Microsoft Outlook is
+one client which behaves in this fashion; no attempt has been made to
+identify other clients which act in a similar way.}  An example dialogue
+exhibiting this behaviour is presented below (lines starting with a three
+digit number are sent by the server, the other lines are sent by the
 client):
 
 \begin{verbatim}
