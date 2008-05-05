@@ -36,7 +36,7 @@ modified to work well with the data stored by L<ASO::Parser>.
 
 =cut
 
-=head2 ASO::DecisionTree->new()
+=head2 my $adt = ASO::DecisionTree->new()
 
 Create a new ASO::DecisionTree object.  Takes the following arguments:
 
@@ -139,7 +139,7 @@ sub new {
     return $adt;
 }
 
-=head2 $adt->divideset(\@rows, $column)
+=head2 my (\@true, \@false) = $adt->divideset(\@rows, $column)
 
 Divides @rows into two sets, depending on the value of element $column in each
 %row from @rows (formats described in L</DATA STRUCTURES>).  Returns (\@true,
@@ -161,7 +161,7 @@ sub divideset {
     return (\@true, \@false);
 }
 
-=head2 ASO::DecisionTree->build_tree(\@rows, \@current_cg, \@original_cg, $current_score, $score_function)
+=head2 my $adt = ASO::DecisionTree->build_tree(\@rows, \@current_cg, \@original_cg, $current_score, $score_function)
 
 Recursively build a Decision Tree from @rows, using columns taken from
 @current_cg.  The format of @rows, @current_cg and @original_cg is described in
@@ -265,7 +265,7 @@ sub build_tree {
     return $new_tree;
 }
 
-=head2 ASO::DecisionTree->load_data($dbi_dsn, $username, $password)
+=head2 my (\@rows, \%index_to_rule_id, \%rule_id_to_index) = ASO::DecisionTree->load_data($dbi_dsn, $username, $password)
 
 Connect to the database specified in $dbi_dsn using $username and $password (see
 L<DBI> and L<DBD::foo>, where I<foo> is your database driver, for the format of
@@ -459,7 +459,7 @@ better.
 
 =cut
 
-=head2 $adt->rejection_ratio(\@rows, $column, $current_cg, $original_cg)
+=head2 my $score = $adt->rejection_ratio(\@rows, $column, $current_cg, $original_cg)
 
 The fraction of @rows where $column is a rejection.
 
@@ -479,7 +479,7 @@ sub rejection_ratio {
     return $counts[1] / @{$rows};
 }
 
-=head2 $adt->subsequent_rejections(\@rows, $column, $current_cg, $original_cg)
+=head2 my $score = $adt->subsequent_rejections(\@rows, $column, $current_cg, $original_cg)
 
 How many other columns/restrictions in the current column group would reject
 when this column/restriction rejects.
