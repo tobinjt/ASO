@@ -30,7 +30,13 @@ modified to work well with the data stored by L<ASO::Parser>.
 
     use ASO::DecisionTree;
 
-    my $adt = ASO::DecisionTree->new();
+    my ($dbi_dsn, $username, $password) = qw(...);
+    my ($rows, $index_to_rule_id, $rule_id_to_index)
+        = ASO::DecisionTree->load_data($dbi_dsn, $username, $password);
+    my $cluster_groups = ASO::DecisionTree->build_cluster_groups(
+                $dbi_dsn, $username, $password, $rule_id_to_index);
+    my $tree = ASO::DecisionTree->build_tree(
+                $rows, $cluster_groups, $cluster_groups, 0, q{rejection_ratio});
 
 =head1 METHODS
 
@@ -189,19 +195,26 @@ sub build_tree {
      = ($current_score, undef,        undef,             undef             );
 
     # Find the best column to divide the rows on.
-    foreach my $column (@{$current_cg->[0]}) {
-        my ($true_branch, $false_branch) = $package->divideset($rows, $column);
+    CLUSTER_ELEMENT:
+    foreach my $cluster_element (@{$current_cg->[0]}) {
+        # Skip required rules which don't have a column; they'll be dealt with
+        # when this cluster group runs out of useful columns.
+        if (not exists $cluster_element->{column}) {
+            next CLUSTER_ELEMENT;
+        }
+        my ($true_branch, $false_branch)
+            = $package->divideset($rows, $cluster_element->{column});
         # The probability that a random row will be in the true branch.
         my $probability = @{$true_branch} / @{$rows};
         # Weight the score of each branch by the probability of a row being in
         # that branch, and sum the weighted branch scores to get the new overall
         # score.
         my $true_score  = $package->$score_function($true_branch,
-                                                    $column,
+                                                    $cluster_element->{column},
                                                     $current_cg,
                                                     $original_cg);
         my $false_score = $package->$score_function($false_branch,
-                                                    $column,
+                                                    $cluster_element->{column},
                                                     $current_cg,
                                                     $original_cg);
         my $new_score =   ($probability       * $true_score)
@@ -211,7 +224,7 @@ sub build_tree {
         # being better.
         if ($new_score > $best_score) {
             $best_score         = $new_score;
-            $best_column        = $column;
+            $best_column        = $cluster_element->{column};
             $best_true_branch   = $true_branch;
             $best_false_branch  = $false_branch;
         }
@@ -223,7 +236,7 @@ sub build_tree {
         # Create a new column group structure, without the column we're
         # dividing the rows on now.
         my $reduced_cg = dclone($current_cg);
-        my @new_column_group = grep { $_ != $best_column }
+        my @new_column_group = grep { $_->{column} != $best_column }
                                     @{$reduced_cg->[0]};
         if (not @new_column_group) {
             # We've exhausted the first column group, so drop it.
@@ -525,6 +538,11 @@ sub rejection_ratio {
         croak qq{rejection_ratio(): expecting four arguments, not $num_args\n};
     }
 
+    # Returning zero when there are zero rows seems like the best option.
+    if (not @{$rows}) {
+        return 0;
+    }
+
     my @counts = (0, 0);
     map { $counts[$_->{results}->[$column]]++; } @{$rows};
 
@@ -547,7 +565,7 @@ sub subsequent_rejections {
     }
 
     if (@{$current_cg->[0]} == 1) {
-        # There's only one column left - this one.  Fall back ro
+        # There's only one column left - this one.  Fall back to
         # rejection_ratio();
         return $package->rejection_ratio($rows, $column, $current_cg, $original_cg);
     }
@@ -565,7 +583,7 @@ sub subsequent_rejections {
         # The actual number of subsequent rejections in the current column group
         # when this rejection took effect.
         $num_subsequent_rejects +=
-            grep { $row->{results}->[$_]; } @{$current_cg->[0]};
+            grep { $row->{results}->[$_->{column}]; } @{$current_cg->[0]};
         # The current column will always be included in the count returned by
         # grep, so reduce the count by one.
         $num_subsequent_rejects--;
