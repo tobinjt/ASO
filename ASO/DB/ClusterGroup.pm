@@ -111,7 +111,7 @@ my %cols = (
     # The cluster group that restrictions referencing this row should be placed
     # in by ASO::DecisionTree.
     cluster_group       => {
-        sql                 => q{NOT NULL},
+        sql                 => q{NOT NULL UNIQUE},
         type                => q{integer},
     },
     # The restriction list restrictions referencing this group should be used

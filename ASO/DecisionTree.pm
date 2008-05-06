@@ -400,21 +400,44 @@ sub load_data {
     return (\@rows, \%index_to_rule_id, \%rule_id_to_index);
 }
 
-=head2 ASO::DecisionTree->build_cluster_groups($dbi_dsn, $username, $password, \%rule_id_to_index)
+=head2 my (\@cluster_groups) = ASO::DecisionTree->build_cluster_groups($dbi_dsn, $username, $password, \%rule_id_to_index)
 
 Builds and returns the cluster groups structure from the database.  The
-structure returned is an array of arrays of indices (see L</@cluster_groups>);
-the indices should be used to select elements from rows returned by load_data().
-The cluster groups are used in build_tree() to select elements to split @rows
-with; the elements from the first cluster should be used first until exhausted
-or ineffective in splitting the tree, after which the elements from subsequent
-clusters should be used.
+structure returned is an array of arrays of cluster elements (see
+L</@cluster_groups> and L</%cluster_element>); in synopsis:
+
+    @cluster_groups = (
+        [
+            { column => ... }, # cluster element
+            { column => ... },
+            { column => ... },
+        ],
+        [
+            { column => ... },
+            { column => ... },
+            { column => ... },
+        ],
+        ...
+    );
+
+The column from each %cluster_element will be used in build_tree() to split
+@rows (returned by load_data()); the elements from the first cluster
+(@cluster_groups[0]) should be used first until exhausted or ineffective in
+splitting the tree, after which the elements from subsequent clusters should be
+used.
+
+There will be a cluster element for every rule that is present in
+\%rule_id_to_index or that references a cluster group with the C<required>
+attribute set to true.  @cluster_groups is sorted by the C<cluster_group>
+attribute in the database (see L<ASO::DB::ClusterGroup> for a list of
+attributes); the contents of an individual @cluster_group (e.g.
+$cluster_groups[0]) are not sorted.
 
 Connects to the database using $dbi_dsn, $using and $password - see L<DBI> and
 L<DBD::foo> (your database driver) for details of $dbi_dsn.  Dies if unable to
 connect to the database.  Returns (\@cluster_groups).  %rule_id_to_index should
-have been returned from load_data(); if not the indices in @cluster_groups won't
-match the indices in @rows.
+have been returned from load_data(); if not the columns in each %cluster_element
+won't match the indices in @rows.
 
 =cut
 
@@ -434,22 +457,51 @@ sub build_cluster_groups {
         {AutoCommit => 1},
     );
 
-    my $search = $dbix->resultset(q{Rule})->search(
+    my $search = $dbix->resultset(q{ClusterGroup})->search(
         {
-            q{action}   => q{REJECTION},
+            # No search criteria.
         },
         {
-            q{prefetch} => [qw(cluster_group)],
+            q{prefetch} => [qw(rules)],
         },
     );
 
     my @cluster_groups;
-    RULE:
-    while (my $rule = $search->next()) {
-        if (not exists $rule_id_to_index->{$rule->id()}) {
-            next RULE;
+    CLUSTER_GROUP:
+    while (my $cg = $search->next()) {
+        # I probably won't need all the fields, but it's easier to yank them all
+        # now.
+        my %template_cg = (
+            name                => $cg->name(),
+            description         => $cg->description(),
+            id                  => $cg->id(),
+            cluster_group       => $cg->cluster_group(),
+            restriction_list    => $cg->restriction_list(),
+            required            => $cg->required(),
+        );
+
+        my @cluster_elements;
+        RULE:
+        foreach my $rule ($cg->rules()) {
+            # Skip rules unless the cluster group is required or the rule has
+            # been seen in results; the other rules are not interesting.
+            if (        not exists $rule_id_to_index->{$rule->id()}
+                    and not $template_cg{required}) {
+                next RULE;
+            }
+            my $cluster_element = dclone(\%template_cg);
+            $cluster_element->{rule_id} = $rule->id();
+            if (exists $rule_id_to_index->{$rule->id()}) {
+                $cluster_element->{column} = $rule_id_to_index->{$rule->id()};
+            }
+            push @cluster_elements, $cluster_element;
         }
+        $cluster_groups[$template_cg{cluster_group}] = \@cluster_elements;
     }
+
+    # Collapse @cluster_groups - it'll be mostly empty.
+    my @reduced_cgs = grep { defined $_ and @{$_} } @cluster_groups;
+    return \@reduced_cgs;
 }
 
 =head1 SCORE FUNCTIONS
