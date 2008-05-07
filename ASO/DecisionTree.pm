@@ -401,23 +401,44 @@ sub load_data {
     );
 
     my (@rows, %rule_id_to_index, %index_to_rule_id);
-    my $last_connection_id = -1;
-    my $next_index = 0;
+    my ($last_connection_id, $next_index) = (-1, 0);
     # This gets us raw results rather than objects; we must ensure that the
     # column order in the select line above matches the order here.
     my $cursor = $search->cursor();
+
     while (my ($connection_id, $rule_id) = $cursor->next()) {
         if ($last_connection_id != $connection_id) {
             $last_connection_id = $connection_id;
-            push @rows, { results => [] };
+            push @rows, [];
         }
         if (not exists $rule_id_to_index{$rule_id}) {
             $rule_id_to_index{$rule_id} = $next_index;
             $index_to_rule_id{$next_index} = $rule_id;
             $next_index++;
         }
-        $rows[-1]->{results}->[$rule_id_to_index{$rule_id}] = 1;
+        $rows[-1]->[$rule_id_to_index{$rule_id}] = 1;
     }
+
+    # Make Data::Dumper do as little work as possible when detecting duplicate
+    # rows.
+    local $Data::Dumper::Indent = 0;
+    local $Data::Dumper::Terse  = 1;
+    # Instead of storing every row, including duplicates, store one of each row,
+    # plus the number of times it occurs.  We'd save memory by doing this in the
+    # while loop above, but the code got too convoluted, so we do it this way
+    # instead.
+    my %unique_rows;
+    foreach my $row (@rows) {
+        my $key = Dumper($row);
+        if (not exists $unique_rows{$key}) {
+            $unique_rows{$key} = {
+                count   => 0,
+                results => $row,
+            };
+        }
+        $unique_rows{$key}->{count}++;
+    }
+    @rows = values %unique_rows;
 
     # Zero-fill the rows.
     my $row_length = $next_index;
@@ -427,12 +448,6 @@ sub load_data {
         # Extend the rows so they're all the same length.
         push @{$row->{results}}, (0) x ($row_length - @{$row->{results}});
     }
-
-    # TODO: Consider collapsing rows at some point.  In a quick test 24621
-    # original rows collapsed to 172 unique rows.  Need to change the
-    # representation of rows: maybe each row is a hash, containing count and
-    # results?  Other keys can be added as necessary then.  I'll worry about
-    # that stuff when everything else is working.
 
     return (\@rows, \%index_to_rule_id, \%rule_id_to_index);
 }
@@ -570,7 +585,7 @@ sub rejection_ratio {
     }
 
     my @counts = (0, 0);
-    map { $counts[$_->{results}->[$column]]++; } @{$rows};
+    map { $counts[$_->{results}->[$column]] += $_->{count}; } @{$rows};
 
     return $counts[1] / @{$rows};
 }
@@ -603,16 +618,16 @@ sub subsequent_rejections {
         if (not $row->{results}->[$column]) {
             next ROW;
         }
-        # The total number of possible rejections when this rejection took
-        # effect.
-        $num_possible_rejects += $num_other_restrictions;
-        # The actual number of subsequent rejections in the current column group
-        # when this rejection took effect.
-        $num_subsequent_rejects +=
-            grep { $row->{results}->[$_->{column}]; } @{$current_cg->[0]};
-        # The current column will always be included in the count returned by
-        # grep, so reduce the count by one.
-        $num_subsequent_rejects--;
+        # The number of possible subsequent rejections in the current column
+        # group.
+        $num_possible_rejects += $num_other_restrictions * $row->{count};
+        # The number of subsequent rejections in the current column group which
+        # would have taken effect.
+        foreach my $cg (@{$current_cg->[0]}) {
+            if ($row->{results}->[$cg->{column}] and $cg->{column} != $column) {
+                $num_subsequent_rejects += $row->{count};
+            }
+        }
     }
 
     if ($num_possible_rejects == 0) {
@@ -654,12 +669,12 @@ results, plus some additional data.
 
 =head2 %row
 
-%row represents the results for one connection.  %row contains the following
-keys:
+%row represents all connections with the same results.  %row contains the
+following keys:
 
 =over 4
 
-=item @results = %row{results};
+=item @results = $row{results};
 
 Each element in @results corresponds to one result and will be either C<0> or
 C<1>.  The element also corresponds to a rule: see L</%rule_id_to_index>.  A
@@ -674,6 +689,11 @@ L</Example data> shows a table and @rows resulting from it.  @results for each
 Rule 2 first appears in connection 3, so it is represented by element 3 in each
 @results; rules 3 and 4 precede it.  Rule 5 has no results in the connections,
 so it is not present in @results.
+
+=item my $count = $row{count}
+
+The number of times this row's results were present in the data; this is used to
+avoid repeating duplicate rows.
 
 =back
 
