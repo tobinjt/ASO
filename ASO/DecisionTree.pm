@@ -48,6 +48,10 @@ Create a new ASO::DecisionTree object.  Takes the following arguments:
 
 =over 4
 
+=item label => string
+
+The label to be displayed when displaying the tree.
+
 =item column => integer
 
 The column in each row which the decision is to be made on.
@@ -84,7 +88,9 @@ ASO::DecisionTree object.
 
 =back
 
-You must specify one of the following groups of arguments:
+Required arguments: C<label>.
+
+You must also specify one of the following groups of arguments:
 
 =over 4
 
@@ -102,6 +108,7 @@ sub new {
     my ($package, %args) = @_;
 
     my %default_args = (
+        label           => undef,
         column          => undef,
         true_branch     => undef,
         false_branch    => undef,
@@ -115,6 +122,16 @@ sub new {
         if (not exists $default_args{$arg}) {
             croak qq{${package}::new(): unknown parameter $arg\n};
         }
+    }
+
+    my @required_args = qw(label);
+    my %required_args;
+    foreach my $required_arg (@required_args) {
+        if (not exists $args{$required_arg}) {
+            croak qq{${package}::new(): required parameter }
+                . qq{$required_arg missing\n};
+        }
+        $required_args{$required_arg} = delete $args{$required_arg};
     }
 
     my @valid_groups = (
@@ -138,7 +155,7 @@ sub new {
               . Data::Dumper->Dump([\%args], [q{*arguments}]);
     }
 
-    %args = (%default_args, %args);
+    %args = (%default_args, %required_args, %args);
 
     my $adt = bless \%args, $package;
 
@@ -184,15 +201,19 @@ sub build_tree {
     }
 
     if (not @{$rows}) {
-        return $package->new(leaf_node => 1, leaf_branch => $rows);
+        return $package->new(leaf_node      => 1,
+                             leaf_branch    => $rows, 
+                             label          => q{No rows});
     }
 
     if (not @{$current_cg}) {
-        return $package->new(leaf_node => 1, leaf_branch => $rows);
+        return $package->new(leaf_node      => 1,
+                             leaf_branch    => $rows,
+                             label          => q{No cluster groups});
     }
 
-    my ($best_score,    $best_column, $best_true_branch, $best_false_branch)
-     = ($current_score, undef,        undef,             undef             );
+    my ($best_score,    $best_cg, $best_true_branch, $best_false_branch)
+     = ($current_score, undef,    undef,             undef             );
 
     # Find the best column to divide the rows on.
     CLUSTER_ELEMENT:
@@ -224,11 +245,13 @@ sub build_tree {
         # being better.
         if ($new_score > $best_score) {
             $best_score         = $new_score;
-            $best_column        = $cluster_element->{column};
+            $best_cg            = $cluster_element;
             $best_true_branch   = $true_branch;
             $best_false_branch  = $false_branch;
         }
     }
+
+    # XXX WHY DOES THE NEW COLUMN HAVE TO BE BETTER THAN THE CURRENT SCORE?
 
     # If we found a column that's useful for dividing on we recursively divide
     # the true and false branches.
@@ -236,8 +259,7 @@ sub build_tree {
         # Create a new column group structure, without the column we're
         # dividing the rows on now.
         my $reduced_cg = dclone($current_cg);
-        my @new_column_group = grep { $_->{column} != $best_column }
-                                    @{$reduced_cg->[0]};
+        my @new_column_group = grep { $_ != $best_cg } @{$reduced_cg->[0]};
         if (not @new_column_group) {
             # We've exhausted the first column group, so drop it.
             shift @{$reduced_cg};
@@ -255,25 +277,27 @@ sub build_tree {
                                                 $original_cg,
                                                 $best_score,
                                                 $score_function);
-        return $package->new(column        => $best_column,
+        return $package->new(column        => $best_cg->{column},
                              true_branch   => $true_branch,
-                             false_branch  => $false_branch);
+                             false_branch  => $false_branch,
+                             label         => $best_cg->{restriction_name});
     }
 
     # None of the columns in the current column group were helpful in dividing
     # the rows, so we add them as info nodes and continue with the next column
     # group.
     my $reduced_cg = dclone($current_cg);
-    my $unused_columns = shift @{$reduced_cg};
-    my $new_tree = $package->build_tree($rows,
-                                        $reduced_cg,
-                                        $original_cg,
-                                        $current_score,
-                                        $score_function);
-    foreach my $column (@{$unused_columns}) {
-        $new_tree = $package->new(column       => $column,
+    my $unused_cgs = shift @{$reduced_cg};
+    my $new_tree   = $package->build_tree($rows,
+                                          $reduced_cg,
+                                          $original_cg,
+                                          $current_score,
+                                          $score_function);
+    foreach my $cg (@{$unused_cgs}) {
+        $new_tree = $package->new(column       => $cg->{column},
                                   info_branch  => $new_tree,
-                                  info_node    => 1);
+                                  info_node    => 1,
+                                  label        => $cg->{restriction_name});
     }
     return $new_tree;
 }
@@ -504,6 +528,8 @@ sub build_cluster_groups {
             }
             my $cluster_element = dclone(\%template_cg);
             $cluster_element->{rule_id} = $rule->id();
+            $cluster_element->{restriction_name} = $rule->restriction_name()
+                                                   || q{unknown restriction};
             if (exists $rule_id_to_index->{$rule->id()}) {
                 $cluster_element->{column} = $rule_id_to_index->{$rule->id()};
             }
