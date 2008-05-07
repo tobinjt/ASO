@@ -3,7 +3,7 @@ package ASO::DecisionTree::Output::Image;
 use warnings;
 use strict;
 
-use List::Util qw(max);
+use List::Util qw(max sum);
 use Imager;
 use Carp;
 
@@ -383,8 +383,27 @@ Returns the label for the top node of $tree.
 sub get_label {
     my ($package, $subtree) = @_;
 
-    # At some point this should display more information.
-    return $subtree->{label};
+    my $num_rows = $package->get_num_rows($subtree);
+    return qq{$subtree->{label} ($num_rows)};
+}
+
+=head2 ASO::DecisionTree::Output::Image->get_num_rows($tree)
+
+Returns the number of rows in $tree.
+
+=cut
+
+sub get_num_rows {
+    my ($package, $subtree) = @_;
+
+    if ($subtree->{info_node}) {
+        return $package->get_num_rows($subtree->{info_branch});
+    }
+    if ($subtree->{leaf_node}) {
+        return sum(map { $_->{count} } @{$subtree->{leaf_branch}}) || 0;
+    }
+    return    $package->get_num_rows($subtree->{true_branch})
+            + $package->get_num_rows($subtree->{false_branch});
 }
 
 =head1 AUTHOR
