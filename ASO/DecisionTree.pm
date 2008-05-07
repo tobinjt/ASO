@@ -202,9 +202,22 @@ sub build_tree {
     }
 
     if (not @{$rows}) {
-        return $package->new(leaf_node      => 1,
-                             leaf_branch    => $rows, 
-                             label          => q{No rows});
+        my $new_tree = $package->new(
+            leaf_node      => 1,
+            leaf_branch    => $rows, 
+            label          => q{No rows}
+        );
+        foreach my $cluster_group (@{$current_cg}) {
+            foreach my $cluster_element (@{$cluster_group}) {
+                $new_tree = $package->new(
+                    column       => $cluster_element->{column},
+                    info_branch  => $new_tree,
+                    info_node    => 1,
+                    label        => $cluster_element->{restriction_name}
+                );
+            }
+        }
+        return $new_tree;
     }
 
     if (not @{$current_cg}) {
@@ -298,11 +311,13 @@ sub build_tree {
                                           $original_cg,
                                           $score_function,
                                           $threshold);
-    foreach my $cg (@{$unused_cgs}) {
-        $new_tree = $package->new(column       => $cg->{column},
-                                  info_branch  => $new_tree,
-                                  info_node    => 1,
-                                  label        => $cg->{restriction_name});
+    foreach my $cluster_element (@{$unused_cgs}) {
+        $new_tree = $package->new(
+            column       => $cluster_element->{column},
+            info_branch  => $new_tree,
+            info_node    => 1,
+            label        => $cluster_element->{restriction_name}
+        );
     }
     return $new_tree;
 }
