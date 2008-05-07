@@ -5,47 +5,7 @@ use strict;
 
 use List::Util qw(max);
 use Imager;
-use File::Spec::Functions qw(splitpath);
-use Data::Dumper;
-$Data::Dumper::Sortkeys = 1;
 use Carp;
-
-my $dummy_tree =
-{
-    label           => q{reject_unknown_recipient},
-    true_branch     =>
-        {
-            label           => q{first info node},
-            info_node       => 1,
-            info_branch     =>
-                {
-                    label           => q{reject 1},
-                    leaf_node       => 1,
-                },
-        },
-    false_branch =>
-        {
-            label           => q{reject_unknown_sender},
-            true_branch     =>
-                {
-                    label           => q{another info node},
-                    info_node       => 1,
-                    info_branch     => 
-                        {
-                            label           => q{reject 2},
-                            leaf_node       => 1,
-                        },
-                },
-            false_branch =>
-                {
-                    label           => q{reject_unknown_sender_domain},
-                    leaf_node       => 1,
-                },
-        },
-};
-
-my $tree_image = ASO::DecisionTree::Output::Image->draw_tree($dummy_tree);
-ASO::DecisionTree::Output::Image->save_image($tree_image, q{out.png});
 
 =head1 NAME
 
@@ -450,7 +410,7 @@ None.
 
 =head1 DEPENDENCIES
 
-Standard Perl modules: L<List::Util>, L<File::Spec::Functions>, L<Carp>.
+Standard Perl modules: L<List::Util>, L<Carp>.
 
 External modules: L<Imager>.
 
