@@ -12,26 +12,34 @@ use Carp;
 
 my $dummy_tree =
 {
-    label   => q{reject_unknown_recipient},
-    leaf    => 0,
-    true    =>
+    label           => q{reject_unknown_recipient},
+    true_branch     =>
         {
-            label   => q{reject 1},
-            leaf    => 1,
-        },
-    false =>
-        {
-            label   => q{reject_unknown_sender},
-            leaf    => 0,
-            true =>
+            label           => q{first info node},
+            info_node       => 1,
+            info_branch     =>
                 {
-                    label   => q{reject 2},
-                    leaf    => 1,
+                    label           => q{reject 1},
+                    leaf_node       => 1,
                 },
-            false =>
+        },
+    false_branch =>
+        {
+            label           => q{reject_unknown_sender},
+            true_branch     =>
                 {
-                    label   => q{reject_unknown_sender_domain},
-                    leaf    => 1,
+                    label           => q{another info node},
+                    info_node       => 1,
+                    info_branch     => 
+                        {
+                            label           => q{reject 2},
+                            leaf_node       => 1,
+                        },
+                },
+            false_branch =>
+                {
+                    label           => q{reject_unknown_sender_domain},
+                    leaf_node       => 1,
                 },
         },
 };
@@ -104,16 +112,17 @@ print qq{tree width: $tree_width\n};
     my $font = Imager::Font->new(file => $fontfile)
         or croak qq{failed to load $fontfile: } . Imager->errstr() . qq{\n};
 
-    $package->draw_tree_r(image                   => $image,
-                font                    => $font,
-                tree                    => $tree,
-                xmin                    => 0,
-                ymin                    => 0,
-                xmax                    => $image_width,
-                ymax                    => $image_height,
-                height_of_label         => $height_of_label,
-                height_between_nodes    => $height_between_nodes,
-            );
+    $package->draw_tree_r(
+        image                   => $image,
+        font                    => $font,
+        tree                    => $tree,
+        xmin                    => 0,
+        ymin                    => 0,
+        xmax                    => $image_width,
+        ymax                    => $image_height,
+        height_of_label         => $height_of_label,
+        height_between_nodes    => $height_between_nodes,
+    );
 
     return $image;
 }
@@ -154,21 +163,63 @@ XXX Recursively draw a tree.
 sub draw_tree_r {
     my ($package, %args) = @_;
 
-    if ($args{tree}->{leaf}) {
+    if ($args{tree}->{leaf_node} or $args{tree}->{info_node}) {
         # Draw the label.
         my $label_x = ($args{xmin} + $args{xmax}) / 2;
         $package->draw_label(
-            string     => $args{tree}->{label},
+            string     => $package->get_label($args{tree}),
             x          => $label_x,
             y          => $args{ymin},
             image      => $args{image},
             font       => $args{font},
         );
+        if ($args{tree}->{leaf_node}) {
+            # Finished with leaf nodes.
+            return ($label_x, $args{ymin});
+        }
+
+        # Draw the remainder of the tree.
+        my $child_ymin = $args{ymin} + $args{height_of_label}
+                                     + $args{height_between_nodes};
+        my ($child_x, $child_y) = $package->draw_tree_r(
+            %args,
+            tree       => $args{tree}->{info_branch},
+            xmin       => $args{xmin},
+            ymin       => $child_ymin,
+            xmax       => $args{xmax},
+            ymax       => $args{ymax},
+        );
+
+        # Draw the connecting line for info node.
+        my $line_y = $args{ymin} + $args{height_of_label};
+        my $line_x = $label_x;
+        $package->draw_line(
+            image   => $args{image},
+            x1      => $line_x,
+            y1      => $line_y,
+            x2      => $child_x,
+            y2      => $child_y,
+        );
+
+        # Finished with info nodes.
         return ($label_x, $args{ymin});
     }
 
-    my $false_width = $package->get_tree_width($args{tree}->{false});
-    my $true_width  = $package->get_tree_width($args{tree}->{true});
+    # Displaying true/false nodes is enough code to go into a separate function.
+    return $package->draw_tree_true_false_node(%args);
+}
+
+=head2 ASO::DecisionTree::Output::Image->draw_tree_r(%args)
+
+XXX Draw a node with true and false branches.
+
+=cut
+
+sub draw_tree_true_false_node {
+    my ($package, %args) = @_;
+
+    my $false_width = $package->get_tree_width($args{tree}->{false_branch});
+    my $true_width  = $package->get_tree_width($args{tree}->{true_branch});
     my $total_width = $false_width + $true_width;
 
     my $xsize       = $args{xmax} - $args{xmin};
@@ -178,8 +229,7 @@ sub draw_tree_r {
     # Need to ensure the label doesn't extend past xmin or xmax; this can
     # happen if half the label width is greater than the width of one of the
     # branches.  In that case shift it left or right enough to fit in the box.
-    # XXX WRITE sub label_length {
-    my $half_label_length = (length $args{tree}->{label}) / 2;
+    my $half_label_length = $package->get_label_length($args{tree}) / 2;
     my $left_label_width  = max($false_width, $half_label_length);
     if ($half_label_length > $true_width) {
         $left_label_width  = $total_width - $half_label_length;
@@ -188,7 +238,7 @@ sub draw_tree_r {
 
     # Add the label.
     $package->draw_label(
-        string     => $args{tree}->{label},
+        string     => $package->get_label($args{tree}),
         x          => $label_x,
         y          => $args{ymin},
         image      => $args{image},
@@ -200,7 +250,7 @@ sub draw_tree_r {
     # Draw the false branch
     my ($false_line_x, $false_line_y) = $package->draw_tree_r(
         %args,
-        tree       => $args{tree}->{false},
+        tree       => $args{tree}->{false_branch},
         xmin       => $args{xmin},
         ymin       => $child_ymin,
         xmax       => $args{xmin} + $false_xsize,
@@ -210,7 +260,7 @@ sub draw_tree_r {
     # Draw the true branch
     my ($true_line_x, $true_line_y) = $package->draw_tree_r(
         %args,
-        tree       => $args{tree}->{true},
+        tree       => $args{tree}->{true_branch},
         xmin       => $args{xmin} + $false_xsize,
         ymin       => $child_ymin,
         xmax       => $args{xmax},
@@ -311,18 +361,22 @@ XXX Recursively determine the height of the tree.
 sub get_tree_height {
     my ($package, $subtree) = @_;
 
-    if ($subtree->{leaf}) {
+    if ($subtree->{leaf_node}) {
         return 1;
     }
 
-    my $false_height = $package->get_tree_height($subtree->{false});
-    my $true_height  = $package->get_tree_height($subtree->{true});
+    if ($subtree->{info_node}) {
+        return 1 + $package->get_tree_height($subtree->{info_branch});
+    }
+
+    my $false_height = $package->get_tree_height($subtree->{false_branch});
+    my $true_height  = $package->get_tree_height($subtree->{true_branch});
     return max($false_height, $true_height) + 1;
 }
 
 =head2 ASO::DecisionTree::Output::Image->get_tree_width(%args)
 
-XXX Determine the width of the tree; will possibly over estimate it, depenting
+XXX Determine the width of the tree; will possibly over estimate it, depending
 on the shape of the tree.
 
 =cut
@@ -330,18 +384,47 @@ on the shape of the tree.
 sub get_tree_width {
     my ($package, $subtree) = @_;
 
-    my $padding = q{  };
-    if ($subtree->{leaf}) {
-        # Allow one space either side
-        # XXX sub label_length {
-        return length $subtree->{label} . $padding;
+    my $label_width = $package->get_label_length($subtree);
+    if ($subtree->{leaf_node}) {
+        return $label_width;
     }
 
-    my $false_width = $package->get_tree_width($subtree->{false});
-    my $true_width  = $package->get_tree_width($subtree->{true});
+    if ($subtree->{info_node}) {
+        my $child_width = $package->get_tree_width($subtree->{info_branch});
+        return max($label_width, $child_width);
+    }
+
+    my $false_width = $package->get_tree_width($subtree->{false_branch});
+    my $true_width  = $package->get_tree_width($subtree->{true_branch});
     my $child_width = $false_width + $true_width;
-    my $label_width = length $subtree->{label} . $padding;
     return max($child_width, $label_width);
+}
+
+=head2 ASO::DecisionTree::Output::Image->get_label_length($tree)
+
+Returns the width of the label for the top node of $tree.
+
+=cut
+
+sub get_label_length {
+    my ($package, $subtree) = @_;
+
+    my $label = $package->get_label($subtree);
+    # Add some padding to separate labels.
+    return 2 + length $label;
+}
+
+=head2 ASO::DecisionTree::Output::Image->get_label($tree)
+
+Returns the label for the top node of $tree.
+
+=cut
+
+sub get_label {
+    my ($package, $subtree) = @_;
+
+    # At some point this should display more information.
+    return $subtree->{label};
 }
 
 =head1 AUTHOR
