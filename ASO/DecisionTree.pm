@@ -10,6 +10,7 @@ $Data::Dumper::Sortkeys = 1;
 use Storable qw(dclone);
 use lib qw(..);
 use ASO::DB;
+use List::Util qw(sum);
 
 =head1 NAME
 
@@ -36,7 +37,7 @@ modified to work well with the data stored by L<ASO::Parser>.
     my $cluster_groups = ASO::DecisionTree->build_cluster_groups(
                 $dbi_dsn, $username, $password, $rule_id_to_index);
     my $tree = ASO::DecisionTree->build_tree(
-                $rows, $cluster_groups, $cluster_groups, 0, q{rejection_ratio});
+                $rows, $cluster_groups, $cluster_groups, q{rejection_ratio});
 
 =head1 METHODS
 
@@ -184,7 +185,7 @@ sub divideset {
     return (\@true, \@false);
 }
 
-=head2 my $adt = ASO::DecisionTree->build_tree(\@rows, \@current_cg, \@original_cg, $current_score, $score_function)
+=head2 my $adt = ASO::DecisionTree->build_tree(\@rows, \@current_cg, \@original_cg, $score_function, $threshold)
 
 Recursively build a Decision Tree from @rows, using columns taken from
 @current_cg.  The format of @rows, @current_cg and @original_cg is described in
@@ -193,7 +194,7 @@ L</DATA STRUCTURES>.  $score_function is the name of a XXX IMPROVE THIS.
 =cut
 
 sub build_tree {
-    my ($package, $rows, $current_cg, $original_cg, $current_score, $score_function) = @_;
+    my ($package, $rows, $current_cg, $original_cg, $score_function, $threshold) = @_;
 
     if (@_ != 6) {
         my $num_args = @_ - 1;
@@ -212,8 +213,8 @@ sub build_tree {
                              label          => q{No cluster groups});
     }
 
-    my ($best_score,    $best_cg, $best_true_branch, $best_false_branch)
-     = ($current_score, undef,    undef,             undef             );
+    my ($best_score, $best_cg, $best_true_branch, $best_false_branch)
+     = (0,           undef,    undef,             undef             );
 
     # Find the best column to divide the rows on.
     CLUSTER_ELEMENT:
@@ -225,8 +226,12 @@ sub build_tree {
         }
         my ($true_branch, $false_branch)
             = $package->divideset($rows, $cluster_element->{column});
+
+        my $true_count  = sum(map { $_->{count}; } @{$true_branch})  || 0;
+        my $false_count = sum(map { $_->{count}; } @{$false_branch}) || 0;
+        my $rows_count  = sum(map { $_->{count}; } @{$rows})         || 0;
         # The probability that a random row will be in the true branch.
-        my $probability = @{$true_branch} / @{$rows};
+        my $probability = $true_count / $rows_count;
         # Weight the score of each branch by the probability of a row being in
         # that branch, and sum the weighted branch scores to get the new overall
         # score.
@@ -240,6 +245,7 @@ sub build_tree {
                                                     $original_cg);
         my $new_score =   ($probability       * $true_score)
                         + ((1 - $probability) * $false_score);
+
         # A higher overall score is better.  Scoring functions need to normalise
         # their functions so their results are between zero and one, with one
         # being better.
@@ -251,15 +257,14 @@ sub build_tree {
         }
     }
 
-    # XXX WHY DOES THE NEW COLUMN HAVE TO BE BETTER THAN THE CURRENT SCORE?
-
     # If we found a column that's useful for dividing on we recursively divide
     # the true and false branches.
-    if ($best_score > $current_score) {
+    if ($best_score > $threshold) {
         # Create a new column group structure, without the column we're
         # dividing the rows on now.
         my $reduced_cg = dclone($current_cg);
-        my @new_column_group = grep { $_ != $best_cg } @{$reduced_cg->[0]};
+        my @new_column_group = grep { $_->{rule_id} != $best_cg->{rule_id} }
+                                    @{$reduced_cg->[0]};
         if (not @new_column_group) {
             # We've exhausted the first column group, so drop it.
             shift @{$reduced_cg};
@@ -270,13 +275,13 @@ sub build_tree {
         my $true_branch  = $package->build_tree($best_true_branch,
                                                 $reduced_cg,
                                                 $original_cg,
-                                                $best_score,
-                                                $score_function);
+                                                $score_function,
+                                                $threshold);
         my $false_branch = $package->build_tree($best_false_branch,
                                                 $reduced_cg,
                                                 $original_cg,
-                                                $best_score,
-                                                $score_function);
+                                                $score_function,
+                                                $threshold);
         return $package->new(column        => $best_cg->{column},
                              true_branch   => $true_branch,
                              false_branch  => $false_branch,
@@ -291,8 +296,8 @@ sub build_tree {
     my $new_tree   = $package->build_tree($rows,
                                           $reduced_cg,
                                           $original_cg,
-                                          $current_score,
-                                          $score_function);
+                                          $score_function,
+                                          $threshold);
     foreach my $cg (@{$unused_cgs}) {
         $new_tree = $package->new(column       => $cg->{column},
                                   info_branch  => $new_tree,
@@ -586,8 +591,9 @@ sub rejection_ratio {
 
     my @counts = (0, 0);
     map { $counts[$_->{results}->[$column]] += $_->{count}; } @{$rows};
+    my $total_results = sum( map { $_->{count}; } @{$rows} );
 
-    return $counts[1] / @{$rows};
+    return $counts[1] / $total_results;
 }
 
 =head2 my $score = $adt->subsequent_rejections(\@rows, $column, $current_cg, $original_cg)
@@ -605,19 +611,25 @@ sub subsequent_rejections {
         croak qq{subsequent_rejections(): expecting four arguments, not $num_args\n};
     }
 
+    # Returning zero when there are zero rows seems like the best option.
+    if (not @{$rows}) {
+        return 0;
+    }
+
+    # If this is the false subset we might as well return 0 now.
+    if (not $rows->[0]->{results}->[$column]) {
+        return 0;
+    }
+
     if (@{$current_cg->[0]} == 1) {
-        # There's only one column left - this one.  Fall back to
-        # rejection_ratio();
-        return $package->rejection_ratio($rows, $column, $current_cg, $original_cg);
+        # There's only one column left - this one.  Return 1.
+        return 1;
     }
 
     my $num_other_restrictions = @{$current_cg->[0]} - 1;
     my ($num_subsequent_rejects, $num_possible_rejects) = (0, 0);
     ROW:
     foreach my $row (@{$rows}) {
-        if (not $row->{results}->[$column]) {
-            next ROW;
-        }
         # The number of possible subsequent rejections in the current column
         # group.
         $num_possible_rejects += $num_other_restrictions * $row->{count};
@@ -630,12 +642,8 @@ sub subsequent_rejections {
         }
     }
 
-    if ($num_possible_rejects == 0) {
-        # This restriction didn't take effect in this group of rows.
-        return 0;
-    }
-
-    return $num_subsequent_rejects / $num_possible_rejects;
+    my $score = $num_subsequent_rejects / $num_possible_rejects;
+    return $score;
 }
 
 =head1 DATA STRUCTURES
