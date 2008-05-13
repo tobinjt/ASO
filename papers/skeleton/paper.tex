@@ -1,0 +1,128 @@
+% $Id: logparser.tex 545 2008-05-01 20:00:22Z tobinjt $
+\documentclass[twocolumn,a4paper,11pt,draft]{article}
+
+% Useful stuff for math mode.
+\usepackage{amstext}
+% Wrapping of URLs; this doesn't work in the bibliography, but the breakurl
+% package does.
+%\usepackage{url}
+% The name of the program, so I only have to change it in one place.
+\newcommand{\parsername}{\PLP{}}
+\newcommand{\parsernames}{\PLP{}'s}
+% Include images
+\usepackage[final]{graphicx}
+% Change how nested enumerate environments are labelled.
+\renewcommand{\labelenumii}{\roman{enumii}:}
+\renewcommand{\refname}{Bibliography}
+% Add the bibliography into the table of contents.
+\usepackage[section,numbib]{tocbibind}
+% Provides commands to distinguish between pdf and dvi output.
+\usepackage{ifpdf}
+
+\usepackage[acronym=true,style=altlist,number=none,toc=true]{glossary}
+\makeglossary{}
+\makeacronym{}
+
+% When creating a \PDF{} make the table of contents into links to the pages
+% (without horrible red borders) and include bookmarks.  The title and
+% author don't work - I think either gnuplot or graphviz clobbers it.
+% hyperfootnotes need to be disabled to avoid breaking footmisc, but they
+% still seem to work, somehow.
+\ifpdf{}
+    \usepackage[pdftex,hyperfootnotes=false]{hyperref}
+\else{}
+    \usepackage[dvips,hyperfootnotes=false]{hyperref}
+\fi{}
+\hypersetup{
+    pdftitle    = {Parsing Postfix log files},
+    pdfauthor   = {John Tobin},
+    final       = true,
+    pdfborder   = {0 0 0},
+%    breaklinks  = true,
+}
+% This is necessary for URLs in the bibliography; I dunno why the url
+% package doesn't work; don't include it when generating \PDF{} output.
+\ifpdf{}
+\else{}
+    \usepackage{breakurl}
+\fi{}
+\usepackage{lastpage}
+
+% Extra footnote functionality, including references to earlier footnotes.
+\usepackage{footmisc}
+
+% \showgraph{filename}{caption}{label}
+\newcommand{\showgraph}[3]{
+    \begin{figure}[hbt!]
+        \caption{#2}\label{#3}
+        \includegraphics{#1}
+    \end{figure}
+}
+
+%\showtable{filename}{caption}{label}
+\newcommand{\showtable}[3]{
+    \begin{table}[ht]
+        \caption{#2}\label{#3}
+        \input{#1}
+    \end{table}
+}
+
+% Replacement for \ref{}, adds the page number too.
+\newcommand{\refwithpage}[1]{%
+    \empty{}\ref{#1} [page~\pageref{#1}]%
+}
+% section references, automatically add \textsection
+\newcommand{\sectionref}[1]{%
+    \textsection{}\refwithpage{#1}%
+}
+
+% A command to format a Postfix daemon's name
+\newcommand{\daemon}[1]{%
+    \texttt{postfix/#1}%
+}
+
+% This is ridiculous, but I can't put @ in glossary entries, so . . .
+\newcommand{\at}[0]{%
+    @%
+}
+
+\newcommand{\tab}[0]{%
+    \hspace*{2em}%
+}
+
+% This may keep hyperref happy about the Abstract entry in the table of
+% contents.
+\newcounter{dummy}
+
+\begin{document}
+
+\title{XXX TITLE}
+\author{John Tobin \& Carl Vogel \\ School of Computer Science and Statistics \\
+Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie \&
+vogel@cs.tcd.ie }
+\maketitle
+
+\refstepcounter{dummy}
+\addcontentsline{toc}{section}{Abstract}
+\begin{abstract}
+
+\end{abstract}
+
+\section{Introduction}
+
+
+\section{Algorithm}
+
+
+\section{Results}
+
+
+\section{Conclusion}
+
+\appendix
+
+\bibliographystyle{../common/bibliography-style}
+\bibliography{../common/bibliography}
+\label{bibliography}
+
+\end{document}
