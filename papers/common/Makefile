@@ -19,7 +19,7 @@ run_latex:
 	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@"
 
 paper.bbl: ../common/bibliography.bib
-	bibtex $$( basename "$@" .bbl )
+	bibtex $$( basename "$@" .bbl ) || (rm -f paper.pdf paper.ps "$@"; false)
 	touch ran_bibtex
 
 run_makeindex:
