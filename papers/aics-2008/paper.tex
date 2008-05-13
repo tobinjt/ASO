@@ -96,7 +96,8 @@
 
 \begin{document}
 
-\title{XXX TITLE}
+\title{Using Decision Trees for optimisation rather than classification
+XXX BETTER TITLE}
 \author{John Tobin \& Carl Vogel \\ School of Computer Science and Statistics \\
 Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie \&
 vogel@cs.tcd.ie }
@@ -106,18 +107,54 @@ vogel@cs.tcd.ie }
 \addcontentsline{toc}{section}{Abstract}
 \begin{abstract}
 
+    Classification performed by evaluating user-defined sequences of tests
+    can be optimised by applying a Decision Tree algorithm to data gathered
+    from running the tests, providing the user with a more efficient or
+    more accurate sequence of tests.  This usage of Decision Trees is
+    illustrated by optimising Postfix~\cite{postfix} anti-spam
+    restrictions~\cite{smtpd_access_readme}, a task complicated by the
+    division of the tests into groups, restricting the Decision Tree
+    algorithm to examining subsets of attributes at a time.
+
 \end{abstract}
 
 \section{Introduction}
 
+Motivation, background on Postfix restrictions (appendix maybe?)
 
 \section{Algorithm}
 
+Standard CART Decision Tree with modifications: 
+
+\begin{itemize}
+
+    \item groups of attributes to examine
+
+    \item result already known --- non-rejections will be weeded out into
+        the false branches, eventually ending up in the bottom-left-most
+        leaf node.
+
+    \item scoring functions
+
+\end{itemize}
 
 \section{Results}
 
+\begin{itemize}
+
+    \item duplicate rows collapsed; histograms of distribution
+
+    \item optimised ordering --- primary component analysis
+
+    \item image
+
+    \item different trees from different scoring functions
+
+\end{itemize}
 
 \section{Conclusion}
+
+Useful for optimisation and visualisation.
 
 \appendix
 
