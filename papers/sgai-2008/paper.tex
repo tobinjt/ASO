@@ -96,7 +96,7 @@
 
 \begin{document}
 
-\title{XXX TITLE}
+\title{A user-extensible and adaptable parser architecture}
 \author{John Tobin \& Carl Vogel \\ School of Computer Science and Statistics \\
 Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie \&
 vogel@cs.tcd.ie }
@@ -106,20 +106,44 @@ vogel@cs.tcd.ie }
 \addcontentsline{toc}{section}{Abstract}
 \begin{abstract}
 
+    Some parsers need to be very precise and restrictive in what they
+    parse, yet allow users to easily adapt existing rules or add new rules
+    to parse new inputs, without requiring an in-depth knowledge of the
+    parser's internal workings.  This paper presents a novel parsing
+    architecture which aims to make the process of parsing new inputs as
+    simple as possible, enabling users to trivially add new rules (to parse
+    variants of existing inputs) and relatively easily add new actions (to
+    do something useful with a previously unknown class of input).
+
 \end{abstract}
 
 \section{Introduction}
 
+Background of the project --- emphasise the variety in the log lines.
+Motivation for creating the parser.  At some point I want to compare this
+architecture to recursive decent parsers, Lex/Yacc parsers, XXX parsers.
 
 \section{Algorithm}
 
+Split into framework, actions, \& rules.  Explain adding new rules and
+actions.  Cut down rules to the minimum possible.  Framework provides
+support functions, parsing loop, manages data --- boring stuff users don't
+need to concern themselves with.
 
 \section{Results}
 
+Scalability, ordering, caching regexes.  Interesting to run with all rules
+versus running with the minimum number necessary to parse the test log
+files.  Then try that again with different orderings?
 
 \section{Conclusion}
 
+Makes adding new rules trivial, new actions tractable.  Knowledge of the
+framework is rarely necessary.
+
 \appendix
+
+\cite{postfix}
 
 \bibliographystyle{../common/bibliography-style}
 \bibliography{../common/bibliography}
