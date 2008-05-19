@@ -10,6 +10,7 @@ use Storable qw(dclone);
 use List::Util qw(sum);
 use lib qw(..);
 use ASO::DB;
+use ASO::DecisionTree::Node;
 
 =head1 NAME
 
@@ -42,126 +43,6 @@ modified to work well with the data stored by L<ASO::Parser>.
 
 =cut
 
-=head2 my $adt = ASO::DecisionTree->new()
-
-Create a new ASO::DecisionTree object.  Takes the following arguments:
-
-=over 4
-
-=item label => string
-
-The label to be displayed when displaying the tree.
-
-=item column => integer
-
-The column in each row which the decision is to be made on.
-
-=item true_branch => $true_adt
-
-The branch to follow when the column in the row is true.  This should be an
-ASO::DecisionTree object.
-
-=item false_branch => $false_adt
-
-The branch to follow when the column in the row is false.  This should be an
-ASO::DecisionTree object.
-
-=item leaf_node => boolean
-
-True if this node is a leaf node.
-
-=item leaf_branch => \@rows
-
-The data associated with the leaf node.  The format of @rows is described in
-L</DATA STRUCTURES>.
-
-=item info_node => boolean
-
-True if this node is a info node, i.e. it doesn't make a decision.  Info nodes
-are used to retain information about columns which aren't useful in
-classification.
-
-=item info_branch => $info_adt
-
-The branch to follow when the info_node is true.  This should be an
-ASO::DecisionTree object.
-
-=back
-
-Required arguments: C<label>.
-
-You must also specify one of the following groups of arguments:
-
-=over 4
-
-=item leaf_node, leaf_branch
-
-=item column, true_branch, false_branch
-
-=item column, info_node, info_branch
-
-=back
-
-=cut
-
-sub new {
-    my ($package, %args) = @_;
-
-    my %default_args = (
-        label           => undef,
-        column          => undef,
-        true_branch     => undef,
-        false_branch    => undef,
-        leaf_node       => 0,
-        leaf_branch     => undef,
-        info_node       => 0,
-        info_branch     => undef,
-    );
-
-    foreach my $arg (keys %args) {
-        if (not exists $default_args{$arg}) {
-            croak qq{${package}::new(): unknown parameter $arg\n};
-        }
-    }
-
-    my @required_args = qw(label);
-    my %required_args;
-    foreach my $required_arg (@required_args) {
-        if (not exists $args{$required_arg}) {
-            croak qq{${package}::new(): required parameter }
-                . qq{$required_arg missing\n};
-        }
-        $required_args{$required_arg} = delete $args{$required_arg};
-    }
-
-    my @valid_groups = (
-        [qw(leaf_node leaf_branch)],
-        [qw(column true_branch false_branch)],
-        [qw(column info_node info_branch)],
-    );
-
-    my $arg_keys = join q{,}, sort keys %args;
-    my $is_valid_group = 0;
-    VALID_GROUP:
-    foreach my $valid_group (@valid_groups) {
-        my $valid_keys = join q{,}, sort @{$valid_group};
-        if ($valid_keys eq $arg_keys) {
-            $is_valid_group = 1;
-            last VALID_GROUP;
-        }
-    }
-    if (not $is_valid_group) {
-        croak qq{${package}::new(): bad combination of arguments:\n}
-              . Data::Dumper->Dump([\%args], [q{*arguments}]);
-    }
-
-    %args = (%default_args, %required_args, %args);
-
-    my $adt = bless \%args, $package;
-
-    return $adt;
-}
-
 =head2 my (\@true, \@false) = $adt->divideset(\@rows, $column)
 
 Divides @rows into two sets, depending on the value of element $column in each
@@ -188,7 +69,8 @@ sub divideset {
 
 Recursively build a Decision Tree from @rows, using columns taken from
 @current_cg.  The format of @rows, @current_cg and @original_cg is described in
-L</DATA STRUCTURES>.  $score_function is the name of a XXX IMPROVE THIS.
+L</DATA STRUCTURES>.  Returns a tree of L<ASO::DecisionTree::Node> objects.
+$score_function is the name of a XXX IMPROVE THIS.
 
 =cut
 
@@ -201,14 +83,14 @@ sub build_tree {
     }
 
     if (not @{$rows}) {
-        my $new_tree = $package->new(
+        my $new_tree = ASO::DecisionTree::Node->new(
             leaf_node      => 1,
             leaf_branch    => $rows, 
             label          => q{No rows}
         );
         foreach my $cluster_group (@{$current_cg}) {
             foreach my $cluster_element (@{$cluster_group}) {
-                $new_tree = $package->new(
+                $new_tree = ASO::DecisionTree::Node->new(
                     column       => $cluster_element->{column},
                     info_branch  => $new_tree,
                     info_node    => 1,
@@ -220,9 +102,11 @@ sub build_tree {
     }
 
     if (not @{$current_cg}) {
-        return $package->new(leaf_node      => 1,
-                             leaf_branch    => $rows,
-                             label          => q{No cluster groups});
+        return ASO::DecisionTree::Node->new(
+                leaf_node      => 1,
+                leaf_branch    => $rows,
+                label          => q{No cluster groups}
+            );
     }
 
     my ($best_score, $best_cg, $best_true_branch, $best_false_branch)
@@ -294,10 +178,13 @@ sub build_tree {
                                                 $original_cg,
                                                 $score_function,
                                                 $threshold);
-        return $package->new(column        => $best_cg->{column},
-                             true_branch   => $true_branch,
-                             false_branch  => $false_branch,
-                             label         => $best_cg->{restriction_name});
+        return ASO::DecisionTree::Node->new(
+                column        => $best_cg->{column},
+                branch_node   => 1,
+                true_branch   => $true_branch,
+                false_branch  => $false_branch,
+                label         => $best_cg->{restriction_name}
+            );
     }
 
     # None of the columns in the current column group were helpful in dividing
@@ -311,7 +198,7 @@ sub build_tree {
                                           $score_function,
                                           $threshold);
     foreach my $cluster_element (@{$unused_cgs}) {
-        $new_tree = $package->new(
+        $new_tree = ASO::DecisionTree::Node->new(
             column       => $cluster_element->{column},
             info_branch  => $new_tree,
             info_node    => 1,
