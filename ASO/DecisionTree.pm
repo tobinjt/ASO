@@ -8,7 +8,6 @@ use Carp;
 use Data::Dumper;
 use Storable qw(dclone);
 use List::Util qw(sum);
-use lib qw(..);
 use ASO::DB;
 use ASO::DecisionTree::Node;
 
@@ -39,7 +38,7 @@ altered to work well with the data stored by L<ASO::Parser>.
     );
     $adt->load_data();
     $adt->build_cluster_groups();
-    my $tree = $adt->build_tree($rows, $cluster_groups, q{rejection_ratio}, 0.01);
+    my $tree = $adt->build_tree(q{rejection_ratio}, 0.01);
 
 =head1 METHODS
 
@@ -123,7 +122,7 @@ sub build_tree {
 
     if (@_ != 3) {
         my $num_args = @_ - 1;
-        croak qq{build_tree_r(): expecting two arguments, not $num_args\n};
+        croak qq{build_tree(): expecting two arguments, not $num_args\n};
     }
 
     return $self->build_tree_r(
@@ -775,13 +774,9 @@ If C<required> is true C<column> may not be present.
 
 =head2 @current_cg
 
-@original_cg is the original @cluster_groups, unmodified by build_tree().  
-
-=head2 @original_cg
-
 @current_cg is the remaining cluster groups - those which have been consumed by
-build_tree() have been removed.  @current_cg is modified automatically by
-build_tree() as it recursively builds the tree.
+build_tree_r() have been removed.  @current_cg is modified automatically by
+build_tree_r() as it recursively builds the tree.
 
 =cut
 
