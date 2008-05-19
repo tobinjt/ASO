@@ -21,14 +21,13 @@ INSERT INTO cluster_groups(id, name, description, cluster_group, restriction_lis
         'smtpd_helo_restrictions'
 );
 
-INSERT INTO cluster_groups(id, name, description, cluster_group, restriction_list, required)
+INSERT INTO cluster_groups(id, name, description, cluster_group, restriction_list)
     VALUES(
         3,
         'Sender restrictions',
         'Restrictions applied when the client sends the MAIL FROM command',
         300,
         'smtpd_sender_restrictions',
-        1
 );
 
 INSERT INTO cluster_groups(id, name, description, cluster_group, restriction_list)
@@ -40,13 +39,14 @@ INSERT INTO cluster_groups(id, name, description, cluster_group, restriction_lis
         'smtpd_recipient_restrictions'
 );
 
-INSERT INTO cluster_groups(id, name, description, cluster_group, restriction_list)
+INSERT INTO cluster_groups(id, name, description, cluster_group, restriction_list, required)
     VALUES(
         5,
         'permit_mynetworks, reject_unauth_destination',
         'Permit clients in mynetworks to relay, reject unauthorised relaying attempts.',
         500,
-        'smtpd_recipient_restrictions'
+        'smtpd_recipient_restrictions',
+        1
 );
 
 INSERT INTO cluster_groups(id, name, description, cluster_group, restriction_list)

@@ -715,7 +715,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         1,
         'REJECTED',
         'permit_mynetworks, reject_unauth_destination',
-        3
+        5
 );
 
 -- Client host rejected: cannot find your hostname, [199.84.53.138]; from=<security@e-gold.com.> to=<melanie.bouroche@cs.tcd.ie> proto=ESMTP helo=<DynamicCorp.net>
