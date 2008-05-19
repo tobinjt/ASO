@@ -27,59 +27,130 @@ our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
 =head1 SYNOPSIS
 
 ASO::DecisionTree implements a modified form of the Decision Tree algorithm,
-modified to work well with the data stored by L<ASO::Parser>.
+altered to work well with the data stored by L<ASO::Parser>.
 
     use ASO::DecisionTree;
 
     my ($dbi_dsn, $username, $password) = qw(...);
-    my ($rows, $index_to_rule_id, $rule_id_to_index)
-        = ASO::DecisionTree->load_data($dbi_dsn, $username, $password);
-    my $cluster_groups = ASO::DecisionTree->build_cluster_groups(
-                $dbi_dsn, $username, $password, $rule_id_to_index);
-    my $tree = ASO::DecisionTree->build_tree(
-                $rows, $cluster_groups, $cluster_groups, q{rejection_ratio});
+    my $adt = ASO::DecisionTree->new(
+        dbi_dsn     => $dbi_dsn,
+        username    => $username,
+        password    => $password,
+    );
+    $adt->load_data();
+    $adt->build_cluster_groups();
+    my $tree = $adt->build_tree($rows, $cluster_groups, q{rejection_ratio}, 0.01);
 
 =head1 METHODS
 
 =cut
 
-=head2 my (\@true, \@false) = $adt->divideset(\@rows, $column)
+=head2 my $adt = ASO::DecisionTree->new(%args)
 
-Divides @rows into two sets, depending on the value of element $column in each
-%row from @rows (formats described in L</DATA STRUCTURES>).  Returns (\@true,
-\@false).
+Create a new DecisionTree object.  
+
+Required arguments:
+
+=over 4
+
+=item dbi_dsn => string
+
+The database to connect to.
+
+=item username => string
+
+The username to use when connecting to the database.
+
+=item password => string
+
+The password to use when connecting to the database.
+
+=back
+
+See L<DBI> for a description of C<dbi_dsn>.
+
+There are no optional arguments at this time.
 
 =cut
 
-sub divideset {
-    my ($package, $rows, $column) = @_;
+sub new {
+    my ($package, %args) = @_;
 
-    if (@_ != 3) {
-        my $num_args = @_ - 1;
-        croak qq{divideset(): expecting two arguments, not $num_args\n};
+    my %default_args  = ();
+    my %required_args = (
+        dbi_dsn     => undef,
+        username    => undef,
+        password    => undef,
+    );
+
+    foreach my $arg (keys %args) {
+        if (        not exists $default_args{$arg}
+                and not exists $required_args{$arg}) {
+            croak qq{${package}::new(): unknown parameter $arg\n};
+        }
     }
 
-    my @true  = grep {     $_->{results}->[$column] } @{$rows};
-    my @false = grep { not $_->{results}->[$column] } @{$rows};
+    foreach my $required_arg (keys %required_args) {
+        if (not exists $args{$required_arg}) {
+            croak qq{${package}::new(): required parameter }
+                . qq{$required_arg missing\n};
+        }
+        $required_args{$required_arg} = delete $args{$required_arg};
+    }
 
-    return (\@true, \@false);
+    %args = (%default_args, %required_args, %args);
+
+    my $adt = bless \%args, $package;
+
+    return $adt;
 }
 
-=head2 my $adt = ASO::DecisionTree->build_tree(\@rows, \@current_cg, \@original_cg, $score_function, $threshold)
+=head2 my $tree = $adt->build_tree($score_function, $threshold)
 
-Recursively build a Decision Tree from @rows, using columns taken from
-@current_cg.  The format of @rows, @current_cg and @original_cg is described in
-L</DATA STRUCTURES>.  Returns a tree of L<ASO::DecisionTree::Node> objects.
-$score_function is the name of a XXX IMPROVE THIS.
+Recursively build a DecisionTree Tree using the data loaded by $art->load_data()
+and the cluster groups loaded by $ard->build_cluster_groups().  $score_function
+is the name of the score function to use (see L</SCORE FUNCTIONS>).  The score
+must be greater that $threshold for the algorithm to use an attribute in
+classification (i.e. use the attribute in a branch node); once the score drops
+below $threshold the remainder of the current cluster group will be added as
+info nodes.  $tree is an L<ASO::DecisionTree::Node> object.  This is really a
+thin wrapper around $adt->build_tree_r().
 
 =cut
 
 sub build_tree {
-    my ($package, $rows, $current_cg, $original_cg, $score_function, $threshold) = @_;
+    my ($self, $score_function, $threshold) = @_;
 
-    if (@_ != 6) {
+    if (@_ != 3) {
         my $num_args = @_ - 1;
-        croak qq{build_tree(): expecting five arguments, not $num_args\n};
+        croak qq{build_tree_r(): expecting two arguments, not $num_args\n};
+    }
+
+    return $self->build_tree_r(
+                $self->{rows},
+                $self->{cluster_groups},
+                $score_function,
+                $threshold,
+            );
+}
+
+=head2 my $tree = ASO::DecisionTree->build_tree_r(\@rows, \@current_cg, $score_function, $threshold)
+
+Recursively build a Decision Tree from @rows, using columns taken from
+@current_cg.  The format of @rows, @current_cg is described in
+L</DATA STRUCTURES>.  Returns a tree of L<ASO::DecisionTree::Node> objects.
+$score_function and $threshold are described in L</build_tree>.  This is the
+function which does the real work - $adt->build_tree() is a thin wrapper around
+$adt->build_tree_r().
+
+=cut
+
+sub build_tree_r {
+    my ($self, $rows, $current_cg, $score_function, $threshold) = @_;
+
+    if (@_ != 5) {
+        my $num_args = @_ - 1;
+        croak qq{build_tree_r(): expecting four arguments, not $num_args\n};
     }
 
     if (not @{$rows}) {
@@ -121,24 +192,27 @@ sub build_tree {
             next CLUSTER_ELEMENT;
         }
         my ($true_branch, $false_branch)
-            = $package->divideset($rows, $cluster_element->{column});
+            = $self->divideset($rows, $cluster_element->{column});
 
         my $true_count  = sum(map { $_->{count}; } @{$true_branch})  || 0;
         my $false_count = sum(map { $_->{count}; } @{$false_branch}) || 0;
-        my $rows_count  = sum(map { $_->{count}; } @{$rows})         || 0;
+        my $rows_count  = sum(map { $_->{count}; } @{$rows})         || 
+            confess qq{\$rows_count cannot be zero/undefined\n};
         # The probability that a random row will be in the true branch.
         my $probability = $true_count / $rows_count;
         # Weight the score of each branch by the probability of a row being in
         # that branch, and sum the weighted branch scores to get the new overall
         # score.
-        my $true_score  = $package->$score_function($true_branch,
-                                                    $cluster_element->{column},
-                                                    $current_cg,
-                                                    $original_cg);
-        my $false_score = $package->$score_function($false_branch,
-                                                    $cluster_element->{column},
-                                                    $current_cg,
-                                                    $original_cg);
+        my $true_score  = $self->$score_function(
+                                    $true_branch,
+                                    $cluster_element->{column},
+                                    $current_cg,
+                                );
+        my $false_score = $self->$score_function(
+                                    $false_branch,
+                                    $cluster_element->{column},
+                                    $current_cg,
+                                );
         my $new_score =   ($probability       * $true_score)
                         + ((1 - $probability) * $false_score);
 
@@ -168,16 +242,18 @@ sub build_tree {
             $reduced_cg->[0] = \@new_column_group;
         }
 
-        my $true_branch  = $package->build_tree($best_true_branch,
-                                                $reduced_cg,
-                                                $original_cg,
-                                                $score_function,
-                                                $threshold);
-        my $false_branch = $package->build_tree($best_false_branch,
-                                                $reduced_cg,
-                                                $original_cg,
-                                                $score_function,
-                                                $threshold);
+        my $true_branch  = $self->build_tree_r(
+                                    $best_true_branch,
+                                    $reduced_cg,
+                                    $score_function,
+                                    $threshold
+                                );
+        my $false_branch = $self->build_tree_r(
+                                    $best_false_branch,
+                                    $reduced_cg,
+                                    $score_function,
+                                    $threshold
+                                );
         return ASO::DecisionTree::Node->new(
                 column        => $best_cg->{column},
                 branch_node   => 1,
@@ -192,11 +268,12 @@ sub build_tree {
     # group.
     my $reduced_cg = dclone($current_cg);
     my $unused_cgs = shift @{$reduced_cg};
-    my $new_tree   = $package->build_tree($rows,
-                                          $reduced_cg,
-                                          $original_cg,
-                                          $score_function,
-                                          $threshold);
+    my $new_tree   = $self->build_tree_r(
+                                $rows,
+                                $reduced_cg,
+                                $score_function,
+                                $threshold
+                            );
     foreach my $cluster_element (@{$unused_cgs}) {
         $new_tree = ASO::DecisionTree::Node->new(
             column       => $cluster_element->{column},
@@ -208,11 +285,10 @@ sub build_tree {
     return $new_tree;
 }
 
-=head2 my (\@rows, \%index_to_rule_id, \%rule_id_to_index) = ASO::DecisionTree->load_data($dbi_dsn, $username, $password)
+=head2 my (\@rows, \%index_to_rule_id, \%rule_id_to_index) = $adt->load_data()
 
-Connect to the database specified in $dbi_dsn using $username and $password (see
-L<DBI> and L<DBD::foo>, where I<foo> is your database driver, for the format of
-$dbi_dsn).  The database will be queried with something similar to
+Connect to the database specified when creating $adt, and query the database
+with something similar to
 
   SELECT results.connection_id, results.rule_id
     FROM results, rules
@@ -243,7 +319,8 @@ array index to a rule id, and C<rule_id_to_index> maps a rule id to an array
 index.
 
 Returns (\@rows, \%index_to_rule_id, \%rule_id_to_index).  Dies if unable to
-connect to the database.
+connect to the database.  Stores (\@rows, \%index_to_rule_id,
+\%rule_id_to_index) in $adt, for use with $adt->build_tree().
 
 An example will hopefully make things clearer:
 
@@ -273,17 +350,17 @@ An example will hopefully make things clearer:
 =cut
 
 sub load_data {
-    my ($package, $dbi_dsn, $username, $password) = @_;
+    my ($self) = @_;
 
-    if (@_ != 4) {
+    if (@_ != 1) {
         my $num_args = @_ - 1;
-        croak qq{load_data(): expecting three arguments, not $num_args\n};
+        croak qq{load_data(): expecting zero arguments, not $num_args\n};
     }
 
     my $dbix = ASO::DB->connect(
-        $dbi_dsn,
-        $username,
-        $password,
+        $self->{dbi_dsn},
+        $self->{username},
+        $self->{password},
         {AutoCommit => 1},
     );
 
@@ -356,14 +433,19 @@ sub load_data {
         push @{$row->{results}}, (0) x ($row_length - @{$row->{results}});
     }
 
+    $self->{rows}             = \@rows;
+    $self->{index_to_rule_id} = \%index_to_rule_id;
+    $self->{rule_id_to_index} = \%rule_id_to_index;
+
     return (\@rows, \%index_to_rule_id, \%rule_id_to_index);
 }
 
-=head2 my (\@cluster_groups) = ASO::DecisionTree->build_cluster_groups($dbi_dsn, $username, $password, \%rule_id_to_index)
+=head2 my (\@cluster_groups) = $adt->build_cluster_groups()
 
-Builds and returns the cluster groups structure from the database.  The
-structure returned is an array of arrays of cluster elements (see
-L</@cluster_groups> and L</%cluster_element>); in synopsis:
+Builds and returns the cluster groups structure from the database, storing it in
+$adt also (for use in $adt->build_tree()).  The structure returned is an array
+of arrays of cluster elements (see L</@cluster_groups> and
+L</%cluster_element>); in synopsis:
 
     @cluster_groups = (
         [
@@ -380,10 +462,10 @@ L</@cluster_groups> and L</%cluster_element>); in synopsis:
     );
 
 The column from each %cluster_element will be used in build_tree() to split
-@rows (returned by load_data()); the elements from the first cluster
-(@cluster_groups[0]) should be used first until exhausted or ineffective in
-splitting the tree, after which the elements from subsequent clusters should be
-used.
+@rows (loaded from the database by load_data()); the elements from the first
+cluster (@cluster_groups[0]) should be used first until exhausted or ineffective
+in splitting the tree, after which the elements from subsequent clusters should
+be used.
 
 There will be a cluster element for every rule that is present in
 \%rule_id_to_index or that references a cluster group with the C<required>
@@ -392,27 +474,25 @@ attribute in the database (see L<ASO::DB::ClusterGroup> for a list of
 attributes); the contents of an individual @cluster_group (e.g.
 $cluster_groups[0]) are not sorted.
 
-Connects to the database using $dbi_dsn, $using and $password - see L<DBI> and
-L<DBD::foo> (your database driver) for details of $dbi_dsn.  Dies if unable to
-connect to the database.  Returns (\@cluster_groups).  %rule_id_to_index should
-have been returned from load_data(); if not the columns in each %cluster_element
-won't match the indices in @rows.
+Connects to the database using the parameters given to new(); dies if unable to
+connect to the database.  Returns (\@cluster_groups), and saves it in $adt for
+use in $adt->build_tree().
 
 =cut
 
 sub build_cluster_groups {
-    my ($package, $dbi_dsn, $username, $password, $rule_id_to_index) = @_;
+    my ($self) = @_;
 
-    if (@_ != 5) {
+    if (@_ != 1) {
         my $num_args = @_ - 1;
         croak qq{build_cluster_groups(): }
-              . qq{expecting four arguments, not $num_args\n};
+              . qq{expecting zero arguments, not $num_args\n};
     }
 
     my $dbix = ASO::DB->connect(
-        $dbi_dsn,
-        $username,
-        $password,
+        $self->{dbi_dsn},
+        $self->{username},
+        $self->{password},
         {AutoCommit => 1},
     );
 
@@ -444,7 +524,7 @@ sub build_cluster_groups {
         foreach my $rule ($cg->rules()) {
             # Skip rules unless the cluster group is required or the rule has
             # been seen in results; the other rules are not interesting.
-            if (        not exists $rule_id_to_index->{$rule->id()}
+            if (        not exists $self->{rule_id_to_index}->{$rule->id()}
                     and not $template_cg{required}) {
                 next RULE;
             }
@@ -452,8 +532,9 @@ sub build_cluster_groups {
             $cluster_element->{rule_id} = $rule->id();
             $cluster_element->{restriction_name} = $rule->restriction_name()
                                                    || q{unknown restriction};
-            if (exists $rule_id_to_index->{$rule->id()}) {
-                $cluster_element->{column} = $rule_id_to_index->{$rule->id()};
+            if (exists $self->{rule_id_to_index}->{$rule->id()}) {
+                $cluster_element->{column} =
+                    $self->{rule_id_to_index}->{$rule->id()};
             }
             push @cluster_elements, $cluster_element;
         }
@@ -462,7 +543,30 @@ sub build_cluster_groups {
 
     # Collapse @cluster_groups - it'll be mostly empty.
     my @reduced_cgs = grep { defined $_ and @{$_} } @cluster_groups;
+    $self->{cluster_groups} = \@reduced_cgs;
     return \@reduced_cgs;
+}
+
+=head2 my (\@true, \@false) = $adt->divideset(\@rows, $column)
+
+Divides @rows into two sets, depending on the value of element $column in each
+%row from @rows (formats described in L</DATA STRUCTURES>).  Returns (\@true,
+\@false).
+
+=cut
+
+sub divideset {
+    my ($self, $rows, $column) = @_;
+
+    if (@_ != 3) {
+        my $num_args = @_ - 1;
+        croak qq{divideset(): expecting two arguments, not $num_args\n};
+    }
+
+    my @true  = grep {     $_->{results}->[$column] } @{$rows};
+    my @false = grep { not $_->{results}->[$column] } @{$rows};
+
+    return (\@true, \@false);
 }
 
 =head1 SCORE FUNCTIONS
@@ -472,18 +576,18 @@ better.
 
 =cut
 
-=head2 my $score = $adt->rejection_ratio(\@rows, $column, $current_cg, $original_cg)
+=head2 my $score = $adt->rejection_ratio(\@rows, $column, $current_cg)
 
 The fraction of @rows where $column is a rejection.
 
 =cut
 
 sub rejection_ratio {
-    my ($package, $rows, $column, $current_cg, $original_cg) = @_;
+    my ($self, $rows, $column, $current_cg) = @_;
 
-    if (@_ != 5) {
+    if (@_ != 4) {
         my $num_args = @_ - 1;
-        croak qq{rejection_ratio(): expecting four arguments, not $num_args\n};
+        croak qq{rejection_ratio(): expecting three arguments, not $num_args\n};
     }
 
     # Returning zero when there are zero rows seems like the best option.
@@ -498,7 +602,7 @@ sub rejection_ratio {
     return $counts[1] / $total_results;
 }
 
-=head2 my $score = $adt->subsequent_rejections(\@rows, $column, $current_cg, $original_cg)
+=head2 my $score = $adt->subsequent_rejections(\@rows, $column, $current_cg)
 
 How many other columns/restrictions in the current column group would reject
 when this column/restriction rejects.
@@ -506,11 +610,11 @@ when this column/restriction rejects.
 =cut
 
 sub subsequent_rejections {
-    my ($package, $rows, $column, $current_cg, $original_cg) = @_;
+    my ($package, $rows, $column, $current_cg) = @_;
 
-    if (@_ != 5) {
+    if (@_ != 4) {
         my $num_args = @_ - 1;
-        croak qq{subsequent_rejections(): expecting four arguments, not $num_args\n};
+        croak qq{subsequent_rejections(): expecting three arguments, not $num_args\n};
     }
 
     # Returning zero when there are zero rows seems like the best option.
