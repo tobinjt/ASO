@@ -81,6 +81,7 @@ build_loop:
 	# (e.g. if I added an index).
 	make build_run PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}";
 	echo; echo; echo;
+	set -e; \
 	for i in $$( seq 1 4 ); do \
 		echo "iteration $$i starting"; \
 		make $$( echo "$$SOURCE" | sed -e 's/tex$$/bbl/' ); \
@@ -155,7 +156,7 @@ build/logparser-flow-chart-%.ps: logparser-flow-chart-%.dot
 	dot -o "$@" -Tps -x "$<"
 
 # graph dependencies
-build/plot-cached-discarded.ps: build/stats-cached.txt build/stats-discarded.txt
+build/plot-cached-discarded.ps: build/stats-cached.txt build/stats-discarded.txt build/stats-cached-discarded-factor.txt
 build/plot-cached-discarded-factor.ps: build/stats-cached-discarded-factor.txt
 build/plot-normal-shuffle-reverse.ps: build/stats-normal.txt build/stats-shuffle.txt build/stats-reverse.txt
 build/plot-normal-shuffle-factor.ps: build/stats-normal-shuffle-reverse-factor.txt
@@ -171,11 +172,28 @@ build/plot-hits-low.ps: stats-hits.txt
 build/plot-log22-log-lines.ps: stats-log22-rule-count-by-program.txt
 build/plot-log22-rules.ps: stats-log22-rule-count-by-program.txt
 
+# Duplicated dependencies; make doesn't seem to rebuild properly when there are multiple wildcard dependencies.  Poo.
+build/plot-cached-discarded.pdf: build/stats-cached.txt build/stats-discarded.txt build/stats-cached-discarded-factor.txt
+build/plot-cached-discarded-factor.pdf: build/stats-cached-discarded-factor.txt
+build/plot-normal-shuffle-reverse.pdf: build/stats-normal.txt build/stats-shuffle.txt build/stats-reverse.txt
+build/plot-normal-shuffle-factor.pdf: build/stats-normal-shuffle-reverse-factor.txt 
+build/plot-normal-reverse-factor.pdf: build/stats-normal-shuffle-reverse-factor.txt
+build/plot-normal-filesize-numlines-factor.pdf: build/stats-normal-filesize-numlines-factor.txt
+build/plot-normal-filesize-numlines.pdf: build/stats-normal.txt file-sizes.txt wc.txt
+build/plot-log22-distribution-by-rule.pdf: stats-log22-distribution-by-rule.txt
+build/plot-log22-distribution-versus-rule-count.pdf: stats-log22-rule-count-by-program.txt
+build/plot-hits.pdf: stats-hits.txt
+build/plot-hits-high.pdf: stats-hits.txt
+build/plot-hits-middle.pdf: stats-hits.txt
+build/plot-hits-low.pdf: stats-hits.txt
+build/plot-log22-log-lines.pdf: stats-log22-rule-count-by-program.txt
+build/plot-log22-rules.pdf: stats-log22-rule-count-by-program.txt
+
 build/plot-%.ps: graphs/plot-%.gpi
-	cd graphs && gnuplot "../$<"
+	cd graphs && gnuplot "../$<" || (rm -f "../$@"; false)
 
 build/plot-%.pdf: graphs/plot-%-pdf.gpi
-	cd graphs && gnuplot "../$<"
+	cd graphs && gnuplot "../$<" || (rm -f "../$@"; false)
 
 # Stop make deleting the intermediate gnuplot file, because there's no point
 # in recreating it each time make runs.
@@ -307,6 +325,7 @@ build/mails-received-include-for-graph.tex: build/mails-received-stats.txt			\
 	sed -i -e 's/\\%//g' "$@" || (rm -f "$@"; false)
 
 # Build stats from the directory created by gen-stats.
+# XXX THIS DOESN'T HAPPEN AUTOMATICALLY - MAKE THAT WORK.
 build/stats-normal.txt: stats-normal
 	DIR="$<" FILE="$@" make parse-stats
 
@@ -341,6 +360,7 @@ clean:
 
 veryclean: clean
 	rm -f build/*
+	rm -rf *-graphed
 
 check:
 	chktex -I0 -q logparser.tex
