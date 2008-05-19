@@ -153,22 +153,12 @@ sub build_tree_r {
     }
 
     if (not @{$rows}) {
-        my $new_tree = ASO::DecisionTree::Node->new(
+        my $leaf = ASO::DecisionTree::Node->new(
             leaf_node      => 1,
             leaf_branch    => $rows, 
             label          => q{No rows}
         );
-        foreach my $cluster_group (@{$current_cg}) {
-            foreach my $cluster_element (@{$cluster_group}) {
-                $new_tree = ASO::DecisionTree::Node->new(
-                    column       => $cluster_element->{column},
-                    info_branch  => $new_tree,
-                    info_node    => 1,
-                    label        => $cluster_element->{restriction_name}
-                );
-            }
-        }
-        return $new_tree;
+        return $self->make_info_node_chain($current_cg, $leaf);
     }
 
     if (not @{$current_cg}) {
@@ -179,87 +169,17 @@ sub build_tree_r {
             );
     }
 
-    my ($best_score, $best_cg, $best_true_branch, $best_false_branch)
-     = (0,           undef,    undef,             undef             );
-
-    # Find the best column to divide the rows on.
-    CLUSTER_ELEMENT:
-    foreach my $cluster_element (@{$current_cg->[0]}) {
-        # Skip required rules which don't have a column; they'll be dealt with
-        # when this cluster group runs out of useful columns.
-        if (not exists $cluster_element->{column}) {
-            next CLUSTER_ELEMENT;
-        }
-        my ($true_branch, $false_branch)
-            = $self->divideset($rows, $cluster_element->{column});
-
-        my $true_count  = sum(map { $_->{count}; } @{$true_branch})  || 0;
-        my $false_count = sum(map { $_->{count}; } @{$false_branch}) || 0;
-        my $rows_count  = sum(map { $_->{count}; } @{$rows})         || 
-            confess qq{\$rows_count cannot be zero/undefined\n};
-        # The probability that a random row will be in the true branch.
-        my $probability = $true_count / $rows_count;
-        # Weight the score of each branch by the probability of a row being in
-        # that branch, and sum the weighted branch scores to get the new overall
-        # score.
-        my $true_score  = $self->$score_function(
-                                    $true_branch,
-                                    $cluster_element->{column},
-                                    $current_cg,
-                                );
-        my $false_score = $self->$score_function(
-                                    $false_branch,
-                                    $cluster_element->{column},
-                                    $current_cg,
-                                );
-        my $new_score =   ($probability       * $true_score)
-                        + ((1 - $probability) * $false_score);
-
-        # A higher overall score is better.  Scoring functions need to normalise
-        # their functions so their results are between zero and one, with one
-        # being better.
-        if ($new_score > $best_score) {
-            $best_score         = $new_score;
-            $best_cg            = $cluster_element;
-            $best_true_branch   = $true_branch;
-            $best_false_branch  = $false_branch;
-        }
-    }
+    my $best = $self->find_best_column($rows, $current_cg, $score_function);
 
     # If we found a column that's useful for dividing on we recursively divide
     # the true and false branches.
-    if ($best_score > $threshold) {
-        # Create a new column group structure, without the column we're
-        # dividing the rows on now.
-        my $reduced_cg = dclone($current_cg);
-        my @new_column_group = grep { $_->{rule_id} != $best_cg->{rule_id} }
-                                    @{$reduced_cg->[0]};
-        if (not @new_column_group) {
-            # We've exhausted the first column group, so drop it.
-            shift @{$reduced_cg};
-        } else {
-            $reduced_cg->[0] = \@new_column_group;
-        }
-
-        my $true_branch  = $self->build_tree_r(
-                                    $best_true_branch,
-                                    $reduced_cg,
-                                    $score_function,
-                                    $threshold
-                                );
-        my $false_branch = $self->build_tree_r(
-                                    $best_false_branch,
-                                    $reduced_cg,
-                                    $score_function,
-                                    $threshold
-                                );
-        return ASO::DecisionTree::Node->new(
-                column        => $best_cg->{column},
-                branch_node   => 1,
-                true_branch   => $true_branch,
-                false_branch  => $false_branch,
-                label         => $best_cg->{restriction_name}
-            );
+    if ($best->{score} > $threshold) {
+        return $self->build_branch_node(
+                    $current_cg,
+                    $score_function,
+                    $threshold,
+                    $best,
+                );
     }
 
     # None of the columns in the current column group were helpful in dividing
@@ -273,15 +193,7 @@ sub build_tree_r {
                                 $score_function,
                                 $threshold
                             );
-    foreach my $cluster_element (@{$unused_cgs}) {
-        $new_tree = ASO::DecisionTree::Node->new(
-            column       => $cluster_element->{column},
-            info_branch  => $new_tree,
-            info_node    => 1,
-            label        => $cluster_element->{restriction_name}
-        );
-    }
-    return $new_tree;
+    return $self->make_info_node_chain([$unused_cgs], $new_tree);
 }
 
 =head2 my (\@rows, \%index_to_rule_id, \%rule_id_to_index) = $adt->load_data()
@@ -544,6 +456,160 @@ sub build_cluster_groups {
     my @reduced_cgs = grep { defined $_ and @{$_} } @cluster_groups;
     $self->{cluster_groups} = \@reduced_cgs;
     return \@reduced_cgs;
+}
+
+=head1 HELPER METHODS
+
+These are helper methods which shouldn't be called directly, they're used
+internally.
+
+=cut
+
+=head2 $adt->build_branch_node($current_cg, $score_function, $threshold, $best)
+
+Build a branch node, recursively building the true and false branches.  $best is
+returned by $adt->find_best_column().
+
+=cut
+
+sub build_branch_node {
+    my ($self, $current_cg, $score_function, $threshold, $best) = @_;
+
+    if (@_ != 5) {
+        my $num_args = @_ - 1;
+        croak qq{build_branch_node(): expecting four arguments, not $num_args\n};
+    }
+
+    # Create a new column group structure, without the column we're
+    # dividing the rows on now.
+    my $reduced_cg = dclone($current_cg);
+    my @new_column_group = grep { $_->{rule_id} != $best->{cg}->{rule_id} }
+                                @{$reduced_cg->[0]};
+    if (not @new_column_group) {
+        # We've exhausted the first column group, so drop it.
+        shift @{$reduced_cg};
+    } else {
+        $reduced_cg->[0] = \@new_column_group;
+    }
+
+    my $true_branch  = $self->build_tree_r(
+                                $best->{true_branch},
+                                $reduced_cg,
+                                $score_function,
+                                $threshold
+                            );
+    my $false_branch = $self->build_tree_r(
+                                $best->{false_branch},
+                                $reduced_cg,
+                                $score_function,
+                                $threshold
+                            );
+    return ASO::DecisionTree::Node->new(
+            column        => $best->{cg}->{column},
+            branch_node   => 1,
+            true_branch   => $true_branch,
+            false_branch  => $false_branch,
+            label         => $best->{cg}->{restriction_name}
+        );
+}
+
+=head2 $adt->find_best_column($rows, $current_cg, $score_function)
+
+Find the best column to divide $rows on, based on scores from $score_function.
+Returns a reference to a hash containing the results: $score, $cg, $true_branch,
+$false_branch.
+
+=cut
+
+sub find_best_column {
+    my ($self, $rows, $current_cg, $score_function) = @_;
+
+    if (@_ != 4) {
+        my $num_args = @_ - 1;
+        croak qq{find_best_column(): expecting three arguments, not $num_args\n};
+    }
+
+    my %best = (
+        score           => 0,
+        cg              => undef,
+        true_branch     => undef,
+        false_branch    => undef,
+    );
+
+    CLUSTER_ELEMENT:
+    foreach my $cluster_element (@{$current_cg->[0]}) {
+        # Skip required rules which don't have a column; they'll be dealt with
+        # when this cluster group runs out of useful columns.
+        if (not exists $cluster_element->{column}) {
+            next CLUSTER_ELEMENT;
+        }
+        my ($true_branch, $false_branch)
+            = $self->divideset($rows, $cluster_element->{column});
+
+        my $true_count  = sum(map { $_->{count}; } @{$true_branch})  || 0;
+        my $false_count = sum(map { $_->{count}; } @{$false_branch}) || 0;
+        my $rows_count  = sum(map { $_->{count}; } @{$rows})         || 
+            confess qq{\$rows_count cannot be zero/undefined\n};
+        # The probability that a random row will be in the true branch.
+        my $probability = $true_count / $rows_count;
+        # Weight the score of each branch by the probability of a row being in
+        # that branch, and sum the weighted branch scores to get the new overall
+        # score.
+        my $true_score  = $self->$score_function(
+                                    $true_branch,
+                                    $cluster_element->{column},
+                                    $current_cg,
+                                );
+        my $false_score = $self->$score_function(
+                                    $false_branch,
+                                    $cluster_element->{column},
+                                    $current_cg,
+                                );
+        my $new_score =   ($probability       * $true_score)
+                        + ((1 - $probability) * $false_score);
+
+        # A higher overall score is better.  Scoring functions need to normalise
+        # their functions so their results are between zero and one, with one
+        # being better.
+        if ($new_score > $best{score}) {
+            $best{score}         = $new_score;
+            $best{cg}            = $cluster_element;
+            $best{true_branch}   = $true_branch;
+            $best{false_branch}  = $false_branch;
+        }
+    }
+
+    return (\%best);
+}
+
+=head2 my $tree = $adt->make_info_node_chain($current_cg, $tail_node)
+
+Returns a chain of info nodes containing all columns from $current_cg,
+finishing with $tail_node.
+
+=cut
+
+sub make_info_node_chain {
+    my ($self, $current_cg, $tail_node) = @_;
+
+    if (@_ != 3) {
+        my $num_args = @_ - 1;
+        croak qq{make_info_node_chain(): expecting two arguments, not $num_args\n};
+    }
+
+    my $chain = $tail_node;
+    foreach my $cluster_group (@{$current_cg}) {
+        foreach my $cluster_element (@{$cluster_group}) {
+            $chain = ASO::DecisionTree::Node->new(
+                column       => $cluster_element->{column},
+                info_branch  => $chain,
+                info_node    => 1,
+                label        => $cluster_element->{restriction_name}
+            );
+        }
+    }
+
+    return $chain;
 }
 
 =head2 my (\@true, \@false) = $adt->divideset(\@rows, $column)
