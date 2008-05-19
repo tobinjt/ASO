@@ -309,9 +309,13 @@ L<http://search.cpan.org/dist/ASO-DecisionTree-Node>
 
 =back
 
+=head1 DEPENDENCIES
 
-=head1 ACKNOWLEDGEMENTS
+Standard modules bundled with Perl: L<Carp>, L<Data::Dumper>.
 
+Modules bundled with ASO: none.
+
+Other modules: none.
 
 =head1 COPYRIGHT & LICENSE
 
@@ -319,7 +323,6 @@ Copyright 2008 John Tobin, all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
-
 
 =cut
 

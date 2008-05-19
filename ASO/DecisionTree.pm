@@ -138,7 +138,7 @@ sub build_tree {
 Recursively build a Decision Tree from @rows, using columns taken from
 @current_cg.  The format of @rows, @current_cg is described in
 L</DATA STRUCTURES>.  Returns a tree of L<ASO::DecisionTree::Node> objects.
-$score_function and $threshold are described in L</build_tree>.  This is the
+$score_function and $threshold are described in build_tree().  This is the
 function which does the real work - $adt->build_tree() is a thin wrapper around
 $adt->build_tree_r().
 
