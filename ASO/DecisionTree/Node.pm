@@ -183,6 +183,18 @@ sub new {
 }
 
 
+=head2 my $label = $node->label()
+
+Returns the node's label.
+
+=cut
+
+sub label {
+    my ($node) = @_;
+
+    return $node->{label};
+}
+
 =head2 $node->leaf_branch()
 
 Returns the leaf branch, or C<undef> if that branch doesn't exist.  You can use
