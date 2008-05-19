@@ -6,11 +6,10 @@ use warnings;
 use strict;
 use Carp;
 use Data::Dumper;
-$Data::Dumper::Sortkeys = 1;
 use Storable qw(dclone);
+use List::Util qw(sum);
 use lib qw(..);
 use ASO::DB;
-use List::Util qw(sum);
 
 =head1 NAME
 
@@ -441,8 +440,9 @@ sub load_data {
 
     # Make Data::Dumper do as little work as possible when detecting duplicate
     # rows.
-    local $Data::Dumper::Indent = 0;
-    local $Data::Dumper::Terse  = 1;
+    local $Data::Dumper::Indent   = 0;
+    local $Data::Dumper::Terse    = 1;
+    local $Data::Dumper::Sortkeys = 1;
     # Instead of storing every row, including duplicates, store one of each row,
     # plus the number of times it occurs.  We'd save memory by doing this in the
     # while loop above, but the code got too convoluted, so we do it this way
@@ -834,6 +834,14 @@ L<http://search.cpan.org/dist/ASO-DecisionTree>
 
 =back
 
+=head1 DEPENDENCIES
+
+Standard modules shipped with Perl: L<Carp>, L<Data::Dumper>, L<List::Util>,
+L<Storable>.
+
+Modules packaged with ASO::Parser: L<ASO::DB>.
+
+External modules: none.
 
 =head1 COPYRIGHT & LICENSE
 
