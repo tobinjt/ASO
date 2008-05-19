@@ -9,8 +9,7 @@ ASO::DB - Load required database classes.
 
 =head1 VERSION
 
-This documentation refers to ASO::DB version $Id$
-
+Version $Id$
 
 =head1 SYNOPSIS
 

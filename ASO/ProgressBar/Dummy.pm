@@ -9,7 +9,7 @@ API, but doesn't display a progress bar.
 
 =head1 VERSION
 
-This documentation refers to ASO::ProgressBar::Dummy version $Id$
+Version $Id$
 
 =head1 SYNOPSIS
 

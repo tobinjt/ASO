@@ -11,7 +11,7 @@ data gathered.
 
 =head1 VERSION
 
-This documentation refers to ASO::Parser version $Id$
+Version $Id$
 
 =head1 SYNOPSIS
 

@@ -8,7 +8,7 @@ ASO::DB::Base - Base class for ORM modules.
 
 =head1 VERSION
 
-This documentation refers to ASO::DB::Base version $Id$
+Version $Id$
 
 =head1 SYNOPSIS
 

@@ -8,7 +8,7 @@ ASO::DB::ClusterGroup - ORM module representing the cluster_groups table.
 
 =head1 VERSION
 
-This documentation refers to ASO::DB::ClusterGroup version $Id$
+Version $Id$
 
 =head1 SYNOPSIS
 

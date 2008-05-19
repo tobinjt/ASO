@@ -9,7 +9,7 @@ nothing if it isn't.
 
 =head1 VERSION
 
-This documentation refers to ASO::ProgressBar version $Id$
+Version $Id$
 
 =head1 SYNOPSIS
 

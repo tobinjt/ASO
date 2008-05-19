@@ -13,7 +13,7 @@ ASO::DecisionTree::Output::Image - Output an L<ASO::DecisionTree> as an image.
 
 =head1 VERSION
 
-This documentation refers to ASO::DB version $Id$
+Version $Id$
 
 =cut
 

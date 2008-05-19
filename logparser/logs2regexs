@@ -328,7 +328,7 @@ logs2regexs - create new regexes from unparsed Postfix log lines
 
 =head1 VERSION
 
-This documentation refers to logs2regexs version $Id$
+Version $Id$
 
 =head1 SYNOPSIS
 

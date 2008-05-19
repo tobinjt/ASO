@@ -246,7 +246,7 @@ logparser - parse Postfix log files
 
 =head1 VERSION
 
-This documentation refers to logparser version $Id$
+Version $Id$
 
 =head1 SYNOPSIS
 

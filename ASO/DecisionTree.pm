@@ -18,7 +18,7 @@ ASO::DecisionTree - A module implementing the Decision Tree algorithm.
 
 =head1 VERSION
 
-This documentation refers to ASO::DB version $Id$
+Version $Id$
 
 =cut
 

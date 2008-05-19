@@ -8,7 +8,7 @@ ASO::DB::Rule - ORM module representing the rules table.
 
 =head1 VERSION
 
-This documentation refers to ASO::DB::Rule version $Id$
+Version $Id$
 
 =head1 SYNOPSIS
 

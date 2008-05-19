@@ -8,7 +8,7 @@ ASO::DB::Result - ORM module representing the connections table.
 
 =head1 VERSION
 
-This documentation refers to ASO::DB::Result version $Id$
+Version $Id$
 
 =head1 SYNOPSIS
 
