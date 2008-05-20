@@ -719,6 +719,24 @@ sub subsequent_rejections {
     return $score;
 }
 
+=head2 $adt->random_score(\@rows, $column, $current_cg)
+
+Returns a random score between 0 and 1, for comparison purposes: other scoring
+functions should result in better trees.
+
+=cut
+
+sub random_score {
+    my ($self, $rows, $column, $current_cg) = @_;
+
+    if (@_ != 4) {
+        my $num_args = @_ - 1;
+        croak qq{random_score(): expecting three arguments, not $num_args\n};
+    }
+
+    return rand 1;
+}
+
 =head1 DATA STRUCTURES
 
 The data structures used throughout this module and passed as arguments to
