@@ -7,6 +7,7 @@ use strict;
 use Carp;
 use Data::Dumper;
 use List::Util qw(sum);
+use IO::File;
 
 =head1 NAME
 
@@ -99,9 +100,7 @@ will be included.
 sub optimal_order {
     my ($self, $tree, %options) = @_;
 
-    my %defaults = (
-        ignore_info_nodes   => 0,
-    );
+    my %defaults = $self->get_oo_options();
 
     %options = $self->validate_options(\%defaults, \%options);
     # As far as I can see the optimal order is always going to be the rightmost
@@ -150,22 +149,66 @@ sub optimal_order {
 
 =head2 $object->print_optimal_order($tree, %options)
 
-Prints the results of optimal_order() to the default print filehandle (C<STDOUT>
-unless you've changed it with C<select>).  Each hash returned will be formatted
-as:
+Prints the results of optimal_order().  Each hash returned will be formatted as:
 
     $restriction_name, # $percentage%, $percentage_so_far
+
+Takes the same arguments as optimal_order(), plus:
+
+=over 4
+
+=item filehandle
+
+A filehandle to print to; takes precedence over C<filename>.
+
+=item filename
+
+A filename to open and print to; superseded by C<filehandle>.
+
+=back
+
+If neither C<filehandle> nor C<filename> are specified the default filehandle
+will be used (C<STDOUT> unless changed by C<select>).
 
 =cut
 
 sub print_optimal_order {
     my ($self, $tree, %options) = @_;
 
-    my @list = $self->optimal_order($tree, %options);
+    my %oo_options = $self->get_oo_options();
+    my %defaults   = (
+        %oo_options,
+        filename            => undef,
+        filehandle          => undef,
+    );
+
+    %options = $self->validate_options(\%defaults, \%options);
+    %oo_options = map { $_ => $options{$_} } keys %oo_options;
+
+    my @list = $self->optimal_order($tree, %oo_options);
+
+    if (not defined $options{filehandle}) {
+        if (defined $options{filename}) {
+            # Add a > if necessary, but allow the caller to specify >> or | if
+            # they desire.
+            my $mode = $options{filename} =~ m/^\s*[>|]/ ? q{} : q{> };
+            $options{filehandle} = IO::File->new($mode . $options{filename})
+                or croak qq{Failed to open $options{filename}: $!\n};
+        } else {
+            # This should reopen the current default filehandle.
+            # This should not be so hairy; filehandles should have been first
+            # class types from the start.
+            my $fileno = fileno select;
+            $options{filehandle} = IO::File->new(qq{>&$fileno})
+                or croak qq{Reopening file descriptor $fileno failed: $!\n};
+        }
+    }
+
     my $percentage_so_far = 0;
     foreach my $result (@list) {
         $percentage_so_far += $result->{percentage};
-        printf qq{%s, # %.4f%%, %.4f\n},    $result->{restriction_name},
+        printf { $options{filehandle} } qq{%s, # %.4f%%, %.4f\n},
+                                            $result->{restriction_name},
                                             $result->{percentage},
                                             $percentage_so_far;
     }
@@ -227,6 +270,28 @@ sub validate_options {
     return %options;
 }
 
+=head2 $object->get_oo_options()
+
+Returns the options accepted by optimal_order(), so they don't have to be
+repeated all over the place.
+
+=cut
+
+sub get_oo_options {
+    my ($self) = @_;
+
+    if (@_ != 1) {
+        my $num_args = @_ - 1;
+        croak qq{get_oo_options(): expecting zero arguments, not $num_args\n};
+    }
+
+    my %defaults = (
+        ignore_info_nodes   => 0,
+    );
+
+    return %defaults;
+}
+
 =head1 AUTHOR
 
 John Tobin, C<< <tobinjt at cs.tcd.ie> >>
@@ -267,7 +332,8 @@ L<http://search.cpan.org/dist/ASO-DecisionTree-Output-OptimalOrder>
 
 =head1 DEPENDENCIES
 
-Standard modules bundled with Perl: L<Carp>, L<Data::Dumper>, L<List::Util>.
+Standard modules bundled with Perl: L<Carp>, L<Data::Dumper>, L<List::Util>,
+L<IO::File>.
 
 Modules bundled with ASO: none.
 
