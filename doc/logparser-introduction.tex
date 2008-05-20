@@ -8,8 +8,8 @@ whether it was to debug a problem, explain to a user why their mail is
 being rejected, or check whether new anti-spam measures are working.  The
 more adventurous will have generated statistics to show how many hits each
 of their anti-spam measures has gotten in the last week, and possibly even
-generated some graphs to clearly illustrate the point to management or
-users.\footnote{This was the author's first real foray into processing
+generated some graphs to clearly illustrate these statistics to management
+or users.\footnote{This was the author's first real foray into processing
 Postfix log files.}  Very few will have performed in-depth parsing and
 analysis of their log files, where the parsing must correlate the log lines
 per-connection or per-queueid rather than processing log lines
@@ -25,10 +25,10 @@ appendix~\ref{Glossary}.} returns a different explanatory message; policy
 servers may log different messages depending on the characteristics of the
 connection; there are many ways in which the log lines may differ between
 servers, even within the same organisation --- servers may be configured
-differently, or running different version of Postfix.  This paper documents
-the difficult process of parsing Postfix log files, presenting \PLP{}, a
-program which parses log files and places the resulting data into a
-database for later use.  The gathered data can then be used to optimise
+differently, or running different versions of Postfix.  This paper
+documents the difficult process of parsing Postfix log files, presenting
+\PLP{}, a program which parses log files and places the resulting data into
+a database for later use.  The gathered data can then be used to optimise
 current anti-spam measures, provide a baseline to test new anti-spam
 measures against, or to produce statistics showing how effective those
 measures are.  There are numerous other uses for such data: improving
@@ -44,9 +44,9 @@ develop a multitude of uses far beyond those conceived of by the author.
 Section~\ref{background} provides background information useful in
 understanding the paper, parser and algorithm.  It introduces the idea of
 using a database schema as an \API{}, providing an interface to the data
-gathered that is language-neutral.  The unusual separation of rules,
-actions and algorithm is discussed, giving the reasons that approach was
-taken when designing the parser.
+gathered that is language-neutral.  The novel separation of rules, actions
+and framework is discussed, giving the reasons that approach was taken when
+designing the parser.
 
 This algorithm requires a database for storing both the rules used when
 parsing and the results gleaned from parsing.  The database schema used is
@@ -57,12 +57,13 @@ table that stores the rules.
 Section~\ref{rules} discusses the parsing rules in detail, explaining the
 purpose and usage of each field in a rule, referring to an example rule and
 sample data it matches successfully against.  The pros and cons of
-overlapping rules are discussed, including techniques for detecting
+overlapping rules are considered, including techniques for detecting
 unintentional overlaps.  Rule efficiency concerns are discussed, in
-particular the optimisations used by the algorithm, with reference to the
-graphs in appendix~\refwithpage{graphs}.  The final section is a
-description of using the tools provided with the parser to generate new
-rules (specifically the \regex{} in each rule) from unparsed log lines.
+particular the optimisations used by the algorithm, utilising the graphs in
+appendix~\refwithpage{graphs} for illustrative purposes.  The section
+concludes with a description of using the tools provided with the parser to
+generate new rules (specifically the \regex{} in each rule) from unparsed
+log lines.
 
 Section~\ref{parsing-algorithm} contains the core of the paper, describing
 a naive parsing algorithm and the complications initially encountered which
@@ -72,7 +73,7 @@ explanation of the different stages of the initial algorithm.  The
 framework which actions and rules fit into is documented, then the actions
 taken during execution of the algorithm are described, followed by the
 process of adding a new action.  The section concludes with an in-depth
-description of the further complications discovered and their solutions
+description of the further complications discovered, and their solutions
 which complete the parser.
 
 Section~\ref{parsing coverage} analyses the coverage the parser achieves
@@ -80,18 +81,18 @@ over a set of \numberOFlogFILES{} log files taken from a mail server
 handling mail for over 700 users, averaging 8500 mails per day
 (graph~\refwithpage{Mails received per day}).  Coverage is described both
 in terms of the fraction of log lines parsed and the fraction of mails and
-connections successfully reconstructed by the parsing algorithm, including
-dealing with false negatives and a discussion of the difficulties in
-identifying false positives.  A random sampling of log lines was parsed,
-and the correctness of the results manually verified, as part of
-determining the coverage of the parser.
+connections successfully reconstructed by the parsing algorithm; dealing
+with false negatives and a discussion of the difficulties in identifying
+false positives is also included.  As part of determining the coverage of
+the parser a random sampling of log lines was parsed, and the correctness
+of the results manually verified.
 
 Section~\ref{limitations-improvements} lists the limitations of the
 algorithm, then suggests some ways of dealing with them, with the goal of
 improving parsing and reproduction of the journey a mail takes through
 Postfix.
 
-Section~\ref{conclusion} contains the paper's conclusion, describing the
+Section~\ref{conclusion} contains the document's conclusion, describing the
 results of the research, design and implementation of the parser.
 
 Appendix~\ref{other-parsers} discusses other parsers and why they were
@@ -99,15 +100,15 @@ deemed unsuitable for the task, including why they could not be improved or
 expanded upon.
 
 The bibliography contains references to the resources used in developing
-the algorithm, writing the program, and preparing this paper.  Also listed
-are some additional resources expected to be helpful in understanding
-\SMTP{}, Postfix, anti-spam techniques, or the paper.
+the algorithm, writing the program, and preparing this document.  Also
+listed are some additional resources expected to be helpful in
+understanding \SMTP{}, Postfix, anti-spam techniques, or the document.
 
 Appendix~\ref{graphs} contains graphs illustrating the topics previously
 discussed in \sectionref{rule efficiency} (rule efficiency), and explains
 the irregularities observed in these graphs.
 
-Appendix~\ref{Glossary} provides a glossary of terms used in the paper.
+Appendix~\ref{Glossary} provides a glossary of terms used in the document.
 
-Appendix~\ref{Acronyms} provides a list of acronyms used in the paper.
+Appendix~\ref{Acronyms} provides a list of acronyms used in the document.
 
