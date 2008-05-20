@@ -221,8 +221,8 @@ stats-log22-distribution-by-rule.txt:
 stats-log22-rule-count-by-program.txt:
 	sqlite3 -separator ' ' ../sql/db.sq3 "select sum(hits), count(*), program from rules group by program;" | awk '$$1 > 0 { print }' | sed -e 's,postfix/,,' | nl > "$@"
 
-stats-hits.txt:
-	sqlite3 -separator ' ' ../sql/db.sq3 "select hits_total from rules order by hits_total;" > "$@.tmp"
+stats-hits.txt: db.full-run.sq3
+	sqlite3 -separator ' ' "$<" "select hits_total from rules order by hits_total;" > "$@.tmp"
 	nl "$@.tmp" > "$@"
 	rm "$@.tmp"
 
