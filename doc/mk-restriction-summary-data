@@ -3,7 +3,7 @@
 set -e
 set -u
 
-sqlite3 ../sql/db.sq3 <<'SQL'
+sqlite3 db.full-run.sq3 <<'SQL'
 select "Total rejections",                  sum(hits_total) from rules where postfix_action = "REJECTED";
 select "Unknown recipients",                hits_total      from rules where name = "Unknown recipient";
 select "Unknown sender",                    hits_total      from rules where name = "Unknown sender";

@@ -302,7 +302,7 @@ build/stats-normal-shuffle-reverse-include.tex: \
 		build/stats-normal-reverse-stddev.txt build/stats-normal-reverse-stddev-22_62-68.txt build/stats-normal-reverse-stddev-other.txt
 	perl mk-stats-cached-discarded-include $^ > "$@" || (rm -f "$@"; false)
 
-build/restriction-table-include.tex:
+build/restriction-table-include.tex: db.full-run.sq3
 	perl mk-restriction-summary-table > "$@" || (rm -f "$@"; false)
 
 # Number of mails received per day
