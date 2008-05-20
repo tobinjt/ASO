@@ -235,11 +235,13 @@ connect to the database.  Stores (\@rows, \%index_to_rule_id,
 
 An example will hopefully make things clearer:
 
-    my $dbi_dsn = 'whatever your database requires';
-    my ($username, $password) = qw(user pass);
-
-    my ($rows, $index_to_rule_id, $rule_id_to_index)
-        = ASO::DecisionTree->load_data($dbi_dsn, $username, $password);
+    my ($dbi_dsn, $username, $password) = qw(...);
+    my $adt = ASO::DecisionTree->new(
+        dbi_dsn     => $dbi_dsn,
+        username    => $username,
+        password    => $password,
+    );
+    my ($rows, $index_to_rule_id, $rule_id_to_index) = $adt->load_data();
     my $interesting_rule_id = 42;
     if (not exists $rule_id_to_index->{$interesting_rule_id}) {
         print "Rule $interesting_rule_id not in results\n";
