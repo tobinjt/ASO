@@ -6,9 +6,8 @@ set output "../build/plot-hits.pdf"
 
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
-# Let the X axis continue to the next round number for this graph (140; the 
-# last point is 139).
-set autoscale
+# Let the X axis continue to the next round number for this graph
+#set autoscale
 set yrange [0:9e6]
 set title "Number of hits"
 
