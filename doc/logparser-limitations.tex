@@ -39,15 +39,15 @@ always room for improvement.
     \item The program will not detect parsing the same log file twice,
         resulting in the database containing duplicate entries.
 
-    \item The parser does not distinguish between logs produced by
+    \item The parser does not distinguish between log files produced by
         different sources when parsing; all results will be saved to the
-        same database.  This may be viewed as an advantage, as logs from
-        different sources can be combined in the same database, or it may
-        be viewed as a limitation as there is no facility to distinguish
-        between logs from different sources in the same database.  If the
-        results of parsing logs from different sources must remain
-        separate, the parser can easily be instructed to use a different
-        database to store the results in.
+        same database.  This may be viewed as an advantage, as log files
+        from different sources can be combined in the same database, or it
+        may be viewed as a limitation as there is no facility to
+        distinguish between log files from different sources in the same
+        database.  If the results of parsing log files from different
+        sources must remain separate, the parser can easily be instructed
+        to use a different database to store the results in.
 
     \item The solution to complication \sectionref{Mails deleted during
         delivery} involves discarding data.

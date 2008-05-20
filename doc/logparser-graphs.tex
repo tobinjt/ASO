@@ -144,7 +144,7 @@ loop not caught by Postfix as described below.
 The sequence described above occurs extremely rapidly because Postfix does
 not have to deliver the mail to an external system, so mails are delivered,
 bounced and generated as fast as the disks can keep up, resulting in a huge
-volume of logs.
+volume of log lines.
 
 The vast majority of log lines when a mail loop occurs are from Postfix
 components which have a small number of rules associated with them, whereas
@@ -167,10 +167,10 @@ reversed over normal}.  The number of rules which need to be consulted when
 the ordering is shuffled varies between the optimum and nadir, and the
 performance varies proportionally.
 
-The difference between logs with a mail loop and logs without can be seen
-in table~\refwithpage{Execution time increase for different rule orderings}
-showing the increases for the different rule orderings and combinations of
-log files:
+The difference between log files with a mail loop and log files without can
+be seen in table~\refwithpage{Execution time increase for different rule
+orderings} showing the increases for the different rule orderings and
+combinations of log files:
 
 
 

@@ -2,14 +2,14 @@
 
 \label{conclusion}
 
-Parsing Postfix logs appears at first sight to be an almost trivial task,
-especially if one has previous experience in parsing logs, but it turns out
-to be a much more taxing project than initially expected.  The variety and
-breadth of log lines produced by Postfix is quite surprising, because a
-quick survey of sample log files gives the impression that the number of
-distinct log lines is quite small; this impression is due to the uneven
-distribution exhibited by logs produced in normal operation (see
-graph~\refwithpage{rule hits graph} for a vivid illustration of this).  
+Parsing Postfix log files appears at first sight to be an almost trivial
+task, especially if one has previous experience in parsing log files, but
+it turns out to be a much more taxing project than initially expected.  The
+variety and breadth of log lines produced by Postfix is quite surprising,
+because a quick survey of sample log files gives the impression that the
+number of distinct log lines is quite small; this impression is due to the
+uneven distribution exhibited by log lines produced in normal operation
+(see graph~\refwithpage{rule hits graph} for a vivid illustration of this).
 
 
 Given the diverse nature of the log lines and the ease with which
@@ -71,19 +71,19 @@ have been parsed successfully.  Adding new rules to deal with numerous,
 infrequently occurring log lines is a simple task, albeit tiresome (though
 alleviated by the tool described in \sectionref{adding new actions}),
 whereas dealing with mails where information appears to be missing is much
-more grueling.  Trawling through the logs, looking for something out of the
-ordinary, possibly hundreds or even thousands of lines away from the last
-mention of the queueid in question, is extremely time consuming and error
-prone.  In some cases the task is not to spot the line which is unusual,
-but to spot that a line normally present is missing, i.e.\ to realise that
-one line amongst hundreds is absent.  In all cases the evidence must be
-used to construct a hypothesis to explain the irregularities, and that
-hypothesis must then be tested in the parser; if successful, the parser
-must be modified to deal with the irregularities, without adversely
-affecting the existing functionality.  The complications described in
-\sectionref{additional complications} were solved in the order they are
-described in, and that order closely resembles the frequency with which
-they occur; the most frequently occurring complications dominate the
+more grueling.  Trawling through the log files, looking for something out
+of the ordinary, possibly hundreds or even thousands of lines away from the
+last mention of the queueid in question, is extremely time consuming and
+error prone.  In some cases the task is not to spot the line which is
+unusual, but to spot that a line normally present is missing, i.e.\ to
+realise that one line amongst hundreds is absent.  In all cases the
+evidence must be used to construct a hypothesis to explain the
+irregularities, and that hypothesis must then be tested in the parser; if
+successful, the parser must be modified to deal with the irregularities,
+without adversely affecting the existing functionality.  The complications
+described in \sectionref{additional complications} were solved in the order
+they are described in, and that order closely resembles the frequency with
+which they occur; the most frequently occurring complications dominate the
 warning messages produced, and so naturally they are the first
 complications to be dealt with.
 

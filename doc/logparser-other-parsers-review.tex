@@ -25,11 +25,11 @@ program with \parsername{}.  There are some important differences between
 
     \item \parsername{} does not provide any reporting based on the data it
         gathers.  This is by design: the parser is responsible for parsing
-        logs and extracting data --- further processing of that data is a
-        separate concern, deferred to another program.  Using an \SQL{}
-        database simplifies the process of generating such reports
-        (discussed in \sectionref{database as API}); some
-        simple examples are given in \sectionref{motivation}.
+        log files and extracting data --- further processing of that data
+        is a separate concern, deferred to another program.  Using an
+        \SQL{} database simplifies the process of generating such reports
+        (discussed in \sectionref{database as API}); some simple examples
+        are given in \sectionref{motivation}.
 
     \item Most of the parsers silently ignore log lines they cannot handle,
         whereas \parsername{} complains loudly about every single line it
@@ -43,7 +43,8 @@ program with \parsername{}.  There are some important differences between
         support compressed files, but Sawmill exhibits a dramatic slow down
         when thus configured.  Although this is a minor difference, support
         for reading compressed log files is quite helpful, as it
-        dramatically reduces the disk space required to store old logs.
+        dramatically reduces the disk space required to store old log
+        files.
 
 \end{enumerate}
 
@@ -66,10 +67,10 @@ parsing and reporting are difficult to extend as it is a specialised tool,
 unlike the easily extensible design of \parsername{}.  It does not attempt
 to correlate log lines by queueid or \pid{}, nor does it need to deal with
 the complications encountered during this project.  Pflogsumm produces a
-useful report, and successfully dealt with the \numberOFlogFILES{} logs
-files tested with,\footnote{The results it reported were not verified, but
-it did not report any errors, and has a very good reputation amongst
-Postfix users.} but is not a suitable base for this project.
+useful report, and successfully dealt with the \numberOFlogFILES{} log
+files files tested with,\footnote{The results it reported were not
+verified, but it did not report any errors, and has a very good reputation
+amongst Postfix users.} but is not a suitable base for this project.
 
 Pflogsumm's report includes the following:
 
@@ -182,29 +183,29 @@ data in real time using an AJAX web interface. You can also share knowledge
 and Splunk solutions with other members of the Splunk community via
 SplunkBase.\/}
 
-Splunk aims to index all an organisation's logs, providing a centralised
-view capable of searching and correlating diverse log sources.  The web
-interface supports complicated searches, providing statistics and graphs in
-real time, a facility not provided by \parsername{} (report generation has
-been deferred to a subsequent program).  Saved searches\footnote{The author
-was unable to save searches, though that may have been due to limitations
-in the free version.} can be run periodically and the results emailed to a
-recipient or sent to a shell script, which presumably can publish the
-results as required (though possibly without the graphs and detailed
-statistics); \parsername{} provides the database and leaves it to the user
-to utilise it in any way, whenever they want, with no restrictions on usage
-of the data.  The interface is optimised for interactive rather than
-automated queries and it does not appear to be possible to write
-independent tools to utilise the Splunk database; there are additional
-reports available on \url{http://www.splunkbase.com/}, but the author was
-unable to find any: every category was empty, even those which the
-interface claimed had reports available.  Many types of reports are bundled
-with the software, though most are variations of a bar or pie chart, with
-the exception of bubble and heatmap graphs.  It is very easy to drill down
-through the graphs to extract a portion of the data (e.g.\ select the hour
-with the largest number of events, then select a particular host, and
-finally a specific address), though it is not possible to search on partial
-words.
+Splunk aims to index all an organisation's log files, providing a
+centralised view capable of searching and correlating diverse log sources.
+The web interface supports complicated searches, providing statistics and
+graphs in real time, a facility not provided by \parsername{} (report
+generation has been deferred to a subsequent program).  Saved
+searches\footnote{The author was unable to save searches, though that may
+have been due to limitations in the free version.} can be run periodically
+and the results emailed to a recipient or sent to a shell script, which
+presumably can publish the results as required (though possibly without the
+graphs and detailed statistics); \parsername{} provides the database and
+leaves it to the user to utilise it in any way, whenever they want, with no
+restrictions on usage of the data.  The interface is optimised for
+interactive rather than automated queries and it does not appear to be
+possible to write independent tools to utilise the Splunk database; there
+are additional reports available on \url{http://www.splunkbase.com/}, but
+the author was unable to find any: every category was empty, even those
+which the interface claimed had reports available.  Many types of reports
+are bundled with the software, though most are variations of a bar or pie
+chart, with the exception of bubble and heatmap graphs.  It is very easy to
+drill down through the graphs to extract a portion of the data (e.g.\
+select the hour with the largest number of events, then select a particular
+host, and finally a specific address), though it is not possible to search
+on partial words.
 
 The web interface is quite attractive and easy to use when searching, but
 as an administrator it seems unnecessarily difficult to perform simple
@@ -246,15 +247,15 @@ indexing of up to 5GB of data per day.  The cheapest licensed version costs
 \$5000 (plus \$1000 support), and still limits the volume of data indexed
 per day to 500MB.
 
-In the specific case of parsing Postfix logs, Splunk extracts some standard
-fields: to and from addresses, HELO hostname, date, host the logs were
-collected from, and protocol.  It parses the standard syslog fields at the
-beginning of the line, and extracts any \texttt{key=<value>} pairs
-occurring after the standard syslog prologue; these pairs are the fields
-listed above.  Searches can be based on the extracted fields, and all the
-text in the line is also available for searching.  \parsername{} extracts
-noticeably more data, though it does not make the full text of the line
-available, and the full power of \SQL{} is available when searching,
+In the specific case of parsing Postfix log files, Splunk extracts some
+standard fields: to and from addresses, HELO hostname, date, host the log
+files were collected from, and protocol.  It parses the standard syslog
+fields at the beginning of the line, and extracts any \texttt{key=<value>}
+pairs occurring after the standard syslog prologue; these pairs are the
+fields listed above.  Searches can be based on the extracted fields, and
+all the text in the line is also available for searching.  \parsername{}
+extracts noticeably more data, though it does not make the full text of the
+line available, and the full power of \SQL{} is available when searching,
 allowing the user to search on arbitrarily complicated conditions.
 
 Splunk is a generic tool, so it lacks any Postfix specific support over and
@@ -317,16 +318,16 @@ file is limited in comparison to \parsername{}: \newline \tab{} time2,
 email, email\_r, host, host\_r, method, url, code and bytesd.\newline There
 does not seem to be an explanation of any of those fields in the
 documentation (\parsername{} provides copious documentation).  AWStats has
-no special purpose code to deal with the intricacies of Postfix logs, in
-fact it operates by coercing Postfix logs into Apache\footnote{The Apache
-web server is the most popular HTTP server in use for the past 10 years;
-more information is available at \url{http://httpd.apache.org/}.} format
-log files, for analysis by AWStats' HTTP log file parser.  The converting
-parser only deals with a small portion of the log lines generated by
-Postfix, silently skipping those it cannot deal with, and does not
-distinguish between different types of rejection; there is no easy way to
-extend it to handle new log lines.  Although though it does correlate log
-lines by queueid, it does not deal with any of the other complications
+no special purpose code to deal with the intricacies of Postfix log files,
+in fact it operates by coercing Postfix log files into Apache\footnote{The
+Apache web server is the most popular HTTP server in use for the past 10
+years; more information is available at \url{http://httpd.apache.org/}.}
+format log files, for analysis by AWStats' HTTP log file parser.  The
+converting parser only deals with a small portion of the log lines
+generated by Postfix, silently skipping those it cannot deal with, and does
+not distinguish between different types of rejection; there is no easy way
+to extend it to handle new log lines.  Although though it does correlate
+log lines by queueid, it does not deal with any of the other complications
 described in this document.  AWStats supports saving data but the format of
 the saved data is not documented (as far as the author could tell).  It
 also supports reading compressed log files, but that functionality was not
@@ -374,9 +375,9 @@ designed to provide real time alerts when dictionary attacks, mail loops or
 similar problems occur. It doesn't attempt to extract or save data,
 correlate log lines, or any of the more advanced tasks described in this
 document, because it is not designed to do so.  The user must construct the
-\regexes{} to match significant input lines before it will parse any logs.
-This program was not reviewed in further detail because its aims are so far
-removed from the aims of this project.
+\regexes{} to match significant input lines before it will parse any log
+files.  This program was not reviewed in further detail because its aims
+are so far removed from the aims of this project.
 
 \url{http://home.uninet.ee/~ragnar/throughput_monitor/} \newline (Last
 checked 2008/05/01.)
@@ -474,10 +475,10 @@ services and features. Lire is a total solution for your log analysis
 needs.\/}
 
 Lire is a general purpose log parser supporting many different types of log
-file.  Its Postfix parser extracts the following data from Postfix logs:
-\textit{The email servers' reports will show you the number of deliveries
-and the volume of email delivered by day, the domains from which you
-receive or send the most emails, the relays most used, etc.\/}; notably
+file.  Its Postfix parser extracts the following data from Postfix log
+files: \textit{The email servers' reports will show you the number of
+deliveries and the volume of email delivered by day, the domains from which
+you receive or send the most emails, the relays most used, etc.\/}; notably
 rejections are not mentioned or dealt with, and unlike \parsername{} there
 is no facility to extend the parser.  It supports multiple output formats
 for generated reports (text, \HTML{}, \PDF{} and Excel 95) but the reports
@@ -566,9 +567,9 @@ reports Logrep can generate (available in \HTML{} only), nor to examine the
 (undocumented) format in which it can save extracted data for subsequent
 reuse.
 
-Logrep extracts far less data from Postfix logs than \parsername{},
+Logrep extracts far less data from Postfix log files than \parsername{},
 completely ignores rejections, is effectively undocumented, doesn't deal
-with the more complicated aspects of Postfix logs, and at the time of
+with the more complicated aspects of Postfix log files, and at the time of
 writing doesn't work properly.
 
 \url{http://www.itefix.no/phpws/index.php} \newline (Last checked
@@ -609,7 +610,8 @@ added.
 \ddag YAALA only stores the data required to produce the latest report;
 other data will be discarded.
 
-\dag\dag\parsername{} is the only parser with documentation for its data store.
+\dag\dag\parsername{} is the only parser with documentation for its data
+store.
 
 \caption{Summary of parsers' features}
 \label{Summary of parsers' features}
@@ -622,13 +624,13 @@ overall record of the journey each mail traverses through Postfix.  None of
 the reviewed parsers collect the breadth of information gathered by
 \parsername{}, nor make it as easy to extend the parser to handle new log
 lines.  Most other parsers immediately generate a report and discard the
-data extracted from the logs; those which don't discard the data retain it
-in a format inaccessible to other tools.  Nearly all of the parsers
-reviewed can produce a report of greater or lesser detail and complexity, a
-facility not offered by \parsername{}; reporting is deferred to a
-subsequent application.  The quality of the documentation offered by the
-subset of parsers which provide some varies from unusable to good; none of
-the parsers provide any documentation on the format of their data stores
+data extracted from the log files; those which don't discard the data
+retain it in a format inaccessible to other tools.  Nearly all of the
+parsers reviewed can produce a report of greater or lesser detail and
+complexity, a facility not offered by \parsername{}; reporting is deferred
+to a subsequent application.  The quality of the documentation offered by
+the subset of parsers which provide some varies from unusable to good; none
+of the parsers provide any documentation on the format of their data stores
 (if any).  Less than half of the parsers were capable of parsing the
 \numberOFlogFILES{} test log files, and improving or extending the parsers
 would have been quite a difficult task for any of the parsers.  Table
@@ -637,4 +639,4 @@ parsers' features.
 
 The overriding difference between \parsername{} and the other parsers
 reviewed herein is that none of them aim to achieve the high level of
-understanding of Postfix logs achieved by \parsername{}.
+understanding of Postfix log files achieved by \parsername{}.

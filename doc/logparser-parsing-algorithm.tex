@@ -5,11 +5,12 @@
 Where the rules are quite simple and each rule is completely independent of
 its fellows, the algorithm is significantly more complicated and highly
 internally interdependent.  The algorithm deals with all the complications
-of parsing, the eccentricities and oddities of Postfix logs, presenting the
-resulting data in a normalised, easy to use representation.  The
-algorithm's task is to follow the journey each mail takes through Postfix,
-combining the data extracted by rules into a coherent whole, saving it in a
-useful and consistent form, and performing housekeeping duties.
+of parsing, the eccentricities and oddities of Postfix log files,
+presenting the resulting data in a normalised, easy to use representation.
+The algorithm's task is to follow the journey each mail takes through
+Postfix, combining the data extracted by rules into a coherent whole,
+saving it in a useful and consistent form, and performing housekeeping
+duties.
 
 Please refer to \sectionref{parser design} for a discussion of why the
 rules, actions and framework have been separated in the parser's design.
@@ -145,8 +146,8 @@ delivered to one or more remote addresses due to aliases.  When this occurs
 a child mail will be injected into the Postfix queue, but without the
 explicit logging \daemon{smtpd} or \daemon{postdrop} injected mails have.
 Thus the source is not immediately discernible from the log line in which
-the mail first appears; from a strictly chronological reading of the logs
-it usually appears as if the child mail has appeared from thin air.
+the mail first appears; from a strictly chronological reading of the log
+files it usually appears as if the child mail has appeared from thin air.
 Subsequently the parent mail will log the creation of the child mail:
 
 \texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline
@@ -302,7 +303,7 @@ mail}.
 
 \label{tracking re-injected mail}
 
-The crux of the problem is that re-injected mails appear in the logs
+The crux of the problem is that re-injected mails appear in the log files
 without explicit logging indicating their source.  There are two implicit
 indications:
 
@@ -673,10 +674,11 @@ from those components.  Adding new rules to parse those component's log
 lines is a simple process, though if their behaviour differs significantly
 from the \daemon{smtp} or \daemon{local} delivery agents new actions may be
 required.  The mail server in question is a production mail server handling
-mail for a university department; the benefit is that the logs used exhibit
-the idiosyncrasies and peculiarities a mail server in the wild must deal
-with, but the downside is that significantly altering the configuration
-just to log messages from a different Postfix component is not an option.}
+mail for a university department; the benefit is that the log files used
+exhibit the idiosyncrasies and peculiarities a mail server in the wild must
+deal with, but the downside is that significantly altering the
+configuration just to log messages from a different Postfix component is
+not an option.}
 
 
 \subsection{Additional complications}
@@ -1011,8 +1013,8 @@ This complication is dealt with during the PICKUP action.
 \label{smtpd stops logging}
 
 Occasionally a \daemon{smtpd} will just stop logging, without an
-immediately obvious reason.  After poring over logs for some time there are
-several reasons for this infrequent occurrence:
+immediately obvious reason.  After poring over log files for some time
+there are several reasons for this infrequent occurrence:
 
 \begin{enumerate}
 

@@ -125,21 +125,22 @@ when their log lines are parsed.
 
 The state tables contain entries for mails not yet delivered when the
 parser finishes execution.  Ideally all they should contain are mails which
-are awaiting delivery after the period covered by the logs, though they may
-also contain mails whose initial entries are not contained in the logs.
-Any other entries are evidence of a failure in parsing or an aberration in
-the logs.  After parsing the \numberOFlogFILES{} test log files the state
-tables contain 18 entries, breaking down into:
+are awaiting delivery after the period covered by the log files, though
+they may also contain mails whose initial entries are not contained in the
+log files.  Any other entries are evidence of a failure in parsing or an
+aberration in the log files.  After parsing the \numberOFlogFILES{} test
+log files the state tables contain 18 entries, breaking down into:
 
 \begin{itemize}
 
-    \item 1 connection which started only seconds before the logs ended and
-        had not yet been fully transferred from client to server.
+    \item 1 connection which started only seconds before the log files
+        ended and had not yet been fully transferred from client to server.
 
-    \item 1 mail which had been accepted only seconds before the logs ended
-        and had not yet been delivered.
+    \item 1 mail which had been accepted only seconds before the log files
+        ended and had not yet been delivered.
 
-    \item 9 mails whose initial log entries were not present in the logs.
+    \item 9 mails whose initial log entries were not present in the log
+        files.
 
     \item 7 mails which had yet to be delivered due to repeated failures.
 
@@ -178,9 +179,9 @@ evidence that the false positive rate is quite low:
 \end{itemize}
 
 Whereas verifying by inspection that the parser correctly deals with all
-60,721,709 lines in the test logs is infeasible, verifying a subset of
-those logs is a tractable, if extremely time consuming, task.  A sample of
-logs was obtained by randomly selecting a log file:
+60,721,709 lines in the test log files is infeasible, verifying a subset of
+those log files is a tractable, if extremely time consuming, task.  A
+sample of log lines was obtained by randomly selecting a log file:
 
 \verb!    perl -Mstrict -Mwarnings -MList::Util=shuffle \!\newline
 \verb!            -e 'print [shuffle(@ARGV)]->[0];'!
@@ -229,7 +230,7 @@ parsing algorithm is also significantly harder than detecting unparsed log
 lines, as the parser will warn about any unparsed line, whereas discovering
 a flaw in the parser requires understanding of the warnings produced and
 the mails remaining in the state table.  Rectifying a flaw in the parser
-requires an understanding of both the parser and Postfix's logs, and
+requires an understanding of both the parser and Postfix's log files, and
 investigative work to determine the cause of the deficiency, followed by
-further examination of the logs in developing a solution.
+further examination of the log files in developing a solution.
 

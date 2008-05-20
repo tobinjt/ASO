@@ -12,7 +12,7 @@ introduction to Postfix, concentrating on the topics most relevant to this
 paper, namely Postfix anti-spam restrictions and policy servers.  The
 assumptions made in designing and implementing the parser are explained, as
 are the conventions used in this paper.  Other projects which attempt to
-parse Postfix logs are summarised (full details are available in
+parse Postfix log files are summarised (full details are available in
 appendix~\refwithpage{other-parsers}), finishing with a review of
 previously published research in this area.
 
@@ -24,12 +24,12 @@ This paper and the program it describes are part of a larger project to
 optimise a server's Postfix restrictions, generate statistics and graphs,
 and provide a platform on which new restrictions can be trialled and
 evaluated to see if they are beneficial in the fight against spam.  The
-program parses Postfix logs and populates a database with the data gleaned
-from those logs, providing a consistent and simple view of the logs which
-future tools can utilise.  The gathered data can then be used to optimise
-current anti-spam measures, provide a baseline to test new anti-spam
-measures against, or to produce statistics showing how effective those
-measures are.
+program parses Postfix log files and populates a database with the data
+gleaned from those log files, providing a consistent and simple view of the
+log files which future tools can utilise.  The gathered data can then be
+used to optimise current anti-spam measures, provide a baseline to test new
+anti-spam measures against, or to produce statistics showing how effective
+those measures are.
 
 A short example of the optimisation possible using data from the database
 is determining which Postfix restrictions reject the highest number of
@@ -89,18 +89,18 @@ proposed, implemented and tested herein.
 \label{database as API}
 
 The database populated by this program provides a simple interface to
-Postfix logs.  Although the interface is a database schema, it is in effect
-quite similar to any other \API{} provided by shared code: it insulates
-both user and provider of the \API{} from changes in the implementation of
-the \API{}\@.  The algorithm implemented by the parser can be improved;
-support can be added for earlier or later releases of Postfix; bugs can be
-fixed or limitations removed from the parser; these changes will not cause
-the user to be negatively impacted.  Statistics and/or graphs can be
-generated from the database; new restrictions can be tested and the results
-inspected; trends in the fight against spam can emerge from historical data
-saved in the database; the parser remains the same as the usage adapts.
-Using a database simplifies writing programs which need to interact with
-the data in several ways:
+Postfix log files.  Although the interface is a database schema, it is in
+effect quite similar to any other \API{} provided by shared code: it
+insulates both user and provider of the \API{} from changes in the
+implementation of the \API{}\@.  The algorithm implemented by the parser
+can be improved; support can be added for earlier or later releases of
+Postfix; bugs can be fixed or limitations removed from the parser; these
+changes will not cause the user to be negatively impacted.  Statistics
+and/or graphs can be generated from the database; new restrictions can be
+tested and the results inspected; trends in the fight against spam can
+emerge from historical data saved in the database; the parser remains the
+same as the usage adapts.  Using a database simplifies writing programs
+which need to interact with the data in several ways:
 
 \begin{enumerate}
 
@@ -172,8 +172,8 @@ CREATE TRIGGER ON INSERT INTO results
 \end{enumerate}
 
 Storing the results in a database will also increase the efficiency of
-using those results, as the logs need only be parsed once; indeed the
-results may be used by someone with no access to the original logs.
+using those results, as the log files need only be parsed once; indeed the
+results may be used by someone with no access to the original log files.
 
 
 
@@ -270,13 +270,13 @@ servers\footnote{Policy servers will be explained in \sectionref{policy
 servers}.} as the ultimate in flexibility.  Administrators can also supply
 their own rejection messages to make it clear to senders why exactly their
 mail was rejected.  Unfortunately this flexibility has a cost: complexity
-in the logs generated.  While it is easy to use standard Unix text
+in the log files generated.  While it is easy to use standard Unix text
 processing utilities to determine the fate of an individual email,
 following the journey an email takes through Postfix can be quite
-difficult.  The logs tend to follow a 90\%-10\% pattern: 90\% of the time
-the journey is simple, but the other 10\% of the time requires 90\% of the
-code.\footnote{These numbers don't have a solid scientific basis, they're
-based on gut feeling from writing and debugging the software.}
+difficult.  The log files tend to follow a 90\%-10\% pattern: 90\% of the
+time the journey is simple, but the other 10\% of the time requires 90\% of
+the code.\footnote{These numbers don't have a solid scientific basis,
+they're based on gut feeling from writing and debugging the software.}
 
 Postfix's design follows the Unix philosophy of \textit{Write programs that
 do one thing and do it well\/}~\cite{unix-philosophy},\footnote{This
@@ -406,8 +406,8 @@ encountered scenarios are:
         particularly when you factor in Greylisting's position as the final
         restriction which a mail must overcome:\footnote{Greylisting is the
         final restriction a mail must overcome in the configuration used on
-        the mail server the logs were obtained from; an administrator is
-        free to use Greylisting at whichever position in the restriction
+        the mail server the log files were obtained from; an administrator
+        is free to use Greylisting at whichever position in the restriction
         list they feel is most appropriate for their mail system.}
         Greylisting only takes effect for mails which have passed every
         other restriction.
@@ -459,12 +459,13 @@ of (hopefully safe and reasonable) assumptions:
 
 \begin{itemize}
 
-    \item The logs are whole and complete: nothing has been removed, either
-        deliberately or accidentally (e.g.\ log rotation gone awry, file
-        system filling up, logging system unable to cope with the volume of
-        logs).  On a well run system it is extremely unlikely that any of
-        these problems will arise, though it is of course possible,
-        particularly when suffering a deluge of spam or a mail loop.
+    \item The log files are whole and complete: nothing has been removed,
+        either deliberately or accidentally (e.g.\ log rotation gone awry,
+        file system filling up, logging system unable to cope with the
+        volume of log messages).  On a well run system it is extremely
+        unlikely that any of these problems will arise, though it is of
+        course possible, particularly when suffering a deluge of spam or a
+        mail loop.
 
     \item Postfix logs sufficient information to make it possible to
         accurately reconstruct the actions it has taken.  There are a
@@ -489,9 +490,9 @@ box while developing the parser:
 
 \begin{itemize}
 
-    \item The parser is developed using real world logs rather than the
-        idealised logs someone would naturally envisage reading the source
-        code.
+    \item The parser is developed using real world log files rather than
+        the idealised log files someone would naturally envisage reading
+        the source code.
 
     \item The source code cannot accurately communicate the variety of
         orderings in which log lines are written to the log file, as
@@ -512,10 +513,10 @@ box while developing the parser:
 \label{parser design}
 
 It should be clear from the earlier Postfix background (\sectionref{postfix
-background}) that logs produced by Postfix are not fixed; they vary widely
-from host to host, depending on the set of restrictions chosen by the
-administrator.  With this in mind, one of the parser's design aims was to
-make adding new rules as easy as possible, to enable administrators to
+background}) that log files produced by Postfix are not fixed; they vary
+widely from host to host, depending on the set of restrictions chosen by
+the administrator.  With this in mind, one of the parser's design aims was
+to make adding new rules as easy as possible, to enable administrators to
 properly parse their log lines.  To enable this the parser is divided into
 three parts:
 
@@ -526,21 +527,21 @@ three parts:
         method of associating log lines and actions.  Rules are described
         in detail in \sectionref{rules}.
 
-    \item [actions] Actions invoked to deal with a log line once it has been
-        identified by the rules: modifying data structures, handing
+    \item [actions] Actions invoked to deal with a log line once it has
+        been identified by the rules: modifying data structures, handing
         complications, and saving data to the database.  The actions
         perform the work of reconstructing the journey a mail takes through
         Postfix.  Full details of actions can be found in
         \sectionref{parsing-algorithm}, particularly
         \sectionref{actions-in-detail} and \sectionref{adding new actions}.
 
-    \item [framework] The framework is responsible for loading rules, managing data
-        structures so actions can retrieve them, finding the rule which
-        matches each log line, invoking the correct action, etc.  The
-        framework provides the structure which actions and rules plug into.
-        The framework is not described in detail in this document because
-        it is not particularly interesting, but there is some coverage in
-        \sectionref{framework}.
+    \item [framework] The framework is responsible for loading rules,
+        managing data structures so actions can retrieve them, finding the
+        rule which matches each log line, invoking the correct action, etc.
+        The framework provides the structure which actions and rules plug
+        into.  The framework is not described in detail in this document
+        because it is not particularly interesting, but there is some
+        coverage in \sectionref{framework}.
 
 \end{description}
 
@@ -701,7 +702,7 @@ data about which restriction caused the rejection is discarded, whereas an
 important goal of this project is to retain that data to aid optimisation
 and evaluation of Postfix restrictions.  \LMA{} fails to parse Postfix log
 files generated on Solaris hosts because the fields added automatically
-differ from those added on Linux hosts; logs from Solaris hosts (and
+differ from those added on Linux hosts; log files from Solaris hosts (and
 possibly other operating systems) thus require preprocessing before parsing
 by \LMA{}.  Once the preprocessing has been performed on the
 \numberOFlogFILES{} test log files \LMA{} parses the log files without
@@ -734,11 +735,11 @@ Notes about the command above:
         after each matching line, for compatibility with the output of
         DAILY-REJECT\@.
 
-    \item Some records have an \SMTP{} code of \textit{0}, though this is not a
-        valid \SMTP{} code; presumably this is due to \LMA{} not parsing a
-        line properly.  \LMA{} considers this code to be a rejection, so
-        the command above must, too.
-        
+    \item Some records have an \SMTP{} code of \textit{0}, though this is
+        not a valid \SMTP{} code; presumably this is due to \LMA{} not
+        parsing a line properly.  \LMA{} considers this code to be a
+        rejection, so the command above must, too.
+
     \item In a tiny proportion of records the \SMTP{} code is
         \textit{deferred\/} (again, not a valid code, and most likely due
         to mis-parsing by \LMA{}); it is treated as a rejection by \LMA{},

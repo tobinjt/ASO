@@ -17,10 +17,10 @@ aid the user in understanding what each rule parses.  The rules are
 described in detail in \sectionref{rules} but the fields are covered here
 in \sectionref{rule attributes}.
 
-The data saved from parsing the logs is also divided into two tables as
-described below: connections and results.  The connections table contains a
-row for every mail accepted and every connection where there was a
-rejection; the individual fields will be described in
+The data saved from parsing the log files is also divided into two tables
+as described below: connections and results.  The connections table
+contains a row for every mail accepted and every connection where there was
+a rejection; the individual fields will be described in
 \sectionref{connections table}.  The results table has one or more rows per
 row in the connections table; the fields will be covered in detail in
 \sectionref{results table}.
@@ -98,7 +98,8 @@ Each rule defines the following:
             \item [POSTFIX\_RELOAD] The administrator has instructed
                 Postfix to start or stop, and all existing \daemon{smtpd}
                 processes will be terminated.  This does not negatively
-                impact on the logs or mail queued by Postfix for delivery.
+                impact on the log files or mail queued by Postfix for
+                delivery.
 
             \item [PROCESSING] \daemon{cleanup} is processing a mail ---
                 see~\cite{postfix-cleanup} for details of the processing
@@ -337,11 +338,11 @@ connection, though there may be many results per connection.
 \subsection{Conclusion}
 
 The table containing the rules used by the parser and both tables
-containing the data extracted from the Postfix logs were described, with
-the purpose of each field discussed in detail.  A clear, comprehensible
-schema is essential when using the extracted data; it's more important when
-using the data than when storing it, because storing the data is a
-write-once operation, whereas utilising the data requires frequent
-searching, sorting and manipulation of the data to produce customised
-reports and/or statistics.
+containing the data extracted from the Postfix log files were described,
+with the purpose of each field discussed in detail.  A clear,
+comprehensible schema is essential when using the extracted data; it's more
+important when using the data than when storing it, because storing the
+data is a write-once operation, whereas utilising the data requires
+frequent searching, sorting and manipulation of the data to produce
+customised reports and/or statistics.
 
