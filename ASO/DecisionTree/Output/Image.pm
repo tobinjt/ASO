@@ -33,6 +33,8 @@ for easy viewing.
 
 =head1 METHODS
 
+=cut
+
 =head2 my $image = ASO::DecisionTree::Output::Image->new(%options)
 
 Create a new image object.  Takes the following arguments:
@@ -45,6 +47,15 @@ The font to use in the image.  Picking a good font is difficult; I suggest
 F</usr/share/fonts/truetype/ttf-bitstream-vera/VeraMono.ttf> if you have it.
 This is a required option.
 
+=item fontsize => integer
+
+The size of font to use; 12 is a reasonable start, though your font may require
+a larger or smaller size.  This is a required argument.
+
+=item height_between_nodes => integer
+
+The height between nodes in the tree.  Default is 50 pixels.
+
 =back
 
 =cut
@@ -54,12 +65,11 @@ sub new {
 
     my %defaults = (
         height_between_nodes => 50,
-        # XXX use bounding_box() at some stage.
-        height_of_label      => 15,
     );
 
     my %required = (
         fontfile    => undef,
+        fontsize    => undef,
     );
 
     foreach my $required (keys %required) {
@@ -94,25 +104,19 @@ sub draw_tree {
         croak qq{draw_tree(): expecting one argument, not $num_args\n};
     }
 
-    my $tree_height = $self->get_tree_height($tree);
-print qq{tree height: $tree_height\n};
-    my $tree_width  = $self->get_tree_width($tree);
-print qq{tree width: $tree_width\n};
+    $self->{font} = Imager::Font->new(
+        file    => $self->{fontfile},
+        size    => $self->{fontsize},
+    ) or croak qq{failed to load $self->{fontfile}: }
+            . Imager->errstr() . qq{\n};
 
-    my $height_per_node      = $self->{height_between_nodes}
-                                + $self->{height_of_label};
-    my $image_height         = ($height_per_node * ($tree_height - 1))
-                               + $self->{height_of_label};
-    # XXX use 8 as a reasonable approximation; use bounding_box() at some stage.
-    my $image_width          = $tree_width * 8;
+    my $image_height = $self->get_tree_height($tree);
+    my $image_width  = $self->get_tree_width($tree);
 print qq{image size: $image_width * $image_height\n};
 
     $self->{image} = Imager->new(xsize => $image_width, ysize => $image_height)
         or croak q{Failed creating image: } . Imager->errstr() . qq{\n};
     $self->{image}->box(filled => 1, color => 'white');
-    $self->{font} = Imager::Font->new(file => $self->{fontfile})
-        or croak qq{failed to load $self->{fontfile}: }
-            . Imager->errstr() . qq{\n};
 
     $self->draw_tree_r(
         tree                    => $tree,
@@ -175,7 +179,7 @@ sub draw_tree_r {
         }
 
         # Draw the remainder of the tree.
-        my $child_ymin = $args{ymin} + $self->{height_of_label}
+        my $child_ymin = $args{ymin} + $self->get_label_height($args{tree})
                                      + $self->{height_between_nodes};
         my ($child_x, $child_y) = $self->draw_tree_r(
             %args,
@@ -187,7 +191,7 @@ sub draw_tree_r {
         );
 
         # Draw the connecting line for info node.
-        my $line_y = $args{ymin} + $self->{height_of_label};
+        my $line_y = $args{ymin} + $self->get_label_height($args{tree});
         my $line_x = $label_x;
         $self->draw_line(
             x1      => $line_x,
@@ -204,7 +208,7 @@ sub draw_tree_r {
     return $self->draw_tree_true_false_node(%args);
 }
 
-=head2 $image->draw_tree_r(%args)
+=head2 $image->draw_tree_true_false_node(%args)
 
 Draw a node with true and false branches.
 
@@ -217,19 +221,15 @@ sub draw_tree_true_false_node {
     my $true_width  = $self->get_tree_width($args{tree}->{true_branch});
     my $total_width = $false_width + $true_width;
 
-    my $xsize       = $args{xmax} - $args{xmin};
-    my $false_xsize = $xsize * $false_width / $total_width;
-    my $true_xsize  = $xsize * $true_width  / $total_width;
-
     # Need to ensure the label doesn't extend past xmin or xmax; this can
     # happen if half the label width is greater than the width of one of the
     # branches.  In that case shift it left or right enough to fit in the box.
-    my $half_label_length = $self->get_label_length($args{tree}) / 2;
+    my $half_label_length = $self->get_label_width($args{tree}) / 2;
     my $left_label_width  = max($false_width, $half_label_length);
     if ($half_label_length > $true_width) {
         $left_label_width  = $total_width - $half_label_length;
     }
-    my $label_x = $args{xmin} + ($xsize * $left_label_width / $total_width);
+    my $label_x = $args{xmin} + $left_label_width;
 
     # Add the label.
     $self->draw_label(
@@ -238,7 +238,7 @@ sub draw_tree_true_false_node {
         y          => $args{ymin},
     );
 
-    my $child_ymin = $args{ymin} + $self->{height_of_label}
+    my $child_ymin = $args{ymin} + $self->get_label_height($args{tree})
                                  + $self->{height_between_nodes};
     # Draw the false branch
     my ($false_line_x, $false_line_y) = $self->draw_tree_r(
@@ -246,7 +246,7 @@ sub draw_tree_true_false_node {
         tree       => $args{tree}->{false_branch},
         xmin       => $args{xmin},
         ymin       => $child_ymin,
-        xmax       => $args{xmin} + $false_xsize,
+        xmax       => $args{xmin} + $false_width,
         ymax       => $args{ymax},
     );
 
@@ -254,14 +254,14 @@ sub draw_tree_true_false_node {
     my ($true_line_x, $true_line_y) = $self->draw_tree_r(
         %args,
         tree       => $args{tree}->{true_branch},
-        xmin       => $args{xmin} + $false_xsize,
+        xmin       => $args{xmin} + $false_width,
         ymin       => $child_ymin,
         xmax       => $args{xmax},
         ymax       => $args{ymax},
     );
 
     # Draw the connecting lines
-    my $line_y = $args{ymin} + $self->{height_of_label};
+    my $line_y = $args{ymin} + $self->get_label_height($args{tree});
     my $line_x = $label_x;
     $self->draw_line(
         x1      => $line_x,
@@ -326,7 +326,6 @@ Draw a label on the image.
 sub draw_label {
     my ($self, %args) = @_;
     my %defaults = (
-        size       => 12,
         color      => q{black},
         valign     => q{top},
         halign     => q{center},
@@ -340,38 +339,40 @@ sub draw_label {
 
 =head2 $image->get_tree_height(%args)
 
-Recursively determine the height of the tree.  This is the number of nodes from
-top to bottom, not the height of the image.
+Recursively determine the height of the tree, based on the font used.
 
 =cut
 
 sub get_tree_height {
     my ($self, $subtree) = @_;
 
+    my ($label_height, $label_width) = $self->get_label_size($subtree);
     if ($subtree->{leaf_node}) {
-        return 1;
+        return $label_height;
     }
 
     if ($subtree->{info_node}) {
-        return 1 + $self->get_tree_height($subtree->{info_branch});
+        return $label_height + $self->{height_between_nodes}
+                + $self->get_tree_height($subtree->{info_branch});
     }
 
     my $false_height = $self->get_tree_height($subtree->{false_branch});
     my $true_height  = $self->get_tree_height($subtree->{true_branch});
-    return max($false_height, $true_height) + 1;
+    return $label_height + $self->{height_between_nodes}
+            + max($false_height, $true_height);
 }
 
 =head2 $image->get_tree_width(%args)
 
-Determine the width of the tree; will possibly over estimate it, depending on
-the shape of the tree.
+Determine the width of the tree based on the font size; will possibly over
+estimate it, depending on the shape of the tree.
 
 =cut
 
 sub get_tree_width {
     my ($self, $subtree) = @_;
 
-    my $label_width = $self->get_label_length($subtree);
+    my $label_width = $self->get_label_width($subtree);
     if ($subtree->{leaf_node}) {
         return $label_width;
     }
@@ -387,18 +388,47 @@ sub get_tree_width {
     return max($child_width, $label_width);
 }
 
-=head2 $image->get_label_length($tree)
+=head2 $image->get_label_height($tree)
+
+Returns the height of the label for the top node of $tree.
+
+=cut
+
+sub get_label_height {
+    my ($self, $subtree) = @_;
+
+    my ($height, $width) = $self->get_label_size($subtree);
+    return $height;
+}
+
+=head2 $image->get_label_width($tree)
 
 Returns the width of the label for the top node of $tree.
 
 =cut
 
-sub get_label_length {
+sub get_label_width {
+    my ($self, $subtree) = @_;
+
+    my ($height, $width) = $self->get_label_size($subtree);
+    return $width;
+}
+
+=head2 $image->get_label_size($tree)
+
+Returns the C<(height, width)> of the label for the top node of $tree.
+
+=cut
+
+sub get_label_size {
     my ($self, $subtree) = @_;
 
     my $label = $self->get_label($subtree);
-    # Add some padding to separate labels.
-    return 2 + length $label;
+    my $bbox = $self->{font}->bounding_box(
+        string  => qq{ $label },
+        canon   => 1,
+    );
+    return ($bbox->text_height(), $bbox->total_width());
 }
 
 =head2 $image->get_label($tree)
