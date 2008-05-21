@@ -26,7 +26,8 @@ for easy viewing.
 
     my $decision_tree = ....; # See ASO::DecisionTree.
     my $image = ASO::DecisionTree::Output::Image->new(
-        fontfile => q{/usr/share/fonts/truetype/ttf-bitstream-vera/VeraMono.ttf}
+        fontfile => q{/usr/share/fonts/truetype/ttf-bitstream-vera/VeraMono.ttf},
+        fontsize => 12,
     );
     $image->draw_tree($decision_tree);
     $image->save_image($filename);
@@ -63,9 +64,7 @@ The height between nodes in the tree.  Default is 50 pixels.
 sub new {
     my ($package, %options) = @_;
 
-    my %defaults = (
-        height_between_nodes => 50,
-    );
+    my %defaults = $package->get_default_options();
 
     my %required = (
         fontfile    => undef,
@@ -461,6 +460,21 @@ sub get_num_rows {
     }
     return    $self->get_num_rows($subtree->{true_branch})
             + $self->get_num_rows($subtree->{false_branch});
+}
+
+=head2 ASO::DecisionTree::Output::Image->get_default_options()
+
+Returns the default options accepted by new().
+
+=cut
+
+sub get_default_options {
+    my ($package) = @_;
+
+    my %defaults = (
+        height_between_nodes => 50,
+    );
+    return %defaults;
 }
 
 =head1 AUTHOR
