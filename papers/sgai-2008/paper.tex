@@ -1,5 +1,4 @@
-% $Id: logparser.tex 545 2008-05-01 20:00:22Z tobinjt $
-%\documentclass[twocolumn,a4paper,11pt,draft]{article}
+% $Id$
 \documentclass[]{svmult}
 
 % Useful stuff for math mode.
@@ -14,6 +13,7 @@
 \usepackage[section,numbib]{tocbibind}
 % Provides commands to distinguish between pdf and dvi output.
 \usepackage{ifpdf}
+\usepackage{url}
 
 \usepackage[acronym=true,style=altlist,number=none,toc=true]{glossary}
 \makeglossary{}
@@ -36,6 +36,7 @@
 \usepackage{courier}
 \usepackage{makeidx}
 \usepackage{multicol}
+\usepackage{cite}
 
 
 % \showgraph{filename}{caption}{label}
@@ -80,23 +81,27 @@
 \begin{document}
 
 \title*{A user-extensible and adaptable parser architecture}
-%\author{John Tobin \& Carl Vogel \\ School of Computer Science and Statistics \\
-%Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie \& vogel@cs.tcd.ie }
 \author{John Tobin and Carl Vogel}
-\institute{John Tobin \& Carl Vogel \\ School of Computer Science and Statistics \\
-Trinity College \\ Dublin 2 \\ Ireland \\ \email{tobinjt@cs.tcd.ie}
-\email{vogel@cs.tcd.ie} }
+\institute{John Tobin \at{} School of Computer Science and Statistics,
+Trinity College, Dublin 2, Ireland. \newline{} \email{tobinjt@cs.tcd.ie} \and{}
+Carl Vogel \at{} School of Computer Science and Statistics,
+Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
 \maketitle
 
 \abstract{%
-    Some parsers need to be very precise and restrictive in what they
-    parse, yet allow users to easily adapt existing rules or add new rules
-    to parse new inputs, without requiring an in-depth knowledge of the
-    parser's internal workings.  This paper presents a novel parsing
-    architecture which aims to make the process of parsing new inputs as
-    simple as possible, enabling users to trivially add new rules (to parse
-    variants of existing inputs) and relatively easily add new actions (to
-    do something useful with a previously unknown class of input).
+    Some parsers need to be very precise and strict in what they parse, yet
+    must allow users to easily adapt existing rules or add new rules to
+    parse new inputs, without requiring the user to have an in-depth
+    knowledge and understanding of the parser's internal workings.  This
+    paper presents a novel parsing architecture which aims to make the
+    process of parsing new inputs as simple as possible, enabling users to
+    trivially add new rules or adapt existing rules (to parse variants of
+    existing inputs) and relatively easily add new actions (to do something
+    useful with a previously unknown class of input).  The architecture
+    provides a framework which actions and rules fit into: this framework
+    manages the parsing process, provides support functions for the
+    actions, and automatically performs some optimisations which improve
+    the speed of parsing.
 }
 
 XXX DUE MONDAY JUNE 2$^{ND}$ 2008\@.
@@ -109,19 +114,70 @@ BLACK AND WHITE ONLY\@.
 
 XXX FORMAT OF REFERENCES\@.
 
+\input{../../doc/logparser-acronyms.tex}
+
 \section{Introduction}
 
-Background of the project --- emphasise the variety in the log lines, and
-the desire to achieve complete coverage, of both kinds.
-Motivation for creating the parser.  At some point I MIGHT compare this
-architecture to recursive decent parsers, Lex/Yacc parsers, XXX parsers.
+\label{Introduction}
 
-\section{Algorithm}
+The architecture described herein was developed as part of a larger project to
+improve anti-spam techniques by analysing the performance of the set of filters
+currently in use, optimising the order and membership of the set based on that
+analysis, and developing new measures to supplement the existing filters where
+there is a deficiency.  The approach chosen was to analyse the log files
+produced by the mail server, rather than modifying the mail server to generate
+performance statistics; this approach improves the chances of other sites
+testing and utilising the software.  The need arose for a parser capable of
+dealing with the huge variety of log lines produced by Postfix~\cite{postfix},
+the \MTA{}: 
 
-Split into framework, actions, \& rules.  Explain adding new rules and
-actions.  Cut down rule attributes to the minimum possible.  Framework
-provides support functions, parsing loop, manages data --- boring stuff
-users don't need to concern themselves with.
+\begin{itemize}
+
+    \item Log lines differ between versions of Postfix.
+        
+    \item The mail administrator can define custom rejection messages, and
+        thus custom log lines.
+
+    \item External resources utilised by Postfix (e.g.\ policy
+        servers~\cite{policy-servers} or \RBL{} lookups) can also change
+        their messages, without warning.
+
+\end{itemize}
+
+Existing parsers were considered, but their parsing coverage was too low,
+their parsing too inexact, and/or they did not extract sufficient data for
+the purposes of this project.\footnote{A review of the existing parsers
+considered for this project will be included in the thesis.} The effort
+required to adapt and improve an existing parser was judged to be greater
+than the effort to write one from scratch, as the techniques used by the
+existing parsers severely limited their potential: some ignored the
+majority of log lines, parsing specific log lines with great accuracy, but
+in an inextensible fashion; others sloppily parsed the majority of log
+lines, but were incapable of distinguishing between log lines of the same
+type, e.g.\ rejections, and the data they extracted was constrained to the
+\LCD{}.
+
+The solution developed is conceptually simple: provide a few generic functions,
+each capable of dealing with an entire \textit{category\/} of log lines (e.g.\
+rejections), accompanied by a multitude of precise patterns, each of which
+matches all log lines of a specific type, and only that type (e.g.\ rejection
+by a specific \RBL{}).
+
+
+
+
+XXX WHERE SHOULD I DISCUSS COMPLICATIONS\@?
+
+During development of the parser it became apparent that in addition to the
+obvious variety in log lines, there were a large number of complications to
+be overcome
+
+\section{Architecture}
+
+\label{Architecture}
+
+Explain adding new rules and actions.  Cut down rule attributes to the
+minimum possible.
 
 Thoughts from Carl: 
 
@@ -137,18 +193,127 @@ Thoughts from Carl:
 
 \end{itemize}
 
+XXX BEGIN\@:
+
+The architecture is split into three sections: framework, actions and
+rules.  Each will be discussed separately, but first an overview:
+
+\begin{description}
+
+    \item [Framework]  The framework is the structure which actions and
+        rules fit into.  The framework provides the parsing loop, loading
+        and validation of rules, shared data storage, storage of results,
+        and other support functions.
+
+    \item [Actions]  The actions perform the work required to deal with a
+        category of log lines, e.g.\ creating a new data structure when a
+        log line indicating a remote client connected is processed.
+
+    \item [Rules]  The rules are responsible for matching log lines,
+        specifying the action to invoke and the data to be extracted from
+        the log line.
+
+\end{description}
+
+Decoupling the parsing rules from the associated actions and framework allows
+new rules to be written and tested without requiring modifications to the
+parser source code (significantly lowering the barrier to entry for new or
+casual users who need to parse new log lines), and greatly simplifies
+framework, actions and rules. Decoupling the actions from the
+framework simplifies both framework and actions: the framework provides
+services to the actions, and doesn't need to deal with the complications which
+arise, or the task of reconstructing a mail's journey through Postfix; actions
+benefit from having services provided by the framework, freeing them to
+concentrate on the task of accurately reconstructing each mail's journey
+through Postfix and dealing with the complications arising (XXX REFERENCE).
+
+Decoupling also creates a clear separation of functionality: rules handle low
+level details of identifying log lines and extracting data from a log line;
+actions handle the higher level details of following the path a mail takes
+through Postfix, assembling the required data, dealing with complications
+arising, etc; the framework provides services to actions and stores data.  
+
+There is some similarity between the parser's design and William Wood's
+\ATN{}~\cite{atns, nlpip}, a tool used in Computational Linguistics for
+creating grammars to parse or generate sentences.  The resemblance between
+\ATN{} and the parser is accidental, but it is interesting how two
+different approaches have a similar division of responsibilities, while
+having completely different implementations and semantics.
+
+% Do Not Reformat!
+
+\begin{table}[ht]
+    \caption{Similarities with ATN}\label{Similarities with ATN}
+    % The \smallskip{} below stop the text hitting the lines.
+    \begin{tabular}[]{lll}
+        \hline
+        \noalign{\smallskip}
+        \ATN{}        & Parser    & Similarity                          \\
+        \noalign{\smallskip}
+        \hline
+        \noalign{\smallskip}
+        Networks      & Framework & Determines the sequence of
+                                    transitions or actions which        \\
+                      &           & constitutes a valid input.          \\
+        Transitions   & Actions   & Save data and impose conditions the
+                                    input must meet to be               \\
+                      &           & considered valid.                   \\
+        Abbreviations & Rules     & Responsible for classifying input.  \\
+        \noalign{\smallskip}
+        \hline
+        \noalign{\smallskip}
+    \end{tabular}
+\end{table}
+
+\subsection{Framework}
+
+\label{Framework}
+
+The framework provides utility and support functions for the actions and
+rules.  It provides shared storage to pass data between actions, most
+notably the data structures used to represent each connection and mail,
+though there are some others.  It loads and validates rules, controls
+parsing of log files, invoking actions and tracking performance data, and
+stores results on request.
+
+The function which finds the rule matching the input line and invokes the
+requested action can be expressed in pseudo-code (with indentation denoting
+flow-of-control) as:
+
+\begin{verbatim}
+
+for each line in the input files:
+    for each rule defined by the user:
+        if this rule matches the input line:
+            perform the action specified by the rule
+            skip the remaining rules
+            process the next input line
+    warn the user that the input line was not parsed
+
+\end{verbatim}
+
+\subsection{Actions}
+
+\label{Actions}
+
+Actions contain the code required to deal with log lines from a particular
+category, e.g.\ rejections.  
+
+
+\subsection{Rules}
+
+\label{Rules}
+
 \section{Results}
 
 Scalability, ordering, caching regexes.  Interesting to run with all rules
 versus running with the minimum number necessary to parse the test log
-files.  Then try that again with different orderings?
+files.  Then try that again with different orderings?  Coverage.
 
 \section{Conclusion}
 
 Makes adding new rules trivial, new actions tractable.  Knowledge of the
 framework is rarely necessary.
-
-\appendix
 
 \cite{postfix}
 
@@ -156,4 +321,13 @@ framework is rarely necessary.
 \bibliography{../common/bibliography}
 \label{bibliography}
 
+% Redefine the command used to produce the glossary title, because the
+% default command produces an unnumbered section whereas I want a numbered
+% section.
+\renewcommand{\glossarytitle}{\section{Glossary}\label{Glossary}}
+\printglossary{}
+% Redefine the command a second time to produce acronyms instead of a
+% glossary.
+\renewcommand{\glossarytitle}{\section{Acronyms}\label{Acronyms}}
+\printacronym{}
 \end{document}
