@@ -20,6 +20,12 @@ run_latex:
 %.pdf: %.tex
 	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@"
 
+logparser.dvi: logparser.tex logparser-*.tex
+	make build PROGRAM="latex" SOURCE="$<" DEST="$@"
+
+logparser.ps: logparser.dvi
+	dvips -o "$@" "$<"
+
 %.bbl: %-bibliography.bib
 	bibtex $$( basename "$@" .bbl )
 	touch ran_bibtex
