@@ -15,6 +15,10 @@
 % Provides commands to distinguish between pdf and dvi output.
 \usepackage{ifpdf}
 
+\usepackage[acronym=true,style=altlist,number=none,toc=true]{glossary}
+\makeglossary{}
+\makeacronym{}
+
 % This is necessary for URLs in the bibliography; I dunno why the url
 % package doesn't work; don't include it when generating \PDF{} output.
 \ifpdf{}
@@ -80,7 +84,8 @@
 %Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie \& vogel@cs.tcd.ie }
 \author{John Tobin and Carl Vogel}
 \institute{John Tobin \& Carl Vogel \\ School of Computer Science and Statistics \\
-Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie \& vogel@cs.tcd.ie }
+Trinity College \\ Dublin 2 \\ Ireland \\ \email{tobinjt@cs.tcd.ie}
+\email{vogel@cs.tcd.ie} }
 \maketitle
 
 \abstract{%
@@ -102,18 +107,35 @@ POSTER PAPERS\@: MAX 6 PAGES\@.
 
 BLACK AND WHITE ONLY\@.
 
+XXX FORMAT OF REFERENCES\@.
+
 \section{Introduction}
 
-Background of the project --- emphasise the variety in the log lines.
-Motivation for creating the parser.  At some point I want to compare this
+Background of the project --- emphasise the variety in the log lines, and
+the desire to achieve complete coverage, of both kinds.
+Motivation for creating the parser.  At some point I MIGHT compare this
 architecture to recursive decent parsers, Lex/Yacc parsers, XXX parsers.
 
 \section{Algorithm}
 
 Split into framework, actions, \& rules.  Explain adding new rules and
-actions.  Cut down rules to the minimum possible.  Framework provides
-support functions, parsing loop, manages data --- boring stuff users don't
-need to concern themselves with.
+actions.  Cut down rule attributes to the minimum possible.  Framework
+provides support functions, parsing loop, manages data --- boring stuff
+users don't need to concern themselves with.
+
+Thoughts from Carl: 
+
+\begin{itemize}
+
+    \item context-free rules
+
+    \item partially context-aware actions, though not really
+
+    \item transduction: input log lines $\rightarrow$ database
+
+    \item Closer to NLP than fixed grammar.
+
+\end{itemize}
 
 \section{Results}
 
