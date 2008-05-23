@@ -1,45 +1,20 @@
 % $Id: logparser.tex 545 2008-05-01 20:00:22Z tobinjt $
-\documentclass[twocolumn,a4paper,11pt,draft]{article}
+%\documentclass[twocolumn,a4paper,11pt,draft]{article}
+\documentclass[]{svmult}
 
 % Useful stuff for math mode.
 \usepackage{amstext}
-% Wrapping of URLs; this doesn't work in the bibliography, but the breakurl
-% package does.
-%\usepackage{url}
 % The name of the program, so I only have to change it in one place.
 \newcommand{\parsername}{\PLP{}}
 \newcommand{\parsernames}{\PLP{}'s}
 % Include images
 \usepackage[final]{graphicx}
-% Change how nested enumerate environments are labelled.
-\renewcommand{\labelenumii}{\roman{enumii}:}
 \renewcommand{\refname}{Bibliography}
 % Add the bibliography into the table of contents.
 \usepackage[section,numbib]{tocbibind}
 % Provides commands to distinguish between pdf and dvi output.
 \usepackage{ifpdf}
 
-\usepackage[acronym=true,style=altlist,number=none,toc=true]{glossary}
-\makeglossary{}
-\makeacronym{}
-
-% When creating a \PDF{} make the table of contents into links to the pages
-% (without horrible red borders) and include bookmarks.  The title and
-% author don't work - I think either gnuplot or graphviz clobbers it.
-% hyperfootnotes need to be disabled to avoid breaking footmisc, but they
-% still seem to work, somehow.
-\ifpdf{}
-    \usepackage[pdftex,hyperfootnotes=false]{hyperref}
-\else{}
-    \usepackage[dvips,hyperfootnotes=false]{hyperref}
-\fi{}
-\hypersetup{
-    pdftitle    = {Parsing Postfix log files},
-    pdfauthor   = {John Tobin},
-    final       = true,
-    pdfborder   = {0 0 0},
-%    breaklinks  = true,
-}
 % This is necessary for URLs in the bibliography; I dunno why the url
 % package doesn't work; don't include it when generating \PDF{} output.
 \ifpdf{}
@@ -49,7 +24,15 @@
 \usepackage{lastpage}
 
 % Extra footnote functionality, including references to earlier footnotes.
-\usepackage{footmisc}
+\usepackage[bottom]{footmisc}
+
+% Extra packages recommended by Springer.
+\usepackage{mathptmx}
+\usepackage{helvet}
+\usepackage{courier}
+\usepackage{makeidx}
+\usepackage{multicol}
+
 
 % \showgraph{filename}{caption}{label}
 \newcommand{\showgraph}[3]{
@@ -90,22 +73,17 @@
     \hspace*{2em}%
 }
 
-% This may keep hyperref happy about the Abstract entry in the table of
-% contents.
-\newcounter{dummy}
-
 \begin{document}
 
-\title{A user-extensible and adaptable parser architecture}
-\author{John Tobin \& Carl Vogel \\ School of Computer Science and Statistics \\
-Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie \&
-vogel@cs.tcd.ie }
+\title*{A user-extensible and adaptable parser architecture}
+%\author{John Tobin \& Carl Vogel \\ School of Computer Science and Statistics \\
+%Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie \& vogel@cs.tcd.ie }
+\author{John Tobin and Carl Vogel}
+\institute{John Tobin \& Carl Vogel \\ School of Computer Science and Statistics \\
+Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie \& vogel@cs.tcd.ie }
 \maketitle
 
-\refstepcounter{dummy}
-\addcontentsline{toc}{section}{Abstract}
-\begin{abstract}
-
+\abstract{%
     Some parsers need to be very precise and restrictive in what they
     parse, yet allow users to easily adapt existing rules or add new rules
     to parse new inputs, without requiring an in-depth knowledge of the
@@ -114,8 +92,15 @@ vogel@cs.tcd.ie }
     simple as possible, enabling users to trivially add new rules (to parse
     variants of existing inputs) and relatively easily add new actions (to
     do something useful with a previously unknown class of input).
+}
 
-\end{abstract}
+XXX DUE MONDAY JUNE 2$^{ND}$ 2008\@.
+
+PRESENTATION PAPERS\@: MAX 14 PAGES\@.
+
+POSTER PAPERS\@: MAX 6 PAGES\@.
+
+BLACK AND WHITE ONLY\@.
 
 \section{Introduction}
 
