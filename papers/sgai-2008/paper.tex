@@ -129,14 +129,14 @@ produced by the mail server, rather than modifying the mail server to generate
 performance statistics; this approach improves the chances of other sites
 testing and utilising the software.  The need arose for a parser capable of
 dealing with the huge variety of log lines produced by Postfix~\cite{postfix},
-the \MTA{}: 
+the \MTA{} in use: 
 
 \begin{itemize}
 
     \item Log lines differ between versions of Postfix.
         
-    \item The mail administrator can define custom rejection messages, and
-        thus custom log lines.
+    \item The mail administrator can define custom rejection messages,
+        resulting in custom log lines.
 
     \item External resources utilised by Postfix (e.g.\ policy
         servers~\cite{policy-servers} or \RBL{} lookups) can also change
@@ -215,6 +215,9 @@ rules.  Each will be discussed separately, but first an overview:
 
 \end{description}
 
+The framework tries each rule in turn until it finds one which matches the
+input line, then invokes the action specified by that rule.
+
 Decoupling the parsing rules from the associated actions and framework allows
 new rules to be written and tested without requiring modifications to the
 parser source code (significantly lowering the barrier to entry for new or
@@ -292,6 +295,12 @@ for each line in the input files:
 
 \end{verbatim}
 
+The function tracks the number of times each rule matches; this data is
+used during subsequent parsing to optimise the order the rules are tried
+in.  Rules specify the Postfix component which produces the log lines they
+parse; this avoids needlessly trying rules which won't match the log line,
+or worse, might match unintentionally.
+
 \subsection{Actions}
 
 \label{Actions}
@@ -304,6 +313,126 @@ category, e.g.\ rejections.
 
 \label{Rules}
 
+Rules are responsible for categorising input lines, specifying both the
+data to be extracted from each line and the action that should be invoked.
+This implementation stores the rules in the same \SQL{} database that the
+results are stored in; this removes any doubt as to which set of rules was
+used to produce a set of results.  Other implementations are free to store
+the rules in whatever fashion suits their needs.  Each rule defines several
+attributes:
+
+\begin{description}
+
+    \item [program] The Postfix program whose log lines the rule applies
+        to.  This avoids needlessly trying rules which won't match the log
+        line, or worse, might match unintentionally.  Rules whose program
+        is \texttt{*} will be tried against any log lines which aren't
+        parsed by program specific rules.
+
+    \item [regex] The \regex{} to match the log line against.  The \regex{}
+        will first have several keywords expanded: this simplifies reading
+        and writing rules; avoids needless repetition of complex \regex{}
+        components; allows the components to be corrected and/or improved
+        in one location; and makes each \regex{} largely self-documenting.
+
+        For efficiency the keywords are expanded and every rule's \regex{}
+        is compiled before attempting to parse the log file --- otherwise
+        each \regex{} would be recompiled each time it was used, resulting
+        in a large, data dependent slowdown.  Rule efficiency concerns are
+        discussed in \sectionref{rule efficiency}, with the impact of
+        compiling and caching \regexes{} covered in \sectionref{Caching
+        each regex}.
+
+    \item [result\_cols] Specifies how the fields in the
+        log line will be extracted.  The format is:
+        \newline \tab{} \texttt{smtp\_code = 1; recipient = 2, sender = 4;}
+        \newline i.e.\ semi-colon or comma separated assignment statements,
+        with the variable name on the left and the matching capture from
+        the \regex{} on the right hand side.
+
+    \item [result\_data] Sometimes rules need to supply a piece of data
+        which isn't present in the log line: e.g.\ setting
+        \texttt{smtp\_code} when mail is accepted.  The format and allowed
+        variables are the same as for \texttt{result\_cols}, except that
+        arbitrary data\footnote{Commas and semi-colons cannot be escaped
+        and thus cannot be used.  This is intended for use with small
+        amounts of data rather than large amounts in any one rule, so
+        dealing with escape sequences was deemed unnecessary.} is permitted
+        on the right hand side of the assignment.
+
+    \item [action] The action that will be invoked when this rule matches a
+        log line; actions are describe in \sectionref{Actions}.
+
+    \item [hits] This counter starts at zero and is incremented each time
+        the rule successfully matches.  At the start of each run the parser
+        sorts the rules in descending order of hits, and at the end of the
+        run updates every rule's hits.  Assuming that the distribution of
+        log lines is reasonably consistent between log files, rules
+        matching more commonly occurring log lines will be tried before
+        rules matching less commonly occurring log lines, lowering the
+        program's execution time.  Rule ordering for efficiency is
+        discussed in \sectionref{rule ordering for efficiency}.
+
+    \item [priority] This is the user-configurable companion to hits: rules
+        will be tried in order of priority, overriding hits.  This allows
+        more specific rules to take precedence over more general rules
+        (described in \sectionref{overlapping rules}).
+
+\end{description}
+
+The rules used by the Postfix log file parser define several additional
+attributes; each implementation is free to add any additional attributes it
+requires.
+
+\subsubsection{Overlapping rules}
+
+\label{overlapping rules}
+
+The parser does not try to detect overlapping rules; that responsibility is
+left to the author of the rules.\footnote{It may be possible to parse
+each rule's regex and determine if any overlap.  The author has not
+attempted to do this: given the tremendous power and flexibility of
+regex, particularly Perl's (XXX REFERENCE FOR PERL\@; GLOSSARY ENTRY?)
+regex, it would be an extremely difficult task.} Unintentionally
+overlapping rules lead to inconsistent parsing and data extraction because
+the order in which rules are tried against each line may change between log
+files, and the first matching rule wins.  Overlapping rules are frequently
+a requirement, allowing a more specific rule to match some log lines and a
+more general rule to match the majority, e.g.\ separating \SMTP{} delivery
+to specific sites from \SMTP{} delivery to the rest of the world.  The
+algorithm provides a facility for ordering overlapping rules: the priority
+field in each rule (defaults to zero).  Rules are sorted by priority,
+highest first, and then rules with the same priority are sorted by the
+number of successful matches when parsing the previous log file.  Negative
+priorities may be useful for catchall rules.
+
+Detecting overlapping rules is difficult, but the following approaches may
+be helpful:
+
+\begin{itemize}
+
+    \item Sort by \regex{} and visually inspect the list, e.g.\ with \SQL{}
+        similar to: \textbf{select regex from rules order by regex;}
+
+    \item Compare the results of parsing using sorted, shuffled and
+        reversed rules.\footnote{See \sectionref{rule efficiency} for more
+        details of sorting the rules.}  Parse a number of log files using
+        normal sorting, then dump a textual representation of the rules,
+        connections and results tables.  Repeat with shuffled and reversed
+        rules, starting with a fresh database.  If there are no overlapping
+        rules the tables from each run will be identical; differences
+        indicate overlapping rules.  Which rules overlap can be determined
+        by examining the differences in the tables: each result contains a
+        reference to the rule which created it, if the references differ
+        between runs the two rules referenced in the differing records
+        overlap.  Unfortunately this method cannot prove the absence of
+        overlapping rules; it can detect overlapping rules, but only if
+        there are log lines in the input files which match more than one
+        rule.
+
+\end{itemize}
+
+
 \section{Results}
 
 Scalability, ordering, caching regexes.  Interesting to run with all rules
@@ -314,8 +443,6 @@ files.  Then try that again with different orderings?  Coverage.
 
 Makes adding new rules trivial, new actions tractable.  Knowledge of the
 framework is rarely necessary.
-
-\cite{postfix}
 
 \bibliographystyle{../common/bibliography-style}
 \bibliography{../common/bibliography}
