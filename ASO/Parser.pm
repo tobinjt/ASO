@@ -1948,6 +1948,9 @@ sub load_rules {
     # would break the rule set.
     @results = sort { $b->{priority} <=> $a->{priority} } @results;
 
+    # Reset hits for all rules.
+    map { $_->{hits} = 0; } @results;
+
     # Collate rules by program, so that later we'll only try rules for the
     # program that logged the line.
     my %rules_by_program;
