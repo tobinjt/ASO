@@ -3,9 +3,6 @@
 
 % Useful stuff for math mode.
 \usepackage{amstext}
-% Wrapping of URLs; this doesn't work in the bibliography, but the breakurl
-% package does.
-%\usepackage{url}
 % The name of the program, so I only have to change it in one place.
 \newcommand{\parsername}{\PLP{}}
 \newcommand{\parsernames}{\PLP{}'s}
@@ -51,6 +48,10 @@
 % Extra footnote functionality, including references to earlier footnotes.
 \usepackage{footmisc}
 
+% Sort numbers where there are multiple citations.  Doesn't appear to have
+% any effect, though it does reduce the space between numbers.
+\usepackage{cite}
+
 % \showgraph{filename}{caption}{label}
 \newcommand{\showgraph}[3]{
     \begin{figure}[hbt!]
@@ -95,7 +96,7 @@
 }
 
 \newcommand{\numberOFrules}[0]{%
-    165%
+    169%
 }
 
 \newcommand{\numberOFlogLINES}[0]{%
@@ -142,6 +143,8 @@ XXX POSSIBLE CONFERENCES\@: AICS'S AI-2008 IN CORK, AND SGAI IN CAMBRIDGE
 IN DECEMBER\@.
 
 XXX WEKA FOR DECISION TREE DISPLAY\@.
+
+XXX IS THERE A SYMBOL FOR APPENDIX, LIKE \textsection{} FOR SECTIONS\@?
 
 \newpage
 \tableofcontents
