@@ -27,7 +27,7 @@ INSERT INTO cluster_groups(id, name, description, cluster_group, restriction_lis
         'Sender restrictions',
         'Restrictions applied when the client sends the MAIL FROM command',
         300,
-        'smtpd_sender_restrictions',
+        'smtpd_sender_restrictions'
 );
 
 INSERT INTO cluster_groups(id, name, description, cluster_group, restriction_list)
