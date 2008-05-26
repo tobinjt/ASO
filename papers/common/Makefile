@@ -12,10 +12,10 @@ run_latex:
 	fi
 	[ -f "${DEST}" ]
 
-%.dvi: %.tex
+paper.dvi: paper.tex
 	make build PROGRAM="latex" SOURCE="$<" DEST="$@"
 
-%.pdf: %.tex
+paper.pdf: paper.tex
 	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@"
 
 paper.bbl: ../common/bibliography.bib
@@ -104,16 +104,19 @@ build_loop:
 
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
-%.pdf: %.deps bibliography.bib bibliography-style.bst
-%.ps:  %.deps bibliography.bib bibliography-style.bst
+paper.pdf: paper.deps
+paper.ps:  paper.deps
 paper.deps:
 	touch "$@"
+
+build/plot-%.pdf: graphs/plot-%-pdf.gpi
+	cd graphs && gnuplot "../$<" || (rm -f "../$@"; false)
 
 # Cleanup.
 clean:
 	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out *.ist *.glg 
 	rm -f *.gls *.glo *.cbk *.cit *.lof *.idx *.acn *.acr *.alg *.deps *.lot
-	rm -f *.old
+	rm -f *.old build/*.pdf build/*.ps
 
 veryclean: clean
 
