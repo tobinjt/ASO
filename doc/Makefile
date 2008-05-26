@@ -128,6 +128,7 @@ logparser.deps: \
 				build/plot-hits-high.pdf									\
 				build/plot-hits-middle.pdf									\
 				build/plot-hits-low.pdf										\
+				build/plot-action-distribution.pdf							\
 				\
 				build/plot-cached-discarded.ps								\
 				build/plot-cached-discarded-factor.ps						\
@@ -140,6 +141,7 @@ logparser.deps: \
 				build/plot-hits-high.ps										\
 				build/plot-hits-middle.ps									\
 				build/plot-hits-low.ps										\
+				build/plot-action-distribution.ps							\
 				\
 				build/stats-cached-discarded-include-for-graph.tex			\
 				build/stats-normal-filesize-line-count-include.tex			\
@@ -177,6 +179,7 @@ build/plot-hits-middle.ps: stats-hits.txt
 build/plot-hits-low.ps: stats-hits.txt
 build/plot-log22-log-lines.ps: stats-log22-rule-count-by-program.txt
 build/plot-log22-rules.ps: stats-log22-rule-count-by-program.txt
+build/plot-action-distribution.ps: build/action-distribution.txt
 
 # Duplicated dependencies; make doesn't seem to rebuild properly when there are multiple wildcard dependencies.  Poo.
 build/plot-cached-discarded.pdf: build/stats-cached.txt build/stats-discarded.txt build/stats-cached-discarded-factor.txt
@@ -194,6 +197,7 @@ build/plot-hits-middle.pdf: stats-hits.txt
 build/plot-hits-low.pdf: stats-hits.txt
 build/plot-log22-log-lines.pdf: stats-log22-rule-count-by-program.txt
 build/plot-log22-rules.pdf: stats-log22-rule-count-by-program.txt
+build/plot-action-distribution.pdf: build/action-distribution.txt
 
 build/plot-%.ps: graphs/plot-%.gpi
 	cd graphs && gnuplot "../$<" || (rm -f "../$@"; false)
@@ -329,6 +333,10 @@ build/mails-received-include-for-graph.tex: build/mails-received-stats.txt			\
 											build/mails-received-weekends-stats.txt
 	perl mk-stats-cached-discarded-include $^ > "$@"
 	sed -i -e 's/\\%//g' "$@" || (rm -f "$@"; false)
+
+build/action-distribution.txt: db.full-run.sq3
+	sqlite3 -separator ' ' "$<" 'select action, count(action) from rules group by action order by count(action);' > "$@.tmp"
+	nl "$@.tmp" > "$@" || (rm -f "$@"; false)
 
 # Build stats from the directory created by gen-stats.
 # XXX THIS DOESN'T HAPPEN AUTOMATICALLY - MAKE THAT WORK.
