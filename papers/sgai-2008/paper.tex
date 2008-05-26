@@ -38,7 +38,6 @@
 \usepackage{multicol}
 \usepackage{cite}
 
-
 % \showgraph{filename}{caption}{label}
 \newcommand{\showgraph}[3]{
     \begin{figure}[hbt!]
@@ -78,6 +77,26 @@
     \hspace*{2em}%
 }
 
+\newcommand{\numberOFlogFILES}[0]{%
+    93%
+}
+
+\newcommand{\numberOFrules}[0]{%
+    169%
+}
+
+\newcommand{\numberOFlogLINES}[0]{%
+    60,721,709%
+}
+
+\newcommand{\numberOFlogLINEShuman}[0]{%
+    60.72 million%
+}
+
+\newcommand{\numberOFactions}[0]{%
+    18%
+}
+
 \begin{document}
 
 \title*{A user-extensible and adaptable parser architecture}
@@ -111,8 +130,6 @@ PRESENTATION PAPERS\@: MAX 14 PAGES\@.
 POSTER PAPERS\@: MAX 6 PAGES\@.
 
 BLACK AND WHITE ONLY\@.
-
-XXX FORMAT OF REFERENCES\@.
 
 \input{../../doc/logparser-acronyms.tex}
 
@@ -154,14 +171,14 @@ existing parsers severely limited their potential: some ignored the
 majority of log lines, parsing specific log lines with great accuracy, but
 in an inextensible fashion; others sloppily parsed the majority of log
 lines, but were incapable of distinguishing between log lines of the same
-type, e.g.\ rejections, and the data they extracted was constrained to the
-\LCD{}.
+type, e.g.\ rejections, and they extracted only a portion of the data
+required for this project.
 
 The solution developed is conceptually simple: provide a few generic functions,
 each capable of dealing with an entire \textit{category\/} of log lines (e.g.\
 rejections), accompanied by a multitude of precise patterns, each of which
 matches all log lines of a specific type, and only that type (e.g.\ rejection
-by a specific \RBL{}).
+by a specific \RBL{}).  XXX STOP \RBL{} BEING EXPANDED AGAIN\@.
 
 
 
@@ -176,8 +193,7 @@ be overcome
 
 \label{Architecture}
 
-Explain adding new rules and actions.  Cut down rule attributes to the
-minimum possible.
+Explain adding new rules and actions.
 
 Thoughts from Carl: 
 
@@ -277,11 +293,13 @@ rules.  It provides shared storage to pass data between actions, most
 notably the data structures used to represent each connection and mail,
 though there are some others.  It loads and validates rules, controls
 parsing of log files, invoking actions and tracking performance data, and
-stores results on request.
+stores results in the database on request.  The framework is independent of
+the parser being written: the same functionality will be required from the
+framework for most or all parsers.
 
 The function which finds the rule matching the input line and invokes the
 requested action can be expressed in pseudo-code (with indentation denoting
-flow-of-control) as:
+flow of control) as:
 
 \begin{verbatim}
 
@@ -306,8 +324,13 @@ or worse, might match unintentionally.
 \label{Actions}
 
 Actions contain the code required to deal with log lines from a particular
-category, e.g.\ rejections.  
+category, e.g.\ rejections.  The actions are parser-specific: each parser
+will need to write the actions it requires from scratch, unless it's
+extending an existing parser.  In the Postfix parser developed for this
+project there are \numberOFactions{} actions and \numberOFrules{} rules.
 
+\showgraph{build/plot-action-distribution}{Distribution of rules
+per action}{Distribution of rules per action}
 
 \subsection{Rules}
 

@@ -1,0 +1,3 @@
+load "plot-defaults.gpi"
+# Create PDF output.
+set terminal pdf monochrome dashed size 4.7,3.3
