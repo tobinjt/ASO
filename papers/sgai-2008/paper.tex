@@ -671,6 +671,71 @@ nadir, and the performance varies proportionally.
 
 \label{coverage}
 
+The discussion of the parser's coverage of Postfix log files is separated
+into two parts: log lines covered and mails covered.  The first is
+important because the parser should handle all (relevant) log lines it's
+given; the second is equally important because the parser must properly
+deal with every mail if it is to be useful.  Improving the former is
+less intrusive, as it just requires new rules to be written; improving the
+latter is much more intrusive as it requires changes to the parser
+algorithm, and it can also be much harder to notice a deficiency.
+
+Warnings are issued for any log lines which are not parsed; no warnings are
+issued for unparsed log lines while testing with the \numberOFlogFILES{}
+test log files, so it can be safely concluded that there are zero false
+negatives.  False positives are harder to quantify: short of examining each
+of the 60,721,709 log lines and determining which \regex{} parsed it, there
+is no way to be sure that every line was parsed by the correct \regex{},
+making it impossible to quantify the false positive rate; however a random
+sample of 6039 log lines was parsed and the results checked manually to
+ensure that the correct \regex{} parsed each log line.
+
+Coverage of mails is much more difficult to determine accurately than
+coverage of log lines.  The parser can dump its state tables in a human
+readable form; examining these tables with reference to the log files is
+the best way to detect mails which were not handled properly.  The parser
+issues warnings when it detects any errors, some of which may alert the
+user to a problem.  There should be few or no warnings when parsing, and
+when finished parsing the state table should only contain entries for mails
+which had yet to be delivered when the log files ended, or were accepted
+before the log files began.
+
+Verifying by inspection that the parser correctly deals with all 60,721,709
+lines in the test log files is infeasible, but verifying a subset of those
+log files is a tractable, if extremely time consuming, task.  A sample of
+log lines was parsed with all debugging options enabled, resulting in
+167,448 lines of output.  All 167,448 lines were examined in conjunction
+with the input log and a dump of the resulting database, verifying that for
+each of the input lines the parser used the correct rule and executed the
+correct action, which in turn produced the correct result and inserted the
+correct data in the database.  The log segment produced 4 warnings, 10
+mails remaining in the state tables, and 1625 connections correctly entered
+in the database.
+
+Given the evidence detailed above, the author is confident that the false
+positive rate when reconstructing a mail is exceedingly low, if not
+approaching zero.
+
+Parser coverage is divided into two topics in this section: log lines
+covered and mails covered.\footnote{There is substantially more coverage
+discussion in the author's thesis.}  The former is initially more
+important, as the parser must successfully parse every line if it is to be
+complete, but subsequently the latter takes precedence because reproducing
+the path a mail takes through Postfix is the aim of the parser.  Increasing
+the percentage of log lines parsed is relatively simple and non-intrusive:
+adding new rules or modifying existing rules is simplified by the
+separation of rules, actions and framework.  Improving the logical coverage
+is harder, as the actions taken by Postfix must be reconstructed by the
+author, and the new sequence of actions integrated into the existing model
+without breaking the existing parsing.  Detecting a deficiency in the
+parsing algorithm is also significantly harder than detecting unparsed log
+lines, as the parser will warn about any unparsed line, whereas discovering
+a flaw in the parser requires understanding of the warnings produced and
+the mails remaining in the state table.  Rectifying a flaw in the parser
+requires an understanding of both the parser and Postfix's log files, and
+investigative work to determine the cause of the deficiency, followed by
+further examination of the log files in developing a solution.
+
 \section{Conclusion}
 
 Makes adding new rules trivial, new actions tractable.  Knowledge of the
