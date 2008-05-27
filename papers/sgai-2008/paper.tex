@@ -390,9 +390,7 @@ attributes:
         is compiled before attempting to parse the log file --- otherwise
         each \regex{} would be recompiled each time it was used, resulting
         in a large, data dependent slowdown.  Rule efficiency concerns are
-        discussed in \sectionref{rule efficiency}, with the impact of
-        compiling and caching \regexes{} covered in \sectionref{Caching
-        each regex}.
+        discussed in \sectionref{rule efficiency}.
 
     \item [result\_cols] Specifies how the fields in the
         log line will be extracted.  The format is:
@@ -549,6 +547,140 @@ Scalability, ordering, caching regexes.  Interesting to run with all rules
 versus running with the minimum number necessary to parse the test log
 files.  Then try that again with different orderings?  Coverage.
 
+Parsing efficiency is an obvious concern when the parser routinely needs to
+deal with 75 MB log files containing 300,000 log lines (generated daily on
+a mail server handling mail for approximately 700 users --- large scale
+mail servers would have much larger log files on a daily basis).  When
+generating the data for the graphs included in this document,
+\numberOFlogFILES{} log files (totaling 10.08 GB, \numberOFlogLINEShuman{}
+log lines) were each parsed 10 times, the first run discarded, and the
+execution time for the remaining 9 runs averaged.  The first run is
+discarded for two reasons:
+
+\begin{enumerate}
+
+    \item The execution time will be higher because the log file must be
+        read from disk, whereas for subsequent runs the log file will be
+        cached in memory by the operating system.
+
+    \item The execution time will also be higher because the rule ordering
+        will be sub-optimal compared to subsequent runs.
+
+\end{enumerate}
+
+Saving results to the database was disabled for the test runs, as that
+dominates the run time of the program, and the tests are aimed at measuring
+the speed of the parser rather than the speed of the database and the disks
+the database is stored on.
+
+\subsection{Architecture Scalability}
+
+MINIMUM VERSUS MAXIMUM NUMBER OF RULES\@.
+
+An important property of a parser is how execution time scales relative to
+input size: does it scale linearly, polynomially, or exponentially?
+Figure~\refwithpage{execution time vs file size vs number of lines graph}
+shows the execution time in seconds, file size in MB and tens of thousands
+of log lines per log file.  All three lines run roughly in parallel, giving
+a visual impression that the algorithm scales linearly with input size.
+This impression is borne out by fig.~\refwithpage{execution time vs file
+size vs number lines factor} which plots the ratio of file size vs
+execution time and ratio of number of log lines vs execution time (higher
+is better).  As the reader can see the ratios are quite tightly banded,
+showing that the algorithm scales linearly: the much larger log files
+between points 60 and 70 on the X axis in fig.~\refwithpage{execution time
+vs file size vs number of lines graph} actually cause the ratio to
+increase, rather than decrease.  The strange behaviour where larger log
+files are parsed more efficiently is explained fully in \sectionref{Why are
+there dips in the graphs?}.  
+
+\showgraph{build/plot-normal-filesize-numlines}{Execution time vs file
+size vs number of lines}{execution time vs file size vs number of lines
+graph}
+
+\showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file
+size and number of lines to execution time}{execution time vs file size vs
+number lines factor}
+
+\subsection{Rule ordering}
+
+\label{Rule ordering}
+\label{rule ordering for efficiency}
+\label{rule efficiency}
+
+At the time of writing there are \numberOFrules{} different rules, with the
+top 10\% matching the vast majority of the log lines, and the remaining log
+lines split across the other 90\% of the rules (as shown in
+fig.~\refwithpage{rule hits graph}).  \showgraph{build/plot-hits}{Hits per
+rule}{rule hits graph} Assuming that the distribution of log lines is
+reasonably steady over time, program efficiency should benefit from trying
+more frequently matching rules before those which match less frequently.
+To test this hypothesis three full test runs were performed with different
+rule orderings:
+
+\begin{description}
+
+    \item [normal]  The most optimal order, according to the hypothesis:
+        rules which match most often will be tried first.
+
+    \item [shuffle] Random ordering --- the rules will be shuffled once
+        before use and will retain that ordering for the entirety of the
+        log file.  Note that the ordering will change every time the parser
+        is executed, so 10 different orderings will be generated for each
+        log file in the test run.  This is intended to represent an
+        unsorted rule set.
+
+    \item [reverse] Hypothetically the worst order: the most frequently
+        matching rules will be tried last.
+
+\end{description}
+
+Figure~\refwithpage{percentage increase of shuffled and reversed over
+normal} shows the percentage increase of execution times.  Overall this
+provides a modest but worthwhile performance increase of over 10\%, for a
+small investment in time and programming.
+\showgraph{build/plot-normal-shuffle-reverse-factor}{Percentage increase of
+shuffled and reversed over normal}{percentage increase of shuffled and
+reversed over normal}
+
+\subsubsection{Why are there dips in the graphs?}
+\label{Why are there dips in the graphs?}
+
+The dips at log files 22 and 62--68 correspond to peaks in log file size in
+graph~\refwithpage{execution time vs file size vs number of lines graph},
+and peaks in graph~\refwithpage{execution time vs file size vs number lines
+factor} (where a peak means that more lines are processed per second, i.e.\
+performance is better).  The explanation for this took some time to arrive
+at, but it turns out to be reasonably simple.  The large log files in
+question were caused by a mail forwarding loop, where the distribution of
+log lines is quite different to normal, resulting in different performance
+characteristics.  Fewer 
+
+The vast majority of log lines when a mail loop occurs are from Postfix
+components which have a small number of rules associated with them, whereas
+in general \daemon{smtpd} adds the majority of log lines, and also has the
+highest number of rules.  \daemon{smtpd} log lines are distributed across
+rules much more evenly than the log lines which occur frequently during a
+mail loop, so the average number of rules
+required to parse a \daemon{smtpd} log line is much higher that the average
+number required to parse other log lines.
+
+These two characteristics combine to reduce the average number or rules
+required to parse a log line when there is a mail loop, as shown by the
+peaks in fig.~\refwithpage{execution time vs file size vs number lines
+factor}.  When the rule ordering is reversed the majority of log lines
+generated by a mail loop will be parsed with very few rules, whereas
+without a mail loop the majority of log lines require a large number of
+rules; this leads to a noticeable drop in the average time required to
+parse a log line, as shown in fig.~\refwithpage{percentage increase of
+shuffled and reversed over normal}.  The number of rules which need to be
+consulted when the ordering is shuffled varies between the optimum and
+nadir, and the performance varies proportionally.
+
+
+
+\subsection{Coverage}
+
 \section{Conclusion}
 
 Makes adding new rules trivial, new actions tractable.  Knowledge of the
@@ -576,3 +708,4 @@ can be parsed and new actions written.
 
 
 \end{document}
+
