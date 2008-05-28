@@ -16,7 +16,8 @@
 % Provides commands to distinguish between pdf and dvi output.
 \usepackage{ifpdf}
 
-\usepackage[acronym=true,style=altlist,number=none,toc=true]{glossary}
+% global=true prevents acronyms being expanded twice
+\usepackage[global=true,acronym=true,style=altlist,number=none,toc=true]{glossary}
 \makeglossary{}
 \makeacronym{}
 

@@ -12,7 +12,8 @@
     have sent large volumes of spam.  To use an RBL the mail server makes a
     DNS request incorporating the IP address of the currently connected
     client; if the requested hostname exists the client is on the RBL, and
-    the mail server can decide what course of action to take.
+    the mail server can decide what course of action to take.  XXX
+    REFERENCES XXX.
 }}
 
 \newacronym{API}{Application Programming Interface}{description={
@@ -27,16 +28,13 @@
 }}
 
 \newacronym{SMTP}{Simple Mail Transfer Protocol}{description={
-    SMTP, originally defined in \RFC{}~821~\cite{RFC821} and updated in
-    \RFC{}~2821~\cite{RFC2821}, is the protocol which transfers mail from
-    the sender to the recipient across the Internet.  It is a simple, human
-    readable, plain text protocol, making it quite easy to test and debug
-    problems with it.  A detailed description of \SMTP{} is beyond the
-    scope of this document: introductory guides can be found
-    at~\cite{smtp-intro-01, smtp-intro-02}, the definitive references
-    are~\cite{RFC821, RFC2821}.
-    %XXX A brief introduction to SMTP is
-    %provided in \sectionref{SMTP background}.
+    SMTP is the protocol which transfers mail from the sender to the
+    recipient across the Internet.  It is a simple, human readable, plain
+    text protocol, making it quite easy to test and debug problems with it.
+    A detailed description of \SMTP{} is beyond the scope of this document:
+    the original protocol definition is \RFC{}~821~\cite{RFC821}, updated
+    in \RFC{}~2821~\cite{RFC2821}; introductory guides can be found
+    at~\cite{smtp-intro-01,smtp-intro-02}.
 }}
 
 \newacronym{LMTP}{Local Mail Transfer Protocol}{description={
@@ -115,8 +113,8 @@
 }}
 
 \newacronym{regex}{Regular Expression}{description={
-    Regular expressions are a method of matching patterns against text that
-    are explained in detail in~\cite{Wikipedia-regex, perlre}.
+    Regular expressions are a powerful method of matching patterns against
+    text that are explained in detail in~\cite{Wikipedia-regex, perlre}.
 }}
 
 % I think this is better than having both regex and regexes in the acronym
@@ -154,8 +152,8 @@
 
 \newacronym{SLCT}{Simple Logfile Clustering Tool}{description={
     SLCT~\cite{slct-paper} is a tool implementing an algorithm designed by
-    Risto Vaarandi~\cite{risto-vaarandi} for identifying and grouping
-    similar log files, then producing a regex for each group of lines.
+    Risto Vaarandi for identifying and grouping similar log files, then
+    producing a regex for each group of lines.
 }}
 
 \newacronym{ATN}{Augmented Transition Networks}{description={
@@ -173,7 +171,5 @@
     Natural Language Processing~\cite{Wikipedia-nlp} attempts to increase
     our understanding of the languages normally used by humans (e.g.\
     English, Spanish, Japanese), with the goal of writing programs which
-    can understand human languages.  It is in no way connected to
-    Neuro-linguistic programming, which is generally found when searching
-    for NLP.
+    can understand human languages.
 }}
