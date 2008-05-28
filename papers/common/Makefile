@@ -38,7 +38,7 @@ build:
 	make build_loop PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
 	cat "${DEST}.out"
 	grep Overfull "${DEST}.out" || true
-	grep "LaTeX Warning: " "${DEST}.out" || true
+	grep -A 1 "LaTeX Warning: " "${DEST}.out" || true
 	BASE=$$( basename "${SOURCE}" .tex ); \
 	grep ^Warning "$$BASE.blg" || true; \
 	grep '!!' "$$BASE.glg" "$$BASE.alg" || true;
@@ -55,7 +55,7 @@ build_run:
 	# I haven't investigated much further, I don't really care.
 	BASE=$$( basename "${SOURCE}" .tex ); \
 	make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.glg" OUTPUT="$$BASE.gls" INPUT="$$BASE.glo"; \
-	make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.alg" OUTPUT="$$BASE.acn" INPUT="$$BASE.acr"
+	#make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.alg" OUTPUT="$$BASE.acn" INPUT="$$BASE.acr"
 	# The next run will include the new glossary and acronyms if they've changed.
 
 build_loop:

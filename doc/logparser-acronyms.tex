@@ -27,8 +27,15 @@
 }}
 
 \newacronym{SMTP}{Simple Mail Transfer Protocol}{description={
-    SMTP is the protocol which transfers mail from the sender to the
-    recipient across the Internet.  %XXX A brief introduction to SMTP is
+    SMTP, originally defined in \RFC{}~821~\cite{RFC821} and updated in
+    \RFC{}~2821~\cite{RFC2821}, is the protocol which transfers mail from
+    the sender to the recipient across the Internet.  It is a simple, human
+    readable, plain text protocol, making it quite easy to test and debug
+    problems with it.  A detailed description of \SMTP{} is beyond the
+    scope of this document: introductory guides can be found
+    at~\cite{smtp-intro-01, smtp-intro-02}, the definitive references
+    are~\cite{RFC821, RFC2821}.
+    %XXX A brief introduction to SMTP is
     %provided in \sectionref{SMTP background}.
 }}
 
@@ -54,7 +61,9 @@
 \newacronym{SQL}{Structured Query Language}{description={
     SQL is the standard language used for database querying, modification
     and maintenance.  Some information about SQL, including its history,
-    can be found at \cite{Wikipedia-sql}.
+    can be found at \cite{Wikipedia-sql}; a good introduction can be found
+    at~\cite{sql-for-web-nerds}, others are~\cite{w3schools-sql-tutorial,
+    sqlcourse.com}.
 }}
 
 \newacronym{SPF}{Sender Policy Framework}{description={
@@ -106,8 +115,8 @@
 }}
 
 \newacronym{regex}{Regular Expression}{description={
-    Regular expressions are a method of matching patterns in text that are
-    explained in detail in~\cite{Wikipedia-regex, perlre}.
+    Regular expressions are a method of matching patterns against text that
+    are explained in detail in~\cite{Wikipedia-regex, perlre}.
 }}
 
 % I think this is better than having both regex and regexes in the acronym
@@ -150,9 +159,9 @@
 }}
 
 \newacronym{ATN}{Augmented Transition Networks}{description={
-    Augmented Transition Networks are a tool used in Computational
-    Linguistics; they are originally described in~\cite{atns} and further
-    in~\cite{nlpip}.
+    Augmented Transition Networks, originally described in~\cite{atns} and
+    further in~\cite{nlpip}, are a tool used in Computational Linguistics
+    for creating grammars to parse or generate sentences,
 }}
 
 \newacronym{CLI}{Command Line Interface}{description={
@@ -164,9 +173,7 @@
     Natural Language Processing~\cite{Wikipedia-nlp} attempts to increase
     our understanding of the languages normally used by humans (e.g.\
     English, Spanish, Japanese), with the goal of writing programs which
-    can understand human languages.  Potential applications include:
-    programs which will automatically summarise a text; programs which
-    can be taught facts, will understand questions and formulate answers to
-    those questions.  It is in no way connected to Neuro-linguistic
-    programming, which is generally found when searching for NLP.
+    can understand human languages.  It is in no way connected to
+    Neuro-linguistic programming, which is generally found when searching
+    for NLP.
 }}
