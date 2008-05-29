@@ -8,9 +8,9 @@
 \newcommand{\parsernames}{\PLP{}'s}
 % Include images
 \usepackage[final]{graphicx}
-\renewcommand{\refname}{Bibliography}
+%\renewcommand{\refname}{Bibliography}
 % Add the bibliography into the table of contents.
-\usepackage[section,numbib]{tocbibind}
+%\usepackage[section,numbib]{tocbibind}
 % Provides commands to distinguish between pdf and dvi output.
 \usepackage{ifpdf}
 \usepackage{url}
@@ -38,7 +38,21 @@
 \usepackage{courier}
 \usepackage{makeidx}
 \usepackage{multicol}
+
+% Nicer citation lists - smaller spaces.
 \usepackage{cite}
+% Adds page numbers to bibliography entries, showing where they were cited.
+% Breaks when cite is used.
+% \usepackage{citeref}
+% Check for unused references.
+% \usepackage{refcheck}
+\usepackage{varioref}
+% Warnings rather than errors when references cross page boundaries.
+\vrefwarning{}
+% Errors when loops are encountered
+\vrefshowerrors{}
+% Show all the files/packages loaded.
+%\listfiles
 
 % \showgraph{filename}{caption}{label}
 \newcommand{\showgraph}[3]{%
@@ -58,11 +72,17 @@
 
 % Replacement for \ref{}, adds the page number too.
 \newcommand{\refwithpage}[1]{%
-    \empty{}\ref{#1} [p.~\pageref{#1}]%
+    %\empty{}\ref{#1} [p.~\pageref{#1}]%
+    \empty{}\vref{#1}%
+}
+% Shorten the text used for references with page numbers.
+\renewcommand{\reftextfaraway}[1]{%
+    [p.~\pageref{#1}]%
 }
 % section references, automatically add \textsection
 \newcommand{\sectionref}[1]{%
-    \textsection{}\refwithpage{#1}%
+    %\textsection{}\refwithpage{#1}%
+    \textsection{}\vref*{#1}%
 }
 
 % A command to format a Postfix daemon's name
@@ -129,9 +149,6 @@ XXX DUE MONDAY JUNE 2$^{ND}$ 2008\@.  PRESENTATION PAPERS\@: MAX 14
 PAGES\@.  POSTER PAPERS\@: MAX 6 PAGES\@.  BLACK AND WHITE ONLY\@.
 
 XXX DO I NEED TO SAY THAT THINGS WILL BE EXPANDED UPON IN MY THESIS\@?
-
-XXX USE citeref AND A REFERENCE PACKAGE WHICH PUTS CLEVER PAGE NUMBERS ON
-REFERENCES\@.
 
 XXX CHECK EVERY URL IN THE BIBLIOGRAPHY\@.
 
@@ -591,8 +608,8 @@ size vs number lines factor} which plots the ratio of file size vs
 execution time, and ratio of number of log lines vs execution time (higher
 is better in both cases).  As the reader can see the ratios are quite
 tightly banded across the graph, showing that the algorithm scales
-linearly: the much larger log files between points 60 and 70 on the X axis
-in fig.~\refwithpage{execution time vs file size vs number of lines graph}
+linearly: the much larger log files at points 62--68 on the X axis in
+fig.~\refwithpage{execution time vs file size vs number of lines graph}
 actually cause the ratio to increase (i.e.\ improve), rather than decrease.
 The strange behaviour where larger log files are parsed more efficiently is
 explained in \sectionref{Why are there dips in the graphs?}.  
