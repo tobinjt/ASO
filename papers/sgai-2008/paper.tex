@@ -143,12 +143,12 @@ Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
     suitable for parsing large corpora or months of accumulated data.
 }
 
+\today{}
+
 XXX DOES THE ABSTRACT NEED TO BE LONGER\@?  IS IT A GOOD TITLE\@?
 
 XXX DUE MONDAY JUNE 2$^{ND}$ 2008\@.  PRESENTATION PAPERS\@: MAX 14
 PAGES\@.  POSTER PAPERS\@: MAX 6 PAGES\@.  BLACK AND WHITE ONLY\@.
-
-XXX DO I NEED TO SAY THAT THINGS WILL BE EXPANDED UPON IN MY THESIS\@?
 
 XXX CHECK EVERY URL IN THE BIBLIOGRAPHY\@.
 
@@ -175,9 +175,9 @@ several reasons:
 
     \item Log lines differ between versions of Postfix.
         
-    \item The mail administrator can define custom rejection messages,
-        resulting in custom log lines~\cite{postfix-lookup-tables,
-        smtpd_access_readme, smtpd_per_user_control}.
+    \item The mail administrator can define custom rejection
+        messages~\cite{postfix-lookup-tables, smtpd_access_readme,
+        smtpd_per_user_control}, resulting in custom log lines.
 
     \item External resources utilised by Postfix (e.g.\ policy
         servers~\cite{policy-servers} or \RBL{} lookups) can also change
@@ -190,16 +190,14 @@ lines is a simple task, as the log lines will continue to evolve over time.
 
 Existing parsers were considered, but their parsing coverage was too low,
 their parsing too inexact, and/or they did not extract sufficient data for
-the purposes of this project.\footnote{A review of the existing parsers
-considered for this project will be included in the author's thesis.} The
-effort required to adapt and improve an existing parser was judged to be
-greater than the effort to write one from scratch, as the techniques used
-by the existing parsers severely limited their potential: some ignored the
-majority of log lines, parsing specific log lines with great accuracy, but
-in an inextensible fashion; others sloppily parsed the majority of log
-lines, but were incapable of distinguishing between log lines of the same
-type, e.g.\ rejections, and extracted only a portion of the data required
-for this project.
+the purposes of this project.  The effort required to adapt and improve an
+existing parser was judged to be greater than the effort to write one from
+scratch, as the techniques used by the existing parsers severely limited
+their potential: some ignored the majority of log lines, parsing specific
+log lines with great accuracy, but in an inextensible fashion; others
+sloppily parsed the majority of log lines, but were incapable of
+distinguishing between log lines of the same type, e.g.\ rejections, and
+extracted only a portion of the data required for this project.
 
 The solution developed is conceptually simple: provide a few generic
 functions (\textit{actions\/}), each capable of dealing with an entire
@@ -292,28 +290,27 @@ having completely different implementations and semantics.
 
 The framework provides utility and support functions for the actions and
 rules.  It provides shared storage to pass data between actions, most
-notably the data structures used to represent each connection and mail.
-It loads and validates rules, controls
-parsing of log files, invokes actions, tracks how often each rule matches
-(to optimise rule ordering, see \sectionref{Rule ordering}), and
-stores results in the database on request.  The framework is independent of
-the parser being written: the same functionality will be required from the
-framework for most or all parsers.
+notably the data structures used to represent each connection and mail.  It
+loads and validates rules, controls parsing of log files, invokes actions,
+tracks how often each rule matches (to optimise rule ordering, see
+\sectionref{Rule ordering}), and stores results in the database on request.
+The framework is independent of the parser being written: the same
+functionality will be required from the framework for most or all parsers.
 
 The function which finds the rule matching the log line and invokes the
 requested action can be expressed in pseudo-code (with indentation denoting
-flow of control) as:
+flow of control):
+
+% DO NOT REFORMAT!
 
 \begin{verbatim}
-
-for each line in the input files:
-    for each rule defined by the user:
+for each line in the input files: 
+    for each rule defined by the user: 
         if this rule matches the input line:
             perform the action specified by the rule
             skip the remaining rules
             process the next input line
     warn the user that the input line was not parsed
-
 \end{verbatim}
 
 The framework takes care of miscellaneous support functions and low level
@@ -361,10 +358,7 @@ this is because there will only ever be one type of log line for that
 action, e.g.\ all log lines showing that a remote client has connected are
 matched by a single rule and handled by the \texttt{CONNECT} action; in
 other cases the action is required to address a deficiency in the log
-files, or a complication which arises during
-parsing.\footnote{\label{complications footnote}The complications which
-arose during development of the parser will be documented in detail in the
-author's thesis.}
+files, or a complication which arises during parsing.
 
 The ability to add special purpose actions to deal with difficulties and
 new requirements which are discovered during parser development is one of
@@ -388,16 +382,15 @@ functionality.
 
 During development of the parser it became apparent that in addition to the
 obvious variety in log lines, there were a large number of complications to
-be overcome.\footref{complications footnote}  Some were the result of
-deficiencies in Postfix's logging, which were improved or resolved by later
-versions of Postfix; others were due to the vagaries of process scheduling,
-client behaviour, and administrative actions.  All were successfully
-accommodated in the parser: adding new actions was enough for several of
-the complications; others required modifications to a single existing
-action to work around the difficulties; the remainder were resolved by
-adapting actions to pass information to subsequent actions (via the
-framework), which then check for the extra information and change their
-behaviour appropriately.
+be overcome.  Some were the result of deficiencies in Postfix's logging,
+which were improved or resolved by later versions of Postfix; others were
+due to the vagaries of process scheduling, client behaviour, and
+administrative actions.  All were successfully accommodated in the parser:
+adding new actions was enough for several of the complications; others
+required modifications to a single existing action to work around the
+difficulties; the remainder were resolved by adapting actions to pass
+information to subsequent actions (via the framework), which then check for
+the extra information and change their behaviour appropriately.
 
 
 \subsection{Rules}
@@ -421,19 +414,14 @@ attributes:
         parsed by program specific rules, allowing generic rules to be
         written.
 
-    \item [regex] The \regex{} to match the log line against.  For
-        efficiency every rule's \regex{} is compiled before attempting to
-        parse the log file --- otherwise each \regex{} would be recompiled
-        each time it was used, resulting in a large, data dependent
-        slowdown.\footnote{This will be discussed in more detail in the
-        author's thesis.}  XXX MAYBE SCRAP THE SECOND SENTENCE\@?
+    \item [regex] The \regex{} to match the log line against.
 
-    \item [result\_cols] Specifies how the fields in the
-        log line will be extracted.  The format is:
-        \tab{} \texttt{smtp\_code = 1; recipient = 2, sender = 4;}
-        \newline i.e.\ semi-colon or comma separated assignment statements,
-        with the variable name on the left and the matching capture from
-        the \regex{} on the right.
+    \item [result\_cols] Specifies how the fields in the log line will be
+        extracted.  The format is:
+        \tab{} \texttt{smtp\_code = 1; recipient = 2, sender = 4;} \newline
+        i.e.\ semi-colon or comma separated assignment statements, with the
+        variable name on the left and the matching capture from the
+        \regex{} on the right.
 
     \item [result\_data] Sometimes rules need to supply a piece of data
         which isn't present in the log line: e.g.\ setting
@@ -489,35 +477,6 @@ rules with the same priority are sorted by the number of successful matches
 when parsing the previous log file.  Negative priorities may be useful for
 catchall rules.
 
-XXX MAYBE REMOVE THE SECTION ON DETECTING OVERLAPPING RULES\@?
-
-Detecting overlapping rules is difficult, but the following approaches may
-be helpful:
-
-\begin{itemize}
-
-    \item Sort by \regex{} and visually inspect the list, e.g.\ with \SQL{}
-        similar to: \textbf{select regex from rules order by regex;}
-
-    \item Compare the results of parsing using sorted, shuffled and
-        reversed rules.\footnote{See \sectionref{rule efficiency} for more
-        details of sorting the rules.}  Parse a number of log files using
-        normal sorting, then dump a textual representation of the rules,
-        connections and results tables.  Repeat with shuffled and reversed
-        rules, starting with a fresh database.  If there are no overlapping
-        rules the tables from each run will be identical; differences
-        indicate overlapping rules.  Which rules overlap can be determined
-        by examining the differences in the tables: each result contains a
-        reference to the rule which created it, if the references differ
-        between runs the two rules referenced in the differing records
-        overlap.  Unfortunately this method cannot prove the absence of
-        overlapping rules; it can detect overlapping rules, but only if
-        there are log lines in the input files which match more than one
-        rule.
-
-\end{itemize}
-
-
 
 
 \subsection{Architecture characteristics}
@@ -559,8 +518,8 @@ be helpful:
         successfully dealt with in the Postfix log parser.
 
     \item [Line oriented:]  The architecture is line oriented at present:
-        there is no facility for rules to consume more input or push
-        unused input back onto the input stream.  This was not a deliberate
+        there is no facility for rules to consume more input or push unused
+        input back onto the input stream.  This was not a deliberate
         decision, rather a consequence of the line oriented nature of the
         log files; other implementations could pursue a more flexible
         approach.
@@ -576,19 +535,7 @@ mail servers would produce much larger log files on a daily basis).  When
 generating the data for the graphs included in this document,
 \numberOFlogFILES{} log files (totaling 10.08 GB, \numberOFlogLINEShuman{}
 log lines) were each parsed 10 times, the results from first run discarded,
-and the execution time for the remaining 9 runs averaged.  XXX DO I NEED TO
-EXPLAIN WHY\@?  The first run is discarded for two reasons:
-
-\begin{enumerate}
-
-    \item The execution time will be higher because the log file must be
-        read from disk, whereas for subsequent runs the log file will be
-        cached in memory by the operating system.
-
-    \item The execution time will also be higher because the rule ordering
-        will be sub-optimal compared to subsequent runs.
-
-\end{enumerate}
+and the execution time for the remaining 9 runs averaged.
 
 Saving results to the database was disabled for the test runs, as that
 dominates the run time of the program, and the tests are aimed at measuring
@@ -612,14 +559,11 @@ linearly: the much larger log files at points 62--68 on the X axis in
 fig.~\refwithpage{execution time vs file size vs number of lines graph}
 actually cause the ratio to increase (i.e.\ improve), rather than decrease.
 The strange behaviour where larger log files are parsed more efficiently is
-explained in \sectionref{Why are there dips in the graphs?}.  
-
-\showgraph{build/plot-normal-filesize-numlines}{Execution time vs file
-size vs number of lines}{execution time vs file size vs number of lines
-graph}
-
-\showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file
-size and number of lines to execution time}{execution time vs file size vs
+explained in \sectionref{Why are there dips in the graphs?}.
+\showgraph{build/plot-normal-filesize-numlines}{Execution time vs file size
+vs number of lines}{execution time vs file size vs number of lines graph}
+\showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file size
+and number of lines to execution time}{execution time vs file size vs
 number lines factor}
 
 XXX MINIMUM VERSUS MAXIMUM NUMBER OF RULES\@.
@@ -681,8 +625,7 @@ second, i.e.\ performance is better).  The explanation for this took some
 time to arrive at, but it turns out to be reasonably simple.  The large log
 files in question were caused by a mail forwarding loop, where the
 distribution of log lines is quite different to normal, resulting in
-different performance characteristics.\footnote{The cause of the mail
-forwarding loop will be explained in the author's thesis.}
+different performance characteristics.
 
 XXX REWRITE THIS NEXT PARAGRAPH SO IT DOESN'T MENTION postfix/smtpd.  The
 vast majority of log lines when a mail loop occurs are from Postfix
@@ -723,8 +666,8 @@ The discussion of the parser's coverage of Postfix log files is separated
 into two parts: log lines covered and mails covered.  The first is
 important because the parser should handle all (relevant) log lines it's
 given; the second is equally important because the parser must properly
-deal with every mail if it is to be useful.  Improving the former is
-less intrusive, as it just requires new rules to be written; improving the
+deal with every mail if it is to be useful.  Improving the former is less
+intrusive, as it just requires new rules to be written; improving the
 latter is much more intrusive as it requires changes to the parser
 algorithm, and it can also be much harder to notice a deficiency.
 
@@ -765,12 +708,11 @@ positive rate when reconstructing a mail is exceedingly low, if not
 approaching zero.
 
 Parser coverage is divided into two topics in this section: log lines
-covered and mails covered.\footnote{There will be substantially more
-coverage discussion in the author's thesis.}  The former is initially more
-important, as the parser must successfully parse every line if it is to be
-complete, but subsequently the latter takes precedence because reproducing
-the path a mail takes through Postfix is the aim of the parser.  Increasing
-the percentage of log lines parsed is relatively simple and non-intrusive:
+covered and mails covered.  The former is initially more important, as the
+parser must successfully parse every line if it is to be complete, but
+subsequently the latter takes precedence because reproducing the path a
+mail takes through Postfix is the aim of the parser.  Increasing the
+percentage of log lines parsed is relatively simple and non-intrusive:
 adding new rules or modifying existing rules is simplified by the
 separation of rules, actions and framework.  Improving the logical coverage
 is harder, as the actions taken by Postfix must be reconstructed by the
@@ -791,8 +733,8 @@ XXX WRITE THE CONCLUSION\@.
 Makes adding new rules trivial, new actions tractable.  Knowledge of the
 framework is rarely necessary.
 
-The architecture's greatest strength is the ease with which new inputs
-can be parsed and new actions written.
+The architecture's greatest strength is the ease with which new inputs can
+be parsed and new actions written.
 
 \bibliographystyle{spmpsci}
 \bibliography{../common/bibliography}
@@ -813,4 +755,3 @@ can be parsed and new actions written.
 
 
 \end{document}
-
