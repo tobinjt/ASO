@@ -145,15 +145,15 @@ cooperating with an external virus scanner), so the \texttt{virus} field is
 a mystery.
 
 \url{http://www.thesawmill.co.uk/formats/postfix_ii.html} \newline Fields
-extracted: from, to, \RBL{}, client hostname and client \IP{}\@.
+extracted: from, to, RBL, client hostname and client \IP{}\@.
 
 \url{http://www.thesawmill.co.uk/formats/beta_postfix.html} \newline Fields
 extracted: from, to, client hostname, client \IP{}, relay hostname, relay
-\IP{}, status, response code, \RBL{} and message id.
+\IP{}, status, response code, RBL and message id.
 
 Even if the three data sets were linked together Sawmill would extract less
 data than \parsername{}, and it does not appear to extract data about
-rejections except when the rejection is caused by an \RBL{} check.
+rejections except when the rejection is caused by an \DNSBL{} check.
 
 When tested with the \numberOFlogFILES{} test log files it performed
 adequately, though the rate it processed log files at did slow down

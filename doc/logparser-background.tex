@@ -366,9 +366,9 @@ associated action if found; the method of searching the file is dependant
 on the type of the file (\texttt{cidr} in the example) --- see
 \cite{postfix-lookup-tables} for more details.  Other restrictions
 determine their result by consulting external sources, e.g.\
-\texttt{reject\_rbl\_client rbl.example.com} checks whether the \IP{}
-address of the client is present in the \RBL{} \texttt{rbl.example.com},
-rejecting the command if the client is listed.
+\texttt{reject\_rbl\_client dnsbl.example.com} checks whether the \IP{}
+address of the client is present in the \DNSBL{}
+\texttt{dnsbl.example.com}, rejecting the command if the client is listed.
 This description is necessarily brief, for further details
 see~\cite{smtpd_access_readme, smtpd_per_user_control, policy-servers}.
 

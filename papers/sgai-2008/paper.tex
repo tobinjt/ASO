@@ -150,6 +150,13 @@ XXX DOES THE ABSTRACT NEED TO BE LONGER\@?  IS IT A GOOD TITLE\@?
 XXX DUE MONDAY JUNE 2$^{ND}$ 2008\@.  PRESENTATION PAPERS\@: MAX 14
 PAGES\@.  POSTER PAPERS\@: MAX 6 PAGES\@.  BLACK AND WHITE ONLY\@.
 
+XXX IN THE INTRODUCTION\@: WHY IS THIS RELEVANT TO AN AI CONFERENCE\@?
+
+XXX MAYBE MENTION THAT LOG LINES COULD BE MODIFIED AND RE-PARSED\@?  MAYBE
+WORK IT INTO THE ARCHITECTURE CHARACTERISTICS SECTION, AND ELSEWHERE\@.
+
+XXX MAYBE ADD AN EXAMPLE RULE AND LOG LINE, IF THERE'S SUFFICIENT SPACE\@.
+
 \input{../../doc/logparser-acronyms.tex}
 
 \section{Introduction}
@@ -178,7 +185,7 @@ several reasons:
         smtpd_per_user_control}, resulting in custom log lines.
 
     \item External resources utilised by Postfix (e.g.\ policy
-        servers~\cite{policy-servers} or \RBL{} lookups) can also change
+        servers~\cite{policy-servers} or \DNSBL{} lookups) can also change
         their messages, sometimes without warning.
 
 \end{itemize}
@@ -202,7 +209,7 @@ functions (\textit{actions\/}), each capable of dealing with an entire
 category of log lines (e.g.\ rejections), accompanied by a multitude of
 precise patterns (\textit{rules\/}), each of which matches all log lines of
 a specific type, and only that type (e.g.\ rejection by a specific
-\RBLshort{}).
+\DNSBL{}).
 
 
 \section{Architecture}
@@ -733,6 +740,15 @@ framework is rarely necessary.
 
 The architecture's greatest strength is the ease with which new inputs can
 be parsed and new actions written.
+
+System could be used by mail administrators to monitor restrictions.
+
+Explain how someone could build upon it, e.g.\ to parse further Postfix
+stuff, or to parse other logs entirely.
+
+``This is a real world application, based on a real world need, rather than
+a toy application built as a proof of concept''  Put this in the
+introduction as well.
 
 \bibliographystyle{spmpsci}
 \bibliography{../common/bibliography}
