@@ -129,6 +129,7 @@ logparser.deps: \
 				build/plot-hits-middle.pdf									\
 				build/plot-hits-low.pdf										\
 				build/plot-action-distribution.pdf							\
+				build/plot-normal-vs-smaller.pdf							\
 				\
 				build/plot-cached-discarded.ps								\
 				build/plot-cached-discarded-factor.ps						\
@@ -142,6 +143,7 @@ logparser.deps: \
 				build/plot-hits-middle.ps									\
 				build/plot-hits-low.ps										\
 				build/plot-action-distribution.ps							\
+				build/plot-normal-vs-smaller.ps								\
 				\
 				build/stats-cached-discarded-include-for-graph.tex			\
 				build/stats-normal-filesize-line-count-include.tex			\
@@ -180,6 +182,9 @@ build/plot-hits-low.ps: stats-hits.txt
 build/plot-log22-log-lines.ps: stats-log22-rule-count-by-program.txt
 build/plot-log22-rules.ps: stats-log22-rule-count-by-program.txt
 build/plot-action-distribution.ps: build/action-distribution.txt
+build/plot-normal-vs-smaller.ps: build/stats-normal-vs-smaller.txt \
+									build/stats-shuffle-vs-smaller.txt \
+									build/stats-reverse-vs-smaller.txt
 
 # Duplicated dependencies; make doesn't seem to rebuild properly when there are multiple wildcard dependencies.  Poo.
 build/plot-cached-discarded.pdf: build/stats-cached.txt build/stats-discarded.txt build/stats-cached-discarded-factor.txt
@@ -198,6 +203,9 @@ build/plot-hits-low.pdf: stats-hits.txt
 build/plot-log22-log-lines.pdf: stats-log22-rule-count-by-program.txt
 build/plot-log22-rules.pdf: stats-log22-rule-count-by-program.txt
 build/plot-action-distribution.pdf: build/action-distribution.txt
+build/plot-normal-vs-smaller.pdf: build/stats-normal-vs-smaller.txt \
+									build/stats-shuffle-vs-smaller.txt \
+									build/stats-reverse-vs-smaller.txt
 
 build/plot-%.ps: graphs/plot-%.gpi
 	cd graphs && gnuplot "../$<" || (rm -f "../$@"; false)
@@ -338,6 +346,22 @@ build/action-distribution.txt: db.full-run.sq3
 	sqlite3 -separator ' ' "$<" 'select action, count(action) from rules group by action order by count(action);' > "$@.tmp"
 	nl "$@.tmp" > "$@" || (rm -f "$@"; false)
 
+#build/stats-normal-vs-smaller.txt: build/stats-normal.txt build/stats-normal-smaller.txt
+# XXX THE ORDER IS REVERSED HERE TEMPORARILY UNTIL I GET A CHANCE TO RE-RUN THE STATS.
+build/stats-normal-vs-smaller.txt: build/stats-normal-smaller.txt build/stats-normal.txt
+	INPUT="$^" OUTPUT="$@" make normal-vs-smaller
+
+build/stats-reverse-vs-smaller.txt: build/stats-reverse.txt build/stats-reverse-smaller.txt
+	INPUT="$^" OUTPUT="$@" make normal-vs-smaller
+
+build/stats-shuffle-vs-smaller.txt: build/stats-shuffle.txt build/stats-shuffle-smaller.txt
+	INPUT="$^" OUTPUT="$@" make normal-vs-smaller
+
+normal-vs-smaller:
+	# There deliberately aren't any quotes around INPUT because it will have 
+	# multiple file names
+	paste -d ' ' ${INPUT} | awk '!/^#/ { print $$1, 100 - ($$9 * 100 / $$3)}' > "${OUTPUT}"
+
 # Build stats from the directory created by gen-stats.
 # XXX THIS DOESN'T HAPPEN AUTOMATICALLY - MAKE THAT WORK.
 build/stats-normal.txt: stats-normal
@@ -353,6 +377,15 @@ build/stats-reverse.txt: stats-reverse
 	DIR="$<" FILE="$@" make parse-stats
 
 build/stats-discarded.txt: stats-normal-regex
+	DIR="$<" FILE="$@" make parse-stats
+
+build/stats-normal-smaller.txt: stats-normal-smaller
+	DIR="$<" FILE="$@" make parse-stats
+
+build/stats-reverse-smaller.txt: stats-reverse-smaller
+	DIR="$<" FILE="$@" make parse-stats
+
+build/stats-shuffle-smaller.txt: stats-shuffle-smaller
 	DIR="$<" FILE="$@" make parse-stats
 
 parse-stats:
@@ -385,7 +418,7 @@ check-acronyms:
 
 .PHONY: todo
 todo:
-	grep -n -E 'TODO|XXX' *.tex *.bib || true
+	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib || true
 
 2up: logparser-2up.ps logparser-2up.pdf
 
