@@ -487,6 +487,7 @@ documentation for which compression formats it supports.
 =cut
 
 sub parse {
+warn qq{Make it possible to return a modified input line for further parsing\n};
     my ($self, $logfile) = @_;
     $self->{current_logfile} = $logfile;
     my $logfile_fh = IO::File->new(q{< } . $logfile);
