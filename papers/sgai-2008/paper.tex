@@ -166,9 +166,6 @@ PAGES\@.  POSTER PAPERS\@: MAX 6 PAGES\@.  BLACK AND WHITE ONLY\@.
 
 XXX IN THE INTRODUCTION\@: WHY IS THIS RELEVANT TO AN AI CONFERENCE\@?
 
-XXX MAYBE MENTION THAT LOG LINES COULD BE MODIFIED AND RE-PARSED\@?  MAYBE
-WORK IT INTO THE ARCHITECTURE CHARACTERISTICS SECTION, AND ELSEWHERE\@.
-
 XXX MAYBE ADD AN EXAMPLE RULE AND LOG LINE, IF THERE'S SUFFICIENT SPACE\@.
 
 \input{../../doc/logparser-acronyms.tex}
@@ -411,6 +408,11 @@ difficulties; the remainder were resolved by adapting actions to pass
 information to subsequent actions (via the framework), which then check for
 the extra information and change their behaviour appropriately.
 
+Actions may also return a modified input line which will be parsed as if
+read from the input stream, allowing for cascaded parsing XXX REFERENCE\@.
+This is a powerful facility allowing a generic rule and action to parse
+part of the input, followed by more specific rules and actions parsing the
+remainder.
 
 \subsection{Rules}
 
@@ -514,7 +516,10 @@ catchall rules.
     \item [Partially context-sensitive actions:]  XXX IS THIS THE CORRECT
         TERMINOLOGY\@?  Actions can consult the results (or lack of
         results) of previous actions when executing, providing some context
-        sensitivity.  Actions can not inspect past or upcoming inputs.
+        sensitivity.  Actions can not inspect past or upcoming inputs,
+        however allowing actions can return a modified input line that will
+        be parsed as if read from the input stream, allowing for cascaded
+        parsing XXX REFERENCE\@.
 
     \item [Matching rules to log lines is simple:]  The first matching rule
         wins: there is no backtracking to try alternate rules, no attempt
