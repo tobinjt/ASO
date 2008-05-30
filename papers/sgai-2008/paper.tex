@@ -165,10 +165,6 @@ XXX DOES THE ABSTRACT NEED TO BE LONGER\@?  IS IT A GOOD TITLE\@?
 XXX DUE MONDAY JUNE 2$^{ND}$ 2008\@.  PRESENTATION PAPERS\@: MAX 14
 PAGES\@.  POSTER PAPERS\@: MAX 6 PAGES\@.  BLACK AND WHITE ONLY\@.
 
-XXX IN THE INTRODUCTION\@: WHY IS THIS RELEVANT TO AN AI CONFERENCE\@?
-
-XXX MAYBE ADD AN EXAMPLE RULE AND LOG LINE, IF THERE'S SUFFICIENT SPACE\@.
-
 \input{../../doc/logparser-acronyms.tex}
 
 \section{Introduction}
@@ -214,21 +210,24 @@ their potential: some ignored the majority of log lines, parsing specific
 log lines with great accuracy, but in an inextensible fashion; others
 sloppily parsed the majority of log lines, but were incapable of
 distinguishing between log lines of the same type, e.g.\ rejections, and
-extracted only a portion of the data required for this project.
+extracted only a portion of the data required for this project.  The parser
+written for this project is a fully usable application, built to address a
+genuine need, rather than a proof of concept whose sole purpose is to
+illustrate a new idea; it deals with the oddities and difficulties which
+occur in the real world, rather than a clean, idealised scenario developed
+to showcase the best features of a new approach.
 
 The solution developed is conceptually simple: provide a few generic
 functions (\textit{actions\/}), each capable of dealing with an entire
 category of log lines (e.g.\ rejections), accompanied by a multitude of
 precise patterns (\textit{rules\/}), each of which matches all log lines of
 a specific type, and only that type (e.g.\ rejection by a specific
-\DNSBL{}).
-
-This architecture is ideally suited to parsing inputs where the input is
-not fully understood or does not follow a fixed grammar: the architecture
-warns about unparsed inputs and other errors, but continues on parsing as
-best it can, allowing the developer of a new parser to decide which
-deficiencies are most important and require attention first, rather than
-being forced to fix the first error which arises.
+\DNSBL{}).  This architecture is ideally suited to parsing inputs where the
+input is not fully understood or does not follow a fixed grammar: the
+architecture warns about unparsed inputs and other errors, but continues on
+parsing as best it can, allowing the developer of a new parser to decide
+which deficiencies are most important and require attention first, rather
+than being forced to fix the first error which arises.
 
 \section{Architecture}
 
@@ -416,10 +415,10 @@ information to subsequent actions (via the framework), which then check for
 the extra information and change their behaviour appropriately.
 
 Actions may also return a modified input line which will be parsed as if
-read from the input stream, allowing for cascaded parsing XXX REFERENCE\@.
-This is a powerful facility allowing a generic rule and action to parse
-part of the input, followed by more specific rules and actions parsing the
-remainder.
+read from the input stream, allowing for cascaded
+parsing~\cite{cascaded-parsing}.  This is a powerful facility allowing a
+generic rule and action to parse part of the input, followed by more
+specific rules and actions parsing the remainder.
 
 \subsection{Rules}
 
@@ -520,13 +519,13 @@ catchall rules.
         $\text{\textless{}input\textgreater{}} \mapsto \text{rule-1} |
         \text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
 
-    \item [Partially context-sensitive actions:]  XXX IS THIS THE CORRECT
-        TERMINOLOGY\@?  Actions can consult the results (or lack of
-        results) of previous actions when executing, providing some context
-        sensitivity.  Actions can not inspect past or upcoming inputs,
-        however allowing actions can return a modified input line that will
-        be parsed as if read from the input stream, allowing for cascaded
-        parsing XXX REFERENCE\@.
+    \item [Partially context-sensitive actions and cascaded parsing:]
+        Actions can consult the results (or lack of results) of previous
+        actions when executing, providing some context sensitivity.
+        Actions can not inspect past or upcoming inputs, however allowing
+        actions can return a modified input line that will be parsed as if
+        read from the input stream, allowing for cascaded
+        parsing~\cite{cascaded-parsing}.
 
     \item [Matching rules to log lines is simple:]  The first matching rule
         wins: there is no backtracking to try alternate rules, no attempt
@@ -709,12 +708,13 @@ important optimisation enabling the parser to scale well.
 \label{coverage}
 
 The parser's coverage of Postfix log files is separated into two parts: log
-line coverage and mail coverage.  The first is important because the parser
-should handle all input log lines; the second is equally important because
-the parser must properly reconstruct every mail if it is to be useful.
-Improving the former is less intrusive, as it just requires new rules to be
-written; improving the latter is more intrusive as it requires changes to
-actions, and it can also be much harder to notice a deficiency.
+line coverage and mail coverage.  The former is initially more important,
+as the parser must successfully parse every line if it is to be complete,
+but subsequently the latter takes precedence because reproducing the path a
+mail takes through Postfix is the aim of the parser.  Improving the former
+is less intrusive, as it just requires new rules to be written; improving
+the latter is more intrusive as it requires changes to actions, and it can
+also be much harder to notice a deficiency.
 
 The framework issues warnings for any log lines which are not parsed; no
 warnings are issued for unparsed log lines while parsing the
@@ -749,25 +749,6 @@ connections correctly entered in the database.  Given the evidence detailed
 above, the author is confident that the false positive rate when
 reconstructing a mail is zero.
 
-XXX DO I NEED THIS PARAGRAPH\@?
-Parser coverage is divided into two topics in this section: log lines
-covered and mails covered.  The former is initially more important, as the
-parser must successfully parse every line if it is to be complete, but
-subsequently the latter takes precedence because reproducing the path a
-mail takes through Postfix is the aim of the parser.  Increasing the
-percentage of log lines parsed is relatively simple and non-intrusive:
-adding new rules or modifying existing rules is simplified by the
-separation of rules, actions and framework.  Improving the logical coverage
-is harder, as the actions taken by Postfix must be reconstructed by the
-author, and the new sequence of actions integrated into the existing model
-without breaking the existing parsing.  Detecting a deficiency in the
-parsing algorithm is also significantly harder than detecting unparsed log
-lines, as the parser will warn about any unparsed line, whereas discovering
-a flaw in the parser requires understanding of the warnings produced and
-the mails remaining in the state table.  Rectifying a flaw in the parser
-requires an understanding of both the parser and Postfix's log files, and
-investigative work to determine the cause of the deficiency, followed by
-further examination of the log files in developing a solution.
 
 \section{Conclusion}
 
@@ -801,17 +782,22 @@ lines; these \regexes{} will form the basis of the initial ruleset.  When
 the commonly occurring inputs are parsed by rules and actions, the process
 of identifying and rectifying parsing deficiencies can begin, with each
 iteration of the development process improving the parser, similar to
-Stepwise Refinement~\cite{stepwise-refinement}.
+Stepwise Refinement~\cite{stepwise-refinement}.  This architecture is
+ideally suited to parsing inputs where the input is not fully understood or
+does not follow a fixed grammar: the architecture warns about unparsed
+inputs and other errors, but continues on parsing as best it can, allowing
+the developer of a new parser to decide which deficiencies are most
+important and require attention first, rather than being forced to fix the
+first error which arises.
 
-XXX PUT THIS IN THE INTRODUCTION AS WELL\@.  The Postfix log file parser
-based on this architecture provides a basis for systems administrators to
-monitor the effectiveness of their anti-spam measures and adapt their
-defences to combat the new techniques used by those sending spam.  The
-parser is a fully usable application, built to address a genuine need,
-rather than a proof of concept whose sole purpose is to illustrate a new
-idea; it deals with the oddities and difficulties which occur in the real
-world, rather than a clean, idealised scenario developed to showcase the
-best features of a new approach.
+The Postfix log file parser based on this architecture provides a basis for
+systems administrators to monitor the effectiveness of their anti-spam
+measures and adapt their defences to combat the new techniques used by
+those sending spam.  The parser is a fully usable application, built to
+address a genuine need, rather than a proof of concept whose sole purpose
+is to illustrate a new idea; it deals with the oddities and difficulties
+which occur in the real world, rather than a clean, idealised scenario
+developed to showcase the best features of a new approach.
 
 \bibliographystyle{spmpsci}
 \bibliography{../common/bibliography}
