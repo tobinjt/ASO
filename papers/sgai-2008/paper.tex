@@ -585,15 +585,11 @@ vs number of lines}{execution time vs file size vs number of lines graph}
 and number of lines to execution time}{execution time vs file size vs
 number lines factor}
 
-XXX MINIMUM VERSUS MAXIMUM NUMBER OF RULES\@.
-
 \subsection{Rule ordering}
 
 \label{Rule ordering}
 \label{rule ordering for efficiency}
 \label{rule efficiency}
-
-XXX MINIMUM VERSUS MAXIMUM NUMBER OF RULES\@.
 
 At the time of writing there are \numberOFrules{} different rules, with the
 top 10\% matching the vast majority of the log lines, and the remaining log
@@ -639,22 +635,17 @@ The dips at log files 22 and 62--68 in fig.~\refwithpage{percentage
 increase of shuffled and reversed over normal} correspond to peaks in log
 file size in fig.~\refwithpage{execution time vs file size vs number of
 lines graph}, and peaks in fig.~\refwithpage{execution time vs file size vs
-number lines factor} (where a peak means that more lines are processed per
-second, i.e.\ performance is better).  The explanation for this took some
-time to arrive at, but it turns out to be reasonably simple.  The large log
-files in question were caused by a mail forwarding loop, where the
-distribution of log lines is quite different to normal, resulting in
-different performance characteristics.
-
-XXX REWRITE THIS NEXT PARAGRAPH SO IT DOESN'T MENTION postfix/smtpd.  The
-vast majority of log lines when a mail loop occurs are from Postfix
-components which have a small number of rules associated with them, whereas
-in general \daemon{smtpd} adds the majority of log lines, and also has the
-highest number of rules.  \daemon{smtpd} log lines are distributed across
-rules much more evenly than the log lines which occur frequently during a
-mail loop, so the average number of rules required to parse a
-\daemon{smtpd} log line is much higher that the average number required to
-parse other log lines.
+number lines factor} (where a peak means that performance is better).  The
+explanation for this took some time to arrive at, but it turns out to be
+reasonably simple.  The large log files in question were caused by a mail
+forwarding loop, where the distribution of log lines is quite different to
+normal, resulting in different performance characteristics.  The vast
+majority of log lines when a mail loop occurs are from Postfix components
+which have a small number of rules associated with them, whereas in general
+the majority of log lines are from the Postfix component (\daemon{smtpd})
+with the highest number of rules.  Furthermore in normal log files the
+majority of log lines are distributed much more evenly across rules than
+the majority of log lines during a mail loop.
 
 These two characteristics combine to reduce the average number or rules
 required to parse a log line when there is a mail loop, as shown by the
@@ -670,8 +661,8 @@ moves towards the most likely.  This leads to a noticeable drop in the
 average time required to parse a log line during a mail loop, as shown in
 fig.~\refwithpage{percentage increase of shuffled and reversed over
 normal}.  The number of rules which need to be consulted when the ordering
-is shuffled varies between the optimum and the nadir, and the performance
-varies proportionally.
+is shuffled varies between the optimal and the pessimal, with the
+performance varying proportionally.
 
 \subsection{Architecture Scalability: Number of Rules}
 
@@ -705,26 +696,23 @@ important optimisation enabling the parser to scale well.
 
 \label{coverage}
 
-XXX THIS NEEDS TO BE IMPROVED AND PROOFREAD\@.
+The parser's coverage of Postfix log files is separated into two parts: log
+line coverage and mail coverage.  The first is important because the parser
+should handle all input log lines; the second is equally important because
+the parser must properly reconstruct every mail if it is to be useful.
+Improving the former is less intrusive, as it just requires new rules to be
+written; improving the latter is more intrusive as it requires changes to
+actions, and it can also be much harder to notice a deficiency.
 
-The discussion of the parser's coverage of Postfix log files is separated
-into two parts: log lines covered and mails covered.  The first is
-important because the parser should handle all (relevant) log lines it's
-given; the second is equally important because the parser must properly
-deal with every mail if it is to be useful.  Improving the former is less
-intrusive, as it just requires new rules to be written; improving the
-latter is much more intrusive as it requires changes to the parser
-algorithm, and it can also be much harder to notice a deficiency.
-
-Warnings are issued for any log lines which are not parsed; no warnings are
-issued for unparsed log lines while testing with the \numberOFlogFILES{}
-test log files, so it can be safely concluded that there are zero false
-negatives.  False positives are harder to quantify: short of examining each
-of the 60,721,709 log lines and determining which \regex{} parsed it, there
-is no way to be sure that every line was parsed by the correct \regex{},
-making it impossible to quantify the false positive rate; however a random
-sample of 6039 log lines was parsed and the results checked manually to
-ensure that the correct \regex{} parsed each log line.
+The framework issues warnings for any log lines which are not parsed; no
+warnings are issued for unparsed log lines while parsing the
+\numberOFlogFILES{} test log files, so it can be safely concluded that
+there are zero false negatives.  False positives are harder to quantify:
+manually verifying that the correct \regex{} parsed each of the 60,721,709
+log lines is infeasible, making it impossible to quantify the false
+positive rate; however a random sample of 6039 log lines (0.00994\% of the
+total) was parsed and the results verified to ensure that the correct
+\regex{} parsed each log line.
 
 Coverage of mails is much more difficult to determine accurately than
 coverage of log lines.  The parser can dump its state tables in a human
@@ -734,24 +722,22 @@ issues warnings when it detects any errors, some of which may alert the
 user to a problem.  There should be few or no warnings when parsing, and
 when finished parsing the state table should only contain entries for mails
 which had yet to be delivered when the log files ended, or were accepted
-before the log files began.
+before the log files began.  Verifying by inspection that the parser
+correctly deals with all the mails in the test log files is infeasible, but
+verifying a subset of those mails is a tractable, if extremely time
+consuming, task.  A sample of 6000 log lines was parsed with all debugging
+options enabled, resulting in 167,448 lines of output.  All 167,448 lines
+were examined in conjunction with the input log file and a dump of the
+resulting database, verifying that for each of the input lines the parser
+used the correct rule and executed the correct action, which in turn
+produced the correct result and inserted the correct data in the database.
+The log segment produced 4 warnings (about mails which had started before
+the log file segment), 10 mails remaining in the state tables, and 1625
+connections correctly entered in the database.  Given the evidence detailed
+above, the author is confident that the false positive rate when
+reconstructing a mail is zero.
 
-Verifying by inspection that the parser correctly deals with all 60,721,709
-lines in the test log files is infeasible, but verifying a subset of those
-log files is a tractable, if extremely time consuming, task.  A sample of
-log lines was parsed with all debugging options enabled, resulting in
-167,448 lines of output.  All 167,448 lines were examined in conjunction
-with the input log and a dump of the resulting database, verifying that for
-each of the input lines the parser used the correct rule and executed the
-correct action, which in turn produced the correct result and inserted the
-correct data in the database.  The log segment produced 4 warnings, 10
-mails remaining in the state tables, and 1625 connections correctly entered
-in the database.
-
-Given the evidence detailed above, the author is confident that the false
-positive rate when reconstructing a mail is exceedingly low, if not
-approaching zero.
-
+XXX DO I NEED THIS PARAGRAPH\@?
 Parser coverage is divided into two topics in this section: log lines
 covered and mails covered.  The former is initially more important, as the
 parser must successfully parse every line if it is to be complete, but

@@ -42,6 +42,7 @@ build:
 	BASE=$$( basename "${SOURCE}" .tex ); \
 	grep ^Warning "$$BASE.blg" || true; \
 	grep '!!' "$$BASE.glg" "$$BASE.alg" || true;
+	grep 'Output written .* pages' "${DEST}.out";
 	# Finally done.
 	chktex -I0 -q "${SOURCE}"
 
