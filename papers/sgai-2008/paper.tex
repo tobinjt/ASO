@@ -108,17 +108,18 @@
 }
 
 \newcommand{\numberOFrulesMINIMUM}[0]{%
-    119 XXX CHECK THIS NUMBER%
+    115%
 }
 
+% XXX FIGURE OUT HOW TO DO THIS AUTOMATICALLY
 % \numberOFrulesMINIMUM as percentage of \numberOFrules
 \newcommand{\numberOFrulesMINIMUMpercentage}[0]{%
-    70.41\%%
+    68.04\%%
 }
 
 % \numberOFrules as percentage increase of \numberOFrulesMINIMUM
 \newcommand{\numberOFrulesMAXIMUMpercentage}[0]{%
-    42.01\%%
+    46.95\%%
 }
 
 \newcommand{\numberOFlogLINES}[0]{%
@@ -222,6 +223,12 @@ precise patterns (\textit{rules\/}), each of which matches all log lines of
 a specific type, and only that type (e.g.\ rejection by a specific
 \DNSBL{}).
 
+This architecture is ideally suited to parsing inputs where the input is
+not fully understood or does not follow a fixed grammar: the architecture
+warns about unparsed inputs and other errors, but continues on parsing as
+best it can, allowing the developer of a new parser to decide which
+deficiencies are most important and require attention first, rather than
+being forced to fix the first error which arises.
 
 \section{Architecture}
 
@@ -764,22 +771,47 @@ further examination of the log files in developing a solution.
 
 \section{Conclusion}
 
-XXX WRITE THE CONCLUSION\@.
+The architecture's greatest strength is the ease with which is can be
+adapted to deal with new requirements and inputs.  Parsing a variation of
+an existing input is a trivial task: simply modify an existing rule or add
+a new one with an appropriate \regex{} and the task is complete; knowledge
+of the framework is not required when writing rules.  Parsing a new
+category of input is achieved by writing a new action and appropriate
+rules; quite often the action will not need to interact directly with
+existing actions, but when interaction is required the framework provides
+the necessary facilities.  The decoupling of rules from actions allows
+different sets of rules to be used with the same actions: e.g.\ a parser
+might have actions to process versions one and two of a file format; the
+parser will then parse either version one or version two depending on the
+ruleset selected.  The architecture makes it possible to apply commonly
+used programming techniques such as object orientation, inheritance,
+composition, delegation and roles when designing and implementing a parser,
+simplifying the process of working within a team with shared responsibility
+or developing and testing additional functionality.
 
-Makes adding new rules trivial, new actions tractable.  Knowledge of the
-framework is rarely necessary.
+Developing a new parser based on this architecture follows a similar
+process to developing a new parser using any architecture: study the
+inputs, figure out what needs to happen for each category of input
+(actions), and write a specification identifying each type of input
+(rules); the existing framework should be suitable for use with the
+majority of parsers.  If the inputs to be parsed are suitable a large
+amount of work can be done with very little effort by using \SLCT{} to
+identify similar lines in the input and generate \regexes{} to match those
+lines; these \regexes{} will form the basis of the initial ruleset.  When
+the commonly occurring inputs are parsed by rules and actions, the process
+of identifying and rectifying parsing deficiencies can begin, with each
+iteration of the development process improving the parser, similar to
+Stepwise Refinement~\cite{stepwise-refinement}.
 
-The architecture's greatest strength is the ease with which new inputs can
-be parsed and new actions written.
-
-System could be used by mail administrators to monitor restrictions.
-
-Explain how someone could build upon it, e.g.\ to parse further Postfix
-stuff, or to parse other logs entirely.
-
-``This is a real world application, based on a real world need, rather than
-a toy application built as a proof of concept''  Put this in the
-introduction as well.
+XXX PUT THIS IN THE INTRODUCTION AS WELL\@.  The Postfix log file parser
+based on this architecture provides a basis for systems administrators to
+monitor the effectiveness of their anti-spam measures and adapt their
+defences to combat the new techniques used by those sending spam.  The
+parser is a fully usable application, built to address a genuine need,
+rather than a proof of concept whose sole purpose is to illustrate a new
+idea; it deals with the oddities and difficulties which occur in the real
+world, rather than a clean, idealised scenario developed to showcase the
+best features of a new approach.
 
 \bibliographystyle{spmpsci}
 \bibliography{../common/bibliography}
