@@ -147,23 +147,18 @@ Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
 \abstract{%
     Some parsers need to be very precise and strict in what they parse, yet
     must allow users to easily adapt or extend the parser to parse new
-    inputs, without requiring that user have an in-depth
-    knowledge and understanding of the parser's internal workings.  This
-    paper presents a novel parsing architecture which aims to make the
-    process of parsing new inputs as simple as possible, enabling users to
-    trivially add new rules or adapt existing rules (to parse variants of
-    existing inputs) and relatively easily add new actions (to process a
-    previously unknown class of input).  The architecture scales linearly
-    as the number of rules and/or size of input increases, making it
-    suitable for parsing large corpora or months of accumulated data.
+    inputs, without requiring that the user have an in-depth knowledge and
+    understanding of the parser's internal workings.  This paper presents a
+    novel parsing architecture which aims to make the process of parsing
+    new inputs as simple as possible, enabling users to trivially add new
+    rules or adapt existing rules (to parse variants of existing inputs)
+    and relatively easily add new actions (to process a previously unknown
+    class of input).  The architecture scales linearly as the number of
+    rules and/or size of input increases, making it suitable for parsing
+    large corpora or months of accumulated data.
 }
 
-\today{}
-
-XXX DOES THE ABSTRACT NEED TO BE LONGER\@?  IS IT A GOOD TITLE\@?
-
-XXX DUE MONDAY JUNE 2$^{ND}$ 2008\@.  PRESENTATION PAPERS\@: MAX 14
-PAGES\@.  POSTER PAPERS\@: MAX 6 PAGES\@.  BLACK AND WHITE ONLY\@.
+XXX SHOULD THE ABSTRACT BE LONGER\@?  IS IT A GOOD TITLE\@?
 
 \input{../../doc/logparser-acronyms.tex}
 
@@ -181,8 +176,8 @@ server, rather than modifying the mail server to generate performance
 statistics; this approach improves the chances of other sites testing and
 utilising the software.  The need arose for a parser capable of dealing
 with the great number and variety of log lines produced by
-Postfix~\cite{postfix}, the \SMTP{} server in use.  The variety occurs for
-several reasons:
+Postfix~\cite{postfix}, the \SMTP{} server in use.  The variety in log
+lines occurs for several reasons:
 
 \begin{itemize}
 
@@ -244,12 +239,11 @@ rules.  Each will be discussed separately, but first an overview:
         other support functions.
 
     \item [Actions]  The actions perform the work required to deal with a
-        category of log lines, e.g.\ creating a new data structure when a
-        log line indicating a remote client connected is processed.
+        category of log lines, e.g.\ processing data from rejections.
 
-    \item [Rules]  The rules are responsible for matching log lines,
-        specifying the action to invoke and the data to be extracted from
-        the log line.
+    \item [Rules]  The rules are responsible for classifying or matching
+        log lines, specifying the action to invoke and the data to be
+        extracted from the log line.
 
 \end{description}
 
@@ -315,9 +309,9 @@ rules.  It provides shared storage to pass data between actions, most
 notably the data structures used to represent each connection and mail.  It
 loads and validates rules, controls parsing of log files, invokes actions,
 tracks how often each rule matches (to optimise rule ordering, see
-\sectionref{Rule ordering}), and stores results in the database on request.
-The framework is independent of the parser being written: the same
-functionality will be required from the framework for most or all parsers.
+\sectionref{Rule ordering}), and stores results in the database.  The
+framework is independent of the parser being written: the same
+functionality will be required for most or all parsers.
 
 The function which finds the rule matching the log line and invokes the
 requested action can be expressed in pseudo-code (with indentation denoting
@@ -337,11 +331,11 @@ for each line in the input files:
 
 The framework takes care of miscellaneous support functions and low level
 details of parsing, freeing the authors of actions to concentrate on
-writing productive code.  It links actions and rules, allowing either to be
-improved independently of the other.  The framework is the core of the
-architecture and is deliberately quite simple: the rules deal with the
-varying log lines, and the actions deal with the intricacies and
-complications encountered when parsing.
+writing productive code.  It provides the link between actions and rules,
+allowing either to be improved independently of the other.  The framework
+is the core of the architecture and is deliberately quite simple: the rules
+deal with the varying log lines, and the actions deal with the intricacies
+and complications encountered when parsing.
 
 \subsection{Actions}
 
@@ -367,52 +361,48 @@ that don't by themselves represent interesting events.  The third most
 common action is, perhaps surprisingly, \texttt{IGNORE}: there are many log
 lines which are not of interest to the parser, e.g.\ warning messages about
 DNS mismatches, or log lines lacking a way to identify which data structure
-they should be associated with.\footnote{Postfix allocates a queueid
-(explained in the glossary,~\sectionref{Glossary}) to each mail; most log
-lines contain the queueid of the associated mail, but some log lines
-(particularly with older versions of Postfix) lack a queueid, preventing
-their association with a particular data structure.}  The parser warns
-about every unparsed log line, to alert the user that they need to alter or
-extend their rules; the \texttt{IGNORE} action does nothing when executed,
-allowing uninteresting log lines to be parsed without causing any effects.
-The remaining actions have only one or two associated rules: in some cases
-this is because there will only ever be one type of log line for that
-action, e.g.\ all log lines showing that a remote client has connected are
-matched by a single rule and handled by the \texttt{CONNECT} action; in
-other cases the action is required to address a deficiency in the log
-files, or a complication which arises during parsing.
+they should be associated with.  The parser warns about every unparsed log
+line, to alert the user that they need to alter or extend their rules; the
+\texttt{IGNORE} action does nothing when executed, allowing uninteresting
+log lines to be parsed without causing any effects.  The remaining actions
+have only one or two associated rules: in some cases this is because there
+will only ever be one type of log line for that action, e.g.\ all log lines
+showing that a remote client has connected are matched by a single rule and
+handled by the \texttt{CONNECT} action; in other cases the action is
+required to address a deficiency in the log files, or a complication which
+arises during parsing.
 
 The ability to add special purpose actions to deal with difficulties and
 new requirements which are discovered during parser development is one of
 the strengths of this architecture: instead of writing one monolithic
 function which must be modified to support new behaviour or resolve
 challenges, with all the attendant risks of adversely affecting the
-existing, working parser, when a new requirement arises a new, independent
+existing, working parser, when a new requirement arises an independent
 action can be written to satisfy it.  In some cases the new action will
 require the cooperation of other actions, e.g.\ to set or check a flag;
 there is a possibility of introducing failure by modifying existing
 actions, but modifications will be smaller and occur less frequently than
 with a monolithic architecture, and thus failures should be less likely and
-easier to test for and diagnose.  The parser can be written in an Object
-Oriented~\cite{Wikipedia-object-orientation} style, allowing sub-classes to
-extend or override actions in addition to adding new actions; because each
-action is an independent function, the sub-class need only modify the
-action it is interested in, rather than reproducing large chunks of
-functionality.
+easier to test for and diagnose.  The parser can be written in an object
+oriented style, allowing sub-classes to extend or override actions in
+addition to adding new actions; because each action is an independent
+function, the sub-class need only modify the action it is interested in,
+rather than reproducing large chunks of functionality.
 
 \label{complications}
 
 During development of the parser it became apparent that in addition to the
 obvious variety in log lines, there were a large number of complications to
 be overcome.  Some were the result of deficiencies in Postfix's logging,
-which were improved or resolved by later versions of Postfix; others were
-due to the vagaries of process scheduling, client behaviour, and
-administrative actions.  All were successfully accommodated in the parser:
-adding new actions was enough for several of the complications; others
-required modifications to a single existing action to work around the
-difficulties; the remainder were resolved by adapting actions to pass
-information to subsequent actions (via the framework), which then check for
-the extra information and change their behaviour appropriately.
+(some of those deficiencies were improved or resolved by later versions of
+Postfix); others were due to the vagaries of process scheduling, client
+behaviour, and administrative actions.  All were successfully accommodated
+in the parser: adding new actions was enough for several of the
+complications; others required modifications to a single existing action to
+work around the difficulties; the remainder were resolved by adapting
+actions to pass information to subsequent actions (via the framework),
+those subsequent actions then check for the extra information and change
+their behaviour appropriately.
 
 Actions may also return a modified input line which will be parsed as if
 read from the input stream, allowing for cascaded
@@ -425,8 +415,8 @@ specific rules and actions parsing the remainder.
 \label{Rules}
 
 Rules are responsible for categorising inputs, specifying both the data to
-be extracted from each log line and the action that should be invoked.
-This implementation stores the rules in the same \SQL{} database that the
+be extracted from each log line and the action that should be invoked.  The
+Postfix log parser stores the rules in the same \SQL{} database that the
 results are stored in; this removes any doubt as to which set of rules was
 used to produce a set of results.  Other implementations are free to store
 the rules in whatever fashion suits their needs.  Each rule defines several
@@ -466,9 +456,8 @@ attributes:
         frequently, lowering the parser's execution time.
 
     \item [priority] This is the user-configurable companion to hits:
-        priority overrides hits when sorting rules.  This allows more
-        specific rules to take precedence over more general rules
-        (described in \sectionref{overlapping rules}).
+        priority overrides hits when sorting rules, allowing more
+        specific rules to take precedence over more general rules.
 
 \end{description}
 
@@ -479,30 +468,26 @@ requires.
 Adding new rules is simple: simply define all the required attributes and
 append the new rule to wherever the existing rules are stored.  The
 software developed for this project includes a utility based on
-\SLCT{}~\cite{slct-paper} to aid in producing \regexes{} to parse
-previously unparsed inputs.
+SLCT~\cite{slct-paper} to aid in producing \regexes{} to parse previously
+unparsed inputs.
 
 \label{overlapping rules}
 
-XXX DO I NEED TO DISCUSS OVERLAPPING RULES\@?
+%XXX DO I NEED TO DISCUSS OVERLAPPING RULES\@?
 
 The parser does not try to detect overlapping rules; that responsibility is
-left to the author of the rules.\footnote{It may be possible to parse each
-rule's regex and determine if any overlap.  The author has not attempted to
-do this: given the tremendous power and flexibility of regexes,
-particularly Perl's regexes~\cite{perlre}, it would be an extremely
-difficult task.} Unintentionally overlapping rules lead to inconsistent
-parsing and data extraction because the first matching rule wins and the
-order in which rules are tried against each line may change between log
-files.  Overlapping rules are frequently a requirement, allowing a more
-specific rule to match some log lines and a more general rule to match the
-majority, e.g.\ separating \SMTP{} delivery to specific sites from \SMTP{}
-delivery to the rest of the world.  The algorithm provides a facility for
-specifying the order of overlapping rules: the priority field in each rule
-(defaults to zero).  Rules are sorted by priority, highest first, and then
-rules with the same priority are sorted by the number of successful matches
-when parsing the previous log file.  Negative priorities may be useful for
-catchall rules.
+left to the author of the rules.  Unintentionally overlapping rules lead to
+inconsistent parsing and data extraction because the first matching rule
+wins and the order in which rules are tried against each line may change
+between log files.  Overlapping rules are frequently a requirement,
+allowing a more specific rule to match some log lines and a more general
+rule to match the majority, e.g.\ separating \SMTP{} delivery to specific
+sites from \SMTP{} delivery to the rest of the world.  The algorithm
+provides a facility for specifying the order of overlapping rules: the
+priority field in each rule (defaults to zero).  Rules are sorted by
+priority, highest first, and then rules with the same priority are sorted
+by the number of successful matches when parsing the previous log file.
+Negative priorities may be useful for catchall rules.
 
 
 
@@ -567,22 +552,17 @@ generating the data for the graphs included in this document,
 log lines) were each parsed 10 times, the results from first run discarded,
 and the execution time for the remaining 9 runs averaged.
 
-Saving results to the database was disabled for the test runs, as that
-dominates the run time of the program, and the tests are aimed at measuring
-the speed of the parser rather than the speed of the database and the disks
-the database is stored on.
-
-\subsection{Architecture Scalability: Input size}
+\subsection{Architecture Scalability: Input Size}
 
 An important property of a parser is how execution time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
 Figure~\refwithpage{execution time vs file size vs number of lines graph}
 shows the execution time in seconds, file size in MB, and tens of thousands
 of log lines per log file.  All three lines run roughly in parallel, giving
-a visual impression that the algorithm scales linearly with input size.
+the impression that the algorithm scales linearly with input size.
 This impression is borne out by fig.~\refwithpage{execution time vs file
-size vs number lines factor} which plots the ratio of file size vs
-execution time, and ratio of number of log lines vs execution time (higher
+size vs number lines factor} which plots the ratios of file size vs
+execution time, and number of log lines vs execution time (higher
 is better in both cases).  As the reader can see the ratios are quite
 tightly banded across the graph, showing that the algorithm scales
 linearly: the much larger log files at points 62--68 on the X axis in
