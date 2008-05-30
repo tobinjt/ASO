@@ -1,7 +1,7 @@
 load "plot-defaults-pdf.gpi"
 
 set xlabel "Log file"
-set ylabel "Ratio of line count / 10000 and file size in MB to execution time in seconds"
+set ylabel "Ratio of line count / 10000 and file size \nin MB to execution time in seconds"
 set output "../build/plot-normal-filesize-numlines-factor.pdf"
 
 plot "../build/stats-normal-filesize-numlines-factor.txt" using 1 with lines \

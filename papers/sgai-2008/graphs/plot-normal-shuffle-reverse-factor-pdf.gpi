@@ -1,7 +1,7 @@
 load "plot-defaults-pdf.gpi"
 
 set xlabel "Log file"
-set ylabel "Percentage increase of shuffled and reverse over normal"
+set ylabel "Percentage increase of execution time \nfor different rule orderings"
 set output "../build/plot-normal-shuffle-reverse-factor.pdf"
 # Add a % sign on the y axis
 set format y "% g%%"

@@ -1,7 +1,7 @@
 load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
-set ylabel "Percentage execution time decrease with minimum rule set"
+set ylabel "Percentage execution time increase of \nmaximum ruleset over minimum ruleset"
 set output "../build/plot-normal-vs-smaller.ps"
 
 # Don't continue the scales to the next round number; stop at the topmost point.

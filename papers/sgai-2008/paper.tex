@@ -107,6 +107,20 @@
     169%
 }
 
+\newcommand{\numberOFrulesMINIMUM}[0]{%
+    119 XXX CHECK THIS NUMBER%
+}
+
+% \numberOFrulesMINIMUM as percentage of \numberOFrules
+\newcommand{\numberOFrulesMINIMUMpercentage}[0]{%
+    70.41\%%
+}
+
+% \numberOFrules as percentage increase of \numberOFrulesMINIMUM
+\newcommand{\numberOFrulesMAXIMUMpercentage}[0]{%
+    42.01\%%
+}
+
 \newcommand{\numberOFlogLINES}[0]{%
     60,721,709%
 }
@@ -547,7 +561,7 @@ dominates the run time of the program, and the tests are aimed at measuring
 the speed of the parser rather than the speed of the database and the disks
 the database is stored on.
 
-\subsection{Architecture Scalability}
+\subsection{Architecture Scalability: Input size}
 
 An important property of a parser is how execution time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
@@ -659,7 +673,33 @@ normal}.  The number of rules which need to be consulted when the ordering
 is shuffled varies between the optimum and the nadir, and the performance
 varies proportionally.
 
+\subsection{Architecture Scalability: Number of Rules}
 
+How any architecture scales as the number of rules increases is important,
+but it is particularly important in this architecture because it is
+expected that there will be a large number of rules.  There are
+\numberOFrules{} rules in the full ruleset, whereas the minimum number of
+rules required to parse the \numberOFlogFILES{} log files is
+\numberOFrulesMINIMUM{}, \numberOFrulesMINIMUMpercentage{} of the total.  A
+second set of statistics was generated using the minimum ruleset and the
+results compared to the statistics generated using the full ruleset: the
+percentage execution increase when using the full ruleset instead of the
+minimal ruleset for normal, shuffled and reversed orderings is shown in
+fig.~\refwithpage{Percentage execution time increase of maximum ruleset
+over minimum ruleset}.  \showgraph{build/plot-normal-vs-smaller}{Percentage
+execution time increase of maximum ruleset over minimum ruleset}{Percentage
+execution time increase of maximum ruleset over minimum ruleset}
+
+It is clear from fig.~\refwithpage{Percentage execution time increase of
+maximum ruleset over minimum ruleset} that the increased number of rules
+makes a noticeable difference with the reverse ordering, and to a lesser
+extent with the shuffled ordering.  The normal ordering (where rules are
+sorted so that the most frequently matching rules are tried first) shows a
+\input{build/normal-vs-smaller-percentage-increase.tex} increase in
+execution time for a \numberOFrulesMAXIMUMpercentage{} increase in the
+number of rules.  These results show that the architecture scales very well
+as the number of rules increases, and that sorting the rules is an
+important optimisation enabling the parser to scale well.
 
 \subsection{Coverage}
 

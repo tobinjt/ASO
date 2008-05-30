@@ -360,7 +360,7 @@ build/stats-shuffle-vs-smaller.txt: build/stats-shuffle.txt build/stats-shuffle-
 normal-vs-smaller:
 	# There deliberately aren't any quotes around INPUT because it will have 
 	# multiple file names
-	paste -d ' ' ${INPUT} | awk '!/^#/ { print $$1, 100 - ($$9 * 100 / $$3)}' > "${OUTPUT}"
+	paste -d ' ' ${INPUT} | awk '!/^#/ { print $$1, (($$3 -$$9) * 100 / $$9)}' > "${OUTPUT}"
 
 # Build stats from the directory created by gen-stats.
 # XXX THIS DOESN'T HAPPEN AUTOMATICALLY - MAKE THAT WORK.
