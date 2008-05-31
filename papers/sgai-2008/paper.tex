@@ -3,27 +3,13 @@
 
 % Useful stuff for math mode.
 \usepackage{amstext}
-% The name of the program, so I only have to change it in one place.
-\newcommand{\parsername}{\PLP{}}
-\newcommand{\parsernames}{\PLP{}'s}
 % Include images
 \usepackage[final]{graphicx}
-%\renewcommand{\refname}{Bibliography}
-% Add the bibliography into the table of contents.
-%\usepackage[section,numbib]{tocbibind}
-% Provides commands to distinguish between pdf and dvi output.
-\usepackage{ifpdf}
 \usepackage{url}
 
 \usepackage[style=altlist,number=none,toc=true,global=true]{glossary}
 \makeglossary{}
 
-% This is necessary for URLs in the bibliography; I dunno why the url
-% package doesn't work; don't include it when generating \PDF{} output.
-\ifpdf{}
-\else{}
-    \usepackage{breakurl}
-\fi{}
 \usepackage{lastpage}
 
 % Extra footnote functionality, including references to earlier footnotes.
@@ -41,9 +27,6 @@
 
 % Nicer citation lists - smaller spaces.
 \usepackage{cite}
-% Adds page numbers to bibliography entries, showing where they were cited.
-% Breaks when cite is used.
-% \usepackage{citeref}
 % Check for unused references.
 % \usepackage{refcheck}
 \usepackage{varioref}
@@ -51,8 +34,6 @@
 \vrefwarning{}
 % Errors when loops are encountered
 \vrefshowerrors{}
-% Show all the files/packages loaded.
-%\listfiles
 
 % \showgraph{filename}{caption}{label}
 \newcommand{\showgraph}[3]{%
@@ -72,7 +53,6 @@
 
 % Replacement for \ref{}, adds the page number too.
 \newcommand{\refwithpage}[1]{%
-    %\empty{}\ref{#1} [p.~\pageref{#1}]%
     \empty{}\vref{#1}%
 }
 % Shorten the text used for references with page numbers.
@@ -81,18 +61,12 @@
 }
 % section references, automatically add \textsection
 \newcommand{\sectionref}[1]{%
-    %\textsection{}\refwithpage{#1}%
     \textsection{}\vref*{#1}%
 }
 
 % A command to format a Postfix daemon's name
 \newcommand{\daemon}[1]{%
     \texttt{postfix/#1}%
-}
-
-% This is ridiculous, but I can't put @ in glossary entries, so . . .
-\newcommand{\at}[0]{%
-    @%
 }
 
 \newcommand{\tab}[0]{%
@@ -151,14 +125,13 @@ Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
     understanding of the parser's internal workings.  This paper presents a
     novel parsing architecture which aims to make the process of parsing
     new inputs as simple as possible, enabling users to trivially add new
-    rules or adapt existing rules (to parse variants of existing inputs)
-    and relatively easily add new actions (to process a previously unknown
-    class of input).  The architecture scales linearly as the number of
-    rules and/or size of input increases, making it suitable for parsing
-    large corpora or months of accumulated data.
+    rules (to parse variants of existing inputs) and relatively easily add
+    new actions (to process a previously unknown class of input).  The
+    architecture scales linearly as the number of rules and/or size of
+    input increases, making it suitable for parsing large corpora or months
+    of accumulated data.
 }
 
-XXX SHOULD THE ABSTRACT BE LONGER\@?  IS IT A GOOD TITLE\@?
 
 \newacronym{ATN}{Augmented Transition Networks}{description={
     Augmented Transition Networks, originally described in~\cite{atns} and
@@ -167,9 +140,9 @@ XXX SHOULD THE ABSTRACT BE LONGER\@?  IS IT A GOOD TITLE\@?
 }}
 
 \newacronym{DNSBL}{DNS Blacklist}{description={
-    A DNS Blacklist~\cite{Wikipedia-DNSBL} is a simple collaborative
-    anti-spam technique used to reject or penalise email sent from mail
-    servers reported to have sent large volumes of spam.
+    A DNS Blacklist is a simple collaborative anti-spam technique used to
+    reject or penalise email sent from mail servers reported to have sent
+    large volumes of spam.
 }}
 
 \newacronym{SMTP}{Simple Mail Transfer Protocol}{description={
@@ -189,13 +162,26 @@ The architecture described herein was developed as part of a larger project
 to improve anti-spam techniques by analysing the performance of the set of
 filters currently in use, optimising the order and membership of the set
 based on that analysis, and developing new measures to supplement the
-existing filters where there is a deficiency.  The approach chosen to
+existing filters where there is a deficiency.  Most anti-spam techniques
+are content-based~\cite{a-plan-for-spam, word-stemming,
+relaxed-online-svms}, viz they examine the contents of each mail to
+determine whether it is spam or not.  Examining content requires accepting
+the mail in the first place, but rejecting rather than accepting mail is
+preferable in many cases: senders of non-spam mail that is mistakenly
+rejected will receive an immediate non-delivery notice; load is reduced on
+mail servers (allowing more intensive content-based measures to be used on
+mail that is accepted); users have less mail to wade through.  Improving
+the performance of anti-spam measures which are applied when mail is being
+transferred via \SMTP{} is the goal of this project, by providing a
+platform for reasoning about anti-spam filters.  The approach chosen to
 measure performance was to analyse the log files produced by the mail
 server, rather than modifying the mail server to generate performance
 statistics; this approach improves the chances of other sites testing and
 utilising the software.  The need arose for a parser capable of dealing
 with the great number and variety of log lines produced by
-Postfix~\cite{postfix}, the \SMTP{} server in use.  The variety in log
+Postfix~\cite{postfix}, the \SMTP{} server in use.  The parser must be
+designed so that adding support for parsing new log lines is a simple task,
+as the log lines will continue to evolve over time.  The variety in log
 lines occurs for several reasons:
 
 \begin{itemize}
@@ -203,17 +189,13 @@ lines occurs for several reasons:
     \item Log lines differ between versions of Postfix.
         
     \item The mail administrator can define custom rejection
-        messages~\cite{postfix-lookup-tables, smtpd_access_readme,
-        smtpd_per_user_control}, resulting in custom log lines.
+        messages, resulting in custom log lines.
 
     \item External resources utilised by Postfix (e.g.\ policy
         servers~\cite{policy-servers} or \DNSBL{} lookups) can also change
         their messages, sometimes without warning.
 
 \end{itemize}
-
-The parser must be designed so that adding support for parsing new log
-lines is a simple task, as the log lines will continue to evolve over time.
 
 Existing parsers were considered, but their parsing coverage was too low,
 their parsing too inexact, and/or they did not extract sufficient data for
@@ -224,12 +206,7 @@ their potential: some ignored the majority of log lines, parsing specific
 log lines with great accuracy, but in an inextensible fashion; others
 sloppily parsed the majority of log lines, but were incapable of
 distinguishing between log lines of the same type, e.g.\ rejections, and
-extracted only a portion of the data required for this project.  The parser
-written for this project is a fully usable application, built to address a
-genuine need, rather than a proof of concept whose sole purpose is to
-illustrate a new idea; it deals with the oddities and difficulties which
-occur in the real world, rather than a clean, idealised scenario developed
-to showcase the best features of a new approach.
+extracted only a portion of the data required for this project.  
 
 The solution developed is conceptually simple: provide a few generic
 functions (\textit{actions\/}), each capable of dealing with an entire
@@ -797,10 +774,9 @@ developed to showcase the best features of a new approach.
 \bibliography{../common/bibliography}
 \label{bibliography}
 
-% Redefine the command used to produce the glossary title, because the
-% default command produces an unnumbered section whereas I want a numbered
-% section.
-\renewcommand{\glossarytitle}{\section{Glossary}\label{Glossary}}
+% Redefine the command used to produce the glossary title so that it
+% doesn't produce a new section - this will save space.
+\renewcommand{\glossarytitle}{\noindent{}\textbf{\large{Glossary}}}
 \printglossary{}
 
 
