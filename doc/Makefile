@@ -52,6 +52,9 @@ build:
 	grep '!!' "$$BASE.glg" "$$BASE.alg" || true;
 	# Finally done.
 	chktex -I0 -q "${SOURCE}"
+	echo "XXX THINK ABOUT GREPPING OUT CITATION LINES FROM *.aux TO DETERMINE"
+	echo "XXX WHEN THE LIST OF REFERENCES CHANGES SO BIBTEX SHOULD BE RERUN."
+	echo "MAKE %.bbl DEPEND ON %.aux SO LATEX WILL BE RUN IF NECESSARY"
 
 build_run:
 	make run_latex PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
@@ -346,9 +349,7 @@ build/action-distribution.txt: db.full-run.sq3
 	sqlite3 -separator ' ' "$<" 'select action, count(action) from rules group by action order by count(action);' > "$@.tmp"
 	nl "$@.tmp" > "$@" || (rm -f "$@"; false)
 
-#build/stats-normal-vs-smaller.txt: build/stats-normal.txt build/stats-normal-smaller.txt
-# XXX THE ORDER IS REVERSED HERE TEMPORARILY UNTIL I GET A CHANCE TO RE-RUN THE STATS.
-build/stats-normal-vs-smaller.txt: build/stats-normal-smaller.txt build/stats-normal.txt
+build/stats-normal-vs-smaller.txt: build/stats-normal.txt build/stats-normal-smaller.txt
 	INPUT="$^" OUTPUT="$@" make normal-vs-smaller
 
 build/stats-reverse-vs-smaller.txt: build/stats-reverse.txt build/stats-reverse-smaller.txt
