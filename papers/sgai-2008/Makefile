@@ -1,6 +1,6 @@
 include ../common/Makefile
 
-paper.pdf: ../../doc/logparser-acronyms.tex
+#paper.pdf: 
 paper.deps: build/plot-action-distribution.pdf \
 			build/plot-normal-filesize-numlines.pdf \
 			build/plot-normal-filesize-numlines-factor.pdf \
