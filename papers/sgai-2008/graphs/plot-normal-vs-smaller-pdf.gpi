@@ -4,12 +4,9 @@ set xlabel "Log file"
 set ylabel "Percentage execution time increase of \nmaximum ruleset over minimum ruleset"
 set output "../build/plot-normal-vs-smaller.pdf"
 
-# Don't continue the scales to the next round number; stop at the topmost point.
-#set autoscale yfixmax
-#set autoscale yfixmin
 # Add a % sign on the y axis
 set format y "% g%%"
-set yrange [-5:*]
+set yrange [-2:*]
 
 plot "../build/stats-normal-vs-smaller.txt" using 2 with lines title "Normal ordering", \
     "../build/stats-shuffle-vs-smaller.txt" using 2 with lines title "Shuffled ordering", \
