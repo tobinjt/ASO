@@ -7,9 +7,6 @@
 \usepackage[final]{graphicx}
 \usepackage{url}
 
-\usepackage[style=altlist,number=none,toc=true,global=true]{glossary}
-\makeglossary{}
-
 \usepackage{lastpage}
 
 % Extra footnote functionality, including references to earlier footnotes.
@@ -133,27 +130,6 @@ Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
 }
 
 
-\newacronym{ATN}{Augmented Transition Networks}{description={
-    Augmented Transition Networks, originally described in~\cite{atns} and
-    further in~\cite{nlpip}, are a tool used in Computational Linguistics
-    for creating grammars to parse or generate sentences,
-}}
-
-\newacronym{DNSBL}{DNS Blacklist}{description={
-    A DNS Blacklist is a simple collaborative anti-spam technique used to
-    reject or penalise email sent from mail servers reported to have sent
-    large volumes of spam.
-}}
-
-\newacronym{SMTP}{Simple Mail Transfer Protocol}{description={
-    SMTP is the protocol which transfers mail from the sender to the
-    recipient across the Internet.  It is a simple, human readable, plain
-    text protocol, making it quite easy to test and debug problems with it.
-    A detailed description of \SMTP{} is beyond the scope of this document:
-    the original protocol definition is RFC~821~\cite{RFC821}, updated in
-    RFC~2821~\cite{RFC2821}.
-}}
-
 \section{Introduction}
 
 \label{Introduction}
@@ -161,64 +137,65 @@ Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
 The architecture described herein was developed as part of a larger project
 to improve anti-spam techniques by analysing the performance of the set of
 filters currently in use, optimising the order and membership of the set
-based on that analysis, and developing new measures to supplement the
-existing filters where there is a deficiency.  Most anti-spam techniques
-are content-based~\cite{a-plan-for-spam, word-stemming,
-relaxed-online-svms}, viz they examine the contents of each mail to
-determine whether it is spam or not.  Examining content requires accepting
-the mail in the first place, but rejecting rather than accepting mail is
+based on that analysis, and developing supplemental measures where there is
+a deficiency.  Most anti-spam techniques are
+content-based~\cite{a-plan-for-spam, word-stemming, relaxed-online-svms},
+which requires accepting the mail in the first place, but rejecting is
 preferable in many cases: senders of non-spam mail that is mistakenly
 rejected will receive an immediate non-delivery notice; load is reduced on
-mail servers (allowing more intensive content-based measures to be used on
-mail that is accepted); users have less mail to wade through.  Improving
-the performance of anti-spam measures which are applied when mail is being
-transferred via \SMTP{} is the goal of this project, by providing a
+mail servers (allowing more intensive content-based measures to be used);
+users have less mail to wade through.  Improving the performance of
+anti-spam measures which are applied when mail is being transferred via
+SMTP\footref{smtp footnote} is the goal of this project, by providing a
 platform for reasoning about anti-spam filters.  The approach chosen to
 measure performance was to analyse the log files produced by the mail
 server, rather than modifying the mail server to generate performance
 statistics; this approach improves the chances of other sites testing and
 utilising the software.  The need arose for a parser capable of dealing
 with the great number and variety of log lines produced by
-Postfix~\cite{postfix}, the \SMTP{} server in use.  The parser must be
-designed so that adding support for parsing new log lines is a simple task,
-as the log lines will continue to evolve over time.  The variety in log
-lines occurs for several reasons:
+Postfix~\cite{postfix}, the SMTP\footnote{\label{smtp footnote}Simple Mail
+Transfer Protocol transfers mail across the Internet.  It is a simple,
+human readable, plain text protocol, making it quite easy to test and debug
+problems with it.  The original protocol definition is
+RFC~821~\cite{RFC821}, updated in RFC~2821~\cite{RFC2821}.} server in use.
+The parser must be designed so that adding support for parsing new log
+lines is a simple task, as the log lines will continue to evolve over time.
+The variety in log lines occurs for several reasons:
 
 \begin{itemize}
 
     \item Log lines differ between versions of Postfix.
         
     \item The mail administrator can define custom rejection
-        messages, resulting in custom log lines.
+        messages.
 
     \item External resources utilised by Postfix (e.g.\ policy
-        servers~\cite{policy-servers} or \DNSBL{} lookups) can also change
-        their messages, sometimes without warning.
+        servers~\cite{policy-servers} or DNSBLs) can also change their
+        messages, sometimes without warning.
 
 \end{itemize}
 
 Existing parsers were considered, but their parsing coverage was too low,
-their parsing too inexact, and/or they did not extract sufficient data for
-the purposes of this project.  The effort required to adapt and improve an
-existing parser was judged to be greater than the effort to write one from
-scratch, as the techniques used by the existing parsers severely limited
-their potential: some ignored the majority of log lines, parsing specific
-log lines with great accuracy, but in an inextensible fashion; others
-sloppily parsed the majority of log lines, but were incapable of
-distinguishing between log lines of the same type, e.g.\ rejections, and
-extracted only a portion of the data required for this project.  
+their parsing too inexact, and/or they did not extract sufficient data.
+The effort required to adapt and improve an existing parser was judged to
+be greater than the effort to write one from scratch, as the techniques
+used by the existing parsers severely limited their potential: some ignored
+the majority of log lines, parsing specific log lines with great accuracy,
+but in an inextensible fashion; others sloppily parsed the majority of log
+lines, but were incapable of distinguishing between log lines of the same
+type, e.g.\ rejections, and extracted only a portion of the data required.
 
 The solution developed is conceptually simple: provide a few generic
 functions (\textit{actions\/}), each capable of dealing with an entire
 category of log lines (e.g.\ rejections), accompanied by a multitude of
 precise patterns (\textit{rules\/}), each of which matches all log lines of
-a specific type, and only that type (e.g.\ rejection by a specific
-\DNSBL{}).  This architecture is ideally suited to parsing inputs where the
-input is not fully understood or does not follow a fixed grammar: the
-architecture warns about unparsed inputs and other errors, but continues on
-parsing as best it can, allowing the developer of a new parser to decide
-which deficiencies are most important and require attention first, rather
-than being forced to fix the first error which arises.
+a specific type, and only that type (e.g.\ rejection by a specific DNSBL).
+This architecture is ideally suited to parsing inputs where the input is
+not fully understood or does not follow a fixed grammar: the architecture
+warns about unparsed inputs and other errors, but continues on parsing as
+best it can, allowing the developer of a new parser to decide which
+deficiencies are most important and require attention first, rather than
+being forced to fix the first error which arises.
 
 \section{Architecture}
 
@@ -265,11 +242,12 @@ arising, etc; the framework provides services to actions and manages the
 parsing process.
 
 There is some similarity between the parser's design and William Wood's
-\ATN{}~\cite{atns, nlpip}, a tool used in Computational Linguistics for
-creating grammars to parse or generate sentences.  The resemblance between
-\ATN{} and the parser is accidental, but it is interesting how two
-different approaches have a similar division of responsibilities, while
-having completely different implementations and semantics.
+Augmented Transition Networks (ATN)~\cite{atns, nlpip}, a tool used in
+Computational Linguistics for creating grammars to parse or generate
+sentences.  The resemblance between ATN and the parser is accidental, but
+it is interesting how two different approaches have a similar division of
+responsibilities, while having completely different implementations and
+semantics.
 
 % Do Not Reformat!
 
@@ -279,7 +257,7 @@ having completely different implementations and semantics.
     \begin{tabular}[]{lll}
         \hline
         \noalign{\smallskip}
-        \ATN{}        & Parser    & Similarity                          \\
+        ATN           & Parser    & Similarity                          \\
         \noalign{\smallskip}
         \hline
         \noalign{\smallskip}
@@ -475,13 +453,13 @@ inconsistent parsing and data extraction because the first matching rule
 wins and the order in which rules are tried against each line may change
 between log files.  Overlapping rules are frequently a requirement,
 allowing a more specific rule to match some log lines and a more general
-rule to match the majority, e.g.\ separating \SMTP{} delivery to specific
-sites from \SMTP{} delivery to the rest of the world.  The algorithm
-provides a facility for specifying the order of overlapping rules: the
-priority field in each rule (defaults to zero).  Rules are sorted by
-priority, highest first, and then rules with the same priority are sorted
-by the number of successful matches when parsing the previous log file.
-Negative priorities may be useful for catchall rules.
+rule to match the majority, e.g.\ separating SMTP delivery to specific
+sites from SMTP delivery to the rest of the world.  The algorithm provides
+a facility for specifying the order of overlapping rules: the priority
+field in each rule (defaults to zero).  Rules are sorted by priority,
+highest first, and then rules with the same priority are sorted by the
+number of successful matches when parsing the previous log file.  Negative
+priorities may be useful for catchall rules.
 
 
 
@@ -774,12 +752,5 @@ developed to showcase the best features of a new approach.
 
 \bibliographystyle{spmpsci}
 \bibliography{../common/bibliography}
-\label{bibliography}
-
-% Redefine the command used to produce the glossary title so that it
-% doesn't produce a new section - this will save space.
-\renewcommand{\glossarytitle}{\noindent{}\textbf{\large{Glossary}}}
-\printglossary{}
-
 
 \end{document}

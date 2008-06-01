@@ -55,7 +55,7 @@ build_run:
 	# the output files causes the source files to change on the next latex run.
 	# I haven't investigated much further, I don't really care.
 	BASE=$$( basename "${SOURCE}" .tex ); \
-	make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.glg" OUTPUT="$$BASE.gls" INPUT="$$BASE.glo"; \
+	#make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.glg" OUTPUT="$$BASE.gls" INPUT="$$BASE.glo"; \
 	#make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.alg" OUTPUT="$$BASE.acn" INPUT="$$BASE.acr"
 	# The next run will include the new glossary and acronyms if they've changed.
 
