@@ -248,10 +248,10 @@ input log line, then invokes the action specified by that rule.
 
 Decoupling the parsing rules from the associated actions and framework
 allows new rules to be written and tested without requiring modifications
-to the parser source code (significantly lowering the barrier to entry for
-new or casual users who need to parse new log lines), and greatly
-simplifies the framework, actions and rules. Decoupling the actions from
-the framework simplifies both framework and actions: the framework provides
+to the parser source code, significantly lowering the barrier to entry for
+casual users who need to parse new log lines, e.g.\ part-time systems
+administrators attempting to reduce spam.  Decoupling the actions from the
+framework simplifies both framework and actions: the framework provides
 services to the actions, and doesn't need to perform any tasks specific to
 the input being parsed; actions benefit from having services provided by
 the framework, freeing them to concentrate on the task of accurately and
@@ -739,27 +739,29 @@ The architecture makes it possible to apply commonly used programming
 techniques such as object orientation, inheritance, composition, delegation
 and roles when designing and implementing a parser, simplifying the process
 of working within a team with shared responsibility or developing and
-testing additional functionality.
+testing additional functionality.  This architecture is ideally suited to
+parsing inputs where the input is not fully understood or does not follow a
+fixed grammar: the architecture warns about unparsed inputs and other
+errors, but continues on parsing as best it can, allowing the developer of
+a new parser to decide which deficiencies are most important and require
+attention first, rather than being forced to fix the first error which
+arises.
 
-Developing a new parser based on this architecture follows a similar
-process to developing a new parser using any architecture: study the
-inputs, figure out what needs to happen for each category of input
-(actions), and write a specification identifying each type of input
-(rules); the existing framework should be suitable for use with the
-majority of parsers.  If the inputs to be parsed are suitable a large
-amount of work can be done with very little effort by using SLCT to
-identify similar lines in the input and generate regexes to match those
-lines; these regexes will form the basis of the initial ruleset.  When the
-commonly occurring inputs are parsed by rules and actions, the process of
-identifying and rectifying parsing deficiencies can begin, with each
-iteration of the development process improving the parser, similar to
-Stepwise Refinement~\cite{stepwise-refinement}.  This architecture is
-ideally suited to parsing inputs where the input is not fully understood or
-does not follow a fixed grammar: the architecture warns about unparsed
-inputs and other errors, but continues on parsing as best it can, allowing
-the developer of a new parser to decide which deficiencies are most
-important and require attention first, rather than being forced to fix the
-first error which arises.
+The dataset gathered by the parser provides the foundation for the future
+of this project: applying machine-learning algorithms to the data to
+analyse and optimise the set of rules in use, followed by identifying
+patterns in the data which could be used to write new filters to recognise
+and reject spam rather than accepting it.  The current focus is on
+clustering and decision trees to optimise the order in which rules are
+applied; future efforts will involve using gathered data to train and test
+new filters.  This task is very similar to optimising a black box
+application based on its inputs and outputs, and this approach could be
+applied to optimising the behaviour of any system given sufficient logging
+to analyse.  An alternative approach to black box optimisation which uses
+application profiling in conjunction with the application's error messages
+to improve the error messages shown to users is described
+in~\cite{black-box-error-reporting}; profiling data may be useful in
+supplementing systems which fail to provide adequate log messages.
 
 The Postfix log file parser based on this architecture provides a basis for
 systems administrators to monitor the effectiveness of their anti-spam
