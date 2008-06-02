@@ -344,6 +344,13 @@ remote client has connected are matched by a single rule and handled by the
 \texttt{CONNECT} action; in other cases the action is required to address a
 deficiency in the log files, or a complication which arises during parsing.
 
+Using the \texttt{CONNECT} action as an example, it creates a new data
+structure for each client connecting, and saves the data extracted by the
+rule (shown in \sectionref{example rule}).  If the data structure already
+exists it is treated as a symptom of a bug, and the action issues a warning
+containing the full contents of the data structure, plus the log line which
+has just been parsed.
+
 The ability to add special purpose actions to deal with difficulties and
 new requirements which are discovered during parser development is one of
 the strengths of this architecture: instead of writing one monolithic
@@ -445,8 +452,6 @@ unparsed inputs.
 
 \label{overlapping rules}
 
-%XXX DO I NEED TO DISCUSS OVERLAPPING RULES\@?
-
 The parser does not try to detect overlapping rules; that responsibility is
 left to the author of the rules.  Unintentionally overlapping rules lead to
 inconsistent parsing and data extraction because the first matching rule
@@ -461,7 +466,29 @@ highest first, and then rules with the same priority are sorted by the
 number of successful matches when parsing the previous log file.  Negative
 priorities may be useful for catchall rules.
 
+\label{example rule}
 
+This example rule matches the message logged by Postfix when a remote
+client connects to deliver mail; it would match the following sample log
+line:
+
+\begin{verbatim}
+    connect from client.example.com[1.2.3.4]
+\end{verbatim}
+
+% Don't reformat this!
+% XXX CONSIDER USING A TABLE ENVIRONMENT; IT DIDN'T LOOK GREAT BEFORE.
+\begin{tabular}[]{ll}
+\textbf{Attribute}        & \textbf{Value}                                   \\
+program                   & \daemon{smtpd}                                   \\
+regex                     & \verb!^connect from (__HOSTNAME__)\[(__IP__)\]$! \\
+result\_cols              &                                                  \\
+connection\_cols~\empty{} & client\_hostname = 1; client\_ip = 2             \\
+action                    & CONNECT                                          \\
+priority                  & 0                                                \\
+\end{tabular}
+
+\noindent{}The \texttt{CONNECT} action is described in \sectionref{Actions}.
 
 \subsection{Architecture characteristics}
 
