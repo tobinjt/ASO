@@ -434,9 +434,14 @@ attributes:
         matching more frequently will be tried before rules matching less
         frequently, lowering the parser's execution time.
 
-    \item [priority] This is the user-configurable companion to hits:
-        priority overrides hits when sorting rules, allowing more
-        specific rules to take precedence over more general rules.
+    \item [priority] Priority overrides hits when sorting rules, allowing
+        more specific rules to take precedence over more general rules.  To
+        illustrate: most warnings are ignored by a rule whose regex matches
+        \verb!^warning:.*$!, but some warnings require a different action
+        to be taken, e.g.\ when a client tries to send a mail larger than
+        the maximum size the server accepts, the data structure for that
+        mail must be discarded because it won't have all the data required
+        to save it to the database.
 
 \end{description}
 
