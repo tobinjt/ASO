@@ -146,21 +146,21 @@ rejected will receive an immediate non-delivery notice; load is reduced on
 mail servers (allowing more intensive content-based measures to be used);
 users have less mail to wade through.  Improving the performance of
 anti-spam measures which are applied when mail is being transferred via
-SMTP\footref{smtp footnote} is the goal of this project, by providing a
-platform for reasoning about anti-spam filters.  The approach chosen to
-measure performance was to analyse the log files produced by the mail
-server, rather than modifying the mail server to generate performance
-statistics; this approach improves the chances of other sites testing and
-utilising the software.  The need arose for a parser capable of dealing
-with the great number and variety of log lines produced by
-Postfix~\cite{postfix}, the SMTP\footnote{\label{smtp footnote}Simple Mail
-Transfer Protocol transfers mail across the Internet.  It is a simple,
+SMTP\footnotemark{} is the goal of this project, by providing a platform
+for reasoning about anti-spam filters.  The approach chosen to measure
+performance was to analyse the log files produced by the mail server,
+rather than modifying the mail server to generate performance statistics;
+this approach improves the chances of other sites testing and utilising the
+software.  The need arose for a parser capable of dealing with the great
+number and variety of log lines produced by Postfix~\cite{postfix}, the
+SMTP server in use.  The parser must be designed so that adding support for
+parsing new log lines is a simple task, as the log lines will continue to
+evolve over time.  The variety in log lines occurs for several
+reasons:\footnotetext{Simple Mail Transfer Protocol transfers mail from
+sender to one or more recipients across the Internet.  It is a simple,
 human readable, plain text protocol, making it quite easy to test and debug
 problems with it.  The original protocol definition is
-RFC~821~\cite{RFC821}, updated in RFC~2821~\cite{RFC2821}.} server in use.
-The parser must be designed so that adding support for parsing new log
-lines is a simple task, as the log lines will continue to evolve over time.
-The variety in log lines occurs for several reasons:
+RFC~821~\cite{RFC821}, updated in RFC~2821~\cite{RFC2821}.}
 
 \begin{itemize}
 
