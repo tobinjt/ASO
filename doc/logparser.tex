@@ -3,24 +3,60 @@
 
 % Useful stuff for math mode.
 \usepackage{amstext}
-% The name of the program, so I only have to change it in one place.
-\newcommand{\parsername}{\PLP{}}
-\newcommand{\parsernames}{\PLP{}'s}
 % Include images
 \usepackage[final]{graphicx}
-% Change how nested enumerate environments are labelled.
-\renewcommand{\labelenumii}{\roman{enumii}:}
-\renewcommand{\refname}{Bibliography}
 % Add the bibliography into the table of contents.
 \usepackage[section,numbib]{tocbibind}
-% Provides commands to distinguish between pdf and dvi output.
-\usepackage{ifpdf}
+% Create a label for the last page.  Might be useful for "page 23/79" or
+% something.
+\usepackage{lastpage}
 
+% Extra packages recommended by Springer: they change the fonts from
+% Computer Modern to something else and tells Latex to use scalable fonts.
+\usepackage{type1cm}
+%\usepackage{mathptmx}
+%\usepackage{helvet}
+%\usepackage{courier}
+% Extra footnote functionality, including references to earlier footnotes.
+\usepackage{footmisc}
+
+% Sort numbers where there are multiple citations.  Doesn't appear to have
+% any effect (probably clashes with varioref or hyperref), though it does
+% reduce the space between numbers.
+\usepackage{cite}
+
+% Acronyms and glossary entries.
 % global=true prevents acronyms being expanded twice
 \usepackage[global=true,acronym=true,style=altlist,number=none,toc=true]{glossary}
 \makeglossary{}
 \makeacronym{}
 
+% Produce nicer references, e.g. "section 4.3 on the next page"
+% Must be loaded before hyperref.
+\usepackage{varioref}
+% Warnings rather than errors when references cross page boundaries.
+\vrefwarning{}
+% Errors when loops are encountered
+\vrefshowerrors{}
+% Shorten the text used for references with page numbers.
+\renewcommand{\reftextfaraway}[1]{%
+    [p.~\pageref{#1}]%
+}
+% Replacement for \ref{}, adds the page number too.
+\newcommand{\refwithpage}[1]{%
+    \empty{}\vref{#1}%
+    %\empty{}\ref{#1} [p.~\pageref{#1}]%
+}
+% section references, automatically add \textsection
+\newcommand{\sectionref}[1]{%
+    \textsection{}\vref*{#1}%
+    %\textsection{}\refwithpage{#1}%
+}
+
+
+
+% Provides commands to distinguish between pdf and dvi output.
+\usepackage{ifpdf}
 % When creating a \PDF{} make the table of contents into links to the pages
 % (without horrible red borders) and include bookmarks.  The title and
 % author don't work - I think either gnuplot or graphviz clobbers it.
@@ -30,28 +66,21 @@
     \usepackage[pdftex,hyperfootnotes=false]{hyperref}
 \else{}
     \usepackage[dvips,hyperfootnotes=false]{hyperref}
+    % This is necessary for wrapping URLs in the bibliography when
+    % producing a dvi, but causes problems when generating \PDF{} output.
+    \usepackage{breakurl}
 \fi{}
 \hypersetup{
     pdftitle    = {Parsing Postfix log files},
     pdfauthor   = {John Tobin},
     final       = true,
     pdfborder   = {0 0 0},
-%    breaklinks  = true,
 }
-% This is necessary for URLs in the bibliography; I dunno why the url
-% package doesn't work; don't include it when generating \PDF{} output.
-\ifpdf{}
-\else{}
-    \usepackage{breakurl}
-\fi{}
-\usepackage{lastpage}
 
-% Extra footnote functionality, including references to earlier footnotes.
-\usepackage{footmisc}
 
-% Sort numbers where there are multiple citations.  Doesn't appear to have
-% any effect, though it does reduce the space between numbers.
-\usepackage{cite}
+
+\renewcommand{\refname}{Bibliography}
+% New formatting commands.
 
 % \showgraph{filename}{caption}{label}
 \newcommand{\showgraph}[3]{
@@ -69,15 +98,6 @@
     \end{table}
 }
 
-% Replacement for \ref{}, adds the page number too.
-\newcommand{\refwithpage}[1]{%
-    \empty{}\ref{#1} [p.~\pageref{#1}]%
-}
-% section references, automatically add \textsection
-\newcommand{\sectionref}[1]{%
-    \textsection{}\refwithpage{#1}%
-}
-
 % A command to format a Postfix daemon's name
 \newcommand{\daemon}[1]{%
     \texttt{postfix/#1}%
@@ -92,6 +112,7 @@
     \hspace*{2em}%
 }
 
+% Constant values.
 \newcommand{\numberOFlogFILES}[0]{%
     93%
 }
@@ -108,7 +129,11 @@
     60.72 million%
 }
 
-% This may keep hyperref happy about the Abstract entry in the table of
+% The name of the program, so I only have to change it in one place.
+\newcommand{\parsername}{\PLP{}}
+\newcommand{\parsernames}{\PLP{}'s}
+
+% This keeps hyperref fairly happy about the Abstract entry in the table of
 % contents.
 \newcounter{dummy}
 
@@ -140,15 +165,12 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
 \end{abstract}
 
-XXX POSSIBLE CONFERENCES\@: AICS'S AI-2008 IN CORK, AND SGAI IN CAMBRIDGE
-IN DECEMBER\@.
-
 XXX WEKA FOR DECISION TREE DISPLAY\@.
-
-XXX IS THERE A SYMBOL FOR APPENDIX, LIKE \textsection{} FOR SECTIONS\@?
 
 XXX CHECK Y-AXIS LABELS ON GRAPHS TO ENSURE THEY CAN BE READ, AND WRAP IF
 NECESSARY\@.
+
+XXX EXPLAIN THE X-AXIS --- MADS THOUGHT IT WAS UNCLEAR\@.
 
 \newpage
 \tableofcontents

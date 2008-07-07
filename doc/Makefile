@@ -47,14 +47,15 @@ build:
 	cat "${DEST}.out"
 	grep Overfull "${DEST}.out" || true
 	grep "LaTeX Warning: " "${DEST}.out" || true
+	sed -n -e '/^Package .* Warning/,/^$$/p' "${DEST}.out"
 	BASE=$$( basename "${SOURCE}" .tex ); \
 	grep ^Warning "$$BASE.blg" || true; \
 	grep '!!' "$$BASE.glg" "$$BASE.alg" || true;
 	# Finally done.
 	chktex -I0 -q "${SOURCE}"
-	echo "XXX THINK ABOUT GREPPING OUT CITATION LINES FROM *.aux TO DETERMINE"
-	echo "XXX WHEN THE LIST OF REFERENCES CHANGES SO BIBTEX SHOULD BE RERUN."
-	echo "MAKE %.bbl DEPEND ON %.aux SO LATEX WILL BE RUN IF NECESSARY"
+	@echo "XXX THINK ABOUT GREPPING OUT CITATION LINES FROM *.aux TO DETERMINE"
+	@echo "XXX WHEN THE LIST OF REFERENCES CHANGES SO BIBTEX SHOULD BE RERUN."
+	@echo "MAKE %.bbl DEPEND ON %.aux SO LATEX WILL BE RUN IF NECESSARY"
 
 build_run:
 	make run_latex PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
