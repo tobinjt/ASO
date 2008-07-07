@@ -21,7 +21,7 @@ with the source code, available from \url{http://www.postfix.org/}} Further
 complication arises because the set of rejection messages is not fixed: new
 messages can be added by the administrator with custom checks; every
 \DNSBL{}\footnote{This document is supplied with a glossary, see
-appendix~\ref{Glossary}.} returns a different explanatory message; policy
+\textsection\ref{Glossary}.} returns a different explanatory message; policy
 servers may log different messages depending on the characteristics of the
 connection; there are many ways in which the log lines may differ between
 servers, even within the same organisation --- servers may be configured
@@ -60,10 +60,9 @@ sample data it matches successfully against.  The pros and cons of
 overlapping rules are considered, including techniques for detecting
 unintentional overlaps.  Rule efficiency concerns are discussed, in
 particular the optimisations used by the algorithm, utilising the graphs in
-appendix~\refwithpage{graphs} for illustrative purposes.  The section
-concludes with a description of using the tools provided with the parser to
-generate new rules (specifically the \regex{} in each rule) from unparsed
-log lines.
+\sectionref{graphs} for illustrative purposes.  The section concludes with
+a description of using the tools provided with the parser to generate new
+rules (specifically the \regex{} in each rule) from unparsed log lines.
 
 Section~\ref{parsing-algorithm} contains the core of the paper, describing
 a naive parsing algorithm and the complications initially encountered which

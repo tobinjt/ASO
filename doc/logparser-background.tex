@@ -13,8 +13,8 @@ document, namely Postfix anti-spam restrictions and policy servers.  The
 assumptions made in designing and implementing the parser are explained, as
 are the conventions used in this document.  Other projects which attempt to
 parse Postfix log files are summarised (full details are available in
-appendix~\refwithpage{other-parsers}), finishing with a review of
-previously published research in this area.
+\sectionref{other-parsers}), finishing with a review of previously
+published research in this area.
 
 \subsection{Motivation}
 
@@ -654,20 +654,20 @@ on the context it appears in.
 
 \subsection{Other Postfix log parsers}
 
-Ten other parsers have been reviewed in
-appendix~\refwithpage{other-parsers} as part of the background research for
-this project.  None of the reviewed parsers perform the type of advanced
-parsing and log correlation described here; all are intended to perform a
-specific parsing and reporting task, rather than be a generic parser,
-extracting data and leaving generation of reports from the data to other
-programs.  Some parsers save the data extracted to a data store, but the
-many discard all data once they have finished running, making historical
-analysis impossible.  The other parsers reviewed all produce a report of
-varying complexity and detail, whereas the program described here doesn't
-attempt to produce a report at all; that responsibility is deferred to a
-separate program, to be developed later.  The parsing algorithm and program
-described here are designed to enable much more detailed log analysis by
-providing a stable platform for subsequent programs to develop upon.
+Ten other parsers have been reviewed in \sectionref{other-parsers} as part
+of the background research for this project.  None of the reviewed parsers
+perform the type of advanced parsing and log correlation described here;
+all are intended to perform a specific parsing and reporting task, rather
+than be a generic parser, extracting data and leaving generation of reports
+from the data to other programs.  Some parsers save the data extracted to a
+data store, but the many discard all data once they have finished running,
+making historical analysis impossible.  The other parsers reviewed all
+produce a report of varying complexity and detail, whereas the program
+described here doesn't attempt to produce a report at all; that
+responsibility is deferred to a separate program, to be developed later.
+The parsing algorithm and program described here are designed to enable
+much more detailed log analysis by providing a stable platform for
+subsequent programs to develop upon.
 
 XXX EXTEND THIS\@.
 
