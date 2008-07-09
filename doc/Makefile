@@ -52,7 +52,7 @@ build:
 	grep ^Warning "$$BASE.blg" || true; \
 	grep '!!' "$$BASE.glg" "$$BASE.alg" || true;
 	# Finally done.
-	chktex -I0 -q "${SOURCE}"
+	chktex -I0 -q *.tex
 	@echo "XXX THINK ABOUT GREPPING OUT CITATION LINES FROM *.aux TO DETERMINE"
 	@echo "XXX WHEN THE LIST OF REFERENCES CHANGES SO BIBTEX SHOULD BE RERUN."
 	@echo "MAKE %.bbl DEPEND ON %.aux SO LATEX WILL BE RUN IF NECESSARY"
@@ -412,7 +412,7 @@ veryclean: clean
 	rm -rf *-graphed
 
 check:
-	chktex -I0 -q logparser.tex
+	chktex -I0 -q *.tex
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:

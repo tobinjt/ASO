@@ -2,8 +2,6 @@
 
 \label{parsing coverage}
 
-\subsection{Introduction}
-
 The discussion of the parser's coverage of Postfix log files is separated
 into two parts: log lines covered and mails covered.  The first is
 important because the parser should handle all (relevant) log lines it is
@@ -75,7 +73,7 @@ negatives.  False positives are harder to quantify: short of examining each
 of the 60,721,709 log lines and determining which \regex{} parsed it, there
 is no way to be sure that every line was parsed by the correct \regex{},
 making it impossible to quantify the false positive rate; however a random
-sample of 6039 log lines was parsed and the results checked manually to
+sample of 6,039 log lines was parsed and the results checked manually to
 ensure that the correct \regex{} parsed each log line.\footnote{Each log
 line was examined and the correct \regex{} identified from the
 \numberOFrules{} rules in the database; the correct \regex{} was then

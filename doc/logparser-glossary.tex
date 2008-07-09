@@ -1,3 +1,4 @@
+% vim: set filetype=tex :
 % The contents of the glossary.
 \glossary{name={SQLite3},description={
     \textit{SQLite is a small C library that implements a self-contained,
@@ -200,14 +201,34 @@
     (\url{http://www.sun.com/software/solaris/}).
 }}
 
-\glossary{name={awk},description={AWK is a general purpose programming
-    language that is designed for processing text-based data, and is
-    available as a standard utility on all Unix systems.
+\glossary{name={awk},description={
+    AWK is a general purpose programming language that is designed for
+    processing text-based data, and is available as a standard utility on
+    all Unix systems.
 }}
 
-\glossary{name={syslog},description={Syslog is the standard logging
-    mechanism on Unix systems: the program sends log messages to syslog,
-    then syslog filters and stores the messages according to the
-    configuration the administrator has chosen.
+\glossary{name={syslog},description={
+    Syslog is the standard logging mechanism on Unix systems: the program
+    sends log messages to syslog, then syslog filters and stores the
+    messages according to the configuration the administrator has chosen.
 }}
 
+\glossary{name={mail bomb},description={
+    A mail bomb occurs when an attacker inflicts a huge volume of mail on
+    the victim.  At best a mail bomb is irritating to the victim; at worst
+    the deluge of mail can be severe enough to: interrupt service for the
+    victim and/or other users; cause mail to be rejected because the victim
+    has reached a limit (e.g.\ too many mails, too much disk space
+    consumed); the victim may accidentally delete other mail while trying
+    to cope with the mail bomb.
+}}
+
+\glossary{name={mail loop},description={
+    Sometimes mail set to one address must be delivered to a different
+    address instead, e.g.\ because a person has changed jobs.  A mail loop
+    occurs when the recipient addresses constitute a cyclic directed graph;
+    the simplest example is when mail for \texttt{foo\at{}example.net} is
+    delivered to \texttt{bar\at{}example.com}, and mail for
+    \texttt{bar\at{}example.com} is delivered to
+    \texttt{bar\at{}example.com}.
+}}

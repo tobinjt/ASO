@@ -592,8 +592,8 @@ provided by the framework, freeing them to concentrate on the task of
 accurately reconstructing each mail's journey through Postfix and dealing
 with the complications described in \sectionref{additional complications}.
 
-XXX CLARIFY THE SENTENCE STARTING WITH "Although this may seem" IN THE NEXT
-PARAGRAPH\@.
+XXX CLARIFY THE SENTENCE STARTING WITH ``Although this may see'' IN THE
+NEXT PARAGRAPH\@.
 
 Separating the rules from the actions and framework makes it possible to
 parse new log lines without modifying the core parsing algorithm.  Although
@@ -617,7 +617,7 @@ to the parser without modifying existing actions or other parts of the
 algorithm; only in the rare case that the new actions require support from
 other sections of the code will more extensive changes be required.
 
-XXX CHANGE THIS; THE PARSER DESIGN IS NOVEL, DO NOT STRESS THE SIMILARITY
+XXX CHANGE THIS\@; THE PARSER DESIGN IS NOVEL, DO NOT STRESS THE SIMILARITY
 TOO MUCH\@.
 
 There is some similarity between the parser's design and William Wood's
@@ -686,10 +686,9 @@ support both \CSV{} and Berkeley DB appears to have been a limiting factor:
 with fields separated by a comma or other punctuation symbol.  Problems
 with \CSV{} files include the difficulty in escaping separators, providing
 multiple values for a field (e.g.\ multiple recipients) and adding new
-fields.  There is no facility to include documentation of the fields,
-separator, etc., unlike \SQL{} databases where every database includes a
-schema naming the fields and the type of data they store (integer, text,
-timestamp, etc.).
+fields.  There is no facility to document the fields or the separator,
+unlike \SQL{} databases where every database includes a schema naming the
+fields and the type of data they store (integer, text, timestamp, etc.).
 
 Berkeley DB only supports storing simple \textbf{(key, value)} pairs,
 unlike \SQL{} databases which store arbitrary tuples; in \LMA{}'s main

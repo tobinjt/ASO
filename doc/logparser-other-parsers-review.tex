@@ -2,8 +2,6 @@
 
 \label{other-parsers}
 
-\subsection{Introduction}
-
 It is important to compare and contrast newly developed programs,
 algorithms and parsers against those already available, to accurately judge
 what, if any, improvements are delivered by the newcomers.  There are not
@@ -48,17 +46,15 @@ program with \parsername{}.  There are some important differences between
 
 \end{enumerate}
 
-\subsection{Parsers reviewed}
+\subsection{Pflogsumm}
 
-In this section text in italics is a quote extracted from the documentation
-of the program being reviewed.
+\begin{quotation}
 
+    pflogsumm is designed to provide an over-view of Postfix activity, with
+    just enough detail to give the administrator a ``heads up'' for
+    potential trouble spots.
 
-\subsubsection{Pflogsumm}
-
-\textit{pflogsumm is designed to provide an over-view of Postfix activity,
-with just enough detail to give the administrator a ``heads up'' for
-potential trouble spots.\/}
+\end{quotation}
 
 Pflogsumm produces a report designed for troubleshooting, rather than for
 in-depth analysis.  It does not support saving any data, nor does it
@@ -101,16 +97,20 @@ the report.
 \url{http://jimsun.linxnet.com/postfix_contrib.html} \newline (Last checked
 2008/04/09.)
 
-\subsubsection{Sawmill Universal Log File Analysis and Reporting}
+\subsection{Sawmill Universal Log File Analysis and Reporting}
 
-\textit{ Sawmill is a Postfix log analyzer (it also support 686 other log
-formats).  It can process log files in Postfix format, and generate dynamic
-statistics from them, analyzing and reporting events.  Sawmill can parse
-Postfix logs, import them into a SQL database (or its own built-in
-database), aggregate them, and generate dynamically filtered reports, all
-through a web interface.  Sawmill can perform Postfix analysis on any
-platform, including Window, Linux, FreeBSD, OpenBSD, Mac OS, Solaris, other
-UNIX, and more.\/}
+\begin{quotation}
+
+    Sawmill is a Postfix log analyzer (it also support [sic] 686 other log
+    formats).  It can process log files in Postfix format, and generate
+    dynamic statistics from them, analyzing and reporting events.  Sawmill
+    can parse Postfix logs, import them into a SQL database (or its own
+    built-in database), aggregate them, and generate dynamically filtered
+    reports, all through a web interface.  Sawmill can perform Postfix
+    analysis on any platform, including Window, Linux, FreeBSD, OpenBSD,
+    Mac OS, Solaris, other UNIX, and more.
+
+\end{quotation}
 
 Sawmill is a general purpose commercial product which parses 687 log file
 formats (correct as of 2007/12/04) and produces reports.  Its data
@@ -172,16 +172,20 @@ parsing a directory of log files.
 
 (Last checked 2007/12/04.)
 
-\subsubsection{Splunk}
+\subsection{Splunk}
 
-\textit{Splunk is an IT Search engine. It is software that indexes any
-format of IT data from any source in real time, including logs,
-configurations, scripts, code, messages, traps, alerts, activity reports,
-stack traces and metrics from all of your applications, servers and
-devices. Splunk lets you search, navigate, alert and report on all your IT
-data in real time using an AJAX web interface. You can also share knowledge
-and Splunk solutions with other members of the Splunk community via
-SplunkBase.\/}
+\begin{quotation}
+
+    Splunk is an IT Search engine. It is software that indexes any format
+    of IT data from any source in real time, including logs,
+    configurations, scripts, code, messages, traps, alerts, activity
+    reports, stack traces and metrics from all of your applications,
+    servers and devices. Splunk lets you search, navigate, alert and report
+    on all your IT data in real time using an AJAX web interface. You can
+    also share knowledge and Splunk solutions with other members of the
+    Splunk community via SplunkBase.
+
+\end{quotation}
 
 Splunk aims to index all an organisation's log files, providing a
 centralised view capable of searching and correlating diverse log sources.
@@ -245,7 +249,7 @@ the user.  The free version of Splunk limits the volume of data indexed per
 day to 500MB, though a trial Enterprise licence is available which allows
 indexing of up to 5GB of data per day.  The cheapest licensed version costs
 \$5000 (plus \$1000 support), and still limits the volume of data indexed
-per day to 500MB.
+per day to 500MB\@.
 
 In the specific case of parsing Postfix log files, Splunk extracts some
 standard fields: to and from addresses, HELO hostname, date, host the log
@@ -268,14 +272,18 @@ Postfix reports are supposedly available at
 
 \url{http://www.splunk.com/} \newline (Last checked 2008/04/29.)
 
-\subsubsection{Isoqlog}
+\subsection{Isoqlog}
 
-\textit{Isoqlog is an MTA log analysis program written in C. It designed to
-scan qmail, postfix, sendmail and exim logfile and produce usage statistics
-in \HTML{} format for viewing through a browser. It produces Top domains
-output according to Sender, Receiver, Total mails and bytes; it keeps your
-main domain mail statistics with regard to Days Top Domain, Top Users
-values for per day, per month and years.\/}
+\begin{quotation}
+
+    Isoqlog is an MTA log analysis program written in C. It designed to
+    scan qmail, postfix, sendmail and exim logfile and produce usage
+    statistics in \HTML{} format for viewing through a browser. It produces
+    Top domains output according to Sender, Receiver, Total mails and
+    bytes; it keeps your main domain mail statistics with regard to Days
+    Top Domain, Top Users values for per day, per month and years.
+
+\end{quotation}
 
 Isoqlog produces a report listing the number of mails sent by each unique
 sender address, and separately the total number of bytes transferred; both
@@ -299,17 +307,21 @@ testing with the test log files is pointless.
 
 \url{http://www.enderunix.org/isoqlog/} \newline (Last checked 2007/08/13.)
 
-\subsubsection{AWStats}
+\subsection{AWStats}
 
-\textit{AWStats is a free powerful and featureful tool that generates
-advanced web, streaming, ftp or mail server statistics, graphically. This
-log analyzer works as a CGI or from command line and shows you all possible
-information your log contains, in few graphical web pages. It uses a
-partial information file to be able to process large log files, often and
-quickly. It can analyze log files from all major server tools like Apache
-log files (NCSA combined/XLF/ELF log format or common/CLF log format),
-WebStar, IIS (W3C log format) and a lot of other web, proxy, wap, streaming
-servers, mail servers and some ftp servers.\/}
+\begin{quotation}
+
+    AWStats is a free powerful and featureful tool that generates advanced
+    web, streaming, ftp or mail server statistics, graphically. This log
+    analyzer works as a CGI or from command line and shows you all possible
+    information your log contains, in few graphical web pages. It uses a
+    partial information file to be able to process large log files, often
+    and quickly. It can analyze log files from all major server tools like
+    Apache log files (NCSA combined/XLF/ELF log format or common/CLF log
+    format), WebStar, IIS (W3C log format) and a lot of other web, proxy,
+    wap, streaming servers, mail servers and some ftp servers.
+
+\end{quotation}
 
 AWStats will produce simple graphs for many different services, but
 supporting many different services without special purpose code restricts
@@ -367,7 +379,7 @@ calendar month, showing:
 \url{http://awstats.sourceforge.net/docs/awstats_faq.html#MAIL}
 \newline (Last checked 2007/10/13.)
 
-\subsubsection{Throughput monitor}
+\subsection{Throughput monitor}
 
 This utility tracks the number of events which occurred over a particular
 time and warns if the frequency of events passes a certain threshold.  It
@@ -382,14 +394,18 @@ are so far removed from the aims of this project.
 \url{http://home.uninet.ee/~ragnar/throughput_monitor/} \newline (Last
 checked 2008/05/01.)
 
-\subsubsection{Anteater}
+\subsection{Anteater}
 
-\textit{The Anteater project is a Mail Traffic Analyser. Anteater supports
-currently the logformat produced by Sendmail and by Postfix. The tool is
-written in 100\% C++ and is very easy to customize. Input, output, and the
-analysis are modular class objects with a clear interface. There are eight
-useful analyse modules, writing the result in plain ASCII or \HTML{}, to
-stdout or to files.\/}
+\begin{quotation}
+
+    The Anteater project is a Mail Traffic Analyser. Anteater supports
+    currently the logformat produced by Sendmail and by Postfix. The tool
+    is written in 100\% C++ and is very easy to customize. Input, output,
+    and the analysis are modular class objects with a clear interface.
+    There are eight useful analyse modules, writing the result in plain
+    ASCII or \HTML{}, to stdout or to files.
+
+\end{quotation}
 
 Anteater does not have any English documentation so it is difficult, nigh
 impossible, for this author to accurately comment on what analysis it
@@ -406,12 +422,16 @@ log lines.
 
 \url{http://anteater.drzoom.ch/} \newline (Last checked 2007/08/13.)
 
-\subsubsection{Yet Another Advanced Logfile Analyser}
+\subsection{Yet Another Advanced Logfile Analyser}
 
-\textit{yaala is a very flexible analyser for all kinds of logfiles. It
-uses parsers to extract information from a logfile, an SQL-like query
-language to relate the information to each other and an output-module to
-format the information appropriately.\/}
+\begin{quotation}
+
+    yaala is a very flexible analyser for all kinds of logfiles. It uses
+    parsers to extract information from a logfile, an SQL-like query
+    language to relate the information to each other and an output-module
+    to format the information appropriately.
+
+\end{quotation}
 
 YAALA uses a plugin based system to analyse log files and produce \HTML{}
 output reports, with all the parsing and report generation handled by
@@ -462,17 +482,21 @@ facilities to extract data for use in other tools.
 
 \url{http://yaala.org/} \newline (Last checked 2007/10/09.)
 
-\subsubsection{Lire}
+\subsection{Lire}
 
-\textit{As any good system administrator knows, there's a lot more to keep
-track of in an active network than just webservers. Lire is hands down the
-most versatile log analysis software available today. Lire not only keeps
-you informed about your HTTP, FTP, and mail traffic, it also reports on
-your firewalls, your print servers, and your DNS activity. The ever growing
-list of Lire-supported services clearly outstrips any other software, in
-large part thanks to the numerous volunteers who have pioneered many new
-services and features. Lire is a total solution for your log analysis
-needs.\/}
+\begin{quotation}
+
+    As any good system administrator knows, there's a lot more to keep
+    track of in an active network than just webservers. Lire is hands down
+    the most versatile log analysis software available today. Lire not only
+    keeps you informed about your HTTP, FTP, and mail traffic, it also
+    reports on your firewalls, your print servers, and your DNS activity.
+    The ever growing list of Lire-supported services clearly outstrips any
+    other software, in large part thanks to the numerous volunteers who
+    have pioneered many new services and features. Lire is a total solution
+    for your log analysis needs.
+
+\end{quotation}
 
 Lire is a general purpose log parser supporting many different types of log
 file.  Its Postfix parser extracts the following data from Postfix log
@@ -521,14 +545,19 @@ Pflogsumm, and is considerable harder to configure.
 
 \url{http://logreport.org/lire.html} \newline (Last checked 2008/04/29.)
 
-\subsubsection{Logrep}
+\subsection{Logrep}
 
-\textit{Logrep is a secure multi-platform framework for the collection,
-extraction, and presentation of information from various log files. It
-features HTML reports, multi dimensional analysis, overview pages, SSH
-communication, and graphs, and supports over 30 popular systems including
-Snort, Squid, Postfix, Apache, Sendmail, syslog, ipchains, iptables, NT
-event logs, Firewall-1, wtmp, xferlog, Oracle listener and Pix.\/}
+\begin{quotation}
+
+    Logrep is a secure multi-platform framework for the collection,
+    extraction, and presentation of information from various log files. It
+    features HTML reports, multi dimensional analysis, overview pages, SSH
+    communication, and graphs, and supports over 30 popular systems
+    including Snort, Squid, Postfix, Apache, Sendmail, syslog, ipchains,
+    iptables, NT event logs, Firewall-1, wtmp, xferlog, Oracle listener and
+    Pix.
+
+\end{quotation}
 
 Logrep extracts roughly half the fields \parsername{} does:
 
@@ -575,7 +604,7 @@ writing does not work properly.
 \url{http://www.itefix.no/phpws/index.php} \newline (Last checked
 2007/11/18.)
 
-\subsubsection{Log Mail Analyser}
+\subsection{Log Mail Analyser}
 
 Please see the previous in-depth discussion of Log Mail Analyser in
 \sectionref{prior art}.
@@ -585,33 +614,33 @@ Please see the previous in-depth discussion of Log Mail Analyser in
 
 \begin{table}[ht]
 \begin{tabular}{l|l|l|l|l|l}
-    Parser         & Parsed test & Data        & Custom        & Documentation  & Source \\
-                   & log files?  & store?      & reports?      & quality?       & code?  \\
-    \hline         &             &             &               &                &        \\
-    Pflogsumm      & Yes         & No          & Partial\dag   & Good           & Yes    \\
-    Sawmill        & Yes         & Yes         & Searches      & Reasonable     & No     \\
-    Splunk         & Yes         & Yes         & Searches      & Abundant       & No     \\
-                   &             &             & \& reports    & but poor       &        \\
-    Isoqlog        & No          & Yes         & No            & No             & Yes    \\
-    AWStats        & Partially   & Yes         & Partial\dag   & Good           & Yes    \\
-    Throughput     & N/A         & No          & No            & Brief but good & Yes    \\
-    \tab{}monitor  &             &             &               &                &        \\
-    Anteater       & No          & No          & No            & No             & Yes    \\
-    YAALA          & No          & Yes\ddag    & Searches      & Poor           & Yes    \\
-    Lire           & Yes         & Yes         & Yes           & Yes            & Yes    \\
-    Logrep         & No          & Yes         & No            & Barely         & Yes    \\
-    \LMA{}         & No          & Yes         & No            & No             & Yes    \\ 
-    \parsername{}  & Yes         & Yes\dag\dag & No            & Yes            & Yes    \\
+    Parser         & Parsed test & Data            & Custom        & Documentation  & Source \\
+                   & log files?  & store?          & reports?      & quality?       & code?  \\
+    \hline         &             &                 &               &                &        \\
+    Pflogsumm      & Yes         & No              & Partial\dag{} & Good           & Yes    \\
+    Sawmill        & Yes         & Yes             & Searches      & Reasonable     & No     \\
+    Splunk         & Yes         & Yes             & Searches      & Abundant       & No     \\
+                   &             &                 & \& reports    & but poor       &        \\
+    Isoqlog        & No          & Yes             & No            & No             & Yes    \\
+    AWStats        & Partially   & Yes             & Partial\dag{} & Good           & Yes    \\
+    Throughput     & N/A         & No              & No            & Brief but good & Yes    \\
+    \tab{}monitor  &             &                 &               &                &        \\
+    Anteater       & No          & No              & No            & No             & Yes    \\
+    YAALA          & No          & Yes\ddag{}      & Searches      & Poor           & Yes    \\
+    Lire           & Yes         & Yes             & Yes           & Yes            & Yes    \\
+    Logrep         & No          & Yes             & No            & Barely         & Yes    \\
+    \LMA{}         & No          & Yes             & No            & No             & Yes    \\ 
+    \parsername{}  & Yes         & Yes\dag{}\dag{} & No            & Yes            & Yes    \\
 \end{tabular}
 
-\dag Sections can be omitted from a report, but extra sections can not be
+\dag{} Sections can be omitted from a report, but extra sections can not be
 added.
 
-\ddag YAALA only stores the data required to produce the latest report;
+\ddag{} YAALA only stores the data required to produce the latest report;
 other data will be discarded.
 
-\dag\dag\parsername{} is the only parser with documentation for its data
-store.
+\dag{}\dag{}\parsername{} is the only parser with documentation for its
+data store.
 
 \caption{Summary of parsers' features}
 \label{Summary of parsers' features}

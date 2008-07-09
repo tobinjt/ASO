@@ -79,6 +79,11 @@ encountered.
 
 \subsection{Complications encountered}
 
+XXX DUNNO IF THIS SECTION SHOULD BE HERE\@.  QUEUEID VS PID ISN'T TOO
+IMPORTANT\@; CONNECTION REUSE COULD EASILY BE MOVED TO ADDITIONAL
+COMPLICATIONS\@; RE-INJECTED MAILS SHOULD PROBABLY BE MOVED TO ADDITIONAL
+COMPLICATIONS TOO\@.
+
 \label{complications}
 
 These complications were encountered early in the parser's implementation
@@ -182,11 +187,10 @@ Because of this the parser cannot complain when it encounters a log line
 from \daemon{qmgr} for a previously unseen mail; it must flag the mail as
 coming from an unknown origin, and subsequently clear the flag if and when
 the origin of the mail becomes clear.  Obviously the parser could omit
-checking of where mails originate from, but the author believes that it is
-better to require an explicit source, as bugs in the parser are more likely
-to be exposed; such checks helped to identify the complications described
-in \sectionref{discarding cleanup lines} and \sectionref{pickup logging
-after cleanup}.
+checking of where mails originate from, but requiring an explicit source
+helps to expose bugs in the parser; such checks helped to identify the
+complications described in \sectionref{discarding cleanup lines} and
+\sectionref{pickup logging after cleanup}.
 
 Process scheduling can have a still more confusing effect: quite often the
 child mail will be created, delivered and entirely finished with
@@ -200,12 +204,17 @@ identified.
 
 \label{flow-chart}
 
-Figures~\refwithpage{flow chart image part 1} and~\refwithpage{flow chart
-image part 2} show the paths the data representing a mail can take through
-the parser algorithm.  The flow chart covers the most common paths only;
-there are additional, uncommon paths which are excluded for the sake of
-clarity; details of the deviations can be found in \sectionref{additional
-complications}.
+XXX CONSIDER REMOVING PART TWO OF THE FLOW CHART\@: I DON'T THINK THAT
+RE-INJECTION IS IMPORTANT ENOUGH TO WARRANT IT\@.  THE EXPLANATION OF
+TRACKING (\textsection{}5.4.3) COULD BE MOVED TO ADDITIONAL
+COMPLICATIONS\@.
+
+Figure~\refwithpage{flow chart image part 1} and figure~\refwithpage{flow
+chart image part 2} show the paths the data representing a mail can take
+through the parser algorithm.  The flow chart covers the most common paths
+only; there are additional, uncommon paths which are excluded for the sake
+of clarity; details of the deviations can be found in
+\sectionref{additional complications}.
 
 \showgraph{build/logparser-flow-chart-part-1}{Parser flow chart part
 1}{flow chart image part 1}
