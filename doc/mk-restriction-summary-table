@@ -19,10 +19,10 @@ while (<$data_pipe>) {
 }
 
 print q(\begin{tabular}[]{lr}) . qq{\n};
-print qq{Restriction type & Total rejections \\\\\n};
+print qq{Restriction type & Number of rejections \\\\\n};
 
-$data{q{Other restrictions}} = $data{q{Total rejections}}
-    - (sum(values %data) - $data{q{Total rejections}});
+$data{q{Other restrictions}} = $data{q{All rejections}}
+    - (sum(values %data) - $data{q{All rejections}});
 foreach my $key (sort { $data{$b} <=> $data{$a} || $a cmp $b } keys %data) {
     print qq{$key & $data{$key} \\\\\n};
 }

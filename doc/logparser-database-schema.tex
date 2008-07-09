@@ -1,4 +1,4 @@
-\section{Database schema}
+\section{Database Schema}
 \label{database schema}
 
 The database is an integral part of the parser presented here: it stores
@@ -113,13 +113,13 @@ Each rule defines the following:
         \end{description}
 
         Uninteresting log lines are parsed so that any lines the parser
-        isn't capable of handling become immediately obvious errors.
+        is not capable of handling become immediately obvious errors.
 
     \item [program] The program (\daemon{smtpd}, \daemon{qmgr}, etc.) whose
         log lines the rule applies to.  This avoids needlessly trying rules
-        which won't match the log line, or worse, might match
+        which will not match the log line, or worse, might match
         unintentionally.  Rules whose program is \texttt{*} will be tried
-        against any log lines which aren't parsed by program specific
+        against any log lines which are not parsed by program specific
         rules.
 
     \item [regex] The \regex{} to match the log line against.  The \regex{}
@@ -154,7 +154,7 @@ Each rule defines the following:
         actions.
 
     \item [result\_data, connection\_data] Sometimes rules need to supply a
-        piece of data which isn't present in the log line: e.g.\ setting
+        piece of data which is not present in the log line: e.g.\ setting
         \texttt{smtp\_code} when mail is accepted.  The format and allowed
         variables are the same as for \texttt{result\_cols} and
         \texttt{connection\_cols}, except that arbitrary
@@ -169,10 +169,11 @@ Each rule defines the following:
         invoked with can be found in \sectionref{actions-in-detail}.
 
     \item [queueid] Specifies the matching capture from the \regex{} which
-        gives the queueid, or zero if the log line doesn't contain a
-        queueid.  Many log lines won't contain a queueid, e.g.\ rejections
-        logged before a mail has been accepted (a queueid won't have been
-        allocated), or log lines which aren't tied to one particular mail.
+        gives the queueid, or zero if the log line does not contain a
+        queueid.  Many log lines will not contain a queueid, e.g.\
+        rejections logged before a mail has been accepted (a queueid will
+        not have been allocated), or log lines which are not tied to one
+        particular mail.
 
     \item [hits] This counter is maintained for every rule and incremented
         each time the rule successfully matches.  At the start of each run
@@ -229,7 +230,7 @@ fields:
 
     \item [helo] The hostname used in the HELO command.  The HELO hostname
         occasionally changes during a connection, presumably because spam
-        or virus senders think it's a good idea.  By default Postfix only
+        or virus senders think it is a good idea.  By default Postfix only
         logs the HELO hostname when it rejects an \SMTP{} command, but it
         is quite easy to rectify this:
 
@@ -247,11 +248,11 @@ fields:
         \end{enumerate}
 
         Although \texttt{smtpd\_helo\_restrictions} seems like the natural
-        place to log the HELO hostname, there won't be a queueid associated
-        with the mail for the first recipient, so that log line cannot be
-        associated with the correct mail.  There is guaranteed to be a
-        queueid when the DATA command has been reached, and thus it will be
-        logged by any restrictions taking effect in
+        place to log the HELO hostname, there will not be a queueid
+        associated with the mail for the first recipient, so that log line
+        cannot be associated with the correct mail.  There is guaranteed to
+        be a queueid when the DATA command has been reached, and thus it
+        will be logged by any restrictions taking effect in
         \texttt{smtpd\_data\_restrictions}.  There is no difficulty in
         specifying a HELO-based restriction in
         \texttt{smtpd\_data\_restrictions}, Postfix will perform the check
@@ -309,7 +310,7 @@ connection, though there may be many results per connection.
         general an \SMTP{} code is only present for a rejection or final
         delivery; results initially missing an \SMTP{} code will duplicate
         the \SMTP{} code of other results in the connection.  Some final
-        delivery log lines don't contain an \SMTP{} code: in those cases
+        delivery log lines do not contain an \SMTP{} code: in those cases
         the code is faked based on the success or failure represented by
         the log line.
 
@@ -335,14 +336,14 @@ connection, though there may be many results per connection.
 
 \end{description}
 
-\subsection{Conclusion}
+\subsection{Summary}
 
 The table containing the rules used by the parser and both tables
 containing the data extracted from the Postfix log files were described,
 with the purpose of each field discussed in detail.  A clear,
-comprehensible schema is essential when using the extracted data; it's more
-important when using the data than when storing it, because storing the
-data is a write-once operation, whereas utilising the data requires
+comprehensible schema is essential when using the extracted data; it is
+more important when using the data than when storing it, because storing
+the data is a write-once operation, whereas utilising the data requires
 frequent searching, sorting and manipulation of the data to produce
 customised reports and/or statistics.
 

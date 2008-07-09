@@ -4,11 +4,11 @@ set -e
 set -u
 
 sqlite3 db.full-run.sq3 <<'SQL'
-select "Total rejections",                  sum(hits_total) from rules where postfix_action = "REJECTED";
+select "All rejections",                    sum(hits_total) from rules where postfix_action = "REJECTED";
 select "Unknown recipients",                hits_total      from rules where name = "Unknown recipient";
 select "Unknown sender",                    hits_total      from rules where name = "Unknown sender";
 select "\DNSBL{}s",                         sum(hits_total) from rules where restriction_name = "reject_rbl_client";
 select "Greylisting",                       hits_total      from rules where name = "Greylisted";
-select "Non-\FQDN{} HELO",                  hits_total      from rules where name = "Non-FQDN HELO";
+select "Non-FQDN{} HELO",                   hits_total      from rules where name = "Non-FQDN HELO";
 select "Client missing DNS PTR record",     hits_total      from rules where name = "Rejected client without PTR";
 SQL

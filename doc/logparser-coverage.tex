@@ -6,7 +6,7 @@
 
 The discussion of the parser's coverage of Postfix log files is separated
 into two parts: log lines covered and mails covered.  The first is
-important because the parser should handle all (relevant) log lines it's
+important because the parser should handle all (relevant) log lines it is
 given; the second is equally important because the parser must properly
 deal with every mail if it is to be useful.  Improving the former is
 less intrusive, as it just requires new rules to be written; improving the
@@ -40,7 +40,7 @@ Full coverage of log lines requires the following:
         extreme case of zero rules the parser would happily skip every log
         line.  There may be any number of log lines from other programs
         intermingled in the log file, and there are some Postfix programs
-        which don't produce any log lines of interest.
+        which do not produce any log lines of interest.
 
     \item There must be a rule to match each different log line produced by
         each program; if a log line is not successfully matched the parser
@@ -64,7 +64,7 @@ servers have different restrictions with custom messages, \DNSBL{} messages
 change over time, major releases of Postfix change warning messages
 (usually adding more information), etc.,\ so over time the log lines drift
 and change.  Graph~\refwithpage{rule hits graph} shows the number of hits
-for each rule over all \numberOFlogFILES{} log files; it's obvious that a
+for each rule over all \numberOFlogFILES{} log files; it is obvious that a
 small number of rules match the vast majority of the lines, and more than
 half the rules match fewer than 100 times.
 
@@ -213,7 +213,7 @@ Given the circumstantial and experimental evidence detailed above, the
 author is confident that the false positive rate when reconstructing a mail
 is exceedingly low, if not approaching zero.
 
-\subsection{Conclusion}
+\subsection{Summary}
 
 Parser coverage is divided into two topics in this section: log lines
 covered and mails covered.  The former is initially more important, as the

@@ -1,8 +1,6 @@
-\section{Parsing rules}
+\section{Parsing Rules}
 
 \label{rules}
-
-\subsection{Introduction}
 
 This section discusses the rules used in parsing Postfix log files,
 starting with rule characteristics, followed by the problems caused by
@@ -124,7 +122,7 @@ NOQUEUE: reject: RCPT from example.com[10.1.1.1]: 550
   proto=SMTP helo=<smtp.example.com>
 \end{verbatim}
 
-% Don't reformat this!
+% do not reformat this!
 \begin{tabular}[]{ll}
 
 \textbf{Field}      & \textbf{Value}                                    \\
@@ -166,7 +164,7 @@ connection\_cols start at 5.  The various fields are used as follows;
         program which logged the log line a match using the \regex{} will
         be attempted against the log line; if the match is successful the
         action will be executed, if not the next rule will be tried.  If
-        the program-specific rules don't match the log line, the parser
+        the program-specific rules do not match the log line, the parser
         will fall back to generic rules; if those rules are unsuccessful a
         warning will be issued.
 
@@ -421,7 +419,7 @@ they are based upon.  A future version of this utility will also group
 input log lines by \regex{}, so the user can tweak the \regexes{} if
 required.
 
-\subsection{Conclusion}
+\subsection{Summary}
 
 This section dealt with the rules used in parsing Postfix log files:
 

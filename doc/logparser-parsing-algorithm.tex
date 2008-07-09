@@ -1,16 +1,16 @@
-\section{Parsing algorithm}
+\section{Parsing Algorithm}
 
 \label{parsing-algorithm}
 
-Where the rules are quite simple and each rule is completely independent of
-its fellows, the algorithm is significantly more complicated and highly
-internally interdependent.  The algorithm deals with all the complications
-of parsing, the eccentricities and oddities of Postfix log files,
-presenting the resulting data in a normalised, easy to use representation.
-The algorithm's task is to follow the journey each mail takes through
-Postfix, combining the data extracted by rules into a coherent whole,
-saving it in a useful and consistent form, and performing housekeeping
-duties.
+Whereas the rules are quite simple and each rule is completely independent
+of the other rules, the algorithm is significantly more complicated and
+highly internally interdependent.  The algorithm deals with all the
+complications of parsing, the eccentricities and oddities of Postfix log
+files, presenting the resulting data in a normalised, easy to use
+representation.  The algorithm's task is to follow the journey each mail
+takes through Postfix, combining the data extracted by rules into a
+coherent whole, saving it in a useful and consistent form, and performing
+housekeeping duties.
 
 Please refer to \sectionref{parser design} for a discussion of why the
 rules, actions and framework have been separated in the parser's design.
@@ -55,7 +55,7 @@ experience could be summarised as:
 
     \item If the mail is rejected, log all data and finish.
 
-    \item Follow the progress of the accepted mail until it's either
+    \item Follow the progress of the accepted mail until it is either
         delivered, bounced or deleted, then log all data, and finish.
 
 \end{enumerate}
@@ -108,17 +108,17 @@ correlated by the queueid.  This is relatively minor, but does require:
 
 Multiple independent mails may be delivered during one connection: this
 requires the algorithm to clone the current data as soon as a mail is
-accepted, so that subsequent mails won't trample over each other's data.
-This must be done every time a mail is accepted, as it's impossible to tell
-in advance which connections will accept multiple mails.  Happily, once the
-mail has been accepted log entries won't be correlated by \pid{} for that
-mail any more (its queueid will be used instead), so there isn't any
-ambiguity about which mail a given log line belongs
+accepted, so that subsequent mails will not trample over each other's data.
+This must be done every time a mail is accepted, as it is impossible to
+tell in advance which connections will accept multiple mails.  Happily,
+once the mail has been accepted log entries will not be correlated by
+\pid{} for that mail any more (its queueid will be used instead), so there
+is not any ambiguity about which mail a given log line belongs
 to.\footnote{Unfortunately this statement is not completely accurate: see
 \sectionref{timeouts-during-data-phase} for details.  However in general
-there isn't any ambiguity about which data structure should be used for a
+there is not any ambiguity about which data structure should be used for a
 given log line.}  The original connection will be discarded unsaved when
-the client disconnects if it doesn't have any data worth saving, i.e.\ no
+the client disconnects if it does not have any data worth saving, i.e.\ no
 rejections.  One unsolved difficulty is distinguishing between different
 groups of rejections, e.g.\ when dealing with the following sequence:
 
@@ -175,7 +175,7 @@ addition, the first log line belonging to the child mail (the log line
 cited above belongs to the parent mail) is logged by \daemon{qmgr}, so the
 order also depends on how busy \daemon{qmgr} is.\footnote{Postfix is quite
 paranoid about mail delivery, an excellent characteristic for an \MTA{} to
-possess, so it won't log that the child has been created until it is
+possess, so it will not log that the child has been created until it is
 absolutely certain that the mail has been written to disk.}
 
 Because of this the parser cannot complain when it encounters a log line
@@ -240,7 +240,7 @@ is logged (action: PICKUP\@; flowchart:~2).
 
     \item The client disconnects (action: DISCONNECT\@; flowchart:~6).  If
         Postfix has rejected any \SMTP{} commands the data will be saved to
-        the database; if not there won't be any data to save (any mails
+        the database; if not there will not be any data to save (any mails
         accepted will already have been cloned so their data is in another
         data structure).
 
@@ -345,7 +345,7 @@ finally be described:
 \begin{itemize}
 
     \item If the mail is of unknown origin it is assumed to be a child mail
-        whose parent hasn't yet been identified (action: COMMIT\@;
+        whose parent has not yet been identified (action: COMMIT\@;
         flowchart:~15).  Mark the mail as ready for entry in the database
         (flowchart:~16), and wait for the parent to deal with it
         (flowchart:~17).  The mail should not have subsequent log entries;
@@ -559,8 +559,8 @@ The actions:
         skipped, so the mail will be committed.
 
     \item [IGNORE] This rule just returns successfully; it is used when a
-        line needs to be parsed for completeness but doesn't either provide
-        any useful data or require anything to be done.
+        line needs to be parsed for completeness but does not either
+        provide any useful data or require anything to be done.
 
     \item [MAIL\_PICKED\_FOR\_DELIVERY] This action represents Postfix
         picking a mail from the queue to deliver. This action is used for
@@ -616,7 +616,7 @@ The actions:
     \item [TIMEOUT] The connection timed out so the mail currently being
         transferred must be discarded. The mail may have been accepted, in
         which case there's a data structure to dispose of, or it may not in
-        which case there isn't.  See
+        which case there is not.  See
         \sectionref{timeouts-during-data-phase} for the gory details.
 
     \item [TRACK] Track a mail when it is re-injected for forwarding to
@@ -830,7 +830,7 @@ for the following:
         line for this mail?  Every mail which passes normally through
         Postfix will have a \daemon{cleanup} line, and later a
         \daemon{qmgr} log line; lack of a \daemon{cleanup} line is a sure
-        sign the mail didn't make it too far.  
+        sign the mail did not make it too far.  
 
     \item Does the queueid exist in the state tables?  If not it cannot be
         an aborted delivery attempt.
@@ -864,7 +864,7 @@ the CLONE action where a list of cloned connections is maintained.
 Some mail clients disconnect abruptly if a second or subsequent recipient
 is rejected; they may also disconnect after other errors, but such
 disconnections are either unimportant or are handled elsewhere in the
-parser (\sectionref{timeouts-during-data-phase}).  Sadly, Postfix doesn't
+parser (\sectionref{timeouts-during-data-phase}).  Sadly, Postfix does not
 log a message saying the mail has been discarded, as should be expected by
 now.  The checks to identify this happening are:
 
@@ -872,8 +872,8 @@ now.  The checks to identify this happening are:
 
     \item Is the mail missing its \daemon{cleanup} log message?  Every mail
         which passes through Postfix will have a \daemon{cleanup} line;
-        lack of a \daemon{cleanup} line is a sure sign the mail didn't make
-        it too far.
+        lack of a \daemon{cleanup} line is a sure sign the mail did not
+        make it too far.
 
     \item Were there three or more \daemon{smtpd} log lines for the mail?
         There should be a connection line and a mail accepted line,
@@ -918,7 +918,7 @@ following in the TIMEOUT action:
     \item If one or more recipients have been accepted Postfix will have
         allocated a queueid for the incoming mail, and there will be a mail
         in the state tables which needs to be dealt with.
-        
+
 \end{enumerate}
 
 A timeout may thus apply either to an accepted mail or a rejected mail.  To
@@ -963,7 +963,7 @@ meets the following requirements:
 
 \begin{itemize}
 
-    \item The queueid must not have been reused yet, i.e.\ there isn't an
+    \item The queueid must not have been reused yet, i.e.\ there is not an
         entry in the state tables for the queueid.
 
     \item The timestamp of the \daemon{cleanup} line must be within ten
@@ -1070,7 +1070,7 @@ known-good combinations of programs (this check is performed during the
 COMMIT action).  If the mail's combination is found in the valid list the
 mail can be entered in the database; if the combination is not found entry
 must be postponed and the mail flagged for later entry.  The
-SAVE\_BY\_QUEUEID action checks for that flag and retries entry if it's
+SAVE\_BY\_QUEUEID action checks for that flag and retries entry if it is
 found; if the additional log lines have caused the mail to reach a valid
 combination entry will proceed, otherwise it must be postponed once more.
 
@@ -1154,7 +1154,7 @@ Postfix logs the recipient address when delivery of a mail is attempted, so
 if delivery has yet to be attempted the parser cannot determine the
 recipient address or addresses.  This is a problem when mail is arriving
 faster than Postfix can attempt delivery, and the administrator deletes
-some of the mail (because it's the result of a mail loop, mail bomb, or
+some of the mail (because it is the result of a mail loop, mail bomb, or
 joe~job) before Postfix has had a chance to try to deliver it.  In this
 case the recipient address will not have been logged, so a dummy recipient
 address needs to be added, as every mail is required to have at least one
@@ -1173,7 +1173,7 @@ notification mails are created, delivered and deleted from the queue,
 \textit{before\/} the log line from \daemon{bounce} is logged.  To deal
 with this the COMMIT action maintains a cache of recently committed bounce
 notification mails, which the BOUNCE action subsequently checks if the
-bounce mail isn't already in the state tables. If a mail exists in the
+bounce mail is not already in the state tables. If a mail exists in the
 cache under the correct queueid, and its start time is less than ten
 seconds before the timestamp of the bounce log line, it is assumed that the
 bounce notification mail has already been processed and the BOUNCE action
@@ -1208,9 +1208,9 @@ met:
 \begin{enumerate}
 
     \item The queueid is not found in the state tables. 
-        
+
     \item The queueid is found in the cache of deleted mails.
-        
+
     \item The timestamp of the log line is within 5 minutes of the end time
         of the mail.
 
@@ -1222,15 +1222,15 @@ the group used for testing); if this complication occurred more frequently
 it might be desirable to find the mail in the database and add the log
 line to it.
 
-\subsection{Conclusion}
+\subsection{Summary}
 
 This section presented the core of the parser, starting with a very high
 level view and the initial complications which arose.  A flow chart showing
 the paths a mail may take through the nascent simplified algorithm was
 provided, followed by an explanation of those paths, and a discussion of
 the parser's emergent behaviour --- the data from the log files creates the
-paths in the flow chart, they aren't specified anywhere in the parser.  The
-framework which holds the parser together was covered next, after which
+paths in the flow chart, they are not specified anywhere in the parser.
+The framework which holds the parser together was covered next, after which
 came a description of the current actions provided by the parser, and the
 algorithm for analysing unparsed log lines to create \regexes{} for new
 rules.  Detecting, diagnosing and defeating complications forms the largest

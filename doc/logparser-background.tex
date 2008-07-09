@@ -196,7 +196,7 @@ unfortunately that principle was written in a friendlier time.  Given the
 deluge of spam that mail servers are subjected to daily, a more appropriate
 maxim could be: \textit{Require strict adherence to \RFC{}~2821; implement
 the strongest restrictions you can; relax the restrictions and adherence
-only when legitimate mail is impeded.\/}  It's not as friendly, nor as
+only when legitimate mail is impeded.\/}  it is not as friendly, nor as
 catchy, but it more accurately reflects the current situation.} A typical
 \SMTP{} conversation resembles the following (the lines starting with a
 three digit number are sent by the server, all other lines are sent by the
@@ -276,30 +276,25 @@ mail was rejected.  Unfortunately this flexibility has a cost: complexity
 in the log files generated.  While it is easy to use standard Unix text
 processing utilities to determine the fate of an individual email,
 following the journey an email takes through Postfix can be quite
-difficult.  The log files tend to follow a 90\%-10\% pattern: 90\% of the
-time the journey is simple, but the other 10\% of the time accounts for
-90\% of the code in the parser.\footnote{These numbers don't have a solid
-scientific basis, they're based on gut feeling from writing and debugging
-the software.}
+difficult.  For the majority of mails the journey is simple and brief, but
+the remaining minority can be quite complex (see \sectionref{additional
+complications} for details).
 
 Postfix's design follows the Unix philosophy of \textit{Write programs that
-do one thing and do it well\/}~\cite{unix-philosophy},\footnote{This
-principle was also followed when designing the parser (\sectionref{parser
-design}), notably in having separate actions rather than one huge action.}
-and is separated into various component programs to perform the tasks
-required of an \MTA{}\@: receive mail, send mail, local delivery of mail,
-etc. --- full details can be found at~\cite{postfix-overview}.  Each log
-line contains the name of the Postfix component which produced it, and this
-information is used when determining which rules should be used to parse
-each log line (see \sectionref{rule characteristics} for details).  This
-design has positive security implications also: those components which
-interact with other hosts are not privileged,\footnote{Privilege in this
-case means the power to perform actions that are limited to the
-administrator, and not available to ordinary users.} so bugs in those
-components will not give an attacker extra privileges; those components
-which are privileged do not interact with other hosts, making it much more
-difficult for an attacker to exploit any bugs which may exist in those
-components.
+do one thing and do it well\/}~\cite{unix-philosophy}, and is separated
+into various component programs to perform the tasks required of an
+\MTA{}\@: receive mail, send mail, local delivery of mail, etc. --- full
+details can be found in~\cite{postfix-overview}.  Each log line contains
+the name of the Postfix component which produced it, and this information
+is used when determining which rules should be used to parse each log line
+(see \sectionref{rule characteristics} for details).  This design has
+positive security implications also: those components which interact with
+other hosts are not privileged,\footnote{Privilege in this case means the
+power to perform actions that are limited to the administrator, and not
+available to ordinary users.} so bugs in those components will not give an
+attacker extra privileges; those components which are privileged do not
+interact with other hosts, making it much more difficult for an attacker to
+exploit any bugs which may exist in those components.
 
 \subsubsection{Mixing and matching Postfix restrictions}
 
@@ -316,7 +311,7 @@ data.  The appropriate restriction list is evaluated for each stage
 (evaluation will be explained shortly), though by default the restriction
 lists for client connection, HELO and MAIL FROM commands will not be
 evaluated until the first RCPT TO command is received, because some clients
-don't deal properly with rejections before RCPT TO\@; a benefit of this
+do not deal properly with rejections before RCPT TO\@; a benefit of this
 delay is that Postfix has more information available when logging
 rejections.
 
@@ -341,8 +336,9 @@ protect the administrator in as far as is reasonable, e.g.\ the restriction
 because the parameter it checks (the hostname given in the HELO command) is
 under the control of the remote client.  Despite this, it is possible for
 the administrator to make catastrophic mistakes, e.g.\ rejecting mail for
-all users --- the administrator must remember that \textit{With great power
-comes great responsibility}.
+all users --- the administrator must be cognisant of the ramifications of
+their configuration changes.  XXX UNIX DOESN'T STOP YOU DOING STUPID THINGS
+BECAUSE THAT WOULD ALSO STOP YOU DOING CLEVER THINGS\@.
 
 Postfix uses simple lookup tables as the deciding factor when evaluating
 some restrictions, e.g.\ in the example restriction below\newline
@@ -380,7 +376,7 @@ see~\cite{smtpd_access_readme, smtpd_per_user_control, policy-servers}.
 A \textit{policy server\/}~\cite{policy-servers} is an external program
 consulted by Postfix to determine the fate of an \SMTP{} command.  The
 policy server is given state information\footnote{Sample state information
-is shown in table~\refwithpage{Example attributes sent to policy servers}}
+is shown in \tableref{Example attributes sent to policy servers}}
 and returns a verdict as described in \sectionref{Mixing and matching
 Postfix restrictions}.  The policy server can perform more complex checks
 than those provided by Postfix: a trivial example is restricting mail from
@@ -508,9 +504,10 @@ of (hopefully safe and reasonable) assumptions:
 In some ways this task is similar to reverse engineering or replicating a
 black box program based solely on its inputs and outputs.  Although the
 source code is available,\footnote{Reading and understanding the source
-code would require a significant investment of time; the source code for
-Postfix 2.5.1 is 17MB.} there are advantages to treating Postfix as a black
-box while developing the parser:
+code would require a significant investment of time: there are 375,750
+lines of code, documentation, etc.\ in Postfix 2.5.1's 17MB of source code.}
+there are advantages to treating Postfix as a black box while developing
+the parser:
 
 \begin{itemize}
 
@@ -556,7 +553,8 @@ three parts:
         handle complications, and cause data to be saved to the database.
         The actions perform the work of reconstructing the journey a mail
         takes through Postfix.  Full details of actions can be found in
-        \sectionref{actions-in-detail} and \sectionref{adding new actions}.
+        \sectionref{actions-in-detail} and \sectionref{adding new actions}
+        XXX IMPROVE THIS SENTENCE\@.
 
     \item [framework] The framework is responsible for loading rules,
         managing data structures, finding the rule which matches each log
@@ -587,7 +585,7 @@ complications arising, etc; the framework provides services to actions and
 stores data.
 
 Decoupling the actions from the framework simplifies both framework and
-actions: the framework provides services to the actions, and doesn't need
+actions: the framework provides services to the actions, and does not need
 to deal with the complications which arise, or the task of reconstructing a
 mail's journey through Postfix; actions benefit from having services
 provided by the framework, freeing them to concentrate on the task of
@@ -619,7 +617,7 @@ to the parser without modifying existing actions or other parts of the
 algorithm; only in the rare case that the new actions require support from
 other sections of the code will more extensive changes be required.
 
-XXX CHANGE THIS; THE PARSER DESIGN IS NOVEL, DON'T STRESS THE SIMILARITY
+XXX CHANGE THIS; THE PARSER DESIGN IS NOVEL, DO NOT STRESS THE SIMILARITY
 TOO MUCH\@.
 
 There is some similarity between the parser's design and William Wood's
@@ -663,7 +661,7 @@ from the data to other programs.  Some parsers save the data extracted to a
 data store, but the many discard all data once they have finished running,
 making historical analysis impossible.  The other parsers reviewed all
 produce a report of varying complexity and detail, whereas the program
-described here doesn't attempt to produce a report at all; that
+described here does not attempt to produce a report at all; that
 responsibility is deferred to a separate program, to be developed later.
 The parsing algorithm and program described here are designed to enable
 much more detailed log analysis by providing a stable platform for
@@ -705,7 +703,7 @@ basic of \SQL{} databases (joins, ordering, searches, etc.).  It also
 requires custom code to search on some combination of the above, though the
 authors of \LMA{} did provide some queries: IP-STORY, FROM-STORY,
 DAILY-EMAIL and DAILY-REJECT\@.  Berkeley DB appears to be the least useful
-of the three output formats: it doesn't provide the functionality of a
+of the three output formats: it does not provide the functionality of a
 basic \SQL{} database, not can it be used with standard Unix text
 processing tools.
 
@@ -720,7 +718,7 @@ records are added when there are multiple recipients (sadly the records are
 not associated or linked in any way), and presumably the same approach is
 taken when there are multiple destination servers.
 
-The schema used with the MySQL database is undocumented, but at least it's
+The schema used with the MySQL database is undocumented, but at least it is
 possible to discover the schema with an \SQL{} database, unlike with
 Berkeley DB\@; all \SQL{} databases embed the schema into the database and
 provide commands for displaying it.  Berkeley DB does not embed a schema,
@@ -819,12 +817,12 @@ designed to be extensible and useful in a production environment.
 % Berkeley DB is probably limiting the software - an example is the
 % difficulty in searching a pipe-delimited string, so they have
 % re-implemented foreign keys with tables keyed by ip address etc. pointing
-% at the main table - this also won't scale well.  There doesn't appear to
-% be any attempt to deal with the complications I've encountered: their
-% parsing isn't detailed enough to encounter them.  It doesn't run
-% properly; doesn't create any output; throws up errors.
+% at the main table - this also will not scale well.  There does not appear
+% to be any attempt to deal with the complications I have encountered:
+% their parsing is not detailed enough to encounter them.  It does not run
+% properly; does not create any output; throws up errors.
 
-\subsection{Conclusion}
+\subsection{Summary}
 
 This section has provided background information on several topics relevant
 to the remainder of the document.  It started with the motivation behind

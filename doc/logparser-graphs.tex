@@ -119,7 +119,7 @@ loop not caught by Postfix as described below.
 
     \item Postfix accepts the mail for username@domain, but while
         delivering it notices that the \texttt{Delivered-To} header already
-        contains the address it's currently delivering to, and therefore
+        contains the address it is currently delivering to, and therefore
         sends a bounce notification with sender address \textit{$<>$\/} to
         the original sender: username@domain.  Log lines are added by
         \daemon{local}, \daemon{qmgr} (twice) and \daemon{cleanup}.
@@ -212,7 +212,7 @@ reason for the anomalous log files has already been explained in
 The distribution of log lines across rules when there is a mail loop is
 much different and the average number of rules consulted per log line is
 much lower; this results in far fewer \regex{} compilations per line than
-when there isn't a mail loop, and a correspondingly decreased execution
+when there is not a mail loop, and a correspondingly decreased execution
 time.  The increases in execution time when not caching \regexes{} for
 different combinations of log files are summarised in the table below:
 
@@ -269,7 +269,7 @@ action}{Distribution of rules per action}
 
 \clearpage
 
-\subsection{Conclusion}
+\subsection{Summary}
 
 The graphs presented in this section illustrate the topics discussed in
 \sectionref{rule efficiency}.  The first collection of graphs are about

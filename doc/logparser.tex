@@ -20,7 +20,7 @@
 % Extra footnote functionality, including references to earlier footnotes.
 \usepackage{footmisc}
 
-% Sort numbers where there are multiple citations.  Doesn't appear to have
+% Sort numbers where there are multiple citations.  does not appear to have
 % any effect (probably clashes with varioref or hyperref), though it does
 % reduce the space between numbers.
 \usepackage{cite}
@@ -52,6 +52,14 @@
     \textsection{}\vref*{#1}%
     %\textsection{}\refwithpage{#1}%
 }
+% table references, for consistent formatting.
+\newcommand{\tableref}[1]{%
+    table~\vref{#1}%
+}
+% section references, automatically add \textsection
+\newcommand{\graphref}[1]{%
+    graph~\vref{#1}%
+}
 
 
 
@@ -59,7 +67,7 @@
 \usepackage{ifpdf}
 % When creating a \PDF{} make the table of contents into links to the pages
 % (without horrible red borders) and include bookmarks.  The title and
-% author don't work - I think either gnuplot or graphviz clobbers it.
+% author do not work - I think either gnuplot or graphviz clobbers it.
 % hyperfootnotes need to be disabled to avoid breaking footmisc, but they
 % still seem to work, somehow.
 \ifpdf{}
@@ -103,7 +111,7 @@
     \texttt{postfix/#1}%
 }
 
-% This is ridiculous, but I can't put @ in glossary entries, so . . .
+% This is ridiculous, but I cannot put @ in glossary entries, so . . .
 \newcommand{\at}[0]{%
     @%
 }
@@ -171,6 +179,8 @@ XXX CHECK Y-AXIS LABELS ON GRAPHS TO ENSURE THEY CAN BE READ, AND WRAP IF
 NECESSARY\@.
 
 XXX EXPLAIN THE X-AXIS --- MADS THOUGHT IT WAS UNCLEAR\@.
+
+XXX ``.'' AFTER ETC\@; SHOULD I HAVE A BACKSLASH AFTER THE ``.''?
 
 \newpage
 \tableofcontents

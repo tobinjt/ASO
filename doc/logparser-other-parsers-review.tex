@@ -37,7 +37,7 @@ program with \parsername{}.  There are some important differences between
         percentage of input lines it was unable to parse, but does not
         output the lines themselves.
 
-    \item A minor difference is that most parsers don't handle compressed
+    \item A minor difference is that most parsers do not handle compressed
         files; both \parsername{} and Splunk handle them transparently,
         without user intervention; Sawmill and Lire can be configured to
         support compressed files, but Sawmill exhibits a dramatic slow down
@@ -287,15 +287,15 @@ record of data previously extracted, which the newly extracted data is
 merged into (no information is provided on the format of the data store).
 The data extracted appears to be limited to the number of mails sent by
 each sender, unlike the copious amounts of data extracted by \parsername{}.
-It doesn't utilise rejection log lines in any way, so is unsuitable for the
-purposes of this project.  Its parsing is completely inextensible, indeed
-is almost incomprehensible, relying on \texttt{scanf(3)}, fixed offsets and
-low level string manipulation; it is the opposite end of the spectrum to
-\parsernames{} parsing.  It doesn't handle any of the complications
-discussed in this document, doesn't gather the breadth of data required for
-this project, and ignores the majority of log lines produced by Postfix.
-It ignores all log lines earlier than today, so testing with the test log
-files is pointless.
+It does not utilise rejection log lines in any way, so is unsuitable for
+the purposes of this project.  Its parsing is completely inextensible,
+indeed is almost incomprehensible, relying on \texttt{scanf(3)}, fixed
+offsets and low level string manipulation; it is the opposite end of the
+spectrum to \parsernames{} parsing.  It does not handle any of the
+complications discussed in this document, does not gather the breadth of
+data required for this project, and ignores the majority of log lines
+produced by Postfix.  It ignores all log lines earlier than today, so
+testing with the test log files is pointless.
 
 \url{http://www.enderunix.org/isoqlog/} \newline (Last checked 2007/08/13.)
 
@@ -346,7 +346,7 @@ calendar month, showing:
     \item The number of mails accepted from each host.
 
     \item How many mails were received by each recipient.
-        
+
     \item The average number of mails accepted by the server per-day and
         per-hour.
 
@@ -370,9 +370,9 @@ calendar month, showing:
 \subsubsection{Throughput monitor}
 
 This utility tracks the number of events which occurred over a particular
-time and warns if the frequency of events passes a certain threshold.  It's
-designed to provide real time alerts when dictionary attacks, mail loops or
-similar problems occur. It doesn't attempt to extract or save data,
+time and warns if the frequency of events passes a certain threshold.  It
+is designed to provide real time alerts when dictionary attacks, mail loops
+or similar problems occur. It does not attempt to extract or save data,
 correlate log lines, or any of the more advanced tasks described in this
 document, because it is not designed to do so.  The user must construct the
 \regexes{} to match significant input lines before it will parse any log
@@ -391,7 +391,7 @@ analysis are modular class objects with a clear interface. There are eight
 useful analyse modules, writing the result in plain ASCII or \HTML{}, to
 stdout or to files.\/}
 
-Anteater doesn't have any English documentation so it's difficult, nigh
+Anteater does not have any English documentation so it is difficult, nigh
 impossible, for this author to accurately comment on what analysis it
 performs.  It did not run successfully when tested, and its parsing would
 certainly be out of date as Postfix has evolved considerably since this
@@ -546,10 +546,10 @@ Logrep extracts roughly half the fields \parsername{} does:
 It also counts the number of log lines parsed and skipped.  Log lines are
 correlated based on the queueid (referred to as sessionname [sic] within
 Logrep), but not by \pid{}.  The parsing is error prone: empty fields are
-saved when the log line doesn't match the \regex{}, though it appears that
+saved when the log line does not match the \regex{}, though it appears that
 they will not overwrite existing data.  Most notably rejections are
 completely ignored, making it unsuitable for the purposes of this project.
-It doesn't attempt to address any of the complications in
+It does not attempt to address any of the complications in
 \sectionref{complications} \sectionref{additional complications} except for
 correlating by queueid.
 
@@ -568,9 +568,9 @@ reports Logrep can generate (available in \HTML{} only), nor to examine the
 reuse.
 
 Logrep extracts far less data from Postfix log files than \parsername{},
-completely ignores rejections, is effectively undocumented, doesn't deal
+completely ignores rejections, is effectively undocumented, does not deal
 with the more complicated aspects of Postfix log files, and at the time of
-writing doesn't work properly.
+writing does not work properly.
 
 \url{http://www.itefix.no/phpws/index.php} \newline (Last checked
 2007/11/18.)
@@ -581,7 +581,7 @@ Please see the previous in-depth discussion of Log Mail Analyser in
 \sectionref{prior art}.
 
 
-\subsection{Conclusion}
+\subsection{Summary}
 
 \begin{table}[ht]
 \begin{tabular}{l|l|l|l|l|l}
@@ -624,7 +624,7 @@ overall record of the journey each mail traverses through Postfix.  None of
 the reviewed parsers collect the breadth of information gathered by
 \parsername{}, nor make it as easy to extend the parser to handle new log
 lines.  Most other parsers immediately generate a report and discard the
-data extracted from the log files; those which don't discard the data
+data extracted from the log files; those which do not discard the data
 retain it in a format inaccessible to other tools.  Nearly all of the
 parsers reviewed can produce a report of greater or lesser detail and
 complexity, a facility not offered by \parsername{}; reporting is deferred
