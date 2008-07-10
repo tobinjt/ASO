@@ -9,6 +9,8 @@ always room for improvement.
 
 \subsection{Limitations}
 
+\label{logging helo}
+
 \begin{enumerate}
 
     \item Each new Postfix release requires new rules to be written to cope
@@ -19,8 +21,40 @@ always room for improvement.
     \item It appears that the hostname used in the HELO command is not
         logged if the mail is accepted.\footnote{Tested with Postfix
         2.2.10, 2.3.11 and 2.4.7; this may possibly have changed in Postfix
-        2.5.}  Rectifying this has already been described in
-        \sectionref{logging helo}.
+        2.5. XXX TEST THIS AGAIN.}  Rectifying this is relatively simple:
+        create a restriction which is guaranteed to warn for every accepted
+        mail, as follows:
+
+        \begin{enumerate}
+
+            \item Create \texttt{/etc/postfix/log\_helo.pcre}
+                containing:\newline \tab{}\texttt{/\^/~~~~WARN~Logging~HELO}
+
+            \item Modify \texttt{smtpd\_data\_restrictions} in
+                \texttt{/etc/postfix/main.cf} to contain\newline
+                \tab{}\texttt{check\_helo\_access~/etc/postfix/log\_helo.pcre}
+
+        \end{enumerate}
+
+        Although \texttt{smtpd\_helo\_restrictions} seems like the natural
+        place to log the HELO hostname, there will not be a queueid
+        associated with the mail for the first recipient, so the log line
+        cannot be associated with the correct mail.  There is guaranteed
+        to be a queueid when the DATA command has been reached, and thus it
+        will be logged by any restrictions taking effect in
+        \texttt{smtpd\_data\_restrictions}.  There is no difficulty in
+        specifying a HELO-based restriction in
+        \texttt{smtpd\_data\_restrictions}, Postfix will perform the check
+        correctly.
+
+        Logging the HELO hostname in this fashion also prevents the
+        complication described in \sectionref{Mail deleted before delivery
+        is attempted} from occurring, but only in the case where there is a
+        single recipient; in that case the recipient address will be logged
+        also, but when there are multiple recipients no addresses are
+        logged.  It is also possible to warn for every recipient,
+        preventing the complication in \sectionref{Mail deleted before
+        delivery is attempted} entirely.
 
     \item The algorithm does not distinguish between mails where one or
         more mails are rejected and a subsequent mail is accepted; it will

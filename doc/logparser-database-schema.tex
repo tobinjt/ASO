@@ -9,28 +9,28 @@ which utilise the data gathered.
 
 \subsection{Introduction}
 
-The database schema can be conceptually divided in two: the rules which are
-used to parse log files, and the data saved from the parsing of log files.
-Rules have the fields required to parse the log lines, extract data to be
-saved, and the action to be executed; they also have several fields which
-aid the user in understanding what each rule parses.  The rules are
-described in detail in \sectionref{rules} but the fields are covered here
-in \sectionref{rule attributes}.
+The database schema can be conceptually divided in two: the rules, which
+are used to parse log files, and the data saved from the parsing of log
+files.  Rules have the fields required to parse the log lines, extract data
+to be saved, and the action to be executed; they also have several fields
+which aid the user in understanding the meaning of the log lines parsed by
+each rule.  The rules are described in detail in \sectionref{rules} but the
+fields are covered in \sectionref{rule attributes}.
 
 The data saved from parsing the log files is also divided into two tables
 as described below: connections and results.  The connections table
 contains a row for every mail accepted and every connection where there was
 a rejection; the individual fields will be described in
-\sectionref{connections table}.  The results table has one or more rows per
-row in the connections table; the fields will be covered in detail in
-\sectionref{results table}.
+\sectionref{connections table}.  There will be at least one row in the
+results table for each row in the connections table; the fields will be
+covered in detail in \sectionref{results table}.
 
 An important but easily overlooked benefit of storing the rules in the
 database is the connection between rules and results: if more information
-is required when examining a result, the rules which produced the database
-entries are available for inspection (and each result references the rule
-which created it).  There is no ambiguity about which rule resulted in a
-particular result, eliminating one potential source of confusion.
+is required when examining a result, the rule which produced the result is
+available for inspection --- each result references the rule which created
+it.  There is no ambiguity about which rule resulted in a particular
+result, eliminating one potential source of confusion.
 
 \subsection{Rules table}
 
@@ -40,10 +40,10 @@ Rules are discussed in detail in \sectionref{rules}, but the structure of
 the rules table is covered here.  Rules are created by the user, not the
 parser, and will not be modified by the parser (except for the hits and
 hits\_total fields).  Rules parse the individual log lines, extracting data
-to be saved in the connections and results tables, and specifying action to
-take for that log line.
+to be saved in the connections and results tables, and specifying the
+action to take for that log line.
 
-Each rule defines the following:
+The following attributes are defined for each rule:
 
 \begin{description}
 
@@ -54,8 +54,8 @@ Each rule defines the following:
 
     \item [description] Something must have occurred to cause Postfix to
         log each line (e.g.\ a remote client connecting causes a connection
-        line to be logged).  This field describes the action causing the
-        log lines this rule matches.
+        line to be logged).  This field describes the event causing the log
+        lines this rule matches.
 
     \item [restriction\_name] The restriction which caused the mail to be
         rejected.  Only applicable to rules which have an action of
@@ -101,9 +101,8 @@ Each rule defines the following:
                 impact on the log files or mail queued by Postfix for
                 delivery.
 
-            \item [PROCESSING] \daemon{cleanup} is processing a mail ---
-                see~\cite{postfix-cleanup} for details of the processing
-                performed by \daemon{cleanup}.
+            \item [PROCESSING] \daemon{cleanup} is processing a mail
+                (see~\cite{postfix-cleanup} for details).
 
             \item [REJECTED] Postfix rejected a command from the remote
                 client, causing at least one recipient to be rejected.
@@ -133,25 +132,29 @@ Each rule defines the following:
         each \regex{} would be recompiled each time it was used, resulting
         in a large, data dependent slowdown.  Rule efficiency concerns are
         discussed in \sectionref{rule efficiency}, with the impact of
-        compiling and caching \regexes{} covered in \sectionref{Caching
-        each regex}.
+        caching compiled \regexes{} covered in \sectionref{Caching each
+        regex}.
 
     \item [result\_cols, connection\_cols] Specifies how the fields in the
         log line will be extracted.  The format is:
         \newline \tab{} \texttt{smtp\_code = 1; recipient = 2, sender = 4;}
         \newline i.e.\ semi-colon or comma separated assignment statements,
         with the variable name on the left and the matching capture from
-        the \regex{} on the right hand side.  The list of acceptable
-        variable names is:
+        the \regex{} on the right hand side.  Data specified by
+        \texttt{result\_cols} will be entered in the \texttt{results}
+        table, while \texttt{connection\_cols} populates the
+        \texttt{connection} table.  The list of acceptable variable names
+        is:
 
         \texttt{connection\_cols: client\_hostname, client\_ip, server\_ip,
         \newline \tab{} server\_hostname} and \texttt{helo.\newline}
         \texttt{result\_cols: sender, recipient, smtp\_code, message\_id,
         \newline \tab{} size,} and \texttt{data}
 
-        Additionally \texttt{child} and \texttt{pid} are used respectively
-        by the \texttt{TRACK}, \texttt{BOUNCE} and \texttt{SMTPD\_DIED}
-        actions.
+        Additionally \texttt{child} and \texttt{pid} are accepted and used
+        respectively by the \texttt{TRACK}, \texttt{BOUNCE} and
+        \texttt{SMTPD\_DIED} actions, but do not cause data to be entered
+        in the database.
 
     \item [result\_data, connection\_data] Sometimes rules need to supply a
         piece of data which is not present in the log line: e.g.\ setting
@@ -159,17 +162,17 @@ Each rule defines the following:
         variables are the same as for \texttt{result\_cols} and
         \texttt{connection\_cols}, except that arbitrary
         data\footnote{Commas and semi-colons cannot be escaped and thus
-        cannot be used.  This is intended for use with small amounts of
-        data rather than large amounts in any one rule, so dealing with
-        escape sequences was deemed unnecessary.} is permitted on the right
-        hand side of the assignment.
+        cannot be used.  This feature is intended for use with small
+        amounts of data rather than large amounts in any one rule, so
+        dealing with escape sequences was deemed unnecessary.} is permitted
+        on the right hand side of the assignment.
 
     \item [action] The action that will be invoked when this rule matches a
         log line; a full list of actions and the parameters they are
         invoked with can be found in \sectionref{actions-in-detail}.
 
-    \item [queueid] Specifies the matching capture from the \regex{} which
-        gives the queueid, or zero if the log line does not contain a
+    \item [queueid] Specifies the capturing field in the \regex{}
+        containing the queueid, or zero if the log line does not contain a
         queueid.  Many log lines will not contain a queueid, e.g.\
         rejections logged before a mail has been accepted (a queueid will
         not have been allocated), or log lines which are not tied to one
@@ -178,19 +181,19 @@ Each rule defines the following:
     \item [hits] This counter is maintained for every rule and incremented
         each time the rule successfully matches.  At the start of each run
         the program sorts the rules in descending order of hits, and at the
-        end of the run updates every rule's hits.  Assuming that the
-        distribution of log lines is reasonably consistent between log
-        files, rules matching more commonly occurring log lines will be
-        tried before rules matching less commonly occurring log lines,
-        lowering the program's execution time.  Rule ordering for
-        efficiency is discussed in \sectionref{rule ordering for
-        efficiency}.
+        end of the run updates every rule's hits field in the database.
+        Assuming that the distribution of log lines is reasonably
+        consistent between log files, rules matching more commonly
+        occurring log lines will be tried before rules matching less
+        commonly occurring log lines, reducing the program's execution
+        time.  Rule ordering for efficiency is discussed in
+        \sectionref{rule ordering for efficiency}.
 
     \item [hits\_total] The total number of hits for this rule over all
         runs of the parser.
 
-    \item [priority] This is the user-configurable companion to hits: rules
-        will be tried in order of priority, overriding hits.  This allows
+    \item [priority] This is the user-configurable companion to hits: when
+        the list of rules is sorted, priority overrides hits.  This allows
         more specific rules to take precedence over more general rules
         (described in \sectionref{overlapping rules}).
 
@@ -214,7 +217,7 @@ fields:
     \item [id] This field uniquely identifies the row.
 
     \item [server\_ip] The \IP{} address (IPv4 or IPv6) of the server: the
-        local server when receiving mail, the remote server when sending
+        local address when receiving mail, the remote address when sending
         mail.
 
     \item [server\_hostname] The hostname of the server, it will be
@@ -222,7 +225,7 @@ fields:
         hostname via \DNS{}\@.
 
     \item [client\_ip] The client \IP{} address (IPv4 or IPv6): the remote
-        server when receiving mail, the local server when sending mail.
+        address when receiving mail, the local address when sending mail.
 
     \item [client\_hostname] The hostname of the client, it will be
         \texttt{unknown} if the \IP{} address could not be resolved to a
@@ -232,40 +235,8 @@ fields:
         occasionally changes during a connection, presumably because spam
         or virus senders think it is a good idea.  By default Postfix only
         logs the HELO hostname when it rejects an \SMTP{} command, but it
-        is quite easy to rectify this:
-
-\label{logging helo}
-
-        \begin{enumerate}
-
-            \item Create \texttt{/etc/postfix/log\_helo.pcre}
-                containing:\newline \tab{}\texttt{/./~~~~WARN~Logging~HELO}
-
-            \item Modify \texttt{smtpd\_data\_restrictions} in
-                \texttt{/etc/postfix/main.cf} to contain\newline
-                \tab{}\texttt{check\_helo\_access~/etc/postfix/log\_helo.pcre}
-
-        \end{enumerate}
-
-        Although \texttt{smtpd\_helo\_restrictions} seems like the natural
-        place to log the HELO hostname, there will not be a queueid
-        associated with the mail for the first recipient, so that log line
-        cannot be associated with the correct mail.  There is guaranteed to
-        be a queueid when the DATA command has been reached, and thus it
-        will be logged by any restrictions taking effect in
-        \texttt{smtpd\_data\_restrictions}.  There is no difficulty in
-        specifying a HELO-based restriction in
-        \texttt{smtpd\_data\_restrictions}, Postfix will perform the check
-        correctly.
-
-        Logging the HELO hostname in this fashion also prevents the
-        complication described in \sectionref{Mail deleted before delivery
-        is attempted} from occurring when, but only in the case where there
-        is a single recipient; in that case the recipient address will be
-        logged also, but when there are multiple recipients none are
-        logged.  It is also possible to warn for every recipient,
-        preventing the complication in \sectionref{Mail deleted before
-        delivery is attempted} entirely.
+        is quite easy to rectify this, as described in \sectionref{logging
+        helo}.
 
     \item [queueid] The queueid of the mail if the connection represents an
         accepted mail, or \texttt{NOQUEUE} otherwise.
@@ -282,20 +253,21 @@ fields:
 
 \label{results table}
 
-Every log line where the associated rule has a \texttt{postfix\_action}
-will have an entry in the results table, e.g.\ rejecting an \SMTP{}
-command, delivering a mail, or bouncing a mail (see
-\sectionref{postfix_action} for typical values of
-\texttt{postfix\_action}).  Each row is associated with a single
+Every interesting\footnote{All log lines are interesting unless the action
+of the rule which parses them is \texttt{INFO} or \texttt{IGNORE}, as
+described in \sectionref{actions-in-detail}.} log line will have an entry
+in the results table, e.g.\ rejecting an \SMTP{} command, delivering a
+mail, or bouncing a mail (see \sectionref{postfix_action} for typical
+values of \texttt{postfix\_action}).  Each row is associated with a single
 connection, though there may be many results per connection.
 
 \begin{description}
 
-    \item [connection\_id] A reference to the row in the connections table
-        this result is associated with.
+    \item [connection\_id] The id of the row in the connections table this
+        result is associated with.
 
-    \item [rule\_id] A reference to the entry in the rules table which
-        matched the log line and created this result.
+    \item [rule\_id] The id of the entry in the rules table which matched
+        the log line and created this result.
 
     \item [id] A unique identifier for this result.
 
@@ -304,20 +276,23 @@ connection, though there may be many results per connection.
         facility that is quite useful for testing new restrictions.  This
         field will be 1 if the log line parsed was a warning rather than a
         real rejection, or 0 for a real rejection.  This field should be
-        ignored if the result is not a rejection.
+        ignored if the result is not a rejection, i.e.\ the action field of
+        the associated rule is not \texttt{REJECTION}.
 
     \item [smtp\_code] The \SMTP{} code associated with the log line.  In
         general an \SMTP{} code is only present for a rejection or final
         delivery; results initially missing an \SMTP{} code will duplicate
         the \SMTP{} code of other results in the connection.  Some final
         delivery log lines do not contain an \SMTP{} code: in those cases
-        the code is faked based on the success or failure represented by
-        the log line.
+        the code is specified by the rule, based on the success or failure
+        represented by the log line.
 
     \item [sender] The sender's email address.  Because multiple mails may
         be delivered during one connection, there may be different sender
         addresses in the results for one connection; however there should
         not be different sender addresses in the results for one email.
+        Mails sent over the same connection can be distinguished by their
+        queueid.
 
     \item [recipient] The recipient address; there may be multiple
         recipient addresses per mail, but only one per result.

@@ -2,8 +2,6 @@
 
 \label{background}
 
-\subsection{Introduction}
-
 This section provides background information helpful in understanding the
 remainder of the document.  It begins with a discussion of the motivation
 underlying the project, followed by some technical information: the use of
@@ -32,8 +30,8 @@ to test new anti-spam measures against, or to produce statistics showing
 how effective those measures are.
 
 A snippet of \SQL{} provides a short example of the optimisation possible
-using data from the database is determining which Postfix restrictions
-reject the highest number of mails:
+using data from the database: determining which Postfix restrictions reject
+the highest number of mails:
 
 \begin{verbatim}
 SELECT name, description, restriction_name, hits_total
@@ -106,16 +104,13 @@ which need to interact with the data in several ways:
 
 \begin{enumerate}
 
-    \item XXX REWRITE THIS PARAGRAPH\@.  The majority of programming
-        languages have existing code available providing access to
-        databases, so the majority of languages will be able to access the
-        results obtained by the parser.  If this parser was written to be
-        utilised as shared code there would be little or no difficulty in
-        using it when writing in the programing language it is implemented
-        in, but every other programing language wishing to utilise it would
-        require an interface layer to be written.  This requirement would
-        drastically reduce the viability of any project wishing to build
-        upon the work of this project.
+    \item It is already possible to access databases from the vast majority
+        of programming languages, allowing a developer to access the
+        data gathered using their preferred programming language, rather
+        than being restricted to the language the parser is written in.  It
+        is often possible to write an interface layer allowing code written
+        in one language to be used in another language, but this greatly
+        increases the effort required to use the parser.
 
     \item Databases provide complex querying and sorting functionality to
         the user without requiring large amounts of programming.  All
@@ -174,8 +169,9 @@ CREATE TRIGGER ON INSERT INTO results
 \end{enumerate}
 
 Storing the results in a database will also increase the efficiency of
-using those results, as the log files need only be parsed once; indeed the
-results may be used by someone with no access to the original log files.
+using those results, as the log files need only be parsed once rather than
+each time the data is used; indeed the results may be used by someone with
+no access to the original log files.
 
 
 
