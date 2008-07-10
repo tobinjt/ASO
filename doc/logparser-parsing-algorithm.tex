@@ -2,6 +2,9 @@
 
 \label{parsing-algorithm}
 
+EMPHASISE THAT THE LOGS CAUSE THE INTERDEPENDENCIES, NOT THE
+ARCHITECTURE\@.
+
 Whereas the rules are quite simple and each rule is completely independent
 of the other rules, the algorithm is significantly more complicated and
 highly internally interdependent.  The algorithm deals with all the
@@ -137,7 +140,7 @@ groups of rejections, e.g.\ when dealing with the following sequence:
 
 \end{enumerate}
 
-There should probably be two different entires in the database resulting
+There should probably be two different entries in the database resulting
 from the above sequence, but currently there will only be one.
 
 
@@ -209,7 +212,7 @@ RE-INJECTION IS IMPORTANT ENOUGH TO WARRANT IT\@.  THE EXPLANATION OF
 TRACKING (\textsection{}5.4.3) COULD BE MOVED TO ADDITIONAL
 COMPLICATIONS\@.
 
-Figure~\refwithpage{flow chart image part 1} and figure~\refwithpage{flow
+\Figureref{flow chart image part 1} and \figureref{flow
 chart image part 2} show the paths the data representing a mail can take
 through the parser algorithm.  The flow chart covers the most common paths
 only; there are additional, uncommon paths which are excluded for the sake
@@ -435,12 +438,12 @@ described in \sectionref{additional complications}).
 The actions introduce some of the complexity seen in the flow chart: all
 explicit branches and the transitions between some stages (19--20,
 21--22--23--24) in the second half of the flow chart
-(figure~\refwithpage{flow chart image part 2}) are encoded within the
+(\figureref{flow chart image part 2}) are encoded within the
 actions; the transitions between the other stages (16--17, 24--25) in the
 second half arise from the interaction between actions
 
 However the transitions between stages in the first half of the flow chart
-(figure~\refwithpage{flow chart image part 1}) are not encoded anywhere in
+(\figureref{flow chart image part 1}) are not encoded anywhere in
 the parser; the transitions are determined by the ordering of log lines in
 the log file.  The complexity of the first 12 stages in the flow chart
 emerges from the interaction of simple rules and actions, easing the
@@ -639,7 +642,7 @@ The actions:
 \end{description}
 
 The distribution of rules per action is shown in
-graph~\refwithpage{Distribution of rules per action}.
+\graphref{Distribution of rules per action}.
 
 \subsection{Adding new actions}
 

@@ -105,11 +105,11 @@ which need to interact with the data in several ways:
 \begin{enumerate}
 
     \item It is already possible to access databases from the vast majority
-        of programming languages, allowing a developer to access the
-        data gathered using their preferred programming language, rather
-        than being restricted to the language the parser is written in.  It
-        is often possible to write an interface layer allowing code written
-        in one language to be used in another language, but this greatly
+        of programming languages, allowing a developer to access the data
+        gathered using their preferred programming language, rather than
+        being restricted to the language the parser is written in.  It is
+        often possible to write an interface layer allowing code written in
+        one language to be used in another language, but this greatly
         increases the effort required to use the parser.
 
     \item Databases provide complex querying and sorting functionality to
@@ -176,6 +176,7 @@ no access to the original log files.
 
 
 \subsection{Simple Mail Transfer Protocol}
+
 \label{SMTP background}
 
 The \SMTPlong{}, originally defined in \RFC{}~821~\cite{RFC821} and updated
@@ -372,17 +373,17 @@ see~\cite{smtpd_access_readme, smtpd_per_user_control, policy-servers}.
 A \textit{policy server\/}~\cite{policy-servers} is an external program
 consulted by Postfix to determine the fate of an \SMTP{} command.  The
 policy server is given state information\footnote{Sample state information
-is shown in \tableref{Example attributes sent to policy servers}}
-and returns a verdict as described in \sectionref{Mixing and matching
-Postfix restrictions}.  The policy server can perform more complex checks
-than those provided by Postfix: a trivial example is restricting mail from
+is shown in \tableref{Example attributes sent to policy servers}} and
+returns a verdict as described in \sectionref{Mixing and matching Postfix
+restrictions}.  The policy server can perform more complex checks than
+those provided by Postfix: a trivial example is restricting mail from
 addresses associated with the payroll system to sending mail on the third
 Tuesday after pay day only, to help prevent problems from spam or (worse)
-phishing mails with faked sender addresses.\footnote{A
-phishing mail might claim that the payroll system had a disastrous disk
-failure; until the server is replaced and restored all salary payments will
-have to be processed manually, so please reply to this mail with your name,
-address and back account details.}
+phishing mails with faked sender addresses.\footnote{A phishing mail might
+claim that the payroll system had a disastrous disk failure; until the
+server is replaced and restored all salary payments will have to be
+processed manually, so please reply to this mail with your name, address
+and back account details.}
 
 Some widely deployed policy servers:
 
@@ -411,7 +412,7 @@ Some widely deployed policy servers:
         will slowly become less useful, but it does block a large
         percentage of spam mail at the moment; the most effective
         restrictions over the \numberOFlogFILES{} log files used in testing
-        the parser are shown in table~\refwithpage{Summary of rejections}.
+        the parser are shown in \tableref{Summary of rejections}.
         Greylisting is obviously worth using, at least at the moment,
         particularly when you factor in Greylisting's position as the final
         restriction which a mail must overcome:\footnote{Greylisting is the
@@ -492,7 +493,7 @@ of (hopefully safe and reasonable) assumptions:
 
     \item The Postfix queue has not been tampered with, causing unexplained
         appearance or disappearance of mail.  This may happen if the
-        administrator deletes mail from the queue without using 
+        administrator deletes mail from the queue without using
         \daemon{postsuper}, or if there is filesystem corruption.
 
 \end{itemize}
@@ -501,9 +502,9 @@ In some ways this task is similar to reverse engineering or replicating a
 black box program based solely on its inputs and outputs.  Although the
 source code is available,\footnote{Reading and understanding the source
 code would require a significant investment of time: there are 375,750
-lines of code, documentation, etc.\ in Postfix 2.5.1's 17MB of source code.}
-there are advantages to treating Postfix as a black box while developing
-the parser:
+lines of code, documentation, etc.\ in Postfix 2.5.1's 17MB of source
+code.} there are advantages to treating Postfix as a black box while
+developing the parser:
 
 \begin{itemize}
 
@@ -574,11 +575,10 @@ to the parser source code (significantly lowering the barrier to entry for
 new or casual users who need to parse new log lines), and greatly
 simplifies framework, actions and rules.  Decoupling also creates a clear
 separation of functionality: rules handle low level details of identifying
-log lines and extracting data from a log line; actions handle
-the higher level details of following the path a mail takes through
-Postfix, assembling the required data before storing it, dealing with
-complications arising, etc; the framework provides services to actions and
-stores data.
+log lines and extracting data from a log line; actions handle the higher
+level details of following the path a mail takes through Postfix,
+assembling the required data before storing it, dealing with complications
+arising, etc; the framework provides services to actions and stores data.
 
 Decoupling the actions from the framework simplifies both framework and
 actions: the framework provides services to the actions, and does not need
@@ -602,16 +602,16 @@ be made without adversely affecting existing parsing, particularly as there
 may be edge cases which are not immediately obvious.\footnote{See
 \sectionref{yet-more-aborted-delivery-attempts} for a complication which
 occurs only four times in \numberOFlogFILES{} log files tested.}  Requiring
-changes to the parser's code also complicates upgrades, as the changes
-must be preserved during the upgrade, and may clash with changes made by
-the developer.\footnote{See \sectionref{adding new actions} for how to add
-new actions}  \parsername{} allows the user to add new rules to the
-database without changing the parsing algorithm, unless the new log lines
-to be parsed require functionality not already provided by the algorithm.
-If the new log lines do require new functionality, new actions can be added
-to the parser without modifying existing actions or other parts of the
-algorithm; only in the rare case that the new actions require support from
-other sections of the code will more extensive changes be required.
+changes to the parser's code also complicates upgrades, as the changes must
+be preserved during the upgrade, and may clash with changes made by the
+developer.\footnote{See \sectionref{adding new actions} for how to add new
+actions}  \parsername{} allows the user to add new rules to the database
+without changing the parsing algorithm, unless the new log lines to be
+parsed require functionality not already provided by the algorithm.  If the
+new log lines do require new functionality, new actions can be added to the
+parser without modifying existing actions or other parts of the algorithm;
+only in the rare case that the new actions require support from other
+sections of the code will more extensive changes be required.
 
 XXX CHANGE THIS\@; THE PARSER DESIGN IS NOVEL, DO NOT STRESS THE SIMILARITY
 TOO MUCH\@.

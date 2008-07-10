@@ -52,15 +52,31 @@
     \textsection{}\vref*{#1}%
     %\textsection{}\refwithpage{#1}%
 }
+% A reference with a space between the label and the reference.
+\newcommand{\refwithlabel}[2]{%
+    #1~\vref{#2}%
+}
 % table references, for consistent formatting.
 \newcommand{\tableref}[1]{%
-    table~\vref{#1}%
+    \refwithlabel{table}{#1}%
 }
-% section references, automatically add \textsection
+\newcommand{\Tableref}[1]{%
+    \refwithlabel{Table}{#1}%
+}
+% graph references
 \newcommand{\graphref}[1]{%
-    graph~\vref{#1}%
+    \refwithlabel{graph}{#1}%
 }
-
+\newcommand{\Graphref}[1]{%
+    \refwithlabel{Graph}{#1}%
+}
+% figure references
+\newcommand{\figureref}[1]{%
+    \refwithlabel{figure}{#1}%
+}
+\newcommand{\Figureref}[1]{%
+    \refwithlabel{Figure}{#1}%
+}
 
 
 % Provides commands to distinguish between pdf and dvi output.

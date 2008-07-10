@@ -432,3 +432,6 @@ logparser-2up.pdf: logparser-2up.ps
 
 xpdf: logparser.pdf
 	xpdf "$<" &
+
+spellcheck:
+	for file in *.tex; do aspell -t -c "$$file"; done

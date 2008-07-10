@@ -156,15 +156,15 @@ connection\_cols start at 5.  The various fields are used as follows;
         for the user's benefit.
 
     \item [program and regex:] If the program in the rule equals the
-        program which logged the log line a match using the \regex{} will
-        be attempted against the log line; if the match is successful the
-        action will be executed, if not the next rule will be tried.  If
-        the program-specific rules do not match the log line, the parser
-        will fall back to generic rules; if those rules are unsuccessful a
-        warning will be issued.
+        program which logged the log line, a match using the rule's
+        \regex{} will be attempted against the log line; if the match is
+        successful the action will be executed, if not the next rule will
+        be tried.  If the program-specific rules do not match the log line,
+        the parser will fall back to generic rules; if those rules are
+        unsuccessful a warning will be issued.
 
-    \item [action:] will be executed if the \regex{} matches successfully
-        (see \sectionref{actions-in-detail} for full details).
+    \item [action:] The action to be executed if the \regex{} matches
+        successfully (see \sectionref{actions-in-detail} for full details).
 
     \item [result\_cols, connection\_cols, result\_data and
         connection\_data:] are \newline used by the action to extract and
@@ -192,6 +192,8 @@ connection\_cols start at 5.  The various fields are used as follows;
 \subsection{Rule efficiency}
 
 \label{rule efficiency}
+
+XXX ADD TIMING INFORMATION\@.
 
 Parsing efficiency is an obvious concern when the parser routinely needs to
 deal with 75 MB log files containing 300,000 log lines (generated daily on
@@ -223,20 +225,20 @@ the database is stored on.
 
 An important property of a parser is how execution time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
-Graph~\refwithpage{execution time vs file size vs number of lines graph}
+\Graphref{execution time vs file size vs number of lines graph}
 shows the execution time in seconds, file size in MB and tens of thousands
 of log lines per log file.  All three lines run roughly in parallel, giving
 a visual impression that the algorithm scales linearly with input size.
-This impression is borne out by graph~\refwithpage{execution time vs file
+This impression is borne out by \graphref{execution time vs file
 size vs number lines factor} which plots the ratio of file size vs
 execution time and ratio of number of log lines vs execution time (higher
-is better).\footnote{Table~\refwithpage{execution time vs file size vs
-number lines factor table} shows the ratios for different breakdowns of the
-log files.}  As the reader can see the ratios are quite tightly banded,
-showing that the algorithm scales linearly: the much larger log files
-between points 60 and 70 on the X axis in graph~\refwithpage{execution time
-vs file size vs number of lines graph} actually cause the ratio to
-increase, rather than decrease.  The strange behaviour where larger log
+is better); \tableref{execution time vs file size vs number lines
+factor table} shows the ratios for different breakdowns of the log files.
+As the reader can see the ratios are quite tightly banded, showing that the
+algorithm scales linearly: the much larger log files between points 60 and
+70 on the X axis in \graphref{execution time vs file size vs
+number of lines graph} actually cause the ratio to increase (i.e.\
+improve), rather than decrease.  The strange behaviour where larger log
 files are parsed more efficiently is explained fully in \sectionref{Why are
 there dips in the graphs?}.  
 
@@ -246,25 +248,25 @@ there dips in the graphs?}.
 
 Rule ordering was mentioned in \sectionref{rule attributes} and will be
 covered in greater detail in this section.  At the time of writing there
-are \numberOFrules{} different rules, with the top 10\% matching the vast
-majority of the log lines, and the remaining log lines split across the
-other 90\% of the rules (as shown in graph~\refwithpage{rule hits graph}).
-Assuming that the distribution of log lines is reasonably steady over time,
-program efficiency should benefit from trying more frequently matching
-rules before those which match less frequently.  To test this hypothesis
-three full test runs were performed with different rule orderings:
+are \numberOFrules{} different rules: the top 10\% match the vast majority
+of log lines, with the remaining log lines split across the other 90\% of
+the rules (as shown in \graphref{rule hits graph}).  Assuming that
+the distribution of log lines is reasonably steady over time, program
+efficiency should benefit from trying more frequently matching rules before
+those which match less frequently.  To test this hypothesis three full test
+runs were performed with different rule orderings:
 
 \begin{description}
 
     \item [normal]  The most optimal order, according to the hypothesis:
         rules which match most often will be tried first.
 
-    \item [shuffle] Random ordering --- the rules will be shuffled once
-        before use and will retain that ordering for the entirety of the
-        log file.  Note that the ordering will change every time the parser
-        is executed, so 10 different orderings will be generated for each
-        log file in the test run.  This is intended to represent an
-        unsorted rule set.
+    \item [shuffle] This is intended to represent a randomly ordered rule
+        set.  The rules will be shuffled once before use and will retain
+        that ordering for the entirety of the log file.  Note that the
+        ordering will change every time the parser is executed, so 10
+        different orderings will be generated for each log file in the test
+        run.  
 
     \item [reverse] Hypothetically the worst order: the most frequently
         matching rules will be tried last.
@@ -273,7 +275,7 @@ three full test runs were performed with different rule orderings:
 
 Graphs~\refwithpage{percentage increase of shuffled over normal}
 and~\refwithpage{percentage increase of reversed over normal} show the
-percentage increase of execution times, with table~\refwithpage{Execution
+percentage increase of execution times, with \tableref{Execution
 time increase for different rule orderings} showing the mean increases for
 different groupings of log files.  Overall this provides a modest but
 worthwhile performance increase of approximately 9\%, for a small
@@ -288,14 +290,16 @@ optimising the \regex{} to improve the speed of matching, but this
 compilation and optimisation takes CPU time; far more CPU time, in fact,
 than the actual matching takes.  Perl automatically caches static
 \regexes{}, but dynamic \regexes{} need to be explicitly compiled and
-cached.  Graph~\refwithpage{normal regex vs discard regex} shows execution
+cached.  \Graphref{normal regex vs discard regex} shows execution
 times with and without caching the \regex{}.  Caching the compiled
-\regexes{} is obviously far more efficient; graph~\refwithpage{normal regex
+\regexes{} is obviously far more efficient; \graphref{normal regex
 vs discarded regex factor} shows the percentage execution time increase
 when not caching each \regex{}.
 
 Caching the compiled \regexes{} is quite simple, and is the single most
 effective optimisation implemented in the parser.
+
+XXX ADD A TABLE\@.
 
 \subsection{Creating new rules}
 
@@ -307,8 +311,8 @@ restrictions which suits their needs, including using different \DNSBL{}
 services, policy servers, or custom rejection messages.  To facilitate easy
 parsing of new log lines, the parser's design separates parsing rules from
 parsing actions: adding new actions is difficult, but adding new rules to
-parse new rejection messages is trivial (and also occurs much more
-frequently).  The implementation provides a program to ease the process of
+parse new rejection messages is trivial, and also occurs much more
+frequently.  The implementation provides a program to ease the process of
 creating new rules from unparsed log lines, based on the algorithm
 developed by Risto Vaarandi~\cite{risto-vaarandi} for his
 \SLCT{}~\cite{slct-paper}.  The differences between the two algorithms will
@@ -361,11 +365,15 @@ There are 4 steps in the algorithm:
         The original algorithm only maintains counters for words whose hash
         result from the previous phase has a high frequency; this reduces
         the number of counters maintained by the algorithm, reducing the
-        memory requirements of the algorithm.  The modified algorithm omits
-        this check because the majority of unique or infrequently occurring
-        words will have been substituted with keywords during the first
-        phase, vastly reducing the number of tuples to maintain counters
-        for.
+        memory requirements of the algorithm.
+        
+        As time goes on the amount of memory typically available increases
+        and the requirement to reduce memory requirements decreases, hence
+        the modified algorithm omits the hashing step and maintains
+        counters for all tokens. In addition the majority of unique or
+        infrequently occurring words will have been substituted with
+        keywords during the first phase, vastly reducing the number of
+        tuples to maintain counters for.
 
     \item [Classify words based on their frequency]  The frequency of each
         \textit{(word, word's position within the log line)\/} tuple is
@@ -373,31 +381,30 @@ There are 4 steps in the algorithm:
         the user (1\% of all log lines is generally a good starting point)
         it is classified as a fixed word, otherwise it is classified as a
         variable term.  If a variable term appears sufficiently often it
-        will be classified as a fixed term, but that should be noticed by
-        the user when reviewing the new \regexes{}.  Variable terms are
+        will be misclassified as a fixed term, but that should be noticed
+        by the user when reviewing the new \regexes{}.  Variable terms are
         replaced by \texttt{.+}, which means to match zero or more of any
         character.  
 
     \item [Build regexes]  The words are reassembled to produce a \regex{}
-        matching the log line, and a counter is maintained for each
-        \regex{}.  Contiguous sequences of \texttt{.+} in the newly
-        reassembled \regexes{} are collapsed to a single \texttt{.+}; any
-        resulting duplicate \regexes{} are combined, and their counters
-        added.  If the frequency of a \regex{} is lower than the threshold
-        supplied by the user the \regex{} is discarded.\footnote{This is a
-        second threshold, independent of the threshold used to
-        differentiate between fixed and variable words, but once again 1\%
-        of input log lines is a good starting point; obviously the
-        threshold depends on the number and type of input log lines.}  The
-        new \regexes{} are printed for the user to add to the database,
-        either as new rules or merged into the \regexes{} of existing
-        rules; the counter for each \regex{} is also printed, giving the
-        user an indication of how many of the input log lines that \regex{}
-        should match.  Discarding \regexes{} will result in some of the
-        input log lines not being matched; this utility should be run again
-        once the unmatched log lines have been isolated by running the
-        parser, including the new \regexes{}, with the same input which
-        produced the original set of unparsed log lines.
+        matching the log line, and a counter maintained for each \regex{}.
+        Contiguous sequences of \texttt{.+} in the newly reassembled
+        \regexes{} are collapsed to a single \texttt{.+}; any resulting
+        duplicate \regexes{} are combined, and their counters added
+        together.  If the \regex{}'s counter is lower than the threshold
+        supplied by the user the \regex{} is discarded; this second
+        threshold is independent of the threshold used to differentiate
+        between fixed and variable words, but once again 1\% of input log
+        lines is a good starting point; obviously the threshold depends on
+        the number and type of input log lines.  The new \regexes{} are
+        displayed for the user to add to the database, either as new rules
+        or merged into the \regexes{} of existing rules; the counter for
+        each \regex{} is also displayed, giving the user an indication of
+        how many of the input log lines that \regex{} should match.
+        Discarding \regexes{} will result in some of the input log lines
+        not being matched; the utility should be run again once the
+        unmatched log lines have been isolated by parsing the original log
+        files once the parser has been augmented with the new rules.
 
 \end{description}
 
@@ -414,6 +421,9 @@ they are based upon.  A future version of this utility will also group
 input log lines by \regex{}, so the user can tweak the \regexes{} if
 required.
 
+These utilities are not intended to create perfect \regexes{}, but they
+greatly reduce the effort required to parse new or different log lines.
+
 \subsection{Summary}
 
 This section dealt with the rules used in parsing Postfix log files:
@@ -428,15 +438,16 @@ This section dealt with the rules used in parsing Postfix log files:
 
     \item An example log line and the rule matching it illustrated a
         description of how the fields in the rule are used both in the
-        matching phase and the action that is subsequently executed.
+        matching phase and the action that is subsequently executed.  XXX
+        REWRITE ONCE EXAMPLE HAS CHANGED\@; MERGE WITH NEXT ITEM\@.
 
     \item The structure of the database table containing the rules is dealt
         with in \sectionref{rule attributes}, and is not duplicated in this
         section.
 
-    \item The topic of rule efficiency was discussed next, covering the
-        effects of caching compiled \regexes{} and optimal ordering of
-        rules, with reference to the graphs in \sectionref{graphs}.
+    \item The topic of rule efficiency was discussed, covering the effects
+        of caching compiled \regexes{} and optimal ordering of rules, with
+        reference to the graphs in \sectionref{graphs}.
 
     \item This section finished with an explanation of the algorithm used
         to generate a new \regex{} from unparsed log lines.
