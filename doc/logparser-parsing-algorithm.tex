@@ -56,10 +56,10 @@ experience could be summarised as:
 
     \item Mail enters the system via \SMTP{} or local submission.
 
-    \item If the mail is rejected, log all data and finish.
+    \item If the mail is rejected, save all data and finish.
 
     \item Follow the progress of the accepted mail until it is either
-        delivered, bounced or deleted, then log all data, and finish.
+        delivered, bounced, or deleted, then save all data, and finish.
 
 \end{enumerate}
 
@@ -118,17 +118,16 @@ Multiple independent mails may be delivered during one connection: this
 requires the algorithm to clone the current data as soon as a mail is
 accepted, so that subsequent mails will not trample over each other's data.
 This must be done every time a mail is accepted, as it is impossible to
-tell in advance which connections will accept multiple mails.  Happily,
-once the mail has been accepted log entries will not be correlated by
-\pid{} for that mail any more (its queueid will be used instead), so there
-is not any ambiguity about which mail a given log line belongs
-to.\footnote{Unfortunately this statement is not completely accurate: see
-\sectionref{timeouts-during-data-phase} for details.  However in general
-there is not any ambiguity about which data structure should be used for a
-given log line.}  The original connection will be discarded unsaved when
-the client disconnects if it does not have any data worth saving, i.e.\ no
-rejections.  One unsolved difficulty is distinguishing between different
-groups of rejections, e.g.\ when dealing with the following sequence:
+tell in advance which connections will accept multiple mails.  Once the
+mail has been accepted its log entries will not be correlated by \pid{} any
+more (its queueid will be used instead), so there is no longer any
+ambiguity about which mail a given log line belongs to (except when
+timeouts occur during the data phase
+\sectionref{timeouts-during-data-phase}).  If the original connection has
+any interesting data (e.g.\ rejections) it will be saved to the database
+when the client disconnects.  One unsolved difficulty is distinguishing
+between different groups of rejections, e.g.\ when dealing with the
+following sequence:
 
 \begin{enumerate}
 
@@ -140,8 +139,8 @@ groups of rejections, e.g.\ when dealing with the following sequence:
 
 \end{enumerate}
 
-There should probably be two different entries in the database resulting
-from the above sequence, but currently there will only be one.
+There should ideally be two separate entries in the database resulting from
+the above sequence, but currently there will only be one.
 
 
 
@@ -181,19 +180,17 @@ chronological order, the order in which log lines from different processes
 are interleaved is subject to the vagaries of process scheduling.  In
 addition, the first log line belonging to the child mail (the log line
 cited above belongs to the parent mail) is logged by \daemon{qmgr}, so the
-order also depends on how busy \daemon{qmgr} is.\footnote{Postfix is quite
-paranoid about mail delivery, an excellent characteristic for an \MTA{} to
-possess, so it will not log that the child has been created until it is
-absolutely certain that the mail has been written to disk.}
+order also depends on how soon \daemon{qmgr} processes the new mail.
 
-Because of this the parser cannot complain when it encounters a log line
-from \daemon{qmgr} for a previously unseen mail; it must flag the mail as
-coming from an unknown origin, and subsequently clear the flag if and when
-the origin of the mail becomes clear.  Obviously the parser could omit
-checking of where mails originate from, but requiring an explicit source
-helps to expose bugs in the parser; such checks helped to identify the
-complications described in \sectionref{discarding cleanup lines} and
-\sectionref{pickup logging after cleanup}.
+Because of the uncertain order the parser cannot complain when it
+encounters a log line from \daemon{qmgr} for a previously unseen mail;
+instead it must flag the mail as coming from an unknown origin, and
+subsequently clear the flag if and when the origin of the mail becomes
+clear.  Obviously the parser could omit checking where mails originate
+from, but requiring an explicit source helps to expose bugs in the parser;
+such checks helped to identify the complications described in
+\sectionref{discarding cleanup lines} and \sectionref{pickup logging after
+cleanup}.
 
 Process scheduling can have a still more confusing effect: quite often the
 child mail will be created, delivered and entirely finished with
@@ -621,7 +618,7 @@ The actions:
         expire and the \daemon{smtpd} will exit.  This occurs very
         infrequently, as there are many other timeouts which should occur
         in the intervening hours: \DNS{} timeouts, timeouts reading data
-        from the client, etc.  The active connection for that
+        from the client, etc\@.  The active connection for that
         \daemon{smtpd} must be cleaned up, entered in the database, and
         deleted from the state tables.
 

@@ -280,7 +280,7 @@ complications} for details).
 Postfix's design follows the Unix philosophy of \textit{Write programs that
 do one thing and do it well\/}~\cite{unix-philosophy}, and is separated
 into various component programs to perform the tasks required of an
-\MTA{}\@: receive mail, send mail, local delivery of mail, etc. --- full
+\MTA{}\@: receive mail, send mail, local delivery of mail, etc.\ --- full
 details can be found in~\cite{postfix-overview}.  Each log line contains
 the name of the Postfix component which produced it, and this information
 is used when determining which rules should be used to parse each log line
@@ -555,8 +555,8 @@ three parts:
 
     \item [framework] The framework is responsible for loading rules,
         managing data structures, finding the rule which matches each log
-        line, invoking the correct action, etc.  The framework provides the
-        structure which actions and rules plug into.  The framework is
+        line, invoking the correct action, etc\@.  The framework provides
+        the structure which actions and rules plug into.  The framework is
         described in detail in \sectionref{framework}.  XXX EXTEND
         FRAMEWORK SECTION IF NECESSARY\@.
 
@@ -806,16 +806,16 @@ designed to be extensible and useful in a production environment.
 % receiver and e-mail status (sent, rejected).  Undocumented schema.
 % Design decision to use \CSV{} as an intermediate format between the log
 % file and the database seems to have been restrictive.  Appears to require
-% a queueid but majority of log entries (e.g. rejections) lack a queueid.
+% a queueid but majority of log entries (e.g.\ rejections) lack a queueid.
 % Supports whitelisting \IP{} addresses when parsing logs, but whitelisting
 % when generating reports/data mining would be preferable.  Supporting
 % Berkeley DB is probably limiting the software - an example is the
 % difficulty in searching a pipe-delimited string, so they have
-% re-implemented foreign keys with tables keyed by ip address etc. pointing
-% at the main table - this also will not scale well.  There does not appear
-% to be any attempt to deal with the complications I have encountered:
-% their parsing is not detailed enough to encounter them.  It does not run
-% properly; does not create any output; throws up errors.
+% re-implemented foreign keys with tables keyed by ip address etc.\
+% pointing at the main table - this also will not scale well.  There does
+% not appear to be any attempt to deal with the complications I have
+% encountered: their parsing is not detailed enough to encounter them.  It
+% does not run properly; does not create any output; throws up errors.
 
 \subsection{Summary}
 
