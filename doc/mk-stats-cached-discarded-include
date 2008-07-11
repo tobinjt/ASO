@@ -13,7 +13,7 @@ print q(\begin{tabular}[]{lrr}) . qq{\n};
 
 $label  = q{};
 $mean   = q{Mean};
-$stddev = q{Std Dev};
+$stddev = q{Std. Dev.};
 print qq{$label & $mean & $stddev \\\\\n};
 
 foreach my $file (@ARGV) {
