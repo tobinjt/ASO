@@ -48,9 +48,9 @@ my %data;
 FILE:
 while (my $file = $dir->read()) {
     $file =~ m/^(timing\..*)\.(\d{1,2})$/ or next FILE;
+    my ($prefix, $number) = ($1, $2);
     my $filename = catfile($directory, $file);
 
-    my ($prefix, $number) = ($1, $2);
     if (not exists $data{$prefix}) {
         $data{$prefix} = [];
     }

@@ -2,7 +2,7 @@
 
 SHELL=bash
 
-all: test summary
+all: test
 
 diff-some:
 	diff -u warnings-some-working warnings-some; diff -I ^# -u state-some-working state-some
@@ -22,17 +22,17 @@ test: test.20070616.gz
 
 test-list:
 	# We need to double escape the $, otherwise the submake will clobber it.
-	make INPUT='$$$$( < logs-list )'  STATE='"state-list"'    OUTPUT='"warnings-list"'    test-real
+	make INPUT='$$$$( < logs-list )'  STATE='"state-list"'    OUTPUT='"warnings-list"'    TIMING='"timing-list"'	test-real
 
 test-some:
 	# We need to double escape the $, otherwise the submake will clobber it.
-	make INPUT='$$$$( < logs-some )'  STATE='"state-some"'    OUTPUT='"warnings-some"'    test-real
+	make INPUT='$$$$( < logs-some )'  STATE='"state-some"'    OUTPUT='"warnings-some"'    TIMING='"timing-some"'	test-real
 
 test.%: ../../../../logs/mail.log-%
-	make INPUT='"$<"'                 STATE='"state"'         OUTPUT='"warnings"'         test-real
+	make INPUT='"$<"'                 STATE='"state"'         OUTPUT='"warnings"'         TIMING='"timing"'			test-real
 
 test-real:
-	date; perl logparser --year 2007 --skip_inserting_results --out-statefile ${STATE} --individual-state-files ${INPUT} 2> ${OUTPUT}; date
+	date; perl logparser --year 2007 --skip_inserting_results --out-statefile ${STATE} --individual-state-files --timing-data ${TIMING} ${INPUT} 2> ${OUTPUT}; date
 
 ../sql/create-tables-sqlite3-generated.sql: ../ASO/DB.pm ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm ../ASO/DB/ClusterGroup.pm
 	(cd ../sql && perl make_schema > "$@")
@@ -102,6 +102,7 @@ profile.Cover:
 	PERL5OPT=-d:Cover make test
 	cover
 
+# XXX: SUMMARY TARGETS DON'T WORK ANY MORE BECAUSE OF INDIVIDUAL STATE FILES
 summary:
 	make WARNINGS=warnings STATE=state summarize
 

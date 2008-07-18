@@ -2,6 +2,8 @@
 
 # $Id$
 
+# XXX UPDATE POD - OPTIONS ARE WRONG.
+
 use strict;
 use warnings;
 
@@ -69,7 +71,12 @@ foreach my $logfile (@logs) {
     $num_logs_parsed++;
 
     print_timing(qq{Start logfile}, $logfile);
-    $parser->parse($logfile);
+    my $results = $parser->parse($logfile);
+    if ($Options->{q{timing-data}}) {
+        print $timing_file
+            map { qq{$_: $logfile: $results->{$_}\n} }
+                sort keys %{$results};
+    }
     print_timing(qq{Parsed logfile}, $logfile);
 
     $parser->post_parsing();
@@ -222,8 +229,8 @@ sub timewarn {
 
 sub print_timing {
     my ($message, $filename) = @_;
-    my $now = [gettimeofday()];
     if ($Options->{q{timing-data}}) {
+        my $now = [gettimeofday()];
         printf $timing_file qq{$message: $filename: %.6f\n}, 
             tv_interval($timestamp, $now)
     }
@@ -292,6 +299,10 @@ logfile is compressed, a suffix of   If the logfile is compressed, a suffix of
 Specifies the database to use when loading rules and saving results.  Defaults
 to 'dbi:SQLite:dbname=../sql/db.sq3'.  See L<DBI> for more information about the
 format of this option.
+
+=item --timing-data FILE
+
+Write timing data to FILE.
 
 =item --username USERNAME
 

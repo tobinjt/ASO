@@ -487,7 +487,7 @@ documentation for which compression formats it supports.
 =cut
 
 sub parse {
-warn qq{Make it possible to return a modified input line for further parsing\n};
+    # XXX Make it possible to return a modified input line for further parsing
     my ($self, $logfile) = @_;
     $self->{current_logfile} = $logfile;
     my $logfile_fh = IO::File->new(q{< } . $logfile);
@@ -509,11 +509,19 @@ warn qq{Make it possible to return a modified input line for further parsing\n};
         = $self->create_progress_bar($logfile, $logfile_fh);
     my ($last_update, $next_update) = (0, 0);
 
+    $self->{num_lines_read}     = 0;
+    $self->{num_lines_parsed}   = 0;
+    $self->{num_lines_skipped}  = 0;
+    $self->{num_lines_failed}   = 0;
+    $self->{num_rules_tried}    = 0;
+
     LINE:
     while (my $line = $syslog->next()) {
+        $self->{num_lines_read}++;
         $self->{last_timestamp} = $line->{timestamp};
         if (not exists $self->{rules_by_program}->{$line->{program}}) {
             # It's not from a program we're interested in, skip it.
+            $self->{num_lines_skipped}++;
             next LINE;
         }
 
@@ -542,7 +550,32 @@ warn qq{Make it possible to return a modified input line for further parsing\n};
     if ($self->{num_connections_uncommitted}) {
         $self->{dbix}->txn_commit();
     }
-    return 1;
+
+    if ($self->{num_lines_read} !=   $self->{num_lines_parsed}
+                                   + $self->{num_lines_skipped}
+                                   + $self->{num_lines_failed}) {
+        my $message = <<"MESSAGE";
+
+num_lines_read ($self->{num_lines_read}) !=   num_lines_parsed  ($self->{num_lines_parsed})
+                            + num_lines_skipped ($self->{num_lines_skipped})
+                            + num_lines_failed  ($self->{num_lines_failed})
+MESSAGE
+
+        $self->my_die($message);
+    }
+    if ($self->{num_lines_parsed} > $self->{num_rules_tried}) {
+        my $message = <<"MESSAGE";
+
+num_lines_parsed ($self->{num_lines_parsed}) > num_rules_tried ($self->{num_rules_tried})
+MESSAGE
+
+        $self->my_die($message);
+    }
+
+    my %results = map { $_ => $self->{$_} } qw(num_lines_read
+                        num_lines_parsed num_lines_skipped
+                        num_lines_failed num_rules_tried);
+    return \%results;
 }
 
 =over 4
@@ -667,10 +700,12 @@ sub parse_line {
     # Use the program specific rules first, then the generic rules.
     foreach my $rule (@{$self->{rules_by_program}->{$line->{program}}},
             @{$self->{rules_by_program}->{q{*}}}) {
+        $self->{num_rules_tried}++;
         if ($line->{text} !~ m/$rule->{regex}/) {
             next RULE;
         }
         $rule->{count}++;
+        $self->{num_lines_parsed}++;
 
         # TODO: is there a way I can do this without matching twice??
         my @matches = ($line->{text} =~ m/$rule->{regex}/);
@@ -693,6 +728,7 @@ sub parse_line {
     # use my_warn because it complicates and clutters the warning.
     warn qq{$0: $self->{current_logfile}: $.: }
         . qq{unparsed line: $line->{program}: $line->{text}\n};
+    $self->{num_lines_failed}++;
     return;
 }
 
