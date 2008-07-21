@@ -107,7 +107,7 @@
 % New formatting commands.
 
 % \showgraph{filename}{caption}{label}
-\newcommand{\showgraph}[3]{
+\newcommand{\showgraph}[3]{%
     \begin{figure}[hbt!]
         \caption{#2}\label{#3}
         \includegraphics{#1}
@@ -115,11 +115,17 @@
 }
 
 %\showtable{filename}{caption}{label}
-\newcommand{\showtable}[3]{
+\newcommand{\showtable}[3]{%
     \begin{table}[ht]
         \caption{#2}\label{#3}
         \input{#1}
     \end{table}
+}
+
+\newcommand{\tableline}[0]{%
+    \noalign{\smallskip}%
+    \hline%
+    \noalign{\smallskip}%
 }
 
 % A command to format a Postfix daemon's name
@@ -169,6 +175,9 @@
 
 % Pull in the acronyms early, so they can be used throughout the text.
 \input{logparser-acronyms.tex}
+
+% WSUIPA fonts.
+\input{ipamacs}
 
 \title{Parsing Postfix log files}
 \author{John Tobin \\ School of Computer Science and Statistics \\
@@ -232,22 +241,22 @@ Acronyms
 \newpage
 \input{logparser-introduction.tex}
 \input{logparser-background.tex}
+\input{logparser-other-parsers-review.tex}
 \input{logparser-database-schema.tex}
 \input{logparser-parsing-rules.tex}
 \input{logparser-parsing-algorithm.tex}
 \input{logparser-coverage.tex}
+\input{logparser-graphs.tex}
 \input{logparser-limitations.tex}
 \input{logparser-conclusion.tex}
 
 \appendix
 
-\input{logparser-other-parsers-review.tex}
 
 \bibliographystyle{logparser-bibliography-style}
 \bibliography{logparser-bibliography}
 \label{bibliography}
 
-\input{logparser-graphs.tex}
 
 % Redefine the command used to produce the glossary title, because the
 % default command produces an unnumbered section whereas I want a numbered

@@ -48,6 +48,11 @@ gathered that is language-neutral.  The novel separation of rules, actions
 and framework is discussed, giving the reasons that approach was taken when
 designing the parser.
 
+Section~\ref{state of the art review} reviews both the previously published
+research in this area and other available Postfix log parsers, discussing
+why they were deemed unsuitable for the task, including why they could not
+be improved or expanded upon.
+
 This algorithm requires a database for storing both the rules used when
 parsing and the results gleaned from parsing.  The database schema used is
 described in \sectionref{database schema}, explaining in detail the tables
@@ -86,6 +91,10 @@ false positives is also included.  As part of determining the coverage of
 the parser a random sampling of log lines was parsed, and the correctness
 of the results manually verified.
 
+Section~\ref{graphs} contains graphs illustrating the topics previously
+discussed in \sectionref{rule efficiency} (rule efficiency), and explains
+the irregularities observed in these graphs.
+
 Section~\ref{limitations-improvements} lists the limitations of the
 algorithm, then suggests some ways of dealing with them, with the goal of
 improving parsing and reproduction of the journey a mail takes through
@@ -94,18 +103,10 @@ Postfix.
 Section~\ref{conclusion} contains the document's conclusion, describing the
 results of the research, design and implementation of the parser.
 
-Appendix~\ref{other-parsers} discusses other parsers and why they were
-deemed unsuitable for the task, including why they could not be improved or
-expanded upon.
-
 The bibliography contains references to the resources used in developing
 the algorithm, writing the program, and preparing this document.  Also
 listed are some additional resources expected to be helpful in
 understanding \SMTP{}, Postfix, anti-spam techniques, or the document.
-
-Appendix~\ref{graphs} contains graphs illustrating the topics previously
-discussed in \sectionref{rule efficiency} (rule efficiency), and explains
-the irregularities observed in these graphs.
 
 Appendix~\ref{Glossary} provides a glossary of terms used in the document.
 
