@@ -1,0 +1,243 @@
+\section{Parser Architecture}
+
+\subsection{Parser design}
+
+\label{parser design}
+
+It should be clear from the earlier Postfix background (\sectionref{postfix
+background}) that log files produced by Postfix are not fixed; they vary
+widely from host to host, depending on the set of restrictions chosen by
+the administrator.  With this in mind, one of the parser's design aims was
+to make adding new rules as easy as possible, to enable administrators to
+properly parse their log files.  To enable this the parser is divided into
+three parts:
+
+\begin{description}
+
+    \item [rules] Rules match individual log lines and determine which
+        actions will be executed.  Rules provide an easily extensible
+        method of associating log lines with actions, and are described in
+        detail in \sectionref{rules}.
+
+    \item [actions] Actions are invoked to deal with a log line once it has
+        been identified by the rules: actions modify data structures,
+        handle complications, and cause data to be saved to the database.
+        The actions perform the work of reconstructing the journey a mail
+        takes through Postfix.  Full details of actions can be found in
+        \sectionref{actions-in-detail} and \sectionref{adding new actions}
+        XXX IMPROVE THIS SENTENCE\@.
+
+    \item [framework] The framework is responsible for loading rules,
+        managing data structures, finding the rule which matches each log
+        line, invoking the correct action, etc\@.  The framework provides
+        the structure which actions and rules plug into.  The framework is
+        described in detail in \sectionref{framework}.  XXX EXTEND
+        FRAMEWORK SECTION IF NECESSARY\@.
+
+\end{description}
+
+It may help to think of the rules and actions as components which plug into
+the framework.  
+
+\label{why separate rules, actions and framework?}
+
+XXX MERGE THE NEXT TWO PARAGRAPHS\@.
+
+Decoupling the parsing rules from the associated actions and framework
+allows new rules to be written and tested without requiring modifications
+to the parser source code (significantly lowering the barrier to entry for
+new or casual users who need to parse new log lines), and greatly
+simplifies framework, actions and rules.  Decoupling also creates a clear
+separation of functionality: rules handle low level details of identifying
+log lines and extracting data from a log line; actions handle the higher
+level details of following the path a mail takes through Postfix,
+assembling the required data before storing it, dealing with complications
+arising, etc; the framework provides services to actions and stores data.
+
+Decoupling the actions from the framework simplifies both framework and
+actions: the framework provides services to the actions, and does not need
+to deal with the complications which arise, or the task of reconstructing a
+mail's journey through Postfix; actions benefit from having services
+provided by the framework, freeing them to concentrate on the task of
+accurately reconstructing each mail's journey through Postfix and dealing
+with the complications described in \sectionref{additional complications}.
+
+XXX CLARIFY THE SENTENCE STARTING WITH ``Although this may see'' IN THE
+NEXT PARAGRAPH\@.
+
+Separating the rules from the actions and framework makes it possible to
+parse new log lines without modifying the core parsing algorithm.  Although
+this may seem like a trivial point, is it substantially more difficult to
+understand a program's entire parsing algorithm, identify the correct
+location to change and make the appropriate changes, versus adding a new
+rule with the action to invoke, a \regex{} to match the log lines, and the
+specification of the data to extract.  Bear in mind that the changes must
+be made without adversely affecting existing parsing, particularly as there
+may be edge cases which are not immediately obvious.\footnote{See
+\sectionref{yet-more-aborted-delivery-attempts} for a complication which
+occurs only four times in \numberOFlogFILES{} log files tested.}  Requiring
+changes to the parser's code also complicates upgrades, as the changes must
+be preserved during the upgrade, and may clash with changes made by the
+developer.\footnote{See \sectionref{adding new actions} for how to add new
+actions}  \parsername{} allows the user to add new rules to the database
+without changing the parsing algorithm, unless the new log lines to be
+parsed require functionality not already provided by the algorithm.  If the
+new log lines do require new functionality, new actions can be added to the
+parser without modifying existing actions or other parts of the algorithm;
+only in the rare case that the new actions require support from other
+sections of the code will more extensive changes be required.
+
+XXX CHANGE THIS\@; THE PARSER DESIGN IS NOVEL, DO NOT STRESS THE SIMILARITY
+TOO MUCH\@.
+
+There is some similarity between the parser's design and William Wood's
+\ATN{}~\cite{atns, nlpip}, a tool used in Computational Linguistics for
+creating grammars to parse or generate sentences.  The resemblance between
+\ATN{} and the parser is accidental, but it is interesting how two
+apparently different approaches share an underlying separation of concerns;
+this appears to be a natural division of responsibility and functionality.
+
+% Do Not Reformat!
+
+\begin{tabular}[]{lll}
+    \textit{\ATN{}\/}   & \textit{Parser\/} & \textit{Similarity\/}     \\
+    Networks            & Algorithm         & Determines the sequence 
+                                              of transitions            \\
+                        &                   & or actions which 
+                                              constitutes a valid       \\
+                        &                   & input.                    \\
+    Transitions         & Actions           & Save data and impose
+                                              conditions the            \\
+                        &                   & input must meet to be
+                                              considered valid.         \\
+    Abbreviations       & Rules             & Responsible for 
+                                              classifying input.        \\
+\end{tabular}
+
+\subsection{Rule characteristics}
+
+\label{rule characteristics}
+
+Rule have certain characteristics which may help in understanding the
+parser:
+
+\begin{itemize}
+
+    \item Rules are annotated with the name of a Postfix program, and will
+        only be used when parsing log lines produced by that
+        program.\footnote{There are also generic rules which are used when
+        parsing log lines produced by any Postfix program, but only if
+        there are also rules specific to that program, and those rules have
+        already have been tried and have failed on the current log line.}
+        Any given rule will only be used to parse a subset of the log
+        lines, and any given log line will only have a subset of the rules
+        tried against it.
+
+    \item The first matching rule wins: no further rules are tried against
+        that log line, but there is a facility for prioritising the rules
+        so that more specific rules can be tried first.
+
+    \item Rules are completely self-contained and can be understood in
+        isolation, without reference to any other rules.
+
+    \item Rule processing time is a linear function of the number of rules.
+        XXX IMPROVE THIS\@.
+
+\end{itemize}
+
+\label{comparison against context-free grammars}
+
+In context-free grammar terms the parser rules could be described as:
+
+$\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
+\text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
+
+
+\subsection{Overlapping rules}
+
+\label{overlapping rules}
+
+XXX IS THERE ANY PREVIOUS RESEARCH IN THIS AREA\@?
+
+XXX DFA COMPARISON\@.
+
+The parser does not try to detect overlapping rules; that
+responsibility is left to the author of the rules.  Unintentionally
+overlapping rules lead to inconsistent parsing and data extraction because
+the order in which rules are tried against each line may change between log
+files, and the first matching rule wins.  Overlapping rules are frequently
+a requirement, allowing a more specific rule to match some log lines and a
+more general rule to match the majority, e.g.\ separating \SMTP{} delivery
+to specific sites from \SMTP{} delivery to the rest of the world.  The
+algorithm provides a facility for ordering overlapping rules: the priority
+field in each rule (defaults to zero).  Negative priorities may be useful
+for catchall rules.
+
+Detecting overlapping rules is difficult, but the following approaches may
+be helpful:
+
+\begin{itemize}
+
+    \item Sort by \regex{} and visually inspect the list, e.g.\ with \SQL{}
+        similar to: \textbf{select regex from rules order by regex;}
+
+    \item Compare the results of parsing using sorted, shuffled and
+        reversed rules (described in \sectionref{rule efficiency}).  Parse
+        a number of log files using normal sorting, then dump a textual
+        representation of the rules, connections and results tables.
+        Repeat with shuffled and reversed rules, starting with a fresh
+        database.  If there are no overlapping rules the tables from each
+        run will be identical; differences indicate overlapping rules.
+        Which rules overlap can be determined by examining the differences
+        in the tables: each result contains a reference to the rule which
+        created it, if the references differ between runs the two rules
+        referenced in the differing results overlap.  Unfortunately this
+        method cannot prove the absence of overlapping rules; it can detect
+        overlapping rules, but only if there are log lines in the input
+        files which match more than one rule.
+
+\end{itemize}
+
+
+\subsection{Framework}
+
+\label{framework}
+
+The intermingling of log entries from different mails immediately rules out
+the possibility of handling each mail in isolation; the parser must be
+capable of handling multiple mails in parallel, each potentially at a
+different stage in its journey, without any interference between mails ---
+except in the minority of cases where intra-mail interference is required.
+The best way to implement this is to maintain state information for every
+unfinished mail and manipulate the appropriate mail correctly for each log
+line encountered.
+
+This functionality is provided by the framework, which both drives parsing
+overall and provides services to the actions it invokes.  The framework is
+responsible for loading rules from the database and sanity checking them,
+reading log files, matching each rule against the current log line,
+invoking the correct action, maintaining state tables, loading and saving
+state, displaying a progress indicator, and miscellaneous other tasks.
+Actions use services provided by the framework, including storing and
+retrieving data in the state tables, extracting and saving data captured by
+rules, storage of global data, debugging functions, preparing a mail for
+entry in the database, and entering mails in the database.
+
+There is a similarity between this design and the event-driven programming
+paradigm commonly used in GUI programs, where one part of the program
+responds to events (mouse clicks in a GUI program, log lines being matched
+in the parser) and invokes the correct action.
+
+The framework's high level overview could be expressed as (indentation
+denoting flow of control):
+
+\begin{verbatim}
+for each line in the input files:
+    for each rule defined by the user:
+        if this rule matches the input line:
+            perform the action specified by the rule
+            skip the remaining rules
+            process the next input line
+    warn the user that the input line was not parsed
+\end{verbatim}
+

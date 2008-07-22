@@ -63,19 +63,6 @@ experience could be summarised as:
 
 \end{enumerate}
 
-The framework's high level overview could be expressed as (indentation
-denoting flow of control):
-
-\begin{verbatim}
-for each line in the input files:
-    for each rule defined by the user:
-        if this rule matches the input line:
-            perform the action specified by the rule
-            skip the remaining rules
-            process the next input line
-    warn the user that the input line was not parsed
-\end{verbatim}
-
 Unfortunately both high level views ignore the many complications
 encountered.
 
@@ -457,35 +444,6 @@ or paths a mail could take; no other component in the parser has any need
 for this flow of data to be specified.}
 
 
-
-\subsection{Framework}
-
-\label{framework}
-
-The intermingling of log entries from different mails immediately rules out
-the possibility of handling each mail in isolation; the parser must be
-capable of handling multiple mails in parallel, each potentially at a
-different stage in its journey, without any interference between mails ---
-except in the minority of cases where intra-mail interference is required.
-The best way to implement this is to maintain state information for every
-unfinished mail and manipulate the appropriate mail correctly for each log
-line encountered.
-
-This functionality is provided by the framework, which both drives parsing
-overall and provides services to the actions it invokes.  The framework is
-responsible for loading rules from the database and sanity checking them,
-reading log files, matching each rule against the current log line,
-invoking the correct action, maintaining state tables, loading and saving
-state, displaying a progress indicator, and miscellaneous other tasks.
-Actions use services provided by the framework, including storing and
-retrieving data in the state tables, extracting and saving data captured by
-rules, storage of global data, debugging functions, preparing a mail for
-entry in the database, and entering mails in the database.
-
-There is a similarity between this design and the event-driven programming
-paradigm commonly used in GUI programs, where one part of the program
-responds to events (mouse clicks in a GUI program, log lines being matched
-in the parser) and invokes the correct action.
 
 \subsection{Actions in detail}
 
