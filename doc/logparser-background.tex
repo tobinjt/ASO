@@ -466,63 +466,6 @@ Example attributes taken from~\cite{policy-servers}:
 
 
 
-\subsection{Assumptions}
-
-The algorithm described and the program implementing it make a small number
-of (hopefully safe and reasonable) assumptions:
-
-\begin{itemize}
-
-    \item The log files are whole and complete: nothing has been removed,
-        either deliberately or accidentally (e.g.\ log rotation gone awry,
-        file system filling up, logging system unable to cope with the
-        volume of log messages).  On a well run system it is extremely
-        unlikely that any of these problems will arise, though it is of
-        course possible, particularly when suffering a deluge of spam or a
-        mail loop.
-
-    \item Postfix logs sufficient information to make it possible to
-        accurately reconstruct the actions it has taken.  There are a
-        number of heuristics used when parsing; see
-        \sectionref{identifying-bounce-notifications},
-        \sectionref{aborted-delivery-attempts} and \sectionref{pickup
-        logging after cleanup} for details.
-
-    \item The Postfix queue has not been tampered with, causing unexplained
-        appearance or disappearance of mail.  This may happen if the
-        administrator deletes mail from the queue without using
-        \daemon{postsuper}, or if there is filesystem corruption.
-
-\end{itemize}
-
-In some ways this task is similar to reverse engineering or replicating a
-black box program based solely on its inputs and outputs.  Although the
-source code is available,\footnote{Reading and understanding the source
-code would require a significant investment of time: there are 375,750
-lines of code, documentation, etc.\ in Postfix 2.5.1's 17MB of source
-code.} there are advantages to treating Postfix as a black box while
-developing the parser:
-
-\begin{itemize}
-
-    \item The parser is developed using real world log files rather than
-        the idealised log files someone would naturally envisage reading
-        the source code.
-
-    \item The source code cannot accurately communicate the variety of
-        orderings in which log lines are written to the log file, as
-        process scheduling independently interferes with logging and other
-        processing.
-
-    \item The parser acts as a second source of information, with the
-        information gathered from empirical evidence.  An interesting
-        project would be to compare the empirical knowledge inherent in the
-        parsing algorithm with the documentation and source code of
-        Postfix.
-
-\end{itemize}
-
-
 \subsection{Conventions used in the document}
 
 The words \textit{connection\/} and \textit{mail\/} are often used
