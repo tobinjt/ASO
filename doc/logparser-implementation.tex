@@ -188,8 +188,8 @@ The following attributes are defined for each rule:
         For efficiency the keywords are expanded and every rule's \regex{}
         is compiled before attempting to parse the log file --- otherwise
         each \regex{} would be recompiled each time it was used, resulting
-        in a large, data dependent slowdown.  Rule efficiency concerns are
-        discussed in \sectionref{rule efficiency}, with the impact of
+        in a large, data dependent slowdown.  Efficiency concerns are
+        discussed in \sectionref{parser efficiency}, with the impact of
         caching compiled \regexes{} covered in \sectionref{Caching each
         regex}.
 
@@ -382,6 +382,8 @@ customised reports and/or statistics.
 
 
 \subsection{Rules}
+
+\label{rules}
 
 \subsubsection{Example rule}
 

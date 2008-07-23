@@ -182,19 +182,20 @@ be helpful:
         similar to: \textbf{select regex from rules order by regex;}
 
     \item Compare the results of parsing using sorted, shuffled and
-        reversed rules (described in \sectionref{rule efficiency}).  Parse
-        a number of log files using normal sorting, then dump a textual
-        representation of the rules, connections and results tables.
-        Repeat with shuffled and reversed rules, starting with a fresh
-        database.  If there are no overlapping rules the tables from each
-        run will be identical; differences indicate overlapping rules.
-        Which rules overlap can be determined by examining the differences
-        in the tables: each result contains a reference to the rule which
-        created it, if the references differ between runs the two rules
-        referenced in the differing results overlap.  Unfortunately this
-        method cannot prove the absence of overlapping rules; it can detect
-        overlapping rules, but only if there are log lines in the input
-        files which match more than one rule.
+        reversed rules (described in \sectionref{rule ordering for
+        efficiency}).  Parse a number of log files using normal sorting,
+        then dump a textual representation of the rules, connections and
+        results tables.  Repeat with shuffled and reversed rules, starting
+        with a fresh database.  If there are no overlapping rules the
+        tables from each run will be identical; differences indicate
+        overlapping rules.  Which rules overlap can be determined by
+        examining the differences in the tables: each result contains a
+        reference to the rule which created it, if the references differ
+        between runs the two rules referenced in the differing results
+        overlap.  Unfortunately this method cannot prove the absence of
+        overlapping rules; it can detect overlapping rules, but only if
+        there are log lines in the input files which match more than one
+        rule.
 
 \end{itemize}
 

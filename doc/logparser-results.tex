@@ -1,10 +1,17 @@
 \section{Results}
 
-\subsection{Efficiency}
+XXX COMPARE SAVING RESULTS TO RAM DISK VERSUS SAVING TO HARD DISK\@.
 
-\subsubsection{Rule efficiency}
+XXX DO SOMETHING WITH NORMAL VS SMALLER GRAPH\@.
 
-\label{rule efficiency}
+XXX EXPLAIN THE X-AXES ON THE GRAPHS\@.
+
+\showgraph{build/plot-normal-vs-smaller}{NORMAL VS SMALLER}{NORMAL VS
+SMALLER}
+
+\subsection{Parser Efficiency}
+
+\label{parser efficiency}
 
 XXX ADD TIMING INFORMATION\@.
 
@@ -12,9 +19,9 @@ Parsing efficiency is an obvious concern when the parser routinely needs to
 deal with 75 MB log files containing 300,000 log lines (generated daily on
 a mail server handling mail for approximately 700 users --- large scale
 mail servers would have much larger log files on a daily basis).  When
-generating the data for the graphs included in \sectionref{graphs},
-\numberOFlogFILES{} log files (totaling 10.08 GB, \numberOFlogLINEShuman{}
-log lines) were each parsed 10 times, the first run discarded, and the
+generating the timing data used in this section, \numberOFlogFILES{} log
+files (totaling 10.08 GB, \numberOFlogLINEShuman{} log lines) were each
+parsed 10 times, the results of the first first run discarded, and the
 execution time for the remaining 9 runs averaged.  The first run is
 discarded for two reasons:
 
@@ -38,36 +45,60 @@ the database is stored on.
 
 An important property of a parser is how execution time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
-\Graphref{execution time vs file size vs number of lines graph}
-shows the execution time in seconds, file size in MB and tens of thousands
-of log lines per log file.  All three lines run roughly in parallel, giving
-a visual impression that the algorithm scales linearly with input size.
-This impression is borne out by \graphref{execution time vs file
-size vs number lines factor} which plots the ratio of file size vs
-execution time and ratio of number of log lines vs execution time (higher
-is better); \tableref{execution time vs file size vs number lines
-factor table} shows the ratios for different breakdowns of the log files.
-As the reader can see the ratios are quite tightly banded, showing that the
+\Graphref{execution time vs file size vs number of lines graph} shows the
+execution time in seconds, file size in MB, and tens of thousands of log
+lines per log file.  All three lines run roughly in parallel, giving the
+impression that the algorithm scales linearly with input size.  This
+impression is borne out by \graphref{execution time vs file size vs number
+lines factor} which plots both the ratio of file size vs execution time,
+and the ratio of number of log lines vs execution time (higher is better in
+both cases); \tableref{execution time vs file size vs number lines factor
+table} shows the ratios for different groups of log files.  As the
+reader can see the ratios are quite tightly banded, showing that the
 algorithm scales linearly: the much larger log files between points 60 and
-70 on the X axis in \graphref{execution time vs file size vs
-number of lines graph} actually cause the ratio to increase (i.e.\
-improve), rather than decrease.  The strange behaviour where larger log
-files are parsed more efficiently is explained fully in \sectionref{Why are
-there dips in the graphs?}.  
+70 on the X axis in \graphref{execution time vs file size vs number of
+lines graph} actually cause the ratio to increase (i.e.\ improve), rather
+than decrease.  The strange behaviour where larger log files are parsed
+more efficiently is explained fully in \sectionref{Why are there dips in
+the graphs?}.  
+
+\showgraph{build/plot-normal-filesize-numlines}{Execution time vs file
+size vs number of lines}{execution time vs file size vs number of lines
+graph}
+
+The Y axis in \graphref{execution time vs file size vs number of lines
+graph} represents the following:
+
+\begin{enumerate}
+
+    \item The time required, in seconds, to parse the log file.
+
+    \item The size of the log file, in megabytes.
+
+    \item The number of lines in the log file, divided by 10000.
+
+\end{enumerate}
+
+\showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file
+size and number of lines to execution time}{execution time vs file size vs
+number lines factor}
+
+\showtable{build/stats-normal-filesize-line-count-include}{Ratio of file
+size \& number of lines to execution time: statistics}{execution time vs
+file size vs number lines factor table}
 
 \subsubsection{Rule ordering for efficiency}
 
 \label{rule ordering for efficiency}
 
-Rule ordering was mentioned in \sectionref{rule attributes} and will be
-covered in greater detail in this section.  At the time of writing there
-are \numberOFrules{} different rules: the top 10\% match the vast majority
-of log lines, with the remaining log lines split across the other 90\% of
-the rules (as shown in \graphref{rule hits graph}).  Assuming that
-the distribution of log lines is reasonably steady over time, program
-efficiency should benefit from trying more frequently matching rules before
-those which match less frequently.  To test this hypothesis three full test
-runs were performed with different rule orderings:
+At the time of writing there are \numberOFrules{} different rules: the top
+10\% match the vast majority of log lines, with the remaining log lines
+split across the other 90\% of the rules (as shown in \graphref{rule hits
+graph}).  Assuming that the distribution of log lines is reasonably steady
+over time, parser efficiency should benefit from trying more frequently
+matching rules before those which match less frequently.  To test this
+hypothesis three full test runs were performed with different rule
+orderings:
 
 \begin{description}
 
@@ -86,13 +117,29 @@ runs were performed with different rule orderings:
 
 \end{description}
 
-Graphs~\refwithpage{percentage increase of shuffled over normal}
-and~\refwithpage{percentage increase of reversed over normal} show the
-percentage increase of execution times, with \tableref{Execution
-time increase for different rule orderings} showing the mean increases for
-different groupings of log files.  Overall this provides a modest but
-worthwhile performance increase of approximately 9\%, for a small
-investment in time and programming.
+\Graphref{percentage increase of shuffled over normal} shows the percentage
+increase of shuffled over normal, with the percentage increase of reverse
+over normal following in \graphref{percentage increase of reversed over
+normal}; the mean increases for different groupings of log files are given
+in \tableref{Execution time increase for different rule orderings}.
+Overall this optimisation provides a modest but worthwhile performance
+increase of approximately 10\%, for a small investment in time and
+programming.
+
+\label{rule ordering graphs}
+
+XXX SHOW NORMAL AS A REDUCTION FROM SHUFFLE, AND REVERSE AS AN INCREASE
+OVER SHUFFLE\@.
+
+\showgraph{build/plot-normal-shuffle-factor}{Percentage increase of
+shuffled over normal}{percentage increase of shuffled over normal}
+
+\showgraph{build/plot-normal-reverse-factor}{Percentage increase of
+reversed over normal}{percentage increase of reversed over normal}
+
+\showtable{build/stats-normal-shuffle-reverse-include}{Execution time
+increase for different rule orderings}{Execution time increase for
+different rule orderings}
 
 \subsubsection{Caching each regex}
 
@@ -352,23 +399,9 @@ further examination of the log files in developing a solution.
 
 \label{graphs}
 
-XXX COMPARE SAVING RESULTS TO RAM DISK VERSUS SAVING TO HARD DISK\@.
-
-XXX DO SOMETHING WITH NORMAL VS SMALLER GRAPH\@.
-
-XXX EXPLAIN THE X-AXES ON THE GRAPHS\@.
-
-\showgraph{build/plot-normal-vs-smaller}{NORMAL VS SMALLER}{NORMAL VS
-SMALLER}
-
-\renewcommand{\figurename}{Graph}
-
-\subsubsection{Introduction}
-
 Graphs are an excellent means of displaying data, transforming a
 meaningless stream of numbers into an easily comprehensible form, where
-anomalies and patterns are immediately obvious.  These graphs are used to
-illustrate the topics discussed in \sectionref{rule efficiency}.  The
+anomalies and patterns are immediately obvious.  The
 graphs in the first section cover parser scalability, demonstrating that
 performance scales linearly with input size.  The impact of rule ordering
 is shown in \sectionref{rule ordering graphs}, and the anomalous dips and
@@ -379,59 +412,6 @@ of graphs; these graphs are referenced from various places in the test.
 This section concludes with a breakdown of the rule hits accumulated during
 a single test run of the parser.
 
-\newpage
-
-\subsubsection{Parser scalability}
-
-\showgraph{build/plot-normal-filesize-numlines}{Execution time vs file
-size vs number of lines}{execution time vs file size vs number of lines
-graph}
-
-The Y axis in \graphref{execution time vs file size vs number of
-lines graph} represents the following:
-
-\begin{enumerate}
-
-    \item The time required, in seconds, to parse the log file.
-
-    \item The size of the log file, in megabytes.
-
-    \item The number of lines in the log file, divided by 10000.
-
-\end{enumerate}
-
-\Graphref{execution time vs file size vs number lines factor}
-shows the ratio of execution time vs file size and number of lines (higher
-is better, it means more bytes or lines processed per second).  The ratios
-are quite tightly banded with the exception of log files 22 and 62--68,
-where they are noticeably higher; \graphref{execution time vs file
-size vs number lines factor} and \tableref{execution time vs file
-size vs number lines factor table} show that the parser's execution time
-scales linearly with input size.
-
-\showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file
-size and number of lines to execution time}{execution time vs file size vs
-number lines factor}
-
-\showtable{build/stats-normal-filesize-line-count-include}{Ratio of file
-size \& number of lines to execution time: statistics}{execution time vs
-file size vs number lines factor table}
-
-\clearpage
-
-\subsubsection{Rule ordering}
-
-\label{rule ordering graphs}
-
-\showgraph{build/plot-normal-shuffle-factor}{Percentage increase of
-shuffled over normal}{percentage increase of shuffled over normal}
-
-\showgraph{build/plot-normal-reverse-factor}{Percentage increase of
-reversed over normal}{percentage increase of reversed over normal}
-
-\showtable{build/stats-normal-shuffle-reverse-include}{Execution time
-increase for different rule orderings}{Execution time increase for
-different rule orderings}
 
 \subsubsection{Why are there dips in the graphs?}
 \label{Why are there dips in the graphs?}
@@ -627,8 +607,7 @@ action}{Distribution of rules per action}
 
 \subsubsection{Summary}
 
-The graphs presented in this section illustrate the topics discussed in
-\sectionref{rule efficiency}.  The first collection of graphs are about
+The first collection of graphs are about
 parser scalability, showing the linear relationship between execution time
 and input size.  \sectionref{rule ordering graphs} demonstrates the effect
 of rule ordering on execution time, and the unexpected consequences of
