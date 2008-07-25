@@ -13,6 +13,13 @@ run_latex:
 		bibtex $$( basename "${SOURCE}" .tex ) || rm -f "${DEST}"; \
 	fi
 	[ -f "${DEST}" ]
+	AUX=$$( basename "${SOURCE}" .tex ); \
+	AUX="$$AUX.aux"; \
+	touch "$$AUX.old"; \
+	if [ -s "$$AUX.old" ]; then \
+		diff -u "$$AUX.old" "$$AUX"; \
+	fi; \
+	cp "$$AUX" "$$AUX.old"
 
 %.dvi: %.tex
 	make build PROGRAM="latex" SOURCE="$<" DEST="$@"
@@ -46,7 +53,7 @@ build:
 	make build_loop PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
 	cat "${DEST}.out"
 	grep Overfull "${DEST}.out" || true
-	grep "LaTeX Warning: " "${DEST}.out" || true
+	grep -A 1 "LaTeX Warning: " "${DEST}.out" || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' "${DEST}.out"
 	BASE=$$( basename "${SOURCE}" .tex ); \
 	grep ^Warning "$$BASE.blg" || true; \
@@ -55,7 +62,7 @@ build:
 	chktex -I0 -q *.tex
 	@echo "XXX THINK ABOUT GREPPING OUT CITATION LINES FROM *.aux TO DETERMINE"
 	@echo "XXX WHEN THE LIST OF REFERENCES CHANGES SO BIBTEX SHOULD BE RERUN."
-	@echo "MAKE %.bbl DEPEND ON %.aux SO LATEX WILL BE RUN IF NECESSARY"
+	@echo "XXX MAKE %.bbl DEPEND ON %.aux SO LATEX WILL BE RUN FIRST IF NECESSARY"
 
 build_run:
 	make run_latex PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
@@ -71,7 +78,7 @@ build_run:
 	# The next run will include the new glossary and acronyms if they've changed.
 
 build_loop:
-	# Run latex at least three times:
+	# Run latex at least four times when starting from scratch:
 	# 1 \cite commands populate foo.aux; bibtex will populate foo.bbl
 	#   glossary and acronym files are written, and postprocessed
 	# 2 latex reads foo.bbl, updates foo.aux
@@ -123,9 +130,6 @@ logparser.dvi: logparser.deps logparser-bibliography.bib logparser-bibliography-
 logparser.deps: \
 				build/plot-cached-discarded.pdf								\
 				build/plot-cached-discarded-factor.pdf						\
-				build/plot-normal-shuffle-reverse.pdf						\
-				build/plot-normal-shuffle-factor.pdf						\
-				build/plot-normal-reverse-factor.pdf						\
 				build/plot-normal-filesize-numlines-factor.pdf				\
 				build/plot-normal-filesize-numlines.pdf						\
 				build/plot-hits.pdf											\
@@ -134,12 +138,10 @@ logparser.deps: \
 				build/plot-hits-low.pdf										\
 				build/plot-action-distribution.pdf							\
 				build/plot-normal-vs-smaller.pdf							\
+				build/plot-normal-and-reverse-relative-to-shuffle.pdf		\
 				\
 				build/plot-cached-discarded.ps								\
 				build/plot-cached-discarded-factor.ps						\
-				build/plot-normal-shuffle-reverse.ps						\
-				build/plot-normal-shuffle-factor.ps							\
-				build/plot-normal-reverse-factor.ps							\
 				build/plot-normal-filesize-numlines-factor.ps				\
 				build/plot-normal-filesize-numlines.ps						\
 				build/plot-hits.ps											\
@@ -148,6 +150,7 @@ logparser.deps: \
 				build/plot-hits-low.ps										\
 				build/plot-action-distribution.ps							\
 				build/plot-normal-vs-smaller.ps								\
+				build/plot-normal-and-reverse-relative-to-shuffle.ps 		\
 				\
 				build/stats-cached-discarded-include-for-graph.tex			\
 				build/stats-normal-filesize-line-count-include.tex			\
@@ -234,7 +237,7 @@ build/stats-cached-discarded-factor.txt: build/stats-cached.txt build/stats-disc
 	paste -d ' ' $^ | awk '$$1 != "#" {print ($$9 * 100 / $$3) - 100 }' > "$@"
 
 build/stats-normal-shuffle-reverse-factor.txt: build/stats-normal.txt build/stats-shuffle.txt build/stats-reverse.txt
-	paste -d ' ' $^ | awk '$$1 != "#" {print (($$9 * 100 / $$3) - 100), " ", (($$15 * 100 / $$3) - 100) }' > "$@"
+	paste -d ' ' $^ | awk '$$1 != "#" {print ($$3 * 100 / $$9), " ", ($$15 * 100 / $$9) }' > "$@"
 
 # Log 22 stats
 stats-log22-distribution-by-rule.txt:
@@ -297,15 +300,15 @@ build/stats-normal-filesize-line-count-include.tex: \
 # Normal/shuffle/reverse ratios: stddev, mean, etc.
 build/stats-normal-shuffle-stddev.txt: build/stats-normal-shuffle-reverse-factor.txt
 	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: Shuffle (all logs)" >> "$@"
+	echo "Row: Normal (all logs)" >> "$@"
 
 build/stats-normal-shuffle-stddev-22_62-68.txt: build/stats-normal-shuffle-reverse-factor.txt
 	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: Shuffle (logs 22, 62--68)" >> "$@"
+	echo "Row: Normal (logs 22, 62--68)" >> "$@"
 
 build/stats-normal-shuffle-stddev-other.txt: build/stats-normal-shuffle-reverse-factor.txt
 	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: Shuffle (all other logs)" >> "$@"
+	echo "Row: Normal (all other logs)" >> "$@"
 
 build/stats-normal-reverse-stddev.txt: build/stats-normal-shuffle-reverse-factor.txt
 	awk '!/#/ {print $$2}' "$<" | perl ../stats/stddev > "$@"

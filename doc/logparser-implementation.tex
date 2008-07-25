@@ -1,4 +1,4 @@
-\section{Parser Implementation}
+\section{Postfix Parser Implementation}
 
 \subsection{Assumptions}
 
@@ -190,8 +190,8 @@ The following attributes are defined for each rule:
         each \regex{} would be recompiled each time it was used, resulting
         in a large, data dependent slowdown.  Efficiency concerns are
         discussed in \sectionref{parser efficiency}, with the impact of
-        caching compiled \regexes{} covered in \sectionref{Caching each
-        regex}.
+        caching compiled \regexes{} covered in \sectionref{Caching compiled
+        regexes}.
 
     \item [result\_cols, connection\_cols] Specifies how the fields in the
         log line will be extracted.  The format is:

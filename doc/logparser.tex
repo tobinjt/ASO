@@ -20,9 +20,9 @@
 % Extra footnote functionality, including references to earlier footnotes.
 \usepackage{footmisc}
 
-% Sort numbers where there are multiple citations.  does not appear to have
-% any effect (probably clashes with varioref or hyperref), though it does
-% reduce the space between numbers.
+% Sort numbers where there are multiple citations.  Does not appear to have
+% the expected effect (probably clashes with varioref or hyperref), though
+% it does reduce the space between numbers.
 \usepackage{cite}
 
 % Acronyms and glossary entries.
@@ -188,7 +188,7 @@
 Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 \maketitle
 \SVN$Id$
-\SVNId{}
+\begin{center}\SVNId{}\end{center}
 
 \refstepcounter{dummy}
 \addcontentsline{toc}{section}{Abstract}
@@ -215,29 +215,7 @@ NECESSARY\@.
 
 XXX EXPLAIN THE X-AXIS ON GRAPHS --- MADS THOUGHT IT WAS UNCLEAR\@.
 
-\newpage
-
-XXX NEW LAYOUT\@:
-
-\begin{verbatim}
-Introduction
-Background
-State of the Art Review
-Parser Architecture
-Postfix Parser Implementation
-    Database Schema
-    Rules
-    Actions
-    Complications
-    Limitations and Improvements
-Results - BETTER TITLE?
-    Coverage
-    Efficiency
-Conclusion
-References
-Glossary
-Acronyms
-\end{verbatim}
+XXX CHECK THE CAPTIONS ON ALL GRAPHS AND TABLES --- SOME ARE AWFUL\@.
 
 \newpage
 \tableofcontents
