@@ -1,10 +1,10 @@
 load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
-set ylabel "Percentage increase of compiled once over compiled and discarded"
+set ylabel "Increase in parsing time when not caching compiled regexes"
 set output "../build/plot-cached-discarded-factor.ps"
 # Add a % sign on the y axis
 set format y "% g%%"
 
 plot "../build/stats-cached-discarded-factor.txt" using 1 with lines \
-    title "Percentage increase of compiled once over compiled and discarded"
+    title "Increase in parsing time when not caching compiled regexes"

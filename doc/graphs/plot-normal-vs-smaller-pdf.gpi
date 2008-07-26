@@ -1,7 +1,7 @@
 load "plot-defaults-pdf.gpi"
 
 set xlabel "Log file"
-set ylabel "Percentage execution time increase of \nmaximum ruleset over minimum ruleset"
+set ylabel "Percentage parsing time increase of \nmaximum ruleset over minimum ruleset"
 set output "../build/plot-normal-vs-smaller.pdf"
 
 # Add a % sign on the y axis

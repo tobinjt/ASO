@@ -9,7 +9,7 @@ XXX DO SOMETHING WITH NORMAL VS SMALLER GRAPH\@.
 XXX EXPLAIN THE X-AXES ON THE GRAPHS\@.
 
 XXX CHANGE normal TO optimal IN ORDERING STUFF, INCLUDING IN GRAPH CAPTIONS
-AND AXES LABELS\@.
+AND AXIS LABELS\@.
 
 \subsection{Parser Efficiency}
 
@@ -17,117 +17,85 @@ AND AXES LABELS\@.
 
 XXX ADD TIMING INFORMATION\@.
 
-XXX THIS SECTION NEEDS TO BE REWRITTEN\@.
-
 Parsing efficiency is an obvious concern when the parser routinely needs to
 parse very large log files.  The server which generated the log files used
 in testing this parser accepts approximately 10,000 mails for 700 users a
-day, and on average it produces 75MB log files containing 300,000 log lines
---- large scale mail servers would have much larger log files on a daily
-basis.
+day; as expected there are far more mails received on weekdays than at
+weekends.   Median log file size is 50MB, containing 285,000 log lines ---
+large scale mail servers would have much larger log files.  Note that
+\graphref{Mails received per day} and \tableref{Number of mails received
+per day: statistics} show the number of mails received by \SMTP{} only; in
+particular the mail loops noticeable in other graphs do not contribute to
+these figures.
 
-\showgraph{build/plot-mails-received}{Mails received per day}{Mails
-received per day}
-
-As expected there are far more mails received on weekdays than at weekends.
-Note that this graph and the table below show the number of mails received
-by \SMTP{} only; in particular the mail loops noticeable in other graphs
-do not contribute to these figures.
+\showgraph{build/plot-mails-received}{Number of mails received per
+day}{Mails received per day}
 
 \showtable{build/mails-received-include-for-graph}{Number of mails received
-per day: statistics}{Number of mails received per day: statistics}
-
-\showgraph{build/plot-action-distribution}{Distribution of rules per
-action}{Distribution of rules per action}
+per day}{Number of mails received per day: statistics}
 
 When generating the timing data used in this section, \numberOFlogFILES{}
 log files (totaling 10.08 GB, \numberOFlogLINEShuman{} log lines) were each
-parsed 10 times, the results of the first first run discarded, and the
+parsed 10 times, the results from the first first run discarded, and the
 execution time for the remaining 9 runs averaged.  The results from the
-first run are discarded for two reasons:
-
-\begin{enumerate}
-
-    \item The execution time will be higher because the log file must be
-        read from disk, whereas for subsequent runs the log file will be
-        cached in memory by the operating system.
-
-    \item The execution time will also be higher because the rule ordering
-        will be sub-optimal compared to subsequent runs.
-
-\end{enumerate}
-
-Saving results to the database was disabled for the test runs, as that
-dominates the run time of the program, and the tests are aimed at measuring
-the speed of the parser rather than the speed of the database and the disks
-the database is stored on.
-
-\newpage
+first run were discarded because because the rule ordering will be
+sub-optimal compared to subsequent runs --- XXX MAYBE I SHOULDN'T DISCARD
+THE FIRST RESULT\@?  Saving results to the database was disabled for the
+test runs, as that dominates the run time of the program, and the tests are
+aimed at measuring the speed of the parser rather than the speed of the
+database and the disks the database is stored on.
 
 \subsubsection{Algorithmic complexity}
 
 An important property of a parser is how execution time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
-\Graphref{execution time vs file size vs number of lines graph} shows the
-execution time in seconds, file size in MB, and tens of thousands of log
-lines per log file.  All three lines run roughly in parallel, giving the
-impression that the algorithm scales linearly with input size.  This
-impression is borne out by \graphref{execution time vs file size vs number
-lines factor} which plots both the ratio of file size vs execution time,
-and the ratio of number of log lines vs execution time (higher is better in
-both cases); \tableref{execution time vs file size vs number lines factor
-table} shows the ratios for different groups of log files.  As the
-reader can see the ratios are quite tightly banded, showing that the
-algorithm scales linearly: the much larger log files between points 60 and
-70 on the X axis in \graphref{execution time vs file size vs number of
-lines graph} actually cause the ratio to increase (i.e.\ improve), rather
-than decrease.  The strange behaviour where larger log files are parsed
-more efficiently is explained fully in \sectionref{Explaining the peaks in
-log file size}.  
-
-\showgraph{build/plot-normal-filesize-numlines}{Execution time vs file
-size vs number of lines}{execution time vs file size vs number of lines
-graph}
-
-The Y axis in \graphref{execution time vs file size vs number of lines
-graph} represents the following:
-
-\begin{enumerate}
-
-    \item The time required, in seconds, to parse the log file.
-
-    \item The size of the log file, in megabytes.
-
-    \item The number of lines in the log file, divided by 10000.
-
-\end{enumerate}
-
-\showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file
-size and number of lines to execution time}{execution time vs file size vs
-number lines factor}
+\Graphref{parsing time vs file size vs number of lines graph} shows the
+parsing time in seconds, file size in MB, and tens of thousands of log
+lines for each of the \numberOFlogFILES{} log files.  All three lines run
+roughly in parallel, giving the impression that the algorithm scales
+linearly with input size.  This impression is borne out by
+\graphref{parsing time vs file size vs number lines factor} which plots
+both the ratio of file size vs parsing time, and the ratio of number of log
+lines vs parsing time (higher is better in both cases); \tableref{parsing
+time vs file size vs number lines factor table} shows the same ratios for
+different groups of log files.  As the reader can see the ratios are quite
+tightly banded, providing empirical evidence that the algorithm scales
+linearly.  The ratio increases (i.e.\ improves) for log files 22 and 62--68
+despite their larger than average size (shown in \graphref{parsing time vs
+file size vs number of lines graph}); this strange behaviour where larger
+log files are parsed more efficiently than smaller is explained fully in
+\sectionref{Explaining the peaks in log file size}.  
 
 \showtable{build/stats-normal-filesize-line-count-include}{Ratio of file
-size \& number of lines to execution time: statistics}{execution time vs
-file size vs number lines factor table}
+size and number of lines to parsing time}{parsing time vs file size vs
+number lines factor table}
+
+\showgraph{build/plot-normal-filesize-numlines}{Parsing time, file size,
+and number of lines}{parsing time vs file size vs number of lines graph}
+
+\showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file size
+and number of lines to parsing time}{parsing time vs file size vs number
+lines factor}
 
 \subsubsection{Explaining the peaks in log file size}
 
 \label{Explaining the peaks in log file size}
 
-\Graphref{execution time vs file size vs number of lines graph} shows log
+\Graphref{parsing time vs file size vs number of lines graph} shows log
 file size varying between 30--100MB, except for log files 22 (200MB) and
 62--68 (400--900MB).  These large log files were caused by a user
 unintentionally creating a mail forwarding loop, resulting in a huge number
 of mail deliveries and up to an order of magnitude more log lines than is
 usual.  The user specified his mail forwarding as: \newline
 \tab{}\texttt{$\backslash$username, username@domain} \newline This
-instructs Postfix to deliver the mail to the local user, and also forward
-it to the remote address; this is generally not a problem except that the
+instructs Postfix to deliver the mail to the local user, and also forward a
+copy to the remote address; this is generally not a problem except that the
 remote address in this case is the address the mail was originally sent to,
 creating an infinite loop.  To prevent this happening Postfix examines the
 Delivered-To header in the mail, and if the mail has already been delivered
 to the current address it is bounced back to the sender with the error
-message \texttt{mail forwarding loop for username@domain}.  Ordinarily this
+message \newline{} \tab{} \texttt{mail forwarding loop for
+username@domain}\newline{}  Ordinarily this
 works well, but unfortunately in this case the user noticed they had not
 received any mail in a while and opted to send a test mail to themselves,
 causing a loop not caught by Postfix:
@@ -183,11 +151,11 @@ number of rules rises}, and \sectionref{Caching compiled regexes}.
 At the time of writing there are \numberOFrules{} different rules: the top
 10\% match the vast majority of log lines, with the remaining log lines
 split across the other 90\% of the rules (as shown in \graphref{rule hits
-graph}).  Assuming that the distribution of log lines is reasonably steady
-over time, parser efficiency should benefit from trying more frequently
-matching rules before those which match less frequently.  To test this
-hypothesis three full test runs were performed with different rule
-orderings:
+graph}).  Assuming that the distribution of log lines is reasonably
+consistent over time, parser efficiency should benefit from trying more
+frequently matching rules before those which match less frequently.  To
+test this hypothesis three full test runs were performed with different
+rule orderings:
 
 \begin{description}
 
@@ -196,62 +164,45 @@ orderings:
 
     \item [shuffle] This is intended to represent a randomly ordered rule
         set.  The rules will be shuffled once before use and will retain
-        that ordering for the entirety of the log file.  Note that the
-        ordering will change every time the parser is executed, so 10
-        different orderings will be generated for each log file in the test
-        run.  
+        that ordering until the parser exits.  Note that the ordering will
+        change every time the parser is executed, so 10 different rule
+        orderings will be generated for each log file in the test run.  
 
     \item [reverse] Hypothetically the worst order: the most frequently
         matching rules will be tried last.
 
 \end{description}
 
-\Graphref{Execution time relative to
-shuffled ordering graph} shows the execution time of normal and reverse orderings
-relative to shuffled ordering; the mean increases for different groupings
-of log files are given in \tableref{Execution time relative to shuffled
-ordering table}.  Overall this optimisation provides a modest but worthwhile
+\Graphref{Parsing time relative to shuffled ordering graph} shows the
+execution time of normal and reverse orderings relative to shuffled
+ordering; the mean relative execution times for different groupings of log
+files are given in \tableref{Parsing time relative to shuffled ordering
+table}.  Overall this optimisation provides a modest but worthwhile
 performance increase of approximately 10\%, for a small investment in time
 and programming.
 
-\showgraph{build/plot-normal-and-reverse-relative-to-shuffle}{Execution
-time of normal and reverse orderings relative to shuffled
-ordering}{Execution time relative to shuffled ordering graph}
+\showgraph{build/plot-normal-and-reverse-relative-to-shuffle}{Parsing time
+relative to shuffled ordering}{Parsing time relative to shuffled ordering
+graph}
 
-\showtable{build/stats-normal-shuffle-reverse-include}{Execution time
-relative to shuffled ordering}{Execution time relative to shuffled ordering
+\showtable{build/stats-normal-shuffle-reverse-include}{Parsing time
+relative to shuffled ordering}{Parsing time relative to shuffled ordering
 table}
 
-XXX IMPROVE THE REMAINDER OF THIS SECTION\@; CLEARLY SEPARATE THE
-CHARACTERISTICS AND CLARIFY THEM\@.
-
-Different rule orderings have less effect when parsing log files 22 and
-62--68, due to the different distribution of log lines in those log files
-(see \sectionref{Explaining the peaks in log file size}).  The vast
-majority of log lines when a mail loop occurs are from Postfix components
-which have a small number of rules associated with them, whereas in general
-\daemon{smtpd} adds the majority of log lines, and also has the highest
-number of rules.  \daemon{smtpd} log lines are distributed across rules
-much more evenly than the log lines of \daemon{qmgr}, \daemon{local},
-\daemon{cleanup} or \daemon{pickup}, so the average number of rules
-required to parse a \daemon{smtpd} log line is much higher than the average
-number required to parse other log lines.
-
-These two characteristics combine to reduce the average number of rules
-required to parse a log line when there is a mail loop.  The ratio of
-number of lines versus execution time in \graphref{execution time vs file
-size vs number lines factor} shows a noticeable improvement at log files 22
-and 62--68, where a higher ratio means more log lines parsed per unit of
-execution time.
-
-When the rule ordering is reversed the majority of log lines generated by a
-mail loop will be parsed with very few rules, whereas without a mail loop
-the majority of log lines require a large number of rules; this leads to a
-noticeable drop in the average time required to parse a log line, as shown
-in \graphref{Execution time relative to shuffled ordering graph}.  The
-number of rules which need to be consulted when the ordering is shuffled
-varies between the optimal and the pessimal, and the performance varies
-proportionally.
+Differences in rule ordering have less effect on parsing time when parsing
+log files 22 and 62--68, due to the different distribution of log lines in
+those log files (see \sectionref{Explaining the peaks in log file size}).
+When a mail loop occurs the vast majority of log lines are from Postfix
+components which have a small number of rules associated with them, whereas
+in general the majority of log lines are from Postfix components which have
+a high number of associated rules; this results in the average number of
+rules required to parse a log line from log files 22 or 62--68 being
+considerably lower than usual.  The ratio of number of lines versus parsing
+time in \graphref{parsing time vs file size vs number lines factor} shows a
+noticeable improvement at log files 22 and 62--68, where a higher ratio
+means more log lines parsed per unit of time; similarly \graphref{Parsing
+time relative to shuffled ordering graph} shows much less difference
+between the orderings at log files 22 and 62--68.
 
 \subsubsection{Scalability as the number of rules rises}
 
@@ -262,58 +213,53 @@ XXX WRITE THIS SECTION\@.
 \showgraph{build/plot-normal-vs-smaller}{NORMAL VS SMALLER}{NORMAL VS
 SMALLER}
 
+\clearpage{}
+
 \subsubsection{Caching compiled regexs}
 
 \label{Caching compiled regexes}
 
-Before Perl attempts to match a \regex{} against a piece of text, the
-original \regex{} is compiled into an internal representation and optimised
-to improve the speed of matching, but this compilation and optimisation
-takes CPU time; far more CPU time, in fact, than the actual matching takes
-in many cases.  Perl automatically caches static \regexes{} at compile
-time, but \regexes{} loaded dynamically while the program need to be
-explicitly compiled and cached.  
+Before the perl interpreter attempts to match a \regex{} against a piece of
+text, the \regex{} is compiled into an internal representation and
+optimised to improve the speed of matching.  This compilation and
+optimisation takes CPU time ---in many cases it takes far more CPU time
+than the actual matching.  If the interpreter is certain that a \regex{}
+will not change it will automatically cache the compilation results for
+later use.   The results of compiling a dynamically generated \regex{} can
+be cached and used in preference to the original \regex{}, but it is the
+responsibility of the programmer to do this.  The Postfix parser loads the
+rules it uses from a database, and thus each rule's \regex{} is compiled
+and the result cached to reduce parsing time.
 
-The following graphs show the impact that not caching compiled \regexes{}
-has on parser performance: on typical log files the execution time when not
-caching compiled \regexes{} is 500--600\% of the execution time when
-caching; reversing the perspective shows that cached execution time is
-merely 17--20\% of non-cached execution time.  Caching compiled \regexes{}
-is probably the single most effective optimisation possible in the parser's
-implementation; given that it only required sixteen extra lines of
-reasonably simple code,\footnote{The sixteen lines of code breaks down as
-follows: three lines to add caching, eight lines of error checking and
-reporting, three lines to optionally disable caching for debugging and
-performance measurement, and two lines of comments.} the investment in time
-was minimal.
+\Graphref{Increase in parsing time when not caching compiled regexes graph}
+shows the impact that not caching compiled \regexes{} has on parser
+performance: on typical log files the parsing time when not caching
+compiled \regexes{} is 400--600\% of the parsing time when caching.
+Caching compiled \regexes{} is probably the single most effective
+optimisation possible in the parser's implementation, and was quite simple
+to implement.
 
-\showgraph{build/plot-cached-discarded}{Regex: cached vs
-discarded}{normal regex vs discard regex}
+\showgraph{build/plot-cached-discarded-factor}{Increase in parsing time
+when not caching compiled regexes}{Increase in parsing time when not
+caching compiled regexes graph}
 
-\showgraph{build/plot-cached-discarded-factor}{Regex caching: percentage
-execution time increase}{normal regex vs discarded regex factor}
+Two large dips can be seen in \graphref{Increase in parsing time when not
+caching compiled regexes graph} at log files 22 and 62--68, corresponding
+to the spikes in log file size in \graphref{parsing time vs file size vs
+number of lines graph}.  The distribution of log lines across rules when
+there is a mail loop is much different to the norm, and the average number
+of rules consulted per log line is much lower: this results in far fewer
+\regex{} compilations per line when there is a mail loop, and a
+corresponding decrease in the average parsing time for a single log line.
+The outcome is that caching compiled \regexes{} is proportionally less
+important when the log file contents were created by a mail loop.  The
+increases in parsing time when not caching compiled \regexes{} for
+different groups of log files are summarised in \tableref{Increase in
+parsing time when not caching compiled regexes table}.
 
-Two large dips can be seen in \graphref{normal regex vs discarded
-regex factor} at log files 22 and 62--68, corresponding to the spikes in
-log file size in \graphref{execution time vs file size vs number
-of lines graph} and \graphref{normal regex vs discard regex}.  The
-reason for the anomalous log files has already been explained in
-\sectionref{Explaining the peaks in log file size}.
-
-The distribution of log lines across rules when there is a mail loop is
-much different to the norm and the average number of rules consulted per
-log line is much lower; this results in far fewer \regex{} compilations per
-line than when there is not a mail loop, and a correspondingly decreased
-execution time.  The unexpected outcome is that caching \regexes{} is
-proportionally less important when the log file contents were created by a
-mail loop.  The increases in execution time when not caching \regexes{} for
-different combinations of log files are summarised in the table below:
-
-XXX THIS IS AN AWFUL CAPTION\@.
-
-\showtable{build/stats-cached-discarded-include-for-graph}
-{Regex caching/discarding with different groups of log files}
-{Regex caching/discarding with different groups of log files}
+\showtable{build/stats-cached-discarded-include-for-graph} {Increase in
+parsing time when not caching compiled regexes} {Increase in parsing time
+when not caching compiled regexes table}
 
 
 \subsubsection{Summary}
@@ -563,13 +509,18 @@ further examination of the log files in developing a solution.
 
 \subsection{Graphs}
 
+XXX FIGURE OUT WHERE TO PUT THESE GRAPHS\@; DO I NEED ALL THREE\@?
+
+\showgraph{build/plot-action-distribution}{Distribution of rules per
+action}{Distribution of rules per action}
+
 The number of hits per rule is quite unevenly spread, resembling a Power
 Law distribution~\cite{powerlaw}.
 
 \showgraph{build/plot-hits}{Hits per rule}{rule hits graph}
 
-As \graphref{rule hits graph} is quite difficult to read it has
-been separated into three sections: low, middle and high.
+As \graphref{rule hits graph} is quite difficult to read it has been
+separated into three sections: low, middle and high.
 
 \showgraph{build/plot-hits-low}{Hits per rule (low)}{hits per rule low}
 

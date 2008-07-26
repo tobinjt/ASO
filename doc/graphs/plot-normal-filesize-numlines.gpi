@@ -1,15 +1,15 @@
 load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
-set ylabel "Execution time in seconds, file size in MB and number of lines / 10000"
+set ylabel "Parsing time in seconds, file size in MB,\n and number of log lines / 10000"
 set output "../build/plot-normal-filesize-numlines.ps"
 
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
 
-plot "../build/stats-normal.txt" using 3 with lines title "Execution time in seconds", \
+plot "../build/stats-normal.txt" using 3 with lines title "Parsing time in seconds", \
     "../file-sizes.txt" using :($2 / 1000 / 1000) with lines \
         title "File size in MB", \
     "../wc.txt" using :($2 / 10000) with lines \
-        title "Lines per file / 10000"
+        title "Log lines / 10000"
 

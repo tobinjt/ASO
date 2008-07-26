@@ -51,7 +51,7 @@ run_makeindex:
 .PHONY: build
 build:
 	make build_loop PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
-	cat "${DEST}.out"
+	#cat "${DEST}.out"
 	grep Overfull "${DEST}.out" || true
 	grep -A 1 "LaTeX Warning: " "${DEST}.out" || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' "${DEST}.out"
@@ -128,7 +128,6 @@ logparser.pdf: logparser.deps logparser-bibliography.bib logparser-bibliography-
 logparser.dvi: logparser.deps logparser-bibliography.bib logparser-bibliography-style.bst \
 				logparser-acronyms.tex
 logparser.deps: \
-				build/plot-cached-discarded.pdf								\
 				build/plot-cached-discarded-factor.pdf						\
 				build/plot-normal-filesize-numlines-factor.pdf				\
 				build/plot-normal-filesize-numlines.pdf						\
@@ -140,7 +139,6 @@ logparser.deps: \
 				build/plot-normal-vs-smaller.pdf							\
 				build/plot-normal-and-reverse-relative-to-shuffle.pdf		\
 				\
-				build/plot-cached-discarded.ps								\
 				build/plot-cached-discarded-factor.ps						\
 				build/plot-normal-filesize-numlines-factor.ps				\
 				build/plot-normal-filesize-numlines.ps						\
@@ -173,7 +171,6 @@ build/logparser-flow-chart-%.ps: logparser-flow-chart-%.dot
 	dot -o "$@" -Tps -x "$<"
 
 # graph dependencies
-build/plot-cached-discarded.ps: build/stats-cached.txt build/stats-discarded.txt build/stats-cached-discarded-factor.txt
 build/plot-cached-discarded-factor.ps: build/stats-cached-discarded-factor.txt
 build/plot-normal-shuffle-reverse.ps: build/stats-normal.txt build/stats-shuffle.txt build/stats-reverse.txt
 build/plot-normal-shuffle-factor.ps: build/stats-normal-shuffle-reverse-factor.txt
@@ -192,9 +189,9 @@ build/plot-action-distribution.ps: build/action-distribution.txt
 build/plot-normal-vs-smaller.ps: build/stats-normal-vs-smaller.txt \
 									build/stats-shuffle-vs-smaller.txt \
 									build/stats-reverse-vs-smaller.txt
+build/plot-normal-and-reverse-relative-to-shuffle.ps: build/stats-normal-shuffle-reverse-factor.txt
 
 # Duplicated dependencies; make doesn't seem to rebuild properly when there are multiple wildcard dependencies.  Poo.
-build/plot-cached-discarded.pdf: build/stats-cached.txt build/stats-discarded.txt build/stats-cached-discarded-factor.txt
 build/plot-cached-discarded-factor.pdf: build/stats-cached-discarded-factor.txt
 build/plot-normal-shuffle-reverse.pdf: build/stats-normal.txt build/stats-shuffle.txt build/stats-reverse.txt
 build/plot-normal-shuffle-factor.pdf: build/stats-normal-shuffle-reverse-factor.txt 
@@ -213,6 +210,7 @@ build/plot-action-distribution.pdf: build/action-distribution.txt
 build/plot-normal-vs-smaller.pdf: build/stats-normal-vs-smaller.txt \
 									build/stats-shuffle-vs-smaller.txt \
 									build/stats-reverse-vs-smaller.txt
+build/plot-normal-and-reverse-relative-to-shuffle.pdf: build/stats-normal-shuffle-reverse-factor.txt
 
 build/plot-%.ps: graphs/plot-%.gpi
 	cd graphs && gnuplot "../$<" || (rm -f "../$@"; false)
@@ -270,27 +268,27 @@ build/stats-cached-discarded-include-for-graph.tex: build/stats-cached-discarded
 # File size and number of lines ratios: stddev, mean, etc.
 build/stats-normal-filesize-stddev.txt: build/stats-normal-filesize-numlines-factor.txt
 	awk '!/#/ {print $$2}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: File size ratio" >> "$@"
+	echo "Row: File size vs. parsing time" >> "$@"
 
 build/stats-normal-filesize-stddev-22_62-68.txt: build/stats-normal-filesize-numlines-factor.txt
 	awk '!/#/ {print $$2}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: File size ratio (logs 22, 62--68)" >> "$@"
+	echo "Row: File size vs. parsing time (logs 22, 62--68)" >> "$@"
 
 build/stats-normal-filesize-stddev-other.txt: build/stats-normal-filesize-numlines-factor.txt
 	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: File size ratio (all other logs)" >> "$@"
+	echo "Row: File size vs. parsing time (all other logs)" >> "$@"
 
 build/stats-normal-line-count-stddev.txt: build/stats-normal-filesize-numlines-factor.txt
 	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: Number of lines ratio" >> "$@"
+	echo "Row: Number of lines vs. parsing time" >> "$@"
 
 build/stats-normal-line-count-stddev-22_62-68.txt: build/stats-normal-filesize-numlines-factor.txt
 	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: Number of lines ratio (logs 22, 62--68)" >> "$@"
+	echo "Row: Number of lines vs. parsing time (logs 22, 62--68)" >> "$@"
 
 build/stats-normal-line-count-stddev-other.txt: build/stats-normal-filesize-numlines-factor.txt
 	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: Number of lines ratio (all other logs)" >> "$@"
+	echo "Row: Number of lines vs. parsing time (all other logs)" >> "$@"
 
 build/stats-normal-filesize-line-count-include.tex: \
 		build/stats-normal-filesize-stddev.txt build/stats-normal-filesize-stddev-22_62-68.txt build/stats-normal-filesize-stddev-other.txt \
@@ -410,6 +408,7 @@ clean:
 	rm -f *.gls *.glo *.cbk *.cit *.lof *.idx *.acn *.acr *.alg *.deps *.lot
 	rm -f *.old
 
+realclean: veryclean
 veryclean: clean
 	rm -f build/*
 	rm -rf *-graphed
