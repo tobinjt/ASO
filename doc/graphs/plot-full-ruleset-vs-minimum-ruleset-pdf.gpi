@@ -1,0 +1,13 @@
+load "plot-defaults-pdf.gpi"
+
+set xlabel "Log file"
+set ylabel "Percentage parsing time increase of \nmaximum ruleset over minimum ruleset"
+set output "../build/plot-full-ruleset-vs-minimum-ruleset.pdf"
+
+# Add a % sign on the y axis
+set format y "% g%%"
+set yrange [-2:*]
+
+plot "../build/stats-normal-full-ruleset-vs-minimum-ruleset.txt" using 2 with lines title "Normal ordering", \
+    "../build/stats-shuffle-full-ruleset-vs-minimum-ruleset.txt" using 2 with lines title "Shuffled ordering", \
+    "../build/stats-reverse-full-ruleset-vs-minimum-ruleset.txt" using 2 with lines title "Reversed ordering"

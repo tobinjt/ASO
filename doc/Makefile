@@ -136,7 +136,7 @@ logparser.deps: \
 				build/plot-hits-middle.pdf									\
 				build/plot-hits-low.pdf										\
 				build/plot-action-distribution.pdf							\
-				build/plot-normal-vs-smaller.pdf							\
+				build/plot-full-ruleset-vs-minimum-ruleset.pdf				\
 				build/plot-normal-and-reverse-relative-to-shuffle.pdf		\
 				\
 				build/plot-cached-discarded-factor.ps						\
@@ -147,7 +147,7 @@ logparser.deps: \
 				build/plot-hits-middle.ps									\
 				build/plot-hits-low.ps										\
 				build/plot-action-distribution.ps							\
-				build/plot-normal-vs-smaller.ps								\
+				build/plot-full-ruleset-vs-minimum-ruleset.ps				\
 				build/plot-normal-and-reverse-relative-to-shuffle.ps 		\
 				\
 				build/stats-cached-discarded-include-for-graph.tex			\
@@ -186,9 +186,9 @@ build/plot-hits-low.ps: stats-hits.txt
 build/plot-log22-log-lines.ps: stats-log22-rule-count-by-program.txt
 build/plot-log22-rules.ps: stats-log22-rule-count-by-program.txt
 build/plot-action-distribution.ps: build/action-distribution.txt
-build/plot-normal-vs-smaller.ps: build/stats-normal-vs-smaller.txt \
-									build/stats-shuffle-vs-smaller.txt \
-									build/stats-reverse-vs-smaller.txt
+build/plot-full-ruleset-vs-minimum-ruleset.ps: build/stats-normal-full-ruleset-vs-minimum-ruleset.txt \
+									build/stats-shuffle-full-ruleset-vs-minimum-ruleset.txt \
+									build/stats-reverse-full-ruleset-vs-minimum-ruleset.txt
 build/plot-normal-and-reverse-relative-to-shuffle.ps: build/stats-normal-shuffle-reverse-factor.txt
 
 # Duplicated dependencies; make doesn't seem to rebuild properly when there are multiple wildcard dependencies.  Poo.
@@ -207,9 +207,9 @@ build/plot-hits-low.pdf: stats-hits.txt
 build/plot-log22-log-lines.pdf: stats-log22-rule-count-by-program.txt
 build/plot-log22-rules.pdf: stats-log22-rule-count-by-program.txt
 build/plot-action-distribution.pdf: build/action-distribution.txt
-build/plot-normal-vs-smaller.pdf: build/stats-normal-vs-smaller.txt \
-									build/stats-shuffle-vs-smaller.txt \
-									build/stats-reverse-vs-smaller.txt
+build/plot-full-ruleset-vs-minimum-ruleset.pdf: build/stats-normal-full-ruleset-vs-minimum-ruleset.txt \
+									build/stats-shuffle-full-ruleset-vs-minimum-ruleset.txt \
+									build/stats-reverse-full-ruleset-vs-minimum-ruleset.txt
 build/plot-normal-and-reverse-relative-to-shuffle.pdf: build/stats-normal-shuffle-reverse-factor.txt
 
 build/plot-%.ps: graphs/plot-%.gpi
@@ -351,16 +351,16 @@ build/action-distribution.txt: db.full-run.sq3
 	sqlite3 -separator ' ' "$<" 'select action, count(action) from rules group by action order by count(action);' > "$@.tmp"
 	nl "$@.tmp" > "$@" || (rm -f "$@"; false)
 
-build/stats-normal-vs-smaller.txt: build/stats-normal.txt build/stats-normal-smaller.txt
-	INPUT="$^" OUTPUT="$@" make normal-vs-smaller
+build/stats-normal-full-ruleset-vs-minimum-ruleset.txt: build/stats-normal.txt build/stats-normal-minimum-ruleset.txt
+	INPUT="$^" OUTPUT="$@" make full-ruleset-vs-minimum-ruleset
 
-build/stats-reverse-vs-smaller.txt: build/stats-reverse.txt build/stats-reverse-smaller.txt
-	INPUT="$^" OUTPUT="$@" make normal-vs-smaller
+build/stats-reverse-full-ruleset-vs-minimum-ruleset.txt: build/stats-reverse.txt build/stats-reverse-minimum-ruleset.txt
+	INPUT="$^" OUTPUT="$@" make full-ruleset-vs-minimum-ruleset
 
-build/stats-shuffle-vs-smaller.txt: build/stats-shuffle.txt build/stats-shuffle-smaller.txt
-	INPUT="$^" OUTPUT="$@" make normal-vs-smaller
+build/stats-shuffle-full-ruleset-vs-minimum-ruleset.txt: build/stats-shuffle.txt build/stats-shuffle-minimum-ruleset.txt
+	INPUT="$^" OUTPUT="$@" make full-ruleset-vs-minimum-ruleset
 
-normal-vs-smaller:
+full-ruleset-vs-minimum-ruleset:
 	# There deliberately aren't any quotes around INPUT because it will have 
 	# multiple file names
 	paste -d ' ' ${INPUT} | awk '!/^#/ { print $$1, (($$3 -$$9) * 100 / $$9)}' > "${OUTPUT}"
@@ -382,13 +382,13 @@ build/stats-reverse.txt: stats-reverse
 build/stats-discarded.txt: stats-normal-regex
 	DIR="$<" FILE="$@" make parse-stats
 
-build/stats-normal-smaller.txt: stats-normal-smaller
+build/stats-normal-minimum-ruleset.txt: stats-normal-minimum-ruleset
 	DIR="$<" FILE="$@" make parse-stats
 
-build/stats-reverse-smaller.txt: stats-reverse-smaller
+build/stats-reverse-minimum-ruleset.txt: stats-reverse-minimum-ruleset
 	DIR="$<" FILE="$@" make parse-stats
 
-build/stats-shuffle-smaller.txt: stats-shuffle-smaller
+build/stats-shuffle-minimum-ruleset.txt: stats-shuffle-minimum-ruleset
 	DIR="$<" FILE="$@" make parse-stats
 
 parse-stats:
