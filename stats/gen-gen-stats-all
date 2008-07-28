@@ -1,0 +1,128 @@
+#!/usr/bin/env perl
+
+# This will generate gen-stats-all, ensuring that all option combinations are
+# used when generating stats.
+
+# $Id$
+
+use strict;
+use warnings;
+
+use IO::File;
+use Storable qw(dclone);
+
+my $filename = q{gen-stats-all};
+my $fh = IO::File->new(q{> } . $filename)
+    or die qq{$0: failed opening $filename: $!};
+
+print $fh <<'PRELUDE';
+#!/bin/bash
+
+set -u -e
+
+# Start by doing a straight test run, to get a baseline idea of parsing speed.
+
+full_run_dir="/home/tobinjt/stats-full-run"
+mkdir "$full_run_dir"
+cp -p ../sql/db.maximum-ruleset.sq3 ../sql/db.sq3
+perl ../logparser/logparser --year 2007 --skip_inserting_results --out-statefile "$full_run_dir/state-some" --individual-state-files --timing-data "$full_run_dir/timing-some" $( < ../logparser/logs-some ) 2> "$full_run_dir/warnings-some"
+
+# Now do all the combinations.
+PRELUDE
+
+# Options:
+# * Discarding of results.
+# * Caching of regexes
+# * Rule ordering
+#
+# Plus minimum versus maximum rule sets.
+# XXX AT SOME POINT NEED TO TEST AGAINST A RAM DISK.
+
+my @options = (
+    {
+        insert_results              => q{},
+        skip_inserting_results      => q{--skip_inserting_results},
+    },
+    {
+        cache_compiled_regexes      => q{},
+        discard_compiled_regexes    => q{--discard_compiled_regex},
+    },
+    {
+        normal_ordering             => q{--sort_rules=normal},
+        shuffle_ordering            => q{--sort_rules=shuffle},
+        reverse_ordering            => q{--sort_rules=reverse},
+    },
+);
+
+my @arguments = (
+    {
+        minimum_ruleset             => q{../sql/db.minimum-ruleset.sq3},
+        maximum_ruleset             => q{../sql/db.maximum-ruleset.sq3},
+    },
+);
+
+#use Data::Dumper;
+my @mega_results = add_options(\@options, \@arguments, {});
+#print Dumper(\@mega_results);
+
+print_commands($fh, \@mega_results);
+
+sub add_options {
+    my ($options, $arguments, $results) = @_;
+
+    if (not @{$options}) {
+        return add_arguments($arguments, $results);
+    }
+    $results->{options}     ||= [];
+    $results->{directory}   ||= [];
+
+    my @all_results;
+    my $remaining_options = dclone($options);
+    my $option_list = shift @{$remaining_options};
+
+    foreach my $option (sort keys %{$option_list}) {
+        my $results_copy = dclone($results);
+        push @{$results_copy->{options}}, $option_list->{$option};
+        push @{$results_copy->{directory}}, $option;
+        push @all_results,
+            add_options($remaining_options, $arguments, $results_copy);
+    }
+
+    return @all_results;
+}
+
+sub add_arguments {
+    my ($arguments, $results) = @_;
+
+    if (not @{$arguments}) {
+        return $results;
+    }
+    $results->{arguments}   ||= [];
+    $results->{directory}   ||= [];
+
+    my @all_results;
+    my $remaining_arguments = dclone($arguments);
+    my $argument_list = shift @{$remaining_arguments};
+
+    foreach my $argument (sort keys %{$argument_list}) {
+        my $results_copy = dclone($results);
+        push @{$results_copy->{arguments}}, $argument_list->{$argument};
+        push @{$results_copy->{directory}}, $argument;
+        push @all_results, add_arguments($remaining_arguments, $results_copy);
+    }
+
+    return @all_results;
+}
+
+sub print_commands {
+    my ($fh, $all_results) = @_;
+
+    foreach my $result (@{$all_results}) {
+        my $options   = join q{ }, @{$result->{options}};
+        my $arguments = join q{ }, @{$result->{arguments}};
+        my $directory = join q{--}, q{/home/tobinjt/stats}, @{$result->{directory}};
+        print $fh <<"COMMAND";
+LOGPARSER_SWITCHES="$options" bash ../stats/gen-stats "$directory" $arguments
+COMMAND
+    }
+}
