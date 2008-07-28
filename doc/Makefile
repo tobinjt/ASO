@@ -52,6 +52,7 @@ run_makeindex:
 build:
 	make build_loop PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
 	#cat "${DEST}.out"
+	make check-contractions
 	grep Overfull "${DEST}.out" || true
 	grep -A 1 "LaTeX Warning: " "${DEST}.out" || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' "${DEST}.out"
@@ -161,7 +162,8 @@ logparser.deps: \
 				build/logparser-flow-chart-part-2.ps						\
 				build/plot-mails-received.ps								\
 				build/plot-mails-received.pdf								\
-				build/mails-received-include-for-graph.tex
+				build/mails-received-include-for-graph.tex					\
+				build/full-ruleset-vs-minimum-ruleset-include.tex
 	touch "$@"
 
 build/logparser-flow-chart-%.pdf: logparser-flow-chart-%.dot
@@ -351,6 +353,9 @@ build/action-distribution.txt: db.full-run.sq3
 	sqlite3 -separator ' ' "$<" 'select action, count(action) from rules group by action order by count(action);' > "$@.tmp"
 	nl "$@.tmp" > "$@" || (rm -f "$@"; false)
 
+build/full-ruleset-vs-minimum-ruleset-include.tex: build/stats-normal-full-ruleset-vs-minimum-ruleset.txt
+	awk 'BEGIN { sum = 0; } { sum += $$2; } END { printf "%.3g\\%%%%\n", sum / NR }' "$<" > "$@" || (rm -f "$@"; false)
+
 build/stats-normal-full-ruleset-vs-minimum-ruleset.txt: build/stats-normal.txt build/stats-normal-minimum-ruleset.txt
 	INPUT="$^" OUTPUT="$@" make full-ruleset-vs-minimum-ruleset
 
@@ -419,6 +424,10 @@ check:
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
 	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{e]/; p;' logparser-acronyms.tex | grep -f - -n logparser.tex
+
+# Check for contractons like "don't".
+check-contractions:
+	ack '\w'\''(?!s)\w' logparser*.tex
 
 .PHONY: todo
 todo:

@@ -4,8 +4,6 @@ XXX NEED AN INTRODUCTION\@.
 
 XXX COMPARE SAVING RESULTS TO RAM DISK VERSUS SAVING TO HARD DISK\@.
 
-XXX DO SOMETHING WITH NORMAL VS SMALLER GRAPH\@.
-
 XXX EXPLAIN THE X-AXES ON THE GRAPHS\@.
 
 XXX CHANGE normal TO optimal IN ORDERING STUFF, INCLUDING IN GRAPH CAPTIONS
@@ -39,7 +37,7 @@ log files (totaling 10.08 GB, \numberOFlogLINEShuman{} log lines) were each
 parsed 10 times, the results from the first first run discarded, and the
 execution time for the remaining 9 runs averaged.  The results from the
 first run were discarded because because the rule ordering will be
-sub-optimal compared to subsequent runs --- XXX MAYBE I SHOULDN'T DISCARD
+sub-optimal compared to subsequent runs --- XXX MAYBE I SHOULD NOT DISCARD
 THE FIRST RESULT\@?  Saving results to the database was disabled for the
 test runs, as that dominates the run time of the program, and the tests are
 aimed at measuring the speed of the parser rather than the speed of the
@@ -208,12 +206,41 @@ between the orderings at log files 22 and 62--68.
 
 \label{scalability as the number of rules rises}
 
-XXX WRITE THIS SECTION\@.
+How any architecture scales as the number of rules increases is important,
+but it is particularly important in this architecture because it is
+expected that the typical parser will have a large number of rules.  There
+are \numberOFrules{} rules in the full Postfix ruleset, whereas the minimum
+number of rules required to parse the \numberOFlogFILES{} log files used
+when generating the results in this document is \numberOFrulesMINIMUM{},
+\numberOFrulesMINIMUMpercentage{} of the full ruleset.  The full ruleset is
+larger because the Postfix parser is tested with \numberOFlogFILESall{} log
+files, to improve its parsing and ensure it correctly parses logs generated
+by later Postfix versions.  A second set of statistics was generated using
+the minimum ruleset and compared to the statistics generated using the full
+ruleset: the percentage execution increase when using the full ruleset
+instead of the minimal ruleset for normal, shuffled and reversed orderings
+is shown in \graphref{Percentage parsing time increase of maximum ruleset
+over minimum ruleset}.
 
-\showgraph{build/plot-full-ruleset-vs-minimum-ruleset}{NORMAL VS
-SMALLER}{NORMAL VS SMALLER}
+\showgraph{build/plot-full-ruleset-vs-minimum-ruleset}{Percentage parsing
+time increase of maximum ruleset over minimum ruleset}{Percentage parsing
+time increase of maximum ruleset over minimum ruleset}
 
-\clearpage{}
+It is clear from \graphref{Percentage parsing time increase of maximum
+ruleset over minimum ruleset} that the increased number of rules noticeably
+increases parsing time with reverse ordering, and to a lesser extent with
+shuffled ordering.  The normal ordering (where are the most frequently
+matching rules are tried first) shows a mean increase of
+\input{build/full-ruleset-vs-minimum-ruleset-include.tex} in parsing time
+for a \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.
+Log files 22 and 62--68 show much smaller increases for shuffled and
+reversed ordering than other log files do, because the majority of log
+lines in those log files are parsed by Postfix components with a small
+number of parsing rules, so removing unnecessary rules has little effect on
+the total number of rules used.  These results show that the architecture
+scales very well as the number of rules increases, and that optimally
+sorting the rules is an important optimisation contributing to this
+scalability.
 
 \subsubsection{Caching compiled regexs}
 
