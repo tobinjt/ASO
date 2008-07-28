@@ -5,25 +5,26 @@
 
 set -u -e
 
-if [ "$#" != 2 ]; then
-    echo "Usage: $0 output-directory file-list" 1>&2
+if [ "$#" != 3 ]; then
+    echo "Usage: $0 output-directory file-list initial-database" 1>&2
     exit 1
 fi
 
 dir="$1"
 loglist="$2"
+db="$3"
 if [ ! -f "$loglist" ]; then
     echo "$0: $loglist is not a file" 1>&2
     exit 1;
 fi
 mkdir -p "$dir"
 
-make -C ../logparser/ db
 # Try to load libraries, modules etc in advance.
 perl logparser --help > /dev/null 2>&1 || true
 
 old_state=""
 for log in $( < "$loglist" ); do
+    cp -p "$db" ../sql/db.sq3
     filename=$( basename "$log" )
     state="$dir/state.$filename"
     in_state=
@@ -36,6 +37,7 @@ for log in $( < "$loglist" ); do
     for i in $( seq 1 10 ); do
         echo "$filename: $i: $LOGPARSER_SWITCHES" 1>&2
         perl ../logparser/logparser $LOGPARSER_SWITCHES --year 2007 --out-statefile "$state" $in_state --timing-data "$dir/timing.$filename.$i" "$log" 2> "$dir/warnings.$filename.$i"
+        sync
         sync
         sleep 1
     done

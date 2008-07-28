@@ -2,8 +2,23 @@
 
 set -u -e
 
-LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=normal                          " bash ../stats/gen-stats /home/tobinjt/stats-normal          ../logparser/logs-some
-LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=shuffle                         " bash ../stats/gen-stats /home/tobinjt/stats-shuffle         ../logparser/logs-some
-LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=reverse                         " bash ../stats/gen-stats /home/tobinjt/stats-reverse         ../logparser/logs-some
-LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=normal  --discard_compiled_regex" bash ../stats/gen-stats /home/tobinjt/stats-normal-regex    ../logparser/logs-some
-LOGPARSER_SWITCHES="                         --sort_rules=normal                          " bash ../stats/gen-stats /home/tobinjt/stats-normal-database ../logparser/logs-some
+# XXX LOOP OVER ALL COMBINATIONS OF ORDERINGS, CACHING/DISCARDING, RULESETS, ETC.  MAYBE YOINK ANOTHER MACHINE TO RUN TESTS ON?
+
+full_run_dir="/home/tobinjt/stats-full-run"
+mkdir "$full_run_dir"
+cp -p ../sql/db.full-ruleset.sq3 ../sql/db.sq3
+perl ../logparser/logparser --year 2007 --skip_inserting_results --out-statefile "$full_run_dir/state-some" --individual-state-files --timing-data "$full_run_dir/timing-some" $( < ../logparser/logs-some ) 2> "$full_run_dir/warnings-some"
+
+# Test different rule orderings.
+LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=normal                          " bash ../stats/gen-stats /home/tobinjt/stats-normal           ../logparser/logs-some ../sql/db.full-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=shuffle                         " bash ../stats/gen-stats /home/tobinjt/stats-shuffle          ../logparser/logs-some ../sql/db.full-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=reverse                         " bash ../stats/gen-stats /home/tobinjt/stats-reverse          ../logparser/logs-some ../sql/db.full-ruleset.sq3
+# Don't cache compiled regexes.
+LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=normal  --discard_compiled_regex" bash ../stats/gen-stats /home/tobinjt/stats-normal-regex     ../logparser/logs-some ../sql/db.full-ruleset.sq3
+# Save data to database.
+#LOGPARSER_SWITCHES="                         --sort_rules=normal                          " bash ../stats/gen-stats /home/tobinjt/stats-normal-database  ../logparser/logs-some
+# Minimum ruleset
+LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=normal                          " bash ../stats/gen-stats /home/tobinjt/stats-normal-smaller   ../logparser/logs-some ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=shuffle                         " bash ../stats/gen-stats /home/tobinjt/stats-shuffle-smaller  ../logparser/logs-some ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results --sort_rules=reverse                         " bash ../stats/gen-stats /home/tobinjt/stats-reverse-smaller  ../logparser/logs-some ../sql/db.minimum-ruleset.sq3
+# RAM-disk at some stage.
