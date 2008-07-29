@@ -7,7 +7,8 @@ paper.deps: build/plot-action-distribution.pdf \
 			build/plot-hits.pdf \
 			build/plot-normal-shuffle-reverse-factor.pdf \
 			build/plot-normal-vs-smaller.pdf \
-			build/normal-vs-smaller-percentage-increase.tex
+			build/normal-vs-smaller-percentage-increase.tex \
+			build/plot-normal-and-reverse-relative-to-shuffle.pdf
 paper.bbl: spmpsci.bst
 
 build/plot-normal-vs-smaller.pdf: build/stats-normal-vs-smaller.txt \

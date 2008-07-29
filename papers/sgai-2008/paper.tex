@@ -229,7 +229,7 @@ modifications to the parser source code, significantly lowering the barrier
 to entry for casual users who need to parse new log lines, e.g.\ part-time
 systems administrators attempting to reduce spam.  Decoupling the actions
 from the framework simplifies both framework and actions: the framework
-provides services to the actions, but doesn't need to perform any tasks
+provides services to the actions, but does not need to perform any tasks
 specific to the input being parsed; actions benefit from having services
 provided by the framework, freeing them to concentrate on the task of
 accurately and correctly processing the information provided by rules.
@@ -318,7 +318,7 @@ and complications encountered when parsing.
 Each action contains the code required to deal with log lines from a
 particular category, e.g.\ rejections.  The actions are parser-specific:
 each parser will need to write the actions it requires from scratch, unless
-it's extending an existing parser.  In the Postfix parser developed for
+it is extending an existing parser.  In the Postfix parser developed for
 this project there are \numberOFactions{} actions and \numberOFrules{}
 rules; the distribution of rules to actions is very skewed, as shown in
 Fig.~\refwithpage{Distribution of rules per action}.
@@ -328,22 +328,22 @@ the same reason the architecture is so successful in enabling users to
 parse new log lines: most new log lines can be parsed by a combination of a
 new rule and an existing action.  Unsurprisingly the action with the
 highest number of associated rules is \texttt{REJECTION}, the action which
-handles rejections; it's followed by \texttt{SAVE\_BY\_QUEUEID}, the action
-responsible for handling informative inputs: these are log lines that
-supplement the data gathered from other log lines (such as rejections), but
-that don't by themselves represent interesting events.  The third most
-common action is, perhaps surprisingly, \texttt{IGNORE}: there are many log
-lines which are not of interest to the parser, e.g.\ warning messages about
-DNS mismatches.  The parser warns about every unparsed log line, to alert
-the user that they need to alter or extend their ruleset; the
-\texttt{IGNORE} action does nothing when executed, allowing uninteresting
-log lines to be parsed without causing any effects.  The remaining actions
-have only one or two associated rules: in some cases this is because there
-will only ever be one type of log line for that action, e.g.\ all log lines
-showing that a remote client has connected are matched by a single rule and
-handled by the \texttt{CONNECT} action; in other cases the action is
-required to address a deficiency in the log files, or a complication which
-arises during parsing.
+handles rejections; it is followed by \texttt{SAVE\_BY\_QUEUEID}, the
+action responsible for handling informative inputs: these are log lines
+that supplement the data gathered from other log lines (such as
+rejections), but that do not by themselves represent interesting events.
+The third most common action is, perhaps surprisingly, \texttt{IGNORE}:
+there are many log lines which are not of interest to the parser, e.g.\
+warning messages about DNS mismatches.  The parser warns about every
+unparsed log line, to alert the user that they need to alter or extend
+their ruleset; the \texttt{IGNORE} action does nothing when executed,
+allowing uninteresting log lines to be parsed without causing any effects.
+The remaining actions have only one or two associated rules: in some cases
+this is because there will only ever be one type of log line for that
+action, e.g.\ all log lines showing that a remote client has connected are
+matched by a single rule and handled by the \texttt{CONNECT} action; in
+other cases the action is required to address a deficiency in the log
+files, or a complication which arises during parsing.
 
 \label{example action}
 
@@ -407,9 +407,9 @@ attributes:
 \begin{description}
 
     \item [program] The Postfix program whose log lines the rule should be
-        applied to.  This avoids needlessly trying rules that won't match
-        the log line, or worse, might match unintentionally.  Rules whose
-        program is \texttt{*} will be tried against any log lines not
+        applied to.  This avoids needlessly trying rules that will not
+        match the log line, or worse, might match unintentionally.  Rules
+        whose program is \texttt{*} will be tried against any log lines not
         parsed by program specific rules, allowing generic rules to be
         written.
 
@@ -423,7 +423,7 @@ attributes:
         on the right.
 
     \item [result\_data] Sometimes rules need to supply a piece of data
-        which isn't present in the log line: e.g.\ setting
+        which is not present in the log line: e.g.\ setting
         \texttt{smtp\_code} when mail is accepted.  The format is the same
         as for \texttt{result\_cols}, except that arbitrary data is
         permitted on the right hand side of the assignment.
@@ -443,8 +443,8 @@ attributes:
         \verb!^warning:.*$!, but some warnings require a different action
         to be taken, e.g.\ when a client tries to send a mail larger than
         the maximum size the server accepts, the data structure for that
-        mail must be discarded because it won't have all the data required
-        to save it to the database.
+        mail must be discarded because it will not have all the data
+        required to save it to the database.
 
 \end{description}
 
@@ -484,8 +484,8 @@ line:
     connect from client.example.com[1.2.3.4]
 \end{verbatim}
 
-% Don't reformat this!
-% XXX CONSIDER USING A TABLE ENVIRONMENT; IT DIDN'T LOOK GREAT BEFORE.
+% Do not reformat this!
+% XXX CONSIDER USING A TABLE ENVIRONMENT; IT DID NOT LOOK GREAT BEFORE.
 \begin{tabular}[]{ll}
     \hline
     \noalign{\smallskip}
@@ -623,51 +623,48 @@ runs were performed with different rule orderings:
 
 \end{description}
 
-Figure~\refwithpage{percentage increase of shuffled and reversed over
-normal} shows the percentage increase of execution times for shuffled and
-reversed rules.  Overall this optimisation provides a modest but worthwhile
-performance increase of over 10\%, for a small investment in time and
-programming.
-\showgraph{build/plot-normal-shuffle-reverse-factor}{Percentage increase of
-execution time for different rule orderings}{percentage increase of
-shuffled and reversed over normal}
+Figure~\refwithpage{Parsing time relative to shuffled} shows the percentage
+increase of execution times for shuffled and reversed rules.  Overall this
+optimisation provides a modest but worthwhile performance increase of over
+10\%, for a small investment in time and programming.
+\showgraph{build/plot-normal-and-reverse-relative-to-shuffle}{Parsing time
+relative to shuffled}{Parsing time relative to shuffled}
 
 \noindent\textbf{Why are there dips in the graphs?}
 
 \label{Why are there dips in the graphs?}
 
-The dips at log files 22 and 62--68 in fig.~\refwithpage{percentage
-increase of shuffled and reversed over normal} correspond to peaks in log
-file size in fig.~\refwithpage{Execution time, file size, and number of
-lines}, and peaks in fig.~\refwithpage{execution time vs file size vs
-number lines factor}, where a peak means that performance is better.  The
-explanation for this took some time to arrive at, but it turns out to be
-reasonably simple.  The large log files in question were caused by a mail
-forwarding loop, where the distribution of log lines is quite different to
-normal, resulting in different performance characteristics.  The vast
-majority of log lines when a mail loop occurs are from Postfix components
-which have a small number of rules associated with them, whereas in general
-the majority of log lines are from the Postfix component (\daemon{smtpd})
-with the highest number of rules.  Furthermore in normal log files the
-majority of log lines are distributed much more evenly across rules than
-the majority of log lines during a mail loop.
+The dips at log files 22 and 62--68 in fig.~\refwithpage{Parsing time
+relative to shuffled} correspond to peaks in log file size in
+fig.~\refwithpage{Execution time, file size, and number of lines}, and
+peaks in fig.~\refwithpage{execution time vs file size vs number lines
+factor}, where a peak means that performance is better.  The explanation
+for this took some time to arrive at, but it turns out to be reasonably
+simple.  The large log files in question were caused by a mail forwarding
+loop, where the distribution of log lines is quite different to normal,
+resulting in different performance characteristics.  The vast majority of
+log lines when a mail loop occurs are from Postfix components which have a
+small number of rules associated with them, whereas in general the majority
+of log lines are from the Postfix component (\daemon{smtpd}) with the
+highest number of rules.  Furthermore in normal log files the majority of
+log lines are distributed much more evenly across rules than the majority
+of log lines during a mail loop.
 
 These two characteristics combine to reduce the average number of rules
 required to parse a log line when there is a mail loop, as shown by the
 peaks in fig.~\refwithpage{execution time vs file size vs number lines
-factor} and troughs in fig.~\refwithpage{percentage increase of shuffled
-and reversed over normal}.  When the rule ordering is reversed the majority
-of log lines generated by a mail loop will be parsed using very few rules,
-because there are very few rules for the Postfix components producing the
-log lines.  Without a mail loop the Postfix components producing the
-majority of log lines have a large number of rules associated with them,
-and reverse ordering deliberately starts with the least likely rules and
-moves towards the most likely.  This leads to a noticeable drop in the
-average time required to parse a log line during a mail loop, as shown in
-fig.~\refwithpage{percentage increase of shuffled and reversed over
-normal}.  The number of rules which need to be consulted when the ordering
-is shuffled varies between the optimal and the pessimal, with the
-performance varying proportionally.
+factor} and troughs in fig.~\refwithpage{Parsing time relative to
+shuffled}.  When the rule ordering is reversed the majority of log lines
+generated by a mail loop will be parsed using very few rules, because there
+are very few rules for the Postfix components producing the log lines.
+Without a mail loop the Postfix components producing the majority of log
+lines have a large number of rules associated with them, and reverse
+ordering deliberately starts with the least likely rules and moves towards
+the most likely.  This leads to a noticeable drop in the average time
+required to parse a log line during a mail loop, as shown in
+fig.~\refwithpage{Parsing time relative to shuffled}.  The number of rules
+which need to be consulted when the ordering is shuffled varies between the
+optimal and the pessimal, with the performance varying proportionally.
 
 \subsection{Architecture Scalability: Number of Rules}
 
