@@ -1,4 +1,5 @@
 load "plot-defaults-pdf.gpi"
+set terminal pdf monochrome dashed size 4.6,2.6
 
 set xlabel "Log file"
 set ylabel "Percentage execution time increase of \nmaximum ruleset over minimum ruleset"

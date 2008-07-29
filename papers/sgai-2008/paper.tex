@@ -22,6 +22,10 @@
 \usepackage{makeidx}
 \usepackage{multicol}
 
+\setlength{\floatsep}{0pt}
+\setlength{\intextsep}{0pt}
+\setlength{\textfloatsep}{0pt}
+
 % Nicer citation lists - smaller spaces.
 \usepackage{cite}
 % Check for unused references.
@@ -34,10 +38,10 @@
 
 % \showgraph{filename}{caption}{label}
 \newcommand{\showgraph}[3]{%
-    \begin{figure}[hbt!]
-        \caption{#2}\label{#3}
-        \includegraphics{#1}
-    \end{figure}
+    \begin{figure}[hbt!]%
+        \caption{#2}\label{#3}%
+        \includegraphics{#1}%
+    \end{figure}%
 }
 
 %\showtable{filename}{caption}{label}
@@ -61,6 +65,17 @@
     \textsection{}\vref*{#1}%
 }
 
+\newcommand{\refwithlabel}[2]{%
+    #1~\vref{#2}%
+}
+% table references, for consistent formatting.
+\newcommand{\graphref}[1]{%
+    \refwithlabel{fig.}{#1}%
+}
+\newcommand{\Graphref}[1]{%
+    \refwithlabel{Figure}{#1}%
+}
+
 % A command to format a Postfix daemon's name
 \newcommand{\daemon}[1]{%
     \texttt{postfix/#1}%
@@ -80,6 +95,10 @@
 
 \newcommand{\numberOFrulesMINIMUM}[0]{%
     115%
+}
+
+\newcommand{\numberOFlogFILESall}[0]{%
+    522%
 }
 
 % XXX FIGURE OUT HOW TO DO THIS AUTOMATICALLY
@@ -190,12 +209,15 @@ functions (\textit{actions\/}), each capable of dealing with an entire
 category of log lines (e.g.\ rejections), accompanied by a multitude of
 precise patterns (\textit{rules\/}), each of which matches all log lines of
 a specific type, and only that type (e.g.\ rejection by a specific DNSBL).
-This architecture is ideally suited to parsing inputs where the input is
-not fully understood or does not follow a fixed grammar: the architecture
-warns about unparsed inputs and other errors, but continues on parsing as
-best it can, allowing the developer of a new parser to decide which
-deficiencies are most important and require attention first, rather than
-being forced to fix the first error which arises.
+It is an accepted standard to separate the parsing procedure from the
+declarative grammar it operates with.  Part of the novelty here is that the
+grammars (rules and actions) are themselves procedures.  This architecture
+is ideally suited to parsing inputs where the input is not fully understood
+or does not follow a traditional grammar: the architecture warns about
+unparsed inputs and other errors, but continues on parsing as best it can,
+allowing the developer of a new parser to decide which deficiencies are
+most important and require attention first, rather than being forced to fix
+the first error which arises.
 
 \section{Architecture}
 
@@ -317,33 +339,33 @@ and complications encountered when parsing.
 
 Each action contains the code required to deal with log lines from a
 particular category, e.g.\ rejections.  The actions are parser-specific:
-each parser will need to write the actions it requires from scratch, unless
-it is extending an existing parser.  In the Postfix parser developed for
+each parser author will need to write the actions required from scratch,
+unless extending an existing parser.  In the Postfix parser developed for
 this project there are \numberOFactions{} actions and \numberOFrules{}
 rules; the distribution of rules to actions is very skewed, as shown in
-Fig.~\refwithpage{Distribution of rules per action}.
+Fig.~\refwithpage{Distribution of rules per action}.  The distribution is
+skewed for the same reason the architecture is so successful in enabling
+users to parse new log lines: most new log lines can be parsed by a
+combination of a new rule and an existing action.
 \showgraph{build/plot-action-distribution}{Distribution of rules per
-action}{Distribution of rules per action} The distribution is skewed for
-the same reason the architecture is so successful in enabling users to
-parse new log lines: most new log lines can be parsed by a combination of a
-new rule and an existing action.  Unsurprisingly the action with the
-highest number of associated rules is \texttt{REJECTION}, the action which
-handles rejections; it is followed by \texttt{SAVE\_BY\_QUEUEID}, the
-action responsible for handling informative inputs: these are log lines
-that supplement the data gathered from other log lines (such as
-rejections), but that do not by themselves represent interesting events.
-The third most common action is, perhaps surprisingly, \texttt{IGNORE}:
-there are many log lines which are not of interest to the parser, e.g.\
-warning messages about DNS mismatches.  The parser warns about every
-unparsed log line, to alert the user that they need to alter or extend
-their ruleset; the \texttt{IGNORE} action does nothing when executed,
+action}{Distribution of rules per action} Unsurprisingly the action with
+the highest number of associated rules is \texttt{REJECTION}, the action
+which handles Postfix rejecting a mail; it is followed by
+\texttt{SAVE\_BY\_QUEUEID}, the action responsible for handling informative
+inputs: these are log lines that supplement the data gathered from other
+log lines (such as rejections), but that do not by themselves represent
+interesting events.  The third most common action is, perhaps surprisingly,
+\texttt{IGNORE}: the \texttt{IGNORE} action does nothing when executed,
 allowing uninteresting log lines to be parsed without causing any effects.
-The remaining actions have only one or two associated rules: in some cases
-this is because there will only ever be one type of log line for that
-action, e.g.\ all log lines showing that a remote client has connected are
-matched by a single rule and handled by the \texttt{CONNECT} action; in
-other cases the action is required to address a deficiency in the log
-files, or a complication which arises during parsing.
+The parser warns about every unparsed log line, to alert the user that they
+need to alter or extend their ruleset; the Postfix parser successfully
+parses every input line in the \numberOFlogFILESall{} log files it is
+currently being tested with.  The remaining actions have only one or two
+associated rules: in some cases this is because there will only ever be one
+type of log line for that action, e.g.\ all log lines showing that a remote
+client has connected are matched by a single rule and handled by the
+\texttt{CONNECT} action; in other cases the action is required to address a
+deficiency in the log files, or a complication which arises during parsing.
 
 \label{example action}
 
@@ -357,19 +379,18 @@ has just been parsed.
 The ability to add special purpose actions to deal with difficulties and
 new requirements which are discovered during parser development is one of
 the strengths of this architecture: instead of writing one monolithic
-function which must be modified to support new behaviour or resolve
-challenges, with all the attendant risks of adversely affecting the
-existing parser, when a new requirement arises an independent action can be
-written to satisfy it.  In some cases the new action will require the
-cooperation of other actions, e.g.\ to set or check a flag; there is a
-possibility of introducing failure by modifying existing actions, but
-modifications will be smaller and occur less frequently than with a
-monolithic architecture, thus failures should be less likely, and easier to
-test for and diagnose.  The parser can be written in an object oriented
-style, allowing sub-classes to extend or override actions in addition to
-adding new actions; because each action is an independent function, the
-sub-class need only modify the action it is interested in, rather than
-reproducing large chunks of functionality.
+function which must be modified to support new behaviour, with all the
+attendant risks of adversely affecting the existing parser, when a new
+requirement arises an independent action can be written to satisfy it.  In
+some cases the new action will require the cooperation of other actions,
+e.g.\ to set or check a flag; there is a possibility of introducing failure
+by modifying existing actions, but modifications will be smaller and occur
+less frequently than with a monolithic architecture, thus failures should
+be less likely, and easier to test for and diagnose.  The parser can be
+written in an object oriented style, allowing sub-classes to extend or
+override actions in addition to adding new actions; because each action is
+an independent function, the sub-class need only modify the action it is
+interested in, rather than reproducing large chunks of functionality.
 
 \label{complications}
 
@@ -396,18 +417,20 @@ specific rules and actions parsing the remainder.
 
 \label{Rules}
 
-Rules are responsible for categorising inputs, specifying both the data to
-be extracted from each log line and the action that should be invoked.  The
-Postfix log parser stores the rules in the same SQL database that the
-results are stored in, removing any doubt as to which set of rules was used
-to produce a set of results; other implementations are free to store the
-rules in whatever fashion suits their needs.  Each rule defines several
-attributes:
+Rules categorise inputs, specifying both the data to be extracted from each
+log line and the action to invoke.  The Postfix log parser stores the rules
+in the same SQL database that the results are stored in, removing any doubt
+as to which set of rules was used to produce a set of results; other
+implementations are free to store the rules in whatever fashion suits their
+needs.  
+
+XXX ADD SOMETHING ABOUT IMPLEMENTATIONS BEING FREE TO ADD OR REMOVE
+ATTRIBUTES\@.
 
 \begin{description}
 
-    \item [program] The Postfix program whose log lines the rule should be
-        applied to.  This avoids needlessly trying rules that will not
+    \item [program] The Postfix program whose log lines the regex should be
+        applied to.  This avoids needlessly trying regexes that will not
         match the log line, or worse, might match unintentionally.  Rules
         whose program is \texttt{*} will be tried against any log lines not
         parsed by program specific rules, allowing generic rules to be
@@ -448,15 +471,24 @@ attributes:
 
 \end{description}
 
-The rules used by the Postfix log file parser define several additional
-attributes; each implementation is free to add any additional attributes it
-requires.
-
 Adding new rules is simple: simply define all the required attributes and
 append the new rule to wherever the existing rules are stored.  The
 software developed for this project includes a utility based on
 SLCT~\cite{slct-paper} to aid in producing regexes to parse previously
-unparsed inputs.
+unparsed inputs.  Storing the rules separately allows other approaches to
+rule management to be used, e.g.\ instead of manually adding new rules when
+unparsed log lines are seen, machine learning techniques could be used to
+automatically generate new rules, based on the existing rules and input
+lines.  If this approach was taken the choice of machine learning technique
+would be constrained by the size of typical data sets: the
+\numberOFlogFILES{} log files used to generate statistics contain
+\numberOFlogLINEShuman{} log lines.  Techniques which require the full data
+set when training would be impractical; Instance Based Learning
+(IBL)~\cite{instance-based-learning} techniques which automatically
+determine which inputs from the training set are valuable and which can be
+discarded would probably reduce the data required to a manageable size.
+This avenue of research and development has not been pursued by the author,
+but could easily be independently undertaken.
 
 \label{overlapping rules}
 
@@ -506,6 +538,7 @@ line:
 
 \noindent{}The \texttt{CONNECT} action is described in \sectionref{example
 action}.
+
 
 \subsection{Architecture Characteristics}
 
@@ -559,36 +592,58 @@ action}.
 \section{Results}
 
 Parsing efficiency is an obvious concern when the parser routinely needs to
-deal with 75 MB log files containing 300,000 log lines (generated daily on
-a mail server handling mail for approximately 700 users --- large scale
-mail servers would produce much larger log files on a daily basis).  When
-generating the data for the graphs included in this document,
-\numberOFlogFILES{} log files (totaling 10.08 GB, \numberOFlogLINEShuman{}
-log lines) were each parsed 10 times, the results from the first run
-discarded, and the execution time for the remaining 9 runs averaged.
+parse very large log files.  The server which generated the log files used
+in testing this parser accepts approximately 10,000 mails for 700 users a
+day.  Median log file size is 50MB, containing 285,000 log lines --- large
+scale mail servers would have much larger log files.  When generating the
+timing data used in this section, \numberOFlogFILES{} log files (totaling
+10.08 GB, \numberOFlogLINEShuman{} log lines) were each parsed 10 times,
+the results from the first first run discarded, and the execution time for
+the remaining 9 runs averaged.  Saving results to the database was disabled
+for the test runs, as that dominates the run time of the program, and the
+tests are aimed at measuring the speed of the parser rather than the speed
+of the database and the disks the database is stored on.  The computer used
+for test runs was a Dell Optiplex 745, equipped with: 
+
+\begin{tabular}[]{ll}
+
+CPU         & One dual core 2.40GHz Intel(R) Core(TM)2 CPU, \\
+            & with 32KB L1 cache and 4MB L2 cache.          \\
+RAM         & 2GB 667 MHz DDR RAM\@.                        \\
+Hard disk   & One XXX 232GB SATA disk.                      \\
+
+\end{tabular}
+
+In as far as possible the computer was dedicated to the task of gathering
+statistics from test runs, and was not used for any other purpose while
+test runs were ongoing.
+
+XXX TIMING INFORMATION\@.
+\newpage
 
 \subsection{Architecture Scalability: Input Size}
 
-An important property of a parser is how execution time scales relative to
+An important property of a parser is how parsing time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
-Figure~\refwithpage{Execution time, file size, and number of lines} shows
-the execution time in seconds, file size in MB, and tens of thousands of
-log lines per log file.  All three lines run roughly in parallel, giving
-the impression that the algorithm scales linearly with input size.  This
-impression is borne out by fig.~\refwithpage{execution time vs file size vs
-number lines factor} which plots the ratios of file size vs execution time,
-and number of log lines vs execution time (higher is better in both cases).
-As the reader can see the ratios are quite tightly banded across the graph,
-showing that the algorithm scales linearly: the much larger log files at
-points 62--68 on the X axis in fig.~\refwithpage{Execution time, file size,
-and number of lines} actually cause the ratio to increase (i.e.\ improve),
-rather than decrease.  The strange behaviour where larger log files are
-parsed more efficiently is explained in \sectionref{Why are there dips in
-the graphs?}.  \showgraph{build/plot-normal-filesize-numlines}{Execution
-time, file size, and number of lines}{Execution time, file size, and number
-of lines} \showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of
-file size and number of lines to execution time}{execution time vs file
-size vs number lines factor}
+\Graphref{Parsing time, file size, and number of lines} shows the parsing
+time in seconds, file size in MB, and tens of thousands of log lines for
+each of the \numberOFlogFILES{} log files.  All three lines run roughly in
+parallel, giving the impression that the algorithm scales linearly with
+input size.  This impression is borne out by \graphref{parsing time vs file
+size vs number lines factor} which plots both the ratio of file size vs
+parsing time, and the ratio of number of log lines vs parsing time (higher
+is better in both cases).  As the reader can see the ratios are quite
+tightly banded across the graph, showing that the algorithm scales
+linearly.  The ratio increases (i.e.\ improves) for log files 22 and 62--68
+despite their larger than average size (shown in \graphref{Parsing time,
+file size, and number of lines}); this strange behaviour where larger log
+files are parsed more efficiently is explained in \sectionref{Why are there
+dips in the graphs?}.
+\showgraph{build/plot-normal-filesize-numlines}{Parsing time, file size,
+and number of lines}{Parsing time, file size, and number of lines}
+\showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file size
+and number of lines to parsing time}{parsing time vs file size vs number
+lines factor}
 
 \subsection{Rule Ordering}
 
@@ -624,7 +679,7 @@ runs were performed with different rule orderings:
 \end{description}
 
 Figure~\refwithpage{Parsing time relative to shuffled} shows the percentage
-increase of execution times for shuffled and reversed rules.  Overall this
+increase of parsing times for shuffled and reversed rules.  Overall this
 optimisation provides a modest but worthwhile performance increase of over
 10\%, for a small investment in time and programming.
 \showgraph{build/plot-normal-and-reverse-relative-to-shuffle}{Parsing time
@@ -636,8 +691,8 @@ relative to shuffled}{Parsing time relative to shuffled}
 
 The dips at log files 22 and 62--68 in fig.~\refwithpage{Parsing time
 relative to shuffled} correspond to peaks in log file size in
-fig.~\refwithpage{Execution time, file size, and number of lines}, and
-peaks in fig.~\refwithpage{execution time vs file size vs number lines
+fig.~\refwithpage{Parsing time, file size, and number of lines}, and
+peaks in fig.~\refwithpage{parsing time vs file size vs number lines
 factor}, where a peak means that performance is better.  The explanation
 for this took some time to arrive at, but it turns out to be reasonably
 simple.  The large log files in question were caused by a mail forwarding
@@ -652,7 +707,7 @@ of log lines during a mail loop.
 
 These two characteristics combine to reduce the average number of rules
 required to parse a log line when there is a mail loop, as shown by the
-peaks in fig.~\refwithpage{execution time vs file size vs number lines
+peaks in fig.~\refwithpage{parsing time vs file size vs number lines
 factor} and troughs in fig.~\refwithpage{Parsing time relative to
 shuffled}.  When the rule ordering is reversed the majority of log lines
 generated by a mail loop will be parsed using very few rules, because there

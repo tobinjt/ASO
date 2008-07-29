@@ -36,9 +36,11 @@ run_makeindex:
 .PHONY: build
 build:
 	make build_loop PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
-	cat "${DEST}.out"
+	#cat "${DEST}.out"
+	make check-contractions
 	grep Overfull "${DEST}.out" || true
 	grep -A 1 "LaTeX Warning: " "${DEST}.out" || true
+	sed -n -e '/^Package .* Warning/,/^$$/p' "${DEST}.out"
 	BASE=$$( basename "${SOURCE}" .tex ); \
 	grep ^Warning "$$BASE.blg" || true; \
 	#grep '!!' "$$BASE.glg" "$$BASE.alg" || true;
@@ -119,10 +121,13 @@ clean:
 	rm -f *.gls *.glo *.cbk *.cit *.lof *.idx *.acn *.acr *.alg *.deps *.lot
 	rm -f *.old build/*.pdf build/*.ps
 
-veryclean: clean
 
 check:
 	chktex -I0 -q paper.tex
+
+# Check for contractons like "don't".
+check-contractions:
+	ack '\w'\''(?!s)\w' logparser*.tex
 
 .PHONY: todo
 todo:

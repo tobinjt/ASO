@@ -41,11 +41,25 @@ sub-optimal compared to subsequent runs --- XXX MAYBE I SHOULD NOT DISCARD
 THE FIRST RESULT\@?  Saving results to the database was disabled for the
 test runs, as that dominates the run time of the program, and the tests are
 aimed at measuring the speed of the parser rather than the speed of the
-database and the disks the database is stored on.
+database and the disks the database is stored on.  The computer used for
+test runs was a Dell Optiplex 745, equipped with: 
 
-\subsubsection{Algorithmic complexity}
+\begin{tabular}[]{ll}
 
-An important property of a parser is how execution time scales relative to
+CPU         & One dual core 2.40GHz Intel(R) Core(TM)2 CPU, \\
+            & with 32KB L1 cache and 4MB L2 cache. \\
+RAM         & 2GB 667 MHz DDR RAM. \\
+Hard disk   & One XXX 232GB SATA disk. \\
+
+\end{tabular}
+
+In as far as possible the computer was dedicated to the task of gathering
+statistics from test runs, and was not used for any other purpose while
+test runs were ongoing.
+
+\subsubsection{Architecture Scalability: Input Size}
+
+An important property of a parser is how parsing time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
 \Graphref{parsing time vs file size vs number of lines graph} shows the
 parsing time in seconds, file size in MB, and tens of thousands of log

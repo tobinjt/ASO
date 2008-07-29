@@ -47,7 +47,7 @@ run_makeindex:
 	fi
 	echo; echo; echo;
 
-# Why does build need to .PHONY when build_loop and build_run don't?
+# build is a directory so it needs to be marked as PHONY.
 .PHONY: build
 build:
 	make build_loop PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
