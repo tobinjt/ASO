@@ -667,126 +667,6 @@ Unfortunately both high level views ignore the many complications
 encountered.
 
 
-\subsubsection{Complications encountered}
-
-XXX DUNNO IF THIS SECTION SHOULD BE HERE\@.  QUEUEID VS PID IS NOT TOO
-IMPORTANT\@; CONNECTION REUSE COULD EASILY BE MOVED TO ADDITIONAL
-COMPLICATIONS\@; RE-INJECTED MAILS SHOULD PROBABLY BE MOVED TO ADDITIONAL
-COMPLICATIONS TOO\@.
-
-\label{complications}
-
-These complications were encountered early in the parser's implementation
-and guided its design and development.
-
-\subsubsection{Queueid vs pid}
-
-The mail lacks a queueid until it has been accepted, so log lines must
-first be correlated by the \daemon{smtpd} \pid{}, then transition to being
-correlated by the queueid.  This is relatively minor, but does require:
-
-\begin{itemize}
-
-    \item Two versions of several functions: \texttt{by\_pid} and
-        \texttt{by\_queueid}.
-
-    \item Two state tables to hold the data structure for each connection.
-
-    \item Most importantly: every section of code must know whether it
-        needs to lookup the data structures by \pid{} or queueid.
-
-\end{itemize}
-
-\subsubsection{Connection reuse}
-
-\label{connection reuse}
-
-Multiple independent mails may be delivered during one connection: this
-requires the algorithm to clone the current data as soon as a mail is
-accepted, so that subsequent mails will not trample over each other's data.
-This must be done every time a mail is accepted, as it is impossible to
-tell in advance which connections will accept multiple mails.  Once the
-mail has been accepted its log entries will not be correlated by \pid{} any
-more (its queueid will be used instead), so there is no longer any
-ambiguity about which mail a given log line belongs to (except when
-timeouts occur during the data phase
-\sectionref{timeouts-during-data-phase}).  If the original connection has
-any interesting data (e.g.\ rejections) it will be saved to the database
-when the client disconnects.  One unsolved difficulty is distinguishing
-between different groups of rejections, e.g.\ when dealing with the
-following sequence:
-
-\begin{enumerate}
-
-    \item The client attempts to deliver a mail, but it is rejected.
-
-    \item The client issues the RSET command to reset the session.
-
-    \item The client attempts to deliver another mail, likewise rejected.
-
-\end{enumerate}
-
-There should ideally be two separate entries in the database resulting from
-the above sequence, but currently there will only be one.
-
-
-
-\subsubsection{Re-injected mails}
-
-The most difficult complication initially encountered is that locally
-addressed mails are not always delivered directly to a mailbox: sometimes
-they are addressed to and accepted for a local address but need to be
-delivered to one or more remote addresses due to aliases.  When this occurs
-a child mail will be injected into the Postfix queue, but without the
-explicit logging \daemon{smtpd} or \daemon{postdrop} injected mails have.
-Thus the source is not immediately discernible from the log line in which
-the mail first appears; from a strictly chronological reading of the log
-files it usually appears as if the child mail has appeared from thin air.
-Subsequently the parent mail will log the creation of the child mail:
-
-\texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline
-delay=0, status=sent (forwarded as 56F5B43FD)}
-
-The child mail has been created with queueid \texttt{56F5B43FD}.  Different
-delivery methods result in different log lines:
-
-\begin{description}
-
-    \item [Re-injected for forwarding:] forwarded as 56F5B43FD
-
-    \item [Delivered to a remote \SMTP{} server:] 250 Ok: queued as
-        BD07D3C49
-
-    \item [Local delivery:] delivered to command:
-        /mail/procmail/bin/procmail -p -t /mail/procmail/etc/procmailrc
-
-\end{description}
-
-Unfortunately, while all log lines from an individual process appear in
-chronological order, the order in which log lines from different processes
-are interleaved is subject to the vagaries of process scheduling.  In
-addition, the first log line belonging to the child mail (the log line
-cited above belongs to the parent mail) is logged by \daemon{qmgr}, so the
-order also depends on how soon \daemon{qmgr} processes the new mail.
-
-Because of the uncertain order the parser cannot complain when it
-encounters a log line from \daemon{qmgr} for a previously unseen mail;
-instead it must flag the mail as coming from an unknown origin, and
-subsequently clear the flag if and when the origin of the mail becomes
-clear.  Obviously the parser could omit checking where mails originate
-from, but requiring an explicit source helps to expose bugs in the parser;
-such checks helped to identify the complications described in
-\sectionref{discarding cleanup lines} and \sectionref{pickup logging after
-cleanup}.
-
-Process scheduling can have a still more confusing effect: quite often the
-child mail will be created, delivered and entirely finished with
-\textbf{before} the parent logs the creation log line!  Thus, mails flagged
-as coming from an unknown origin cannot be entered into the database when
-their final log line is parsed; instead they must be marked as ready for
-entry and subsequently entered by the parent mail once it has been
-identified.
-
 \subsubsection{Flow chart}
 
 \label{flow-chart}
@@ -1251,9 +1131,30 @@ configuration just to log messages from a different Postfix component is
 not an option.}
 
 
-\subsubsection{Additional complications}
+\subsubsection{Summary}
+
+This section presented the core of the parser, starting with a very high
+level view and the initial complications which arose.  A flow chart showing
+the paths a mail may take through the nascent simplified algorithm was
+provided, followed by an explanation of those paths, and a discussion of
+the parser's emergent behaviour --- the data from the log files creates the
+paths in the flow chart, they are not specified anywhere in the parser.
+The framework which holds the parser together was covered next, after which
+came a description of the current actions provided by the parser, and the
+algorithm for analysing unparsed log lines to create \regexes{} for new
+rules.  Detecting, diagnosing and defeating complications forms the largest
+single portion of this document, mirroring the development of the parser,
+The complications are described in the order they were overcome, with
+subsequent problems affecting fewer mails (often by an order or magnitude),
+though the time required to solve problems increased with each successive
+problem.
+
+
+\subsection{Complications encountered}
 
 \label{additional complications}
+\label{complications}
+
 
 The complications described in this section are listed in the order in
 which they were encountered during development of the parser.  Each of
@@ -1263,10 +1164,118 @@ of occurrence is much higher at the start of the list, with the first
 complication occurring several orders of magnitude more frequently than the
 last.  When deciding which problem to address next, the most common was
 always chosen, as resolving the most common problem would yield the biggest
-improvement in the parser, prune the greatest number of mails from
-the state tables and error messages, and make the remaining problems more
-apparent.
+improvement in the parser, prune the greatest number of mails from the
+state tables and error messages, and make the remaining problems more
+apparent.  The first three complications were encountered early in the
+parser's implementation and guided its design and development.
 
+\subsubsection{Queueid vs pid}
+
+The mail lacks a queueid until it has been accepted, so log lines must
+first be correlated by the \daemon{smtpd} \pid{}, then transition to being
+correlated by the queueid.  This is relatively minor, but does require:
+
+\begin{itemize}
+
+    \item Two versions of several functions: \texttt{by\_pid} and
+        \texttt{by\_queueid}.
+
+    \item Two state tables to hold the data structure for each connection.
+
+    \item Most importantly: every section of code must know whether it
+        needs to lookup the data structures by \pid{} or queueid.
+
+\end{itemize}
+
+\subsubsection{Connection reuse}
+
+\label{connection reuse}
+
+Multiple independent mails may be delivered during one connection: this
+requires the algorithm to clone the current data as soon as a mail is
+accepted, so that subsequent mails will not trample over each other's data.
+This must be done every time a mail is accepted, as it is impossible to
+tell in advance which connections will accept multiple mails.  Once the
+mail has been accepted its log entries will not be correlated by \pid{} any
+more (its queueid will be used instead), so there is no longer any
+ambiguity about which mail a given log line belongs to (except when
+timeouts occur during the data phase
+\sectionref{timeouts-during-data-phase}).  If the original connection has
+any interesting data (e.g.\ rejections) it will be saved to the database
+when the client disconnects.  One unsolved difficulty is distinguishing
+between different groups of rejections, e.g.\ when dealing with the
+following sequence:
+
+\begin{enumerate}
+
+    \item The client attempts to deliver a mail, but it is rejected.
+
+    \item The client issues the RSET command to reset the session.
+
+    \item The client attempts to deliver another mail, likewise rejected.
+
+\end{enumerate}
+
+There should ideally be two separate entries in the database resulting from
+the above sequence, but currently there will only be one.
+
+
+
+\subsubsection{Re-injected mails}
+
+The most difficult complication initially encountered is that locally
+addressed mails are not always delivered directly to a mailbox: sometimes
+they are addressed to and accepted for a local address but need to be
+delivered to one or more remote addresses due to aliases.  When this occurs
+a child mail will be injected into the Postfix queue, but without the
+explicit logging \daemon{smtpd} or \daemon{postdrop} injected mails have.
+Thus the source is not immediately discernible from the log line in which
+the mail first appears; from a strictly chronological reading of the log
+files it usually appears as if the child mail has appeared from thin air.
+Subsequently the parent mail will log the creation of the child mail:
+
+\texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline
+delay=0, status=sent (forwarded as 56F5B43FD)}
+
+The child mail has been created with queueid \texttt{56F5B43FD}.  Different
+delivery methods result in different log lines:
+
+\begin{description}
+
+    \item [Re-injected for forwarding:] forwarded as 56F5B43FD
+
+    \item [Delivered to a remote \SMTP{} server:] 250 Ok: queued as
+        BD07D3C49
+
+    \item [Local delivery:] delivered to command:
+        /mail/procmail/bin/procmail -p -t /mail/procmail/etc/procmailrc
+
+\end{description}
+
+Unfortunately, while all log lines from an individual process appear in
+chronological order, the order in which log lines from different processes
+are interleaved is subject to the vagaries of process scheduling.  In
+addition, the first log line belonging to the child mail (the log line
+cited above belongs to the parent mail) is logged by \daemon{qmgr}, so the
+order also depends on how soon \daemon{qmgr} processes the new mail.
+
+Because of the uncertain order the parser cannot complain when it
+encounters a log line from \daemon{qmgr} for a previously unseen mail;
+instead it must flag the mail as coming from an unknown origin, and
+subsequently clear the flag if and when the origin of the mail becomes
+clear.  Obviously the parser could omit checking where mails originate
+from, but requiring an explicit source helps to expose bugs in the parser;
+such checks helped to identify the complications described in
+\sectionref{discarding cleanup lines} and \sectionref{pickup logging after
+cleanup}.
+
+Process scheduling can have a still more confusing effect: quite often the
+child mail will be created, delivered and entirely finished with
+\textbf{before} the parent logs the creation log line!  Thus, mails flagged
+as coming from an unknown origin cannot be entered into the database when
+their final log line is parsed; instead they must be marked as ready for
+entry and subsequently entered by the parent mail once it has been
+identified.
 
 \subsubsection{Identifying bounce notifications}
 
@@ -1789,25 +1798,6 @@ the group used for testing); if this complication occurred more frequently
 it might be desirable to find the mail in the database and add the log
 line to it.
 
-\subsubsection{Summary}
-
-This section presented the core of the parser, starting with a very high
-level view and the initial complications which arose.  A flow chart showing
-the paths a mail may take through the nascent simplified algorithm was
-provided, followed by an explanation of those paths, and a discussion of
-the parser's emergent behaviour --- the data from the log files creates the
-paths in the flow chart, they are not specified anywhere in the parser.
-The framework which holds the parser together was covered next, after which
-came a description of the current actions provided by the parser, and the
-algorithm for analysing unparsed log lines to create \regexes{} for new
-rules.  Detecting, diagnosing and defeating complications forms the largest
-single portion of this document, mirroring the development of the parser,
-The complications are described in the order they were overcome, with
-subsequent problems affecting fewer mails (often by an order or magnitude),
-though the time required to solve problems increased with each successive
-problem.
-
-
 \subsection{Limitations and possible improvements}
 
 \label{limitations-improvements}
@@ -1918,3 +1908,7 @@ This section has covered the limitations of the parser and possible
 improvements which may be implemented in the future.
 
 
+
+\subsection{Summary}
+
+XXX TO BE WRITTEN\@.
