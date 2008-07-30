@@ -8,9 +8,9 @@ use strict;
 use warnings;
 
 use Time::HiRes qw(gettimeofday tv_interval);
-my $timestamp;
+my ($start_timestamp, $last_timestamp);
 BEGIN {
-    $timestamp = [gettimeofday()];
+    $start_timestamp = $last_timestamp = [gettimeofday()];
 }
 
 use lib q{..};
@@ -70,7 +70,7 @@ foreach my $logfile (@logs) {
     print qq{Starting to read $logfile: $size, $num_logs_parsed/$num_logs\n};
     $num_logs_parsed++;
 
-    print_timing(qq{Start logfile}, $logfile);
+    print_timing(qq{Start parsing logfile}, $logfile);
     my $results = $parser->parse($logfile);
     if ($Options->{q{timing-data}}) {
         print $timing_file
@@ -104,7 +104,11 @@ print_timing(qq{Updated hits}, q{});
 # that.  If the correct environment variable is set stdout will be redirected
 # here and the data will go to the requested file.
 redirect_stdout();
-print_timing(qq{Total time}, q{});
+if ($Options->{q{timing-data}}) {
+    my $now = [gettimeofday()];
+    printf $timing_file qq{Total time: : %.6f\n}, 
+        tv_interval($start_timestamp, $now)
+}
 
 exit 0;
 
@@ -232,7 +236,8 @@ sub print_timing {
     if ($Options->{q{timing-data}}) {
         my $now = [gettimeofday()];
         printf $timing_file qq{$message: $filename: %.6f\n}, 
-            tv_interval($timestamp, $now)
+            tv_interval($last_timestamp, $now);
+        $last_timestamp = $now;
     }
 }
 

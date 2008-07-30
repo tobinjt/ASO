@@ -25,7 +25,7 @@ set -u -e
 full_run_dir="/home/tobinjt/stats-full-run"
 mkdir "$full_run_dir"
 cp -p ../sql/db.maximum-ruleset.sq3 ../sql/db.sq3
-perl ../logparser/logparser --year 2007 --skip_inserting_results --out-statefile "$full_run_dir/state-some" --individual-state-files --timing-data "$full_run_dir/timing-some" $( < ../logparser/logs-some ) 2> "$full_run_dir/warnings-some"
+perl ../logparser/logparser --year 2007 --skip_inserting_results --out-statefile "$full_run_dir/state" --individual-state-files --timing-data "$full_run_dir/timing" $( < ../logparser/logs-some ) 2> "$full_run_dir/warnings"
 
 # Now do all the combinations.
 PRELUDE
