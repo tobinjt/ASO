@@ -192,7 +192,7 @@ sub get_options {
     Getopt::Long::GetOptions(\%opts, @switches) or pod2usage(2);
 
     if ($opts{help}) {
-        pod2usage(1);
+        pod2usage(q{-exitval} => 0, q{-verbose} => 1);
     }
     if ($opts{version}) {
         my $version = q{$Id$};
