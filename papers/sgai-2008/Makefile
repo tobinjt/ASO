@@ -21,3 +21,5 @@ build/normal-vs-smaller-percentage-increase.tex: build/stats-normal-vs-smaller.t
 
 build/timing-run-include.tex: ../../doc/build/timing-run-include.tex
 	cp "$<" "$@"
+
+build/plot-normal-and-reverse-relative-to-shuffle.pdf: build/stats-normal-shuffle-reverse-factor.txt

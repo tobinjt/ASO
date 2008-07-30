@@ -342,10 +342,10 @@ each parser author will need to write the actions required from scratch,
 unless extending an existing parser.  In the Postfix parser developed for
 this project there are \numberOFactions{} actions and \numberOFrules{}
 rules; the distribution of rules to actions is very skewed, as shown in
-Fig.~\refwithpage{Distribution of rules per action}.  The distribution is
-skewed for the same reason the architecture is so successful in enabling
-users to parse new log lines: most new log lines can be parsed by a
-combination of a new rule and an existing action.
+\graphref{Distribution of rules per action}.  The distribution is skewed
+for the same reason the architecture is so successful in enabling users to
+parse new log lines: most new log lines can be parsed by a combination of a
+new rule and an existing action.
 \showgraph{build/plot-action-distribution}{Distribution of rules per
 action}{Distribution of rules per action} Unsurprisingly the action with
 the highest number of associated rules is \texttt{REJECTION}, the action
@@ -667,12 +667,11 @@ number lines factor}
 At the time of writing there are \numberOFrules{} different rules, with the
 top 10\% matching the vast majority of the log lines, and the remaining log
 lines split across the other 90\% of the rules in a Power Law distribution
-(as shown in fig.~\refwithpage{rule hits graph}).
-Assuming that
-the distribution of log lines is reasonably steady over time, parser
-efficiency should benefit from trying more frequently matching rules before
-those which match less frequently.  To test this hypothesis three full test
-runs were performed with different rule orderings:
+(as shown in \graphref{rule hits graph}).  Assuming that the distribution
+of log lines is reasonably steady over time, parser efficiency should
+benefit from trying more frequently matching rules before those which match
+less frequently.  To test this hypothesis three full test runs were
+performed with different rule orderings:
 
 \begin{description}
 
@@ -691,49 +690,48 @@ runs were performed with different rule orderings:
 
 \end{description}
 
-Figure~\refwithpage{Parsing time relative to shuffled} shows the percentage
-increase of parsing times for shuffled and reversed rules.  Overall this
-optimisation provides a modest but worthwhile performance increase of over
-10\%, for a small investment in time and programming.
-\showgraph{build/plot-hits}{Hits per rule}{rule hits graph} 
+\Graphref{Parsing time relative to shuffled} shows the parsing times of
+normal and reversed orderings relative to shuffled ordering.  Overall this
+optimisation provides a modest but worthwhile reduction in parsing time of
+approximately 10\%.  \showgraph{build/plot-hits}{Hits per rule}{rule hits
+graph}
 \showgraph{build/plot-normal-and-reverse-relative-to-shuffle}{Parsing time
-relative to shuffled}{Parsing time relative to shuffled}
+relative to shuffled ordering}{Parsing time relative to shuffled}
 
 \noindent\textbf{Why are there dips in the graphs?}
 
 \label{Why are there dips in the graphs?}
 
-The dips at log files 22 and 62--68 in fig.~\refwithpage{Parsing time
-relative to shuffled} correspond to peaks in log file size in
-fig.~\refwithpage{Parsing time, file size, and number of lines}, and
-peaks in fig.~\refwithpage{parsing time vs file size vs number lines
-factor}, where a peak means that performance is better.  The explanation
-for this took some time to arrive at, but it turns out to be reasonably
-simple.  The large log files in question were caused by a mail forwarding
-loop, where the distribution of log lines is quite different to normal,
-resulting in different performance characteristics.  The vast majority of
-log lines when a mail loop occurs are from Postfix components which have a
-small number of rules associated with them, whereas in general the majority
-of log lines are from the Postfix component (\daemon{smtpd}) with the
-highest number of rules.  Furthermore in normal log files the majority of
-log lines are distributed much more evenly across rules than the majority
-of log lines during a mail loop.
+The dips at log files 22 and 62--68 in \graphref{Parsing time relative to
+shuffled} correspond to peaks in log file size in \graphref{Parsing time,
+file size, and number of lines}, and peaks in \graphref{parsing time vs
+file size vs number lines factor}, where a peak means that performance is
+better.  The explanation for this took some time to arrive at, but it turns
+out to be reasonably simple.  The large log files in question were caused
+by a mail forwarding loop, where the distribution of log lines is quite
+different to normal, resulting in different performance characteristics.
+The vast majority of log lines when a mail loop occurs are from Postfix
+components which have a small number of rules associated with them, whereas
+in general the majority of log lines are from the Postfix component
+(\daemon{smtpd}) with the highest number of rules.  Furthermore in normal
+log files the majority of log lines are distributed much more evenly across
+rules than the majority of log lines during a mail loop.
 
 These two characteristics combine to reduce the average number of rules
 required to parse a log line when there is a mail loop, as shown by the
-peaks in fig.~\refwithpage{parsing time vs file size vs number lines
-factor} and troughs in fig.~\refwithpage{Parsing time relative to
-shuffled}.  When the rule ordering is reversed the majority of log lines
-generated by a mail loop will be parsed using very few rules, because there
-are very few rules for the Postfix components producing the log lines.
-Without a mail loop the Postfix components producing the majority of log
-lines have a large number of rules associated with them, and reverse
-ordering deliberately starts with the least likely rules and moves towards
-the most likely.  This leads to a noticeable drop in the average time
-required to parse a log line during a mail loop, as shown in
-fig.~\refwithpage{Parsing time relative to shuffled}.  The number of rules
-which need to be consulted when the ordering is shuffled varies between the
-optimal and the pessimal, with the performance varying proportionally.
+peaks in \graphref{parsing time vs file size vs number lines factor} and
+troughs in \graphref{Parsing time relative to shuffled}.  When the rule
+ordering is reversed the majority of log lines generated by a mail loop
+will be parsed using very few rules, because there are very few rules for
+the Postfix components producing the log lines.  Without a mail loop the
+Postfix components producing the majority of log lines have a large number
+of rules associated with them, and reverse ordering deliberately starts
+with the least likely rules and moves towards the most likely.  This leads
+to a noticeable drop in the average time required to parse a log line
+during a mail loop, as shown in \graphref{Parsing time relative to
+shuffled}.  The number of rules which need to be consulted when the
+ordering is shuffled varies between the optimal and the pessimal, with the
+performance varying proportionally.
 
 \subsection{Architecture Scalability: Number of Rules}
 
@@ -747,21 +745,21 @@ second set of statistics was generated using the minimum ruleset and the
 results compared to the statistics generated using the full ruleset: the
 percentage execution increase when using the full ruleset instead of the
 minimal ruleset for normal, shuffled and reversed orderings is shown in
-fig.~\refwithpage{Percentage execution time increase of maximum ruleset
-over minimum ruleset}.  \showgraph{build/plot-normal-vs-smaller}{Percentage
+\graphref{Percentage execution time increase of maximum ruleset over
+minimum ruleset}.  \showgraph{build/plot-normal-vs-smaller}{Percentage
 execution time increase of maximum ruleset over minimum ruleset}{Percentage
 execution time increase of maximum ruleset over minimum ruleset}
 
-It is clear from fig.~\refwithpage{Percentage execution time increase of
-maximum ruleset over minimum ruleset} that the increased number of rules
-has a noticeable performance impact with reverse ordering, and to a lesser
-extent with shuffled ordering.  The normal ordering (where are the most
-frequently matching rules are tried first) shows a mean increase of 
-\input{build/normal-vs-smaller-percentage-increase.tex} in
-execution time for a \numberOFrulesMAXIMUMpercentage{} increase in the
-number of rules.  These results show that the architecture scales very well
-as the number of rules increases, and that sorting the rules is an
-important optimisation enabling this.
+It is clear from \graphref{Percentage execution time increase of maximum
+ruleset over minimum ruleset} that the increased number of rules has a
+noticeable performance impact with reverse ordering, and to a lesser extent
+with shuffled ordering.  The normal ordering (where are the most frequently
+matching rules are tried first) shows a mean increase of
+\input{build/normal-vs-smaller-percentage-increase.tex} in execution time
+for a \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.
+These results show that the architecture scales very well as the number of
+rules increases, and that sorting the rules is an important optimisation
+enabling this.
 
 \subsection{Coverage}
 
