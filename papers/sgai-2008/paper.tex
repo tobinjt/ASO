@@ -101,7 +101,6 @@
     522%
 }
 
-% XXX FIGURE OUT HOW TO DO THIS AUTOMATICALLY
 % \numberOFrulesMINIMUM as percentage of \numberOFrules
 \newcommand{\numberOFrulesMINIMUMpercentage}[0]{%
     68.04\%%
@@ -418,14 +417,16 @@ specific rules and actions parsing the remainder.
 \label{Rules}
 
 Rules categorise inputs, specifying both the data to be extracted from each
-log line and the action to invoke.  The Postfix log parser stores the rules
-in the same SQL database that the results are stored in, removing any doubt
-as to which set of rules was used to produce a set of results; other
+log line and the action to invoke.  The Postfix parser stores the rules in
+the same SQL database that the results are stored in, removing any doubt as
+to which set of rules was used to produce a set of results; other
 implementations are free to store the rules in whatever fashion suits their
-needs.  
-
-XXX ADD SOMETHING ABOUT IMPLEMENTATIONS BEING FREE TO ADD OR REMOVE
-ATTRIBUTES\@.
+needs.  Similarly implementations are free to require additional attributes
+in their rules; the framework requires \texttt{regex} and \texttt{action}
+attributes, to determine whether a rule matches the current input line, and
+which action to invoke if it does.  Rules used by the Postfix parser
+define the following attributes: XXX DO I NEED TO LIST ALL THE
+ATTRIBUTES\@?
 
 \begin{description}
 
@@ -483,12 +484,12 @@ lines.  If this approach was taken the choice of machine learning technique
 would be constrained by the size of typical data sets: the
 \numberOFlogFILES{} log files used to generate statistics contain
 \numberOFlogLINEShuman{} log lines.  Techniques which require the full data
-set when training would be impractical; Instance Based Learning
-(IBL)~\cite{instance-based-learning} techniques which automatically
-determine which inputs from the training set are valuable and which can be
-discarded would probably reduce the data required to a manageable size.
-This avenue of research and development has not been pursued by the author,
-but could easily be independently undertaken.
+set when training would be impractical; Instance Based
+Learning~\cite{instance-based-learning} techniques which automatically
+determine which inputs from the training set are valuable and which inputs
+can be discarded would probably reduce the data required to a manageable
+size.  This avenue of research and development has not been pursued by the
+author, but could easily be independently undertaken.
 
 \label{overlapping rules}
 
@@ -503,8 +504,20 @@ sites from SMTP delivery to the rest of the world.  The algorithm provides
 a facility for specifying the order of overlapping rules: the priority
 field in each rule (defaults to zero).  Rules are sorted by priority,
 highest first, and then rules with the same priority are sorted by the
-number of successful matches they had parsing the previous log file.  Negative
-priorities may be useful for catchall rules.
+number of successful matches they had parsing the previous log file.
+Negative priorities may be useful for catchall rules.  XXX DETECTING
+OVERLAP\@.
+
+It is possible to define pathological regexes, which fall into two main
+categories: regexes which match every input line, and regexes which consume
+large amounts of CPU time during matching.  Defining a regex which matches
+every input line is trivial: \verb!/^/! will match the start of the input
+line; every input line is guaranteed to start, so this regex would match
+every input line.  In general a regex will not consume a large amount of
+CPU time when the match is successful; usually CPU time is consumed by a
+regex with a lot of alteration and variable quantifiers failing to match.
+This topic is beyond the scope of this paper, see
+\cite{mastering-regular-expressions} for in-depth discussion.
 
 \label{example rule}
 
@@ -619,7 +632,10 @@ statistics from test runs, and was not used for any other purpose while
 test runs were ongoing.
 
 XXX TIMING INFORMATION\@.
-\newpage
+
+XXX TIMING INFORMATION\@.
+
+XXX TIMING INFORMATION\@.
 
 \subsection{Architecture Scalability: Input Size}
 
@@ -632,18 +648,16 @@ parallel, giving the impression that the algorithm scales linearly with
 input size.  This impression is borne out by \graphref{parsing time vs file
 size vs number lines factor} which plots both the ratio of file size vs
 parsing time, and the ratio of number of log lines vs parsing time (higher
-is better in both cases).  As the reader can see the ratios are quite
-tightly banded across the graph, showing that the algorithm scales
-linearly.  The ratio increases (i.e.\ improves) for log files 22 and 62--68
-despite their larger than average size (shown in \graphref{Parsing time,
-file size, and number of lines}); this strange behaviour where larger log
-files are parsed more efficiently is explained in \sectionref{Why are there
-dips in the graphs?}.
-\showgraph{build/plot-normal-filesize-numlines}{Parsing time, file size,
-and number of lines}{Parsing time, file size, and number of lines}
-\showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file size
-and number of lines to parsing time}{parsing time vs file size vs number
-lines factor}
+is better in both cases).  The ratios are quite tightly banded across the
+graph, showing that the algorithm scales linearly.  The ratio increases
+(i.e.\ improves) for log files 22 and 62--68 despite their larger than
+average size (shown in \graphref{Parsing time, file size, and number of
+lines}); this is explained in \sectionref{Why are there dips in the
+graphs?}.  \showgraph{build/plot-normal-filesize-numlines}{Parsing time,
+file size, and number of lines}{Parsing time, file size, and number of
+lines} \showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file
+size and number of lines to parsing time}{parsing time vs file size vs
+number lines factor}
 
 \subsection{Rule Ordering}
 

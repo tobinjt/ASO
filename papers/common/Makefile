@@ -127,7 +127,7 @@ check:
 
 # Check for contractons like "don't".
 check-contractions:
-	ack '\w'\''(?!s)\w' logparser*.tex
+	ack '\w'\''(?!s)\w' *.tex
 
 .PHONY: todo
 todo:

@@ -48,7 +48,7 @@ test runs was a Dell Optiplex 745, equipped with:
 
 CPU         & One dual core 2.40GHz Intel(R) Core(TM)2 CPU, \\
             & with 32KB L1 cache and 4MB L2 cache. \\
-RAM         & 2GB 667 MHz DDR RAM. \\
+RAM         & 2GB 667 MHz DDR RAM\@. \\
 Hard disk   & One XXX 232GB SATA disk. \\
 
 \end{tabular}
@@ -70,13 +70,12 @@ linearly with input size.  This impression is borne out by
 both the ratio of file size vs parsing time, and the ratio of number of log
 lines vs parsing time (higher is better in both cases); \tableref{parsing
 time vs file size vs number lines factor table} shows the same ratios for
-different groups of log files.  As the reader can see the ratios are quite
-tightly banded, providing empirical evidence that the algorithm scales
-linearly.  The ratio increases (i.e.\ improves) for log files 22 and 62--68
-despite their larger than average size (shown in \graphref{parsing time vs
-file size vs number of lines graph}); this strange behaviour where larger
-log files are parsed more efficiently than smaller is explained fully in
-\sectionref{Explaining the peaks in log file size}.  
+different groups of log files.  The ratios are quite tightly banded,
+providing empirical evidence that the algorithm scales linearly.  The ratio
+increases (i.e.\ improves) for log files 22 and 62--68 despite their larger
+than average size (shown in \graphref{parsing time vs file size vs number
+of lines graph}); this is explained fully in \sectionref{Explaining the
+peaks in log file size}.  
 
 \showtable{build/stats-normal-filesize-line-count-include}{Ratio of file
 size and number of lines to parsing time}{parsing time vs file size vs
