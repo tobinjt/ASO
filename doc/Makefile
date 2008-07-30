@@ -401,7 +401,7 @@ build/stats-shuffle-minimum-ruleset.txt: stats-shuffle-minimum-ruleset
 	DIR="$<" FILE="$@" make parse-stats
 
 parse-stats:
-	perl ../stats/parse-stats --discard-first "${DIR}" > "${FILE}" || (rm -f "${FILE}"; false)
+	perl ../stats/parse-stats "${DIR}" > "${FILE}" || (rm -f "${FILE}"; false)
 	SRC_DIR="${DIR}" DEST_DIR="${DIR}-graphed" make extract-stats
 
 extract-stats: 
@@ -431,7 +431,7 @@ check-acronyms:
 
 # Check for contractons like "don't".
 check-contractions:
-	ack '\w'\''(?!s)\w' logparser*.tex
+	ack '\w'\''(?![sS])\w' logparser*.tex
 
 .PHONY: todo
 todo:

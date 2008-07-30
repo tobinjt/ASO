@@ -147,6 +147,19 @@ Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
     of accumulated data.
 }
 
+XXX DISCUSS COMPLEXITY\@?  EVEN JUST MENTION THAT COMPLEXITY RISES WHEN
+INCREMENTAL PARSING IS USED, BUT THAT EXTERNAL TOOLS COULD BE USED TO DEAL
+WITH IT, AND THAT IT IS ENTIRELY DEPENDANT ON THE RULESET USED\@?
+
+XXX MAYBE MERGE THE AUTHOR SECTIONS IF DESPERATE FOR SPACE\@.
+
+XXX REVIEWER SUGGESTED COMPARING TO EXISTING WORK, BUT I DID NOT FIND ANY
+SIMILAR EXISTING WORK\@.  SHOULD SEARCH AGAIN\@.
+
+XXX OVERLAP DETECTION\@: L1 n L2 = E* --- ((E* --- L1) u (E* --- L2)).
+PERL REGEXES ARE AT LEAST AS POWERFUL AS A PUSHDOWN AUTOMATA --- SEE
+CHOMSKY'S HIERARCHY TO MAKE SURE\@.  CONTAINMENT CANNOT BE DETERMINED FOR
+CFGs, INTERSECTION IS POSSIBLE\@.
 
 \section{Introduction}
 
@@ -330,11 +343,15 @@ writing productive code.  It provides the link between actions and rules,
 allowing either to be improved independently of the other.  The framework
 is the core of the architecture and is deliberately quite simple: the rules
 deal with the varying log lines, and the actions deal with the intricacies
-and complications encountered when parsing.
+and complications encountered when parsing.  XXX MAYBE REMOVE FIRST TWO
+SENTENCES\@.
 
 \subsection{Actions}
 
 \label{Actions}
+
+XXX CARL WONDERS IF THE NUMBERS HERE ARE TYPICAL\@?  ALSO SAY SOMETHING
+LIKE REJECTION AND IGNORE DO NOT IMPLY UNGRAMMATICAL\@.
 
 Each action contains the code required to deal with log lines from a
 particular category, e.g.\ rejections.  The actions are parser-specific:
@@ -433,9 +450,10 @@ ATTRIBUTES\@?
     \item [program] The Postfix program whose log lines the regex should be
         applied to.  This avoids needlessly trying regexes that will not
         match the log line, or worse, might match unintentionally.  Rules
-        whose program is \texttt{*} will be tried against any log lines not
-        parsed by program specific rules, allowing generic rules to be
-        written.
+        whose program is ``\texttt{*}'' will be tried against any log lines
+        not parsed by program specific rules, allowing generic rules to be
+        written.  This is a literal ``\texttt{*}'', not a wildcard or
+        regex.
 
     \item [regex] The Regular Expression to match the log line against.
 
@@ -489,7 +507,7 @@ Learning~\cite{instance-based-learning} techniques which automatically
 determine which inputs from the training set are valuable and which inputs
 can be discarded would probably reduce the data required to a manageable
 size.  This avenue of research and development has not been pursued by the
-author, but could easily be independently undertaken.
+authors, but could easily be independently undertaken.
 
 \label{overlapping rules}
 
@@ -511,13 +529,12 @@ OVERLAP\@.
 It is possible to define pathological regexes, which fall into two main
 categories: regexes which match every input line, and regexes which consume
 large amounts of CPU time during matching.  Defining a regex which matches
-every input line is trivial: \verb!/^/! will match the start of the input
-line; every input line is guaranteed to start, so this regex would match
-every input line.  In general a regex will not consume a large amount of
-CPU time when the match is successful; usually CPU time is consumed by a
-regex with a lot of alteration and variable quantifiers failing to match.
-This topic is beyond the scope of this paper, see
-\cite{mastering-regular-expressions} for in-depth discussion.
+every input line is trivial: \verb!/^/! will match the start of every input
+line.  In general a regex will not consume a large amount of CPU time when
+the match is successful; usually CPU time is consumed by a regex with a lot
+of alteration and variable quantifiers failing to match.  This topic is
+beyond the scope of this paper, see~\cite{mastering-regular-expressions}
+for in-depth discussion.
 
 \label{example rule}
 
@@ -610,30 +627,35 @@ in testing this parser accepts approximately 10,000 mails for 700 users a
 day.  Median log file size is 50MB, containing 285,000 log lines --- large
 scale mail servers would have much larger log files.  When generating the
 timing data used in this section, \numberOFlogFILES{} log files (totaling
-10.08 GB, \numberOFlogLINEShuman{} log lines) were each parsed 10 times,
-the results from the first first run discarded, and the execution time for
-the remaining 9 runs averaged.  Saving results to the database was disabled
+10.08 GB, \numberOFlogLINEShuman{} log lines) were each parsed 10 times and
+the parsing times averaged.  Saving results to the database was disabled
 for the test runs, as that dominates the run time of the program, and the
 tests are aimed at measuring the speed of the parser rather than the speed
 of the database and the disks the database is stored on.  The computer used
 for test runs was a Dell Optiplex 745:
 
 \begin{tabular}[]{ll}
-
+    \hline
+    \noalign{\smallskip}
+    XXX         & XXX NEED LABELS\@.                                \\
+    \noalign{\smallskip}
+    \hline
+    \noalign{\smallskip}
     CPU         & One dual core 2.40GHz Intel\textregistered{}
-                    Core\texttrademark{}2 CPU, \\
-                & with 32KB L1 cache and 4MB L2 cache. \\
-    RAM         & 2GB 667 MHz DDR RAM\@. \\
-    Hard disk   & One Seagate Barracuda 7200 RPM 250GB SATA disk. \\
-
+                    Core\texttrademark{}2 CPU,                      \\
+                & with 32KB L1 cache and 4MB L2 cache.              \\
+    RAM         & 2GB 667 MHz DDR RAM\@.                            \\
+    Hard disk   & One Seagate Barracuda 7200 RPM 250GB SATA disk.   \\
+    \noalign{\smallskip}
+    \hline
+    \noalign{\smallskip}
 \end{tabular}
 
 Parsing all \numberOFlogFILES{} log files in one run took
-\input{build/timing-run-include.tex}.
-
-The computer was dedicated to the task of gathering statistics from test
-runs, and was not used for any other purpose while test runs were ongoing;
-any services not necessary for running the tests were disabled.
+\input{build/timing-run-include.tex}.  The computer was dedicated to the
+task of gathering statistics from test runs, and was not used for any other
+purpose while test runs were ongoing; any services not necessary for
+running the tests were disabled.
 
 \subsection{Architecture Scalability: Input Size}
 
@@ -700,6 +722,8 @@ relative to shuffled ordering}{Parsing time relative to shuffled}
 
 \noindent\textbf{Why are there dips in the graphs?}
 
+XXX MAYBE REDUCE THIS\@?
+
 \label{Why are there dips in the graphs?}
 
 The dips at log files 22 and 62--68 in \graphref{Parsing time relative to
@@ -716,6 +740,8 @@ in general the majority of log lines are from the Postfix component
 (\daemon{smtpd}) with the highest number of rules.  Furthermore in normal
 log files the majority of log lines are distributed much more evenly across
 rules than the majority of log lines during a mail loop.
+
+\newpage
 
 These two characteristics combine to reduce the average number of rules
 required to parse a log line when there is a mail loop, as shown by the
@@ -743,23 +769,23 @@ number of rules required to parse the \numberOFlogFILES{} log files is
 \numberOFrulesMINIMUM{}, \numberOFrulesMINIMUMpercentage{} of the total.  A
 second set of statistics was generated using the minimum ruleset and the
 results compared to the statistics generated using the full ruleset: the
-percentage execution increase when using the full ruleset instead of the
+percentage parsing time increase when using the full ruleset instead of the
 minimal ruleset for normal, shuffled and reversed orderings is shown in
-\graphref{Percentage execution time increase of maximum ruleset over
-minimum ruleset}.  \showgraph{build/plot-normal-vs-smaller}{Percentage
-execution time increase of maximum ruleset over minimum ruleset}{Percentage
-execution time increase of maximum ruleset over minimum ruleset}
+\graphref{Percentage parsing time increase of maximum ruleset over minimum
+ruleset}.  \showgraph{build/plot-normal-vs-smaller}{Percentage parsing time
+increase of maximum ruleset over minimum ruleset}{Percentage parsing time
+increase of maximum ruleset over minimum ruleset}
 
-It is clear from \graphref{Percentage execution time increase of maximum
+It is clear from \graphref{Percentage parsing time increase of maximum
 ruleset over minimum ruleset} that the increased number of rules has a
 noticeable performance impact with reverse ordering, and to a lesser extent
 with shuffled ordering.  The normal ordering (where are the most frequently
 matching rules are tried first) shows a mean increase of
-\input{build/normal-vs-smaller-percentage-increase.tex} in execution time
-for a \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.
-These results show that the architecture scales very well as the number of
-rules increases, and that sorting the rules is an important optimisation
-enabling this.
+\input{build/normal-vs-smaller-percentage-increase.tex} in parsing time for
+a \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.  These
+results show that the architecture scales very well as the number of rules
+increases, and that sorting the rules is an important optimisation enabling
+this.
 
 \subsection{Coverage}
 
@@ -801,7 +827,7 @@ turn produced the correct result and inserted the correct data in the
 database.  The log segment produced 4 warnings (about mails which had
 started before the log file segment), 10 mails remaining in the state
 tables, and 1625 connections correctly entered in the database.  Given the
-evidence detailed above, the author is confident that the false positive
+evidence detailed above, the authors are confident that the false positive
 rate when reconstructing a mail is zero.
 
 

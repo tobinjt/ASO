@@ -35,15 +35,12 @@ per day}{Number of mails received per day: statistics}
 
 When generating the timing data used in this section, \numberOFlogFILES{}
 log files (totaling 10.08 GB, \numberOFlogLINEShuman{} log lines) were each
-parsed 10 times, the results from the first first run discarded, and the
-execution time for the remaining 9 runs averaged.  The results from the
-first run were discarded because because the rule ordering will be
-sub-optimal compared to subsequent runs --- XXX MAYBE I SHOULD NOT DISCARD
-THE FIRST RESULT\@?  Saving results to the database was disabled for the
-test runs, as that dominates the run time of the program, and the tests are
-aimed at measuring the speed of the parser rather than the speed of the
-database and the disks the database is stored on.  The computer used for
-test runs was a Dell Optiplex 745, equipped with: 
+parsed 10 times and the parsing times averaged.  Saving results to the
+database was disabled for the test runs, as that dominates the run time of
+the program, and the tests are aimed at measuring the speed of the parser
+rather than the speed of the database and the disks the database is stored
+on.  The computer used for test runs was a Dell Optiplex 745, equipped
+with: 
 
 \begin{tabular}[]{ll}
 
@@ -156,7 +153,7 @@ bounced and generated as fast as the disks can keep up, resulting in a huge
 volume of log lines.
 
 The different distribution of log lines during a mail forwarding loop has
-interesting effects on execution time, described in detail in
+interesting effects on parsing time, described in detail in
 \sectionref{rule ordering for efficiency}, \sectionref{scalability as the
 number of rules rises}, and \sectionref{Caching compiled regexes}.
 
@@ -235,7 +232,7 @@ larger because the Postfix parser is tested with \numberOFlogFILESall{} log
 files, to improve its parsing and ensure it correctly parses logs generated
 by later Postfix versions.  A second set of statistics was generated using
 the minimum ruleset and compared to the statistics generated using the full
-ruleset: the percentage execution increase when using the full ruleset
+ruleset: the percentage parsing time increase when using the full ruleset
 instead of the minimal ruleset for normal, shuffled and reversed orderings
 is shown in \graphref{Percentage parsing time increase of maximum ruleset
 over minimum ruleset}.
@@ -310,8 +307,8 @@ when not caching compiled regexes table}
 \subsubsection{Summary}
 
 This section began with parser scalability, showing the linear relationship
-between execution time and input size.  Demonstrates the effect of rule
-ordering on execution time, and the unexpected consequences of specific
+between parsing time and input size.  Demonstrates the effect of rule
+ordering on parsing time, and the unexpected consequences of specific
 inputs.  The necessity of caching compiled \regexes{} is attested to by the
 third group of graphs, where the difference between caching and not caching
 is staggering.  The penultimate section contains a breakdown of the rule
