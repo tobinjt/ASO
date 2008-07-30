@@ -8,7 +8,8 @@ paper.deps: build/plot-action-distribution.pdf \
 			build/plot-normal-shuffle-reverse-factor.pdf \
 			build/plot-normal-vs-smaller.pdf \
 			build/normal-vs-smaller-percentage-increase.tex \
-			build/plot-normal-and-reverse-relative-to-shuffle.pdf
+			build/plot-normal-and-reverse-relative-to-shuffle.pdf \
+			build/timing-run-include.tex
 paper.bbl: spmpsci.bst
 
 build/plot-normal-vs-smaller.pdf: build/stats-normal-vs-smaller.txt \
@@ -17,3 +18,6 @@ build/plot-normal-vs-smaller.pdf: build/stats-normal-vs-smaller.txt \
 
 build/normal-vs-smaller-percentage-increase.tex: build/stats-normal-vs-smaller.txt
 	awk 'BEGIN { sum = 0; } { sum += $$2; } END { printf "%.3g\\%%%%\n", sum / NR }' "$<" > "$@" || (rm -f "$@"; false)
+
+build/timing-run-include.tex: ../../doc/build/timing-run-include.tex
+	cp "$<" "$@"

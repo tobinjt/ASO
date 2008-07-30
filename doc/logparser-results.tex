@@ -9,11 +9,12 @@ XXX EXPLAIN THE X-AXES ON THE GRAPHS\@.
 XXX CHANGE normal TO optimal IN ORDERING STUFF, INCLUDING IN GRAPH CAPTIONS
 AND AXIS LABELS\@.
 
+USE THE DATA COLLECTED ABOUT NUMBER OF RULES TRIED\@.  MAYBE INCLUDE IN
+ORDERINGS SECTION\@?
+
 \subsection{Parser Efficiency}
 
 \label{parser efficiency}
-
-XXX ADD TIMING INFORMATION\@.
 
 Parsing efficiency is an obvious concern when the parser routinely needs to
 parse very large log files.  The server which generated the log files used
@@ -46,16 +47,20 @@ test runs was a Dell Optiplex 745, equipped with:
 
 \begin{tabular}[]{ll}
 
-CPU         & One dual core 2.40GHz Intel(R) Core(TM)2 CPU, \\
-            & with 32KB L1 cache and 4MB L2 cache. \\
-RAM         & 2GB 667 MHz DDR RAM\@. \\
-Hard disk   & One XXX 232GB SATA disk. \\
+    CPU         & One dual core 2.40GHz Intel\textregistered{}
+                    Core\texttrademark{}2 CPU, \\
+                & with 32KB L1 cache and 4MB L2 cache. \\
+    RAM         & 2GB 667 MHz DDR RAM\@. \\
+    Hard disk   & One Seagate Barracuda 7200 RPM 250GB SATA disk. \\
 
 \end{tabular}
 
-In as far as possible the computer was dedicated to the task of gathering
-statistics from test runs, and was not used for any other purpose while
-test runs were ongoing.
+Parsing all \numberOFlogFILES{} log files in one run took
+\input{build/timing-run-include.tex}.
+
+The computer was dedicated to the task of gathering statistics from test
+runs, and was not used for any other purpose while test runs were ongoing;
+any services not necessary for running the tests were disabled.
 
 \subsubsection{Architecture Scalability: Input Size}
 

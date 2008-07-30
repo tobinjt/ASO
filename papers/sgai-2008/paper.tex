@@ -616,26 +616,24 @@ the remaining 9 runs averaged.  Saving results to the database was disabled
 for the test runs, as that dominates the run time of the program, and the
 tests are aimed at measuring the speed of the parser rather than the speed
 of the database and the disks the database is stored on.  The computer used
-for test runs was a Dell Optiplex 745, equipped with: 
+for test runs was a Dell Optiplex 745:
 
 \begin{tabular}[]{ll}
 
-CPU         & One dual core 2.40GHz Intel(R) Core(TM)2 CPU, \\
-            & with 32KB L1 cache and 4MB L2 cache.          \\
-RAM         & 2GB 667 MHz DDR RAM\@.                        \\
-Hard disk   & One XXX 232GB SATA disk.                      \\
+    CPU         & One dual core 2.40GHz Intel\textregistered{}
+                    Core\texttrademark{}2 CPU, \\
+                & with 32KB L1 cache and 4MB L2 cache. \\
+    RAM         & 2GB 667 MHz DDR RAM\@. \\
+    Hard disk   & One Seagate Barracuda 7200 RPM 250GB SATA disk. \\
 
 \end{tabular}
 
-In as far as possible the computer was dedicated to the task of gathering
-statistics from test runs, and was not used for any other purpose while
-test runs were ongoing.
+Parsing all \numberOFlogFILES{} log files in one run took
+\input{build/timing-run-include.tex}.
 
-XXX TIMING INFORMATION\@.
-
-XXX TIMING INFORMATION\@.
-
-XXX TIMING INFORMATION\@.
+The computer was dedicated to the task of gathering statistics from test
+runs, and was not used for any other purpose while test runs were ongoing;
+any services not necessary for running the tests were disabled.
 
 \subsection{Architecture Scalability: Input Size}
 
@@ -659,6 +657,7 @@ lines} \showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file
 size and number of lines to parsing time}{parsing time vs file size vs
 number lines factor}
 
+\newpage
 \subsection{Rule Ordering}
 
 \label{Rule ordering}
@@ -669,7 +668,7 @@ At the time of writing there are \numberOFrules{} different rules, with the
 top 10\% matching the vast majority of the log lines, and the remaining log
 lines split across the other 90\% of the rules in a Power Law distribution
 (as shown in fig.~\refwithpage{rule hits graph}).
-\showgraph{build/plot-hits}{Hits per rule}{rule hits graph} Assuming that
+Assuming that
 the distribution of log lines is reasonably steady over time, parser
 efficiency should benefit from trying more frequently matching rules before
 those which match less frequently.  To test this hypothesis three full test
@@ -696,6 +695,7 @@ Figure~\refwithpage{Parsing time relative to shuffled} shows the percentage
 increase of parsing times for shuffled and reversed rules.  Overall this
 optimisation provides a modest but worthwhile performance increase of over
 10\%, for a small investment in time and programming.
+\showgraph{build/plot-hits}{Hits per rule}{rule hits graph} 
 \showgraph{build/plot-normal-and-reverse-relative-to-shuffle}{Parsing time
 relative to shuffled}{Parsing time relative to shuffled}
 

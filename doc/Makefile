@@ -163,7 +163,8 @@ logparser.deps: \
 				build/plot-mails-received.ps								\
 				build/plot-mails-received.pdf								\
 				build/mails-received-include-for-graph.tex					\
-				build/full-ruleset-vs-minimum-ruleset-include.tex
+				build/full-ruleset-vs-minimum-ruleset-include.tex			\
+				build/timing-run-include.tex
 	touch "$@"
 
 build/logparser-flow-chart-%.pdf: logparser-flow-chart-%.dot
@@ -369,6 +370,9 @@ full-ruleset-vs-minimum-ruleset:
 	# There deliberately aren't any quotes around INPUT because it will have 
 	# multiple file names
 	paste -d ' ' ${INPUT} | awk '!/^#/ { print $$1, (($$3 -$$9) * 100 / $$9)}' > "${OUTPUT}"
+
+build/timing-run-include.tex: stats-full-run/timing
+	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes, %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@" || (rm -f "$@"; false)
 
 # Build stats from the directory created by gen-stats.
 # XXX THIS DOESN'T HAPPEN AUTOMATICALLY - MAKE THAT WORK.

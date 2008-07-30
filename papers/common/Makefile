@@ -11,6 +11,13 @@ run_latex:
 		bibtex $$( basename "${SOURCE}" .tex ) || rm -f "${DEST}"; \
 	fi
 	[ -f "${DEST}" ]
+	AUX=$$( basename "${SOURCE}" .tex ); \
+	AUX="$$AUX.aux"; \
+	touch "$$AUX.old"; \
+	if [ -s "$$AUX.old" ]; then \
+		diff -u "$$AUX.old" "$$AUX"; \
+	fi; \
+	cp "$$AUX" "$$AUX.old"
 
 paper.dvi: paper.tex
 	make build PROGRAM="latex" SOURCE="$<" DEST="$@"
