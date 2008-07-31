@@ -2,7 +2,26 @@
 # foo.pdf', otherwise latex will only be run once and it will get very confused.
 all: logparser.pdf
 
-logparser.pdf: logparser-*.tex
+logparser.pdf: logparser.deps logparser-*.tex \
+				logparser-bibliography.bib logparser-bibliography-style.bst
+
+%.pdf: %.tex
+	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@"
+
+logparser.dvi: logparser.deps logparser-*.tex \
+				logparser-bibliography.bib logparser-bibliography-style.bst
+
+%.dvi: %.tex
+	make build PROGRAM="latex" SOURCE="$<" DEST="$@"
+
+# This isn't a wildcard rule because it screws up later postscript wildcard 
+# rules.
+logparser.ps: logparser.dvi
+	dvips -o "$@" "$<"
+
+%.bbl: %-bibliography.bib
+	bibtex $$( basename "$@" .bbl )
+	touch build/ran_bibtex
 
 run_latex:
 	("${PROGRAM}" -interaction=nonstopmode "${SOURCE}" || rm -f "${DEST}") | tee "${DEST}.out";
@@ -21,44 +40,25 @@ run_latex:
 	fi; \
 	cp "$$AUX" "$$AUX.old"
 
-%.dvi: %.tex
-	make build PROGRAM="latex" SOURCE="$<" DEST="$@"
-
-%.pdf: %.tex
-	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@"
-
-logparser.dvi: logparser.tex logparser-*.tex
-	make build PROGRAM="latex" SOURCE="$<" DEST="$@"
-
-logparser.ps: logparser.dvi
-	dvips -o "$@" "$<"
-
-%.bbl: %-bibliography.bib
-	bibtex $$( basename "$@" .bbl )
-	touch ran_bibtex
-
 run_makeindex:
 	set -e; \
 	touch "${INPUT}.old"; \
 	if ! cmp -s "${INPUT}" "${INPUT}.old"; then \
 		makeindex -s "${STYLE}" -t "${LOG}" -o "${OUTPUT}" "${INPUT}"; \
 		cp "${INPUT}" "${INPUT}.old"; \
-		touch ran_makeindex; \
+		touch build/ran_makeindex; \
 	fi
-	echo; echo; echo;
 
 # build is a directory so it needs to be marked as PHONY.
 .PHONY: build
 build:
 	make build_loop PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
-	#cat "${DEST}.out"
 	make check-contractions
 	grep Overfull "${DEST}.out" || true
 	grep -A 1 "LaTeX Warning: " "${DEST}.out" || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' "${DEST}.out"
-	BASE=$$( basename "${SOURCE}" .tex ); \
-	grep ^Warning "$$BASE.blg" || true; \
-	grep '!!' "$$BASE.glg" "$$BASE.alg" || true;
+	grep ^Warning *.blg || true;
+	grep '!!' *.glg *.alg || true;
 	# Finally done.
 	chktex -I0 -q *.tex
 	@echo "XXX THINK ABOUT GREPPING OUT CITATION LINES FROM *.aux TO DETERMINE"
@@ -76,7 +76,8 @@ build_run:
 	BASE=$$( basename "${SOURCE}" .tex ); \
 	make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.glg" OUTPUT="$$BASE.gls" INPUT="$$BASE.glo"; \
 	make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.alg" OUTPUT="$$BASE.acn" INPUT="$$BASE.acr"
-	# The next run will include the new glossary and acronyms if they've changed.
+	# The next time lates is run is will include the new glossary and acronyms 
+	# if they've changed.
 
 build_loop:
 	# Run latex at least four times when starting from scratch:
@@ -97,37 +98,29 @@ build_loop:
 	# 6 hyperref may need to add stuff (not sure what)
 	# So this loop runs four times, and may need to run more times in future
 	# (e.g. if I added an index).
-	make build_run PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}";
-	echo; echo; echo;
+	make build_run
 	set -e; \
 	for i in $$( seq 1 4 ); do \
 		echo "iteration $$i starting"; \
 		make $$( echo "$$SOURCE" | sed -e 's/tex$$/bbl/' ); \
-		if [ -e ran_bibtex ]; then \
+		if [ -e build/ran_bibtex ]; then \
 			echo "ran_bibtex exists, running latex again"; \
-			make build_run PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"; \
-			rm -f ran_bibtex; \
-			echo; echo; echo; \
+			make build_run; \
+			rm -f build/ran_bibtex; \
 		fi; \
-		if [ -e ran_makeindex ]; then \
+		if [ -e build/ran_makeindex ]; then \
 			echo "ran_makeindex exists, running latex again"; \
-			make build_run PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"; \
-			rm -f ran_makeindex; \
-			echo; echo; echo; \
+			make build_run; \
+			rm -f build/ran_makeindex; \
 		fi; \
 		if grep -q -f latex-warnings "${DEST}.out"; then \
 			echo "warnings found, running latex again"; \
-			make build_run PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"; \
-			echo; echo; echo; \
+			make build_run; \
 		fi; \
 	done
 
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
-logparser.pdf: logparser.deps logparser-bibliography.bib logparser-bibliography-style.bst \
-				logparser-acronyms.tex
-logparser.dvi: logparser.deps logparser-bibliography.bib logparser-bibliography-style.bst \
-				logparser-acronyms.tex
 logparser.deps: \
 				build/stats-cached-discarded-include-for-graph.tex			\
 				build/stats-normal-filesize-line-count-include.tex			\
@@ -211,14 +204,14 @@ build/plot-%.pdf: graphs/plot-%-pdf.gpi
 # in recreating it each time make runs.
 .PRECIOUS: graphs/plot-%-pdf.gpi
 graphs/plot-%-pdf.gpi: graphs/plot-%.gpi
-	sed -e 's/ps/pdf/g' "$<" > "$@" || rm -f "$@"
+	sed -e 's/ps/pdf/g' "$<" > "$@"
 
 build/stats-normal-stripped.txt: build/stats-normal.txt
 	sed -e '/^#/d' "$<" > "$@"
 
 # Factored stats for graphs.
 build/stats-normal-filesize-numlines-factor.txt: build/stats-normal-stripped.txt wc.txt file-sizes.txt
-	paste -d ' ' $^ | awk 'BEGIN { print "# line-count file-size"; }; $$1 != "#" {print (($$3 * 10 * 1000 / $$8)), " ", (($$3 * 1000 * 1000 / $$11)) }' > "$@"
+	paste -d ' ' $^ | awk 'BEGIN { print "# line-count file-size"; }; $$1 != "#" {print ($$3 * 10 * 1000 / $$8), " ", ($$3 * 1000 * 1000 / $$11) }' > "$@"
 
 build/stats-cached-discarded-factor.txt: build/stats-cached.txt build/stats-discarded.txt
 	paste -d ' ' $^ | awk '$$1 != "#" {print ($$9 * 100 / $$3) - 100 }' > "$@"
@@ -388,38 +381,29 @@ build/stats-shuffle-minimum-ruleset.txt: stats-shuffle-minimum-ruleset
 
 parse-stats:
 	perl ../stats/parse-stats "${DIR}" > "${FILE}" || (rm -f "${FILE}"; false)
-	SRC_DIR="${DIR}" DEST_DIR="${DIR}-graphed" make extract-stats
-
-extract-stats: 
-	if [ ! -d "${DEST_DIR}" ]; then \
-		mkdir -p "${DEST_DIR}"; \
-	fi
-	perl ../stats/extract-stats.pl "${SRC_DIR}" "${DEST_DIR}" > "${DEST_DIR}/${SRC_DIR}-synposis"
-
 
 # Cleanup.
 clean:
-	rm -f *.dvi *.ps *.aux *.toc *.log *.bbl *.blg *.pdf *.out *.ist *.glg 
-	rm -f *.gls *.glo *.cbk *.cit *.lof *.idx *.acn *.acr *.alg *.deps *.lot
-	rm -f *.old
+	rm -f *.acn *.acr *.alg *.aux *.bbl *.blg *.cbk *.cit *.deps *.dvi \
+			*.glg *.glo *.gls *.idx *.ist *.lof *.log *.lot *.old *.out \
+			*.pdf *.ps *.toc
 
 realclean: veryclean
 veryclean: clean
 	rm -f build/*
-	rm -rf *-graphed
 
 check:
 	chktex -I0 -q *.tex
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
-	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{e]/; p;' logparser-acronyms.tex | grep -f - -n logparser.tex
+	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{e]/; p;' logparser-acronyms.tex \
+		| grep -f - -n $$(ls *.tex | grep -v ^logparser-acronyms.tex)
 
 # Check for contractons like "don't".
 check-contractions:
-	ack '\w'\''(?![sS])\w' logparser*.tex
+	ack '\w'\''(?![sS])\w' *.tex
 
-.PHONY: todo
 todo:
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib || true
 
