@@ -4,12 +4,10 @@ XXX NEED AN INTRODUCTION\@.
 
 XXX COMPARE SAVING RESULTS TO RAM DISK VERSUS SAVING TO HARD DISK\@.
 
-XXX EXPLAIN THE X-AXES ON THE GRAPHS\@.
-
 XXX CHANGE normal TO optimal IN ORDERING STUFF, INCLUDING IN GRAPH CAPTIONS
 AND AXIS LABELS\@.
 
-USE THE DATA COLLECTED ABOUT NUMBER OF RULES TRIED\@.  MAYBE INCLUDE IN
+XXX USE THE DATA COLLECTED ABOUT NUMBER OF RULES TRIED\@.  MAYBE INCLUDE IN
 ORDERINGS SECTION\@?
 
 \subsection{Parser Efficiency}
@@ -19,19 +17,19 @@ ORDERINGS SECTION\@?
 Parsing efficiency is an obvious concern when the parser routinely needs to
 parse very large log files.  The server which generated the log files used
 in testing this parser accepts approximately 10,000 mails for 700 users a
-day; as expected there are far more mails received on weekdays than at
-weekends.   Median log file size is 50MB, containing 285,000 log lines ---
-large scale mail servers would have much larger log files.  Note that
-\graphref{Mails received per day} and \tableref{Number of mails received
-per day: statistics} show the number of mails received by \SMTP{} only; in
-particular the mail loops noticeable in other graphs do not contribute to
-these figures.
+day; \graphref{Mails received per day} shows that as expected there are far
+more mails received on weekdays than at weekends.   Median log file size is
+50MB, containing 285,000 log lines --- large scale mail servers would have
+much larger log files.  Note that \graphref{Mails received per day} and
+\tableref{Number of mails received per day: statistics} show the number of
+mails received by \SMTP{} only; in particular the mail loops noticeable in
+other graphs do not contribute to these figures.
 
-\showgraph{build/plot-mails-received}{Number of mails received per
+\showgraph{build/plot-mails-received}{Number of mails received via SMTP per
 day}{Mails received per day}
 
 \showtable{build/mails-received-include-for-graph}{Number of mails received
-per day}{Number of mails received per day: statistics}
+via SMTP per day}{Number of mails received per day: statistics}
 
 When generating the timing data used in this section, \numberOFlogFILES{}
 log files (totaling 10.08 GB, \numberOFlogLINEShuman{} log lines) were each
@@ -53,11 +51,10 @@ with:
 \end{tabular}
 
 Parsing all \numberOFlogFILES{} log files in one run took
-\input{build/timing-run-include.tex}.
-
-The computer was dedicated to the task of gathering statistics from test
-runs, and was not used for any other purpose while test runs were ongoing;
-any services not necessary for running the tests were disabled.
+\input{build/timing-run-include.tex}.  The computer was dedicated to the
+task of gathering statistics from test runs, and was not used for any other
+purpose while test runs were ongoing; any services not necessary for
+running the tests were disabled.
 
 \subsubsection{Architecture Scalability: Input Size}
 
@@ -375,15 +372,19 @@ Full coverage of log lines requires the following:
 Full coverage of log lines is easy to achieve yet hard to maintain.  It is
 easy to achieve full coverage for a limited set of log files (at the time
 of writing the parser is tested with \numberOFrules{} rules, fully parsing
-\numberOFlogFILES{} contiguous log files from Postfix 2.2 and 2.3), and new
-rules are easy to add.  Maintaining full coverage is hard because other
-servers have different restrictions with custom messages, \DNSBL{} messages
-change over time, major releases of Postfix change warning messages
-(usually adding more information), etc.,\ so over time the log lines drift
-and change.  \Graphref{rule hits graph} shows the number of hits
-for each rule over all \numberOFlogFILES{} log files; it is obvious that a
-small number of rules match the vast majority of the lines, and more than
-half the rules match fewer than 100 times.
+\numberOFlogFILESall{} contiguous log files from Postfix 2.2 through to
+Postfix 2.5), and new rules are easy to add.  Maintaining full coverage is
+hard because other servers have different restrictions with custom
+messages, \DNSBL{} messages change over time, major releases of Postfix
+change warning messages (usually adding more information), etc.,\ so over
+time the log lines drift and change.  \Graphref{rule hits graph} shows the
+number of hits for each rule over all \numberOFlogFILES{} log files.  The
+number of hits per rule is quite unevenly spread, resembling a Power Law
+distribution~\cite{powerlaw} --- it is obvious that a small number of rules
+match the vast majority of the lines, and more than half the rules match
+fewer than 100 times.
+
+\showgraph{build/plot-hits}{Hits per rule}{rule hits graph}
 
 Warnings are issued for any log lines which are not parsed; no warnings are
 issued for unparsed log lines while testing with the \numberOFlogFILES{}
@@ -530,7 +531,11 @@ Given the circumstantial and experimental evidence detailed above, the
 author is confident that the false positive rate when reconstructing a mail
 is exceedingly low, if not approaching zero.
 
-\subsubsection{Summary}
+\subsection{Summary}
+
+XXX EXTEND TO SUMMARISE PARSER EFFICIENCY TOO\@.
+
+XXX REWRITE COVERAGE SUMARY IF NECESSARY\@.
 
 Parser coverage is divided into two topics in this section: log lines
 covered and mails covered.  The former is initially more important, as the
@@ -551,32 +556,3 @@ requires an understanding of both the parser and Postfix's log files, and
 investigative work to determine the cause of the deficiency, followed by
 further examination of the log files in developing a solution.
 
-\subsection{Graphs}
-
-XXX FIGURE OUT WHERE TO PUT THESE GRAPHS\@; DO I NEED ALL THREE\@?
-
-\showgraph{build/plot-action-distribution}{Distribution of rules per
-action}{Distribution of rules per action}
-
-The number of hits per rule is quite unevenly spread, resembling a Power
-Law distribution~\cite{powerlaw}.
-
-\showgraph{build/plot-hits}{Hits per rule}{rule hits graph}
-
-As \graphref{rule hits graph} is quite difficult to read it has been
-separated into three sections: low, middle and high.
-
-\showgraph{build/plot-hits-low}{Hits per rule (low)}{hits per rule low}
-
-It is apparent from the low graph (\graphref{hits per rule low})
-that some rules have few or no hits; those with zero hits are rules which
-were written to parse log files used during development of the parser but
-not utilised in the test runs performed for this document.
-
-\showgraph{build/plot-hits-middle}{Hits per rule (middle)}{hits per rule
-middle}
-
-\showgraph{build/plot-hits-high}{Hits per rule (high)}{hits per rule
-high}
-
-\clearpage{}
