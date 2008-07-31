@@ -129,28 +129,6 @@ logparser.pdf: logparser.deps logparser-bibliography.bib logparser-bibliography-
 logparser.dvi: logparser.deps logparser-bibliography.bib logparser-bibliography-style.bst \
 				logparser-acronyms.tex
 logparser.deps: \
-				build/plot-cached-discarded-factor.pdf						\
-				build/plot-normal-filesize-numlines-factor.pdf				\
-				build/plot-normal-filesize-numlines.pdf						\
-				build/plot-hits.pdf											\
-				build/plot-hits-high.pdf									\
-				build/plot-hits-middle.pdf									\
-				build/plot-hits-low.pdf										\
-				build/plot-action-distribution.pdf							\
-				build/plot-full-ruleset-vs-minimum-ruleset.pdf				\
-				build/plot-normal-and-reverse-relative-to-shuffle.pdf		\
-				\
-				build/plot-cached-discarded-factor.ps						\
-				build/plot-normal-filesize-numlines-factor.ps				\
-				build/plot-normal-filesize-numlines.ps						\
-				build/plot-hits.ps											\
-				build/plot-hits-high.ps										\
-				build/plot-hits-middle.ps									\
-				build/plot-hits-low.ps										\
-				build/plot-action-distribution.ps							\
-				build/plot-full-ruleset-vs-minimum-ruleset.ps				\
-				build/plot-normal-and-reverse-relative-to-shuffle.ps 		\
-				\
 				build/stats-cached-discarded-include-for-graph.tex			\
 				build/stats-normal-filesize-line-count-include.tex			\
 				build/stats-normal-shuffle-reverse-include.tex				\
@@ -166,6 +144,14 @@ logparser.deps: \
 				build/full-ruleset-vs-minimum-ruleset-include.tex			\
 				build/timing-run-include.tex
 	touch "$@"
+
+# Additional logparser.deps dependencies are included from Makefile.deps-pdf 
+# and -ps; -ps is generated from -pdf, to avoid duplication.  Make will 
+# automatically rebuild -ps if it is missing or out of date.
+include Makefile.deps-pdf
+include Makefile.deps-ps
+Makefile.deps-ps: Makefile.deps-pdf
+	sed -e 's/\.pdf/.ps/' "$<" > "$@"
 
 build/logparser-flow-chart-%.pdf: logparser-flow-chart-%.dot
 	dot -o "$@" -Tpdf -x "$<"

@@ -1,0 +1,11 @@
+# Makefile.deps-ps is created from Makefile.deps-pdf
+logparser.deps: build/plot-cached-discarded-factor.pdf						\
+				build/plot-normal-filesize-numlines-factor.pdf				\
+				build/plot-normal-filesize-numlines.pdf						\
+				build/plot-hits.pdf											\
+				build/plot-hits-high.pdf									\
+				build/plot-hits-middle.pdf									\
+				build/plot-hits-low.pdf										\
+				build/plot-action-distribution.pdf							\
+				build/plot-full-ruleset-vs-minimum-ruleset.pdf				\
+				build/plot-normal-and-reverse-relative-to-shuffle.pdf
