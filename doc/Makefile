@@ -152,48 +152,6 @@ build/logparser-flow-chart-%.pdf: logparser-flow-chart-%.dot
 build/logparser-flow-chart-%.ps: logparser-flow-chart-%.dot
 	dot -o "$@" -Tps -x "$<"
 
-# graph dependencies
-build/plot-cached-discarded-factor.ps: build/stats-cached-discarded-factor.txt
-build/plot-normal-shuffle-reverse.ps: build/stats-normal.txt build/stats-shuffle.txt build/stats-reverse.txt
-build/plot-normal-shuffle-factor.ps: build/stats-normal-shuffle-reverse-factor.txt
-build/plot-normal-reverse-factor.ps: build/stats-normal-shuffle-reverse-factor.txt
-build/plot-normal-filesize-numlines-factor.ps: build/stats-normal-filesize-numlines-factor.txt
-build/plot-normal-filesize-numlines.ps: build/stats-normal.txt file-sizes.txt wc.txt
-build/plot-log22-distribution-by-rule.ps: stats-log22-distribution-by-rule.txt
-build/plot-log22-distribution-versus-rule-count.ps: stats-log22-rule-count-by-program.txt
-build/plot-hits.ps: stats-hits.txt
-build/plot-hits-high.ps: stats-hits.txt
-build/plot-hits-middle.ps: stats-hits.txt
-build/plot-hits-low.ps: stats-hits.txt
-build/plot-log22-log-lines.ps: stats-log22-rule-count-by-program.txt
-build/plot-log22-rules.ps: stats-log22-rule-count-by-program.txt
-build/plot-action-distribution.ps: build/action-distribution.txt
-build/plot-full-ruleset-vs-minimum-ruleset.ps: build/stats-normal-full-ruleset-vs-minimum-ruleset.txt \
-									build/stats-shuffle-full-ruleset-vs-minimum-ruleset.txt \
-									build/stats-reverse-full-ruleset-vs-minimum-ruleset.txt
-build/plot-normal-and-reverse-relative-to-shuffle.ps: build/stats-normal-shuffle-reverse-factor.txt
-
-# Duplicated dependencies; make doesn't seem to rebuild properly when there are multiple wildcard dependencies.  Poo.
-build/plot-cached-discarded-factor.pdf: build/stats-cached-discarded-factor.txt
-build/plot-normal-shuffle-reverse.pdf: build/stats-normal.txt build/stats-shuffle.txt build/stats-reverse.txt
-build/plot-normal-shuffle-factor.pdf: build/stats-normal-shuffle-reverse-factor.txt 
-build/plot-normal-reverse-factor.pdf: build/stats-normal-shuffle-reverse-factor.txt
-build/plot-normal-filesize-numlines-factor.pdf: build/stats-normal-filesize-numlines-factor.txt
-build/plot-normal-filesize-numlines.pdf: build/stats-normal.txt file-sizes.txt wc.txt
-build/plot-log22-distribution-by-rule.pdf: stats-log22-distribution-by-rule.txt
-build/plot-log22-distribution-versus-rule-count.pdf: stats-log22-rule-count-by-program.txt
-build/plot-hits.pdf: stats-hits.txt
-build/plot-hits-high.pdf: stats-hits.txt
-build/plot-hits-middle.pdf: stats-hits.txt
-build/plot-hits-low.pdf: stats-hits.txt
-build/plot-log22-log-lines.pdf: stats-log22-rule-count-by-program.txt
-build/plot-log22-rules.pdf: stats-log22-rule-count-by-program.txt
-build/plot-action-distribution.pdf: build/action-distribution.txt
-build/plot-full-ruleset-vs-minimum-ruleset.pdf: build/stats-normal-full-ruleset-vs-minimum-ruleset.txt \
-									build/stats-shuffle-full-ruleset-vs-minimum-ruleset.txt \
-									build/stats-reverse-full-ruleset-vs-minimum-ruleset.txt
-build/plot-normal-and-reverse-relative-to-shuffle.pdf: build/stats-normal-shuffle-reverse-factor.txt
-
 build/plot-%.ps: graphs/plot-%.gpi
 	cd graphs && gnuplot "../$<" || (rm -f "../$@"; false)
 
