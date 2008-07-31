@@ -3,13 +3,13 @@
 all: logparser.pdf
 
 logparser.pdf: logparser.deps logparser-*.tex \
-				logparser-bibliography.bib logparser-bibliography-style.bst
+		logparser-bibliography.bib logparser-bibliography-style.bst
 
 %.pdf: %.tex
 	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@"
 
 logparser.dvi: logparser.deps logparser-*.tex \
-				logparser-bibliography.bib logparser-bibliography-style.bst
+		logparser-bibliography.bib logparser-bibliography-style.bst
 
 %.dvi: %.tex
 	make build PROGRAM="latex" SOURCE="$<" DEST="$@"
@@ -26,7 +26,7 @@ logparser.ps: logparser.dvi
 run_latex:
 	("${PROGRAM}" -interaction=nonstopmode "${SOURCE}" || rm -f "${DEST}") | tee "${DEST}.out";
 	[ -f "${DEST}" ]
-	# Run bibtex if necessary; latex will pick up the new information on the 
+	# Run bibtex if necessary; latex will pick up the new information on the
 	# next run, and on the third run will properly resolve \cite commands.
 	if grep -q "Warning: Citation .* on page .* undefined" "${DEST}.out"; then \
 		bibtex $$( basename "${SOURCE}" .tex ) || rm -f "${DEST}"; \
@@ -121,21 +121,20 @@ build_loop:
 
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
-logparser.deps: \
-				build/stats-cached-discarded-include-for-graph.tex			\
-				build/stats-normal-filesize-line-count-include.tex			\
-				build/stats-normal-shuffle-reverse-include.tex				\
-				build/restriction-table-include.tex							\
-				\
-				build/logparser-flow-chart-part-1.pdf						\
-				build/logparser-flow-chart-part-1.ps						\
-				build/logparser-flow-chart-part-2.pdf						\
-				build/logparser-flow-chart-part-2.ps						\
-				build/plot-mails-received.ps								\
-				build/plot-mails-received.pdf								\
-				build/mails-received-include-for-graph.tex					\
-				build/full-ruleset-vs-minimum-ruleset-include.tex			\
-				build/timing-run-include.tex
+logparser.deps: build/stats-cached-discarded-include-for-graph.tex	\
+		build/stats-normal-filesize-line-count-include.tex	\
+		build/stats-normal-shuffle-reverse-include.tex		\
+		build/restriction-table-include.tex			\
+		\
+		build/logparser-flow-chart-part-1.pdf			\
+		build/logparser-flow-chart-part-1.ps			\
+		build/logparser-flow-chart-part-2.pdf			\
+		build/logparser-flow-chart-part-2.ps			\
+		build/plot-mails-received.ps				\
+		build/plot-mails-received.pdf				\
+		build/mails-received-include-for-graph.tex		\
+		build/full-ruleset-vs-minimum-ruleset-include.tex	\
+		build/timing-run-include.tex
 	touch "$@"
 
 # Additional logparser.deps dependencies are included from Makefile.deps-pdf 
@@ -230,9 +229,13 @@ build/stats-normal-line-count-stddev-other.txt: build/stats-normal-filesize-numl
 	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
 	echo "Row: Number of lines vs. parsing time (all other logs)" >> "$@"
 
-build/stats-normal-filesize-line-count-include.tex: \
-		build/stats-normal-filesize-stddev.txt build/stats-normal-filesize-stddev-22_62-68.txt build/stats-normal-filesize-stddev-other.txt \
-		build/stats-normal-line-count-stddev.txt build/stats-normal-line-count-stddev-22_62-68.txt build/stats-normal-line-count-stddev-other.txt
+build/stats-normal-filesize-line-count-include.tex: 			\
+		build/stats-normal-filesize-stddev.txt			\
+		build/stats-normal-filesize-stddev-22_62-68.txt		\
+		build/stats-normal-filesize-stddev-other.txt 		\
+		build/stats-normal-line-count-stddev.txt		\
+		build/stats-normal-line-count-stddev-22_62-68.txt	\
+		build/stats-normal-line-count-stddev-other.txt
 	perl mk-stats-cached-discarded-include $^ | sed -e 's/\\%//g' > "$@" || (rm -f "$@"; false)
 
 # Normal/shuffle/reverse ratios: stddev, mean, etc.
@@ -260,9 +263,13 @@ build/stats-normal-reverse-stddev-other.txt: build/stats-normal-shuffle-reverse-
 	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
 	echo "Row: Reverse (all other logs)" >> "$@"
 
-build/stats-normal-shuffle-reverse-include.tex: \
-		build/stats-normal-shuffle-stddev.txt build/stats-normal-shuffle-stddev-22_62-68.txt build/stats-normal-shuffle-stddev-other.txt \
-		build/stats-normal-reverse-stddev.txt build/stats-normal-reverse-stddev-22_62-68.txt build/stats-normal-reverse-stddev-other.txt
+build/stats-normal-shuffle-reverse-include.tex: 		\
+		build/stats-normal-shuffle-stddev.txt		\
+		build/stats-normal-shuffle-stddev-22_62-68.txt	\
+		build/stats-normal-shuffle-stddev-other.txt 	\
+		build/stats-normal-reverse-stddev.txt		\
+		build/stats-normal-reverse-stddev-22_62-68.txt	\
+		build/stats-normal-reverse-stddev-other.txt
 	perl mk-stats-cached-discarded-include $^ > "$@" || (rm -f "$@"; false)
 
 build/restriction-table-include.tex: db.full-run.sq3
@@ -281,9 +288,10 @@ build/mails-received-weekdays-stats.txt: mails-received.txt
 	awk '((NR % 7) != 2) && ((NR % 7) != 3) { print $$2 }' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: Week days" >> "$@"
 
-build/mails-received-include-for-graph.tex: build/mails-received-stats.txt			\
-											build/mails-received-weekdays-stats.txt	\
-											build/mails-received-weekends-stats.txt
+build/mails-received-include-for-graph.tex: 		\
+		build/mails-received-stats.txt		\
+		build/mails-received-weekdays-stats.txt	\
+		build/mails-received-weekends-stats.txt
 	perl mk-stats-cached-discarded-include $^ > "$@"
 	sed -i -e 's/\\%//g' "$@" || (rm -f "$@"; false)
 
@@ -342,9 +350,9 @@ parse-stats:
 
 # Cleanup.
 clean:
-	rm -f *.acn *.acr *.alg *.aux *.bbl *.blg *.cbk *.cit *.deps *.dvi \
-			*.glg *.glo *.gls *.idx *.ist *.lof *.log *.lot *.old *.out \
-			*.pdf *.ps *.toc
+	rm -f	*.acn *.acr *.alg *.aux *.bbl *.blg *.cbk *.cit *.deps *.dvi \
+		*.glg *.glo *.gls *.idx *.ist *.lof *.log *.lot *.old *.out \
+		*.pdf *.ps *.toc
 
 realclean: veryclean
 veryclean: clean
