@@ -1,5 +1,4 @@
 load "plot-defaults-pdf.gpi"
-set terminal pdf monochrome dashed size 4.6,2.6
 
 set xlabel "Action"
 set ylabel "Number of rules"
