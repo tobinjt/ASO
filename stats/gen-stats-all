@@ -4,33 +4,33 @@ set -u -e
 
 # Start by doing a straight test run, to get a baseline idea of parsing speed.
 
-full_run_dir="/home/tobinjt/stats-full-run"
-mkdir "$full_run_dir"
+full_run_dir="/home/tobinjt/results/results-full-run"
+mkdir -p "$full_run_dir"
 cp -p ../sql/db.maximum-ruleset.sq3 ../sql/db.sq3
-perl ../logparser/logparser --year 2007 --skip_inserting_results --out-statefile "$full_run_dir/state-some" --individual-state-files --timing-data "$full_run_dir/timing-some" $( < ../logparser/logs-some ) 2> "$full_run_dir/warnings-some"
+perl ../logparser/logparser --year 2007 --skip_inserting_results --out-statefile "$full_run_dir/state" --individual-state-files --timing-data "$full_run_dir/timing" $( < ../logparser/logs-some ) 2> "$full_run_dir/warnings"
 
 # Now do all the combinations.
-LOGPARSER_SWITCHES="  --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/stats--insert_results--cache_compiled_regexes--normal_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
-LOGPARSER_SWITCHES="  --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/stats--insert_results--cache_compiled_regexes--normal_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
-LOGPARSER_SWITCHES="  --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/stats--insert_results--cache_compiled_regexes--reverse_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
-LOGPARSER_SWITCHES="  --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/stats--insert_results--cache_compiled_regexes--reverse_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
-LOGPARSER_SWITCHES="  --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/stats--insert_results--cache_compiled_regexes--shuffle_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
-LOGPARSER_SWITCHES="  --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/stats--insert_results--cache_compiled_regexes--shuffle_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
-LOGPARSER_SWITCHES=" --discard_compiled_regex --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/stats--insert_results--discard_compiled_regexes--normal_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
-LOGPARSER_SWITCHES=" --discard_compiled_regex --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/stats--insert_results--discard_compiled_regexes--normal_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
-LOGPARSER_SWITCHES=" --discard_compiled_regex --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/stats--insert_results--discard_compiled_regexes--reverse_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
-LOGPARSER_SWITCHES=" --discard_compiled_regex --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/stats--insert_results--discard_compiled_regexes--reverse_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
-LOGPARSER_SWITCHES=" --discard_compiled_regex --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/stats--insert_results--discard_compiled_regexes--shuffle_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
-LOGPARSER_SWITCHES=" --discard_compiled_regex --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/stats--insert_results--discard_compiled_regexes--shuffle_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
-LOGPARSER_SWITCHES="--skip_inserting_results  --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/stats--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
-LOGPARSER_SWITCHES="--skip_inserting_results  --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/stats--skip_inserting_results--cache_compiled_regexes--normal_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
-LOGPARSER_SWITCHES="--skip_inserting_results  --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/stats--skip_inserting_results--cache_compiled_regexes--reverse_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
-LOGPARSER_SWITCHES="--skip_inserting_results  --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/stats--skip_inserting_results--cache_compiled_regexes--reverse_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
-LOGPARSER_SWITCHES="--skip_inserting_results  --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/stats--skip_inserting_results--cache_compiled_regexes--shuffle_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
-LOGPARSER_SWITCHES="--skip_inserting_results  --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/stats--skip_inserting_results--cache_compiled_regexes--shuffle_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
-LOGPARSER_SWITCHES="--skip_inserting_results --discard_compiled_regex --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/stats--skip_inserting_results--discard_compiled_regexes--normal_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
-LOGPARSER_SWITCHES="--skip_inserting_results --discard_compiled_regex --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/stats--skip_inserting_results--discard_compiled_regexes--normal_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
-LOGPARSER_SWITCHES="--skip_inserting_results --discard_compiled_regex --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/stats--skip_inserting_results--discard_compiled_regexes--reverse_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
-LOGPARSER_SWITCHES="--skip_inserting_results --discard_compiled_regex --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/stats--skip_inserting_results--discard_compiled_regexes--reverse_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
-LOGPARSER_SWITCHES="--skip_inserting_results --discard_compiled_regex --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/stats--skip_inserting_results--discard_compiled_regexes--shuffle_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
-LOGPARSER_SWITCHES="--skip_inserting_results --discard_compiled_regex --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/stats--skip_inserting_results--discard_compiled_regexes--shuffle_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES="  --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/results/results--insert_results--cache_compiled_regexes--normal_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
+LOGPARSER_SWITCHES="  --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/results/results--insert_results--cache_compiled_regexes--normal_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES="  --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/results/results--insert_results--cache_compiled_regexes--reverse_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
+LOGPARSER_SWITCHES="  --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/results/results--insert_results--cache_compiled_regexes--reverse_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES="  --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/results/results--insert_results--cache_compiled_regexes--shuffle_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
+LOGPARSER_SWITCHES="  --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/results/results--insert_results--cache_compiled_regexes--shuffle_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES=" --discard_compiled_regex --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/results/results--insert_results--discard_compiled_regexes--normal_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
+LOGPARSER_SWITCHES=" --discard_compiled_regex --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/results/results--insert_results--discard_compiled_regexes--normal_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES=" --discard_compiled_regex --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/results/results--insert_results--discard_compiled_regexes--reverse_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
+LOGPARSER_SWITCHES=" --discard_compiled_regex --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/results/results--insert_results--discard_compiled_regexes--reverse_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES=" --discard_compiled_regex --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/results/results--insert_results--discard_compiled_regexes--shuffle_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
+LOGPARSER_SWITCHES=" --discard_compiled_regex --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/results/results--insert_results--discard_compiled_regexes--shuffle_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results  --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/results/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results  --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/results/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results  --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/results/results--skip_inserting_results--cache_compiled_regexes--reverse_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results  --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/results/results--skip_inserting_results--cache_compiled_regexes--reverse_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results  --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/results/results--skip_inserting_results--cache_compiled_regexes--shuffle_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results  --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/results/results--skip_inserting_results--cache_compiled_regexes--shuffle_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results --discard_compiled_regex --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/results/results--skip_inserting_results--discard_compiled_regexes--normal_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results --discard_compiled_regex --sort_rules=normal" bash ../stats/gen-stats "/home/tobinjt/results/results--skip_inserting_results--discard_compiled_regexes--normal_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results --discard_compiled_regex --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/results/results--skip_inserting_results--discard_compiled_regexes--reverse_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results --discard_compiled_regex --sort_rules=reverse" bash ../stats/gen-stats "/home/tobinjt/results/results--skip_inserting_results--discard_compiled_regexes--reverse_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results --discard_compiled_regex --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/results/results--skip_inserting_results--discard_compiled_regexes--shuffle_ordering--maximum_ruleset" ../sql/db.maximum-ruleset.sq3
+LOGPARSER_SWITCHES="--skip_inserting_results --discard_compiled_regex --sort_rules=shuffle" bash ../stats/gen-stats "/home/tobinjt/results/results--skip_inserting_results--discard_compiled_regexes--shuffle_ordering--minimum_ruleset" ../sql/db.minimum-ruleset.sq3

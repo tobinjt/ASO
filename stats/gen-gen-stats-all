@@ -22,8 +22,8 @@ set -u -e
 
 # Start by doing a straight test run, to get a baseline idea of parsing speed.
 
-full_run_dir="/home/tobinjt/stats-full-run"
-mkdir "$full_run_dir"
+full_run_dir="/home/tobinjt/results/results-full-run"
+mkdir -p "$full_run_dir"
 cp -p ../sql/db.maximum-ruleset.sq3 ../sql/db.sq3
 perl ../logparser/logparser --year 2007 --skip_inserting_results --out-statefile "$full_run_dir/state" --individual-state-files --timing-data "$full_run_dir/timing" $( < ../logparser/logs-some ) 2> "$full_run_dir/warnings"
 
@@ -120,7 +120,7 @@ sub print_commands {
     foreach my $result (@{$all_results}) {
         my $options   = join q{ }, @{$result->{options}};
         my $arguments = join q{ }, @{$result->{arguments}};
-        my $directory = join q{--}, q{/home/tobinjt/stats}, @{$result->{directory}};
+        my $directory = join q{--}, q{/home/tobinjt/results/results}, @{$result->{directory}};
         print $fh <<"COMMAND";
 LOGPARSER_SWITCHES="$options" bash ../stats/gen-stats "$directory" $arguments
 COMMAND
