@@ -6,13 +6,13 @@ logparser.pdf: logparser.deps logparser-*.tex \
 		logparser-bibliography.bib logparser-bibliography-style.bst
 
 %.pdf: %.tex
-	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@"
+	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@" BASENAME=$$( basename "$<" .tex )
 
 logparser.dvi: logparser.deps logparser-*.tex \
 		logparser-bibliography.bib logparser-bibliography-style.bst
 
 %.dvi: %.tex
-	make build PROGRAM="latex" SOURCE="$<" DEST="$@"
+	make build PROGRAM="latex"    SOURCE="$<" DEST="$@" BASENAME=$$( basename "$<" .tex )
 
 # This isn't a wildcard rule because it screws up later postscript wildcard 
 # rules.
@@ -29,16 +29,22 @@ run_latex:
 	# Run bibtex if necessary; latex will pick up the new information on the
 	# next run, and on the third run will properly resolve \cite commands.
 	if grep -q "Warning: Citation .* on page .* undefined" "${DEST}.out"; then \
-		bibtex $$( basename "${SOURCE}" .tex ) || rm -f "${DEST}"; \
+		bibtex "${BASENAME}" || rm -f "${DEST}" "${BASENAME}.bbl"; \
+		touch build/ran_bibtex; \
 	fi
+	touch "${BASENAME}.cite.old"
+	grep '^\\citation' "${BASENAME}.aux" > "${BASENAME}.cite"
+	if ! cmp -s "${BASENAME}.cite.old" "${BASENAME}.cite"; then \
+		bibtex "${BASENAME}" || rm -f "${DEST}" "${BASENAME}.bbl"; \
+		touch build/ran_bibtex; \
+	fi
+	cp "${BASENAME}.cite" "${BASENAME}.cite.old"
 	[ -f "${DEST}" ]
-	AUX=$$( basename "${SOURCE}" .tex ); \
-	AUX="$$AUX.aux"; \
-	touch "$$AUX.old"; \
-	if [ -s "$$AUX.old" ]; then \
-		diff -u "$$AUX.old" "$$AUX"; \
-	fi; \
-	cp "$$AUX" "$$AUX.old"
+	touch "${BASENAME}.aux.old";
+	if [ -s "${BASENAME}.aux.old" ]; then \
+		diff -u "${BASENAME}.aux.old" "${BASENAME}.aux" || true; \
+	fi;
+	cp "${BASENAME}.aux" "${BASENAME}.aux.old"
 
 run_makeindex:
 	set -e; \
@@ -52,7 +58,7 @@ run_makeindex:
 # build is a directory so it needs to be marked as PHONY.
 .PHONY: build
 build:
-	make build_loop PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
+	make build_loop
 	make check-contractions
 	grep Overfull "${DEST}.out" || true
 	grep -A 1 "LaTeX Warning: " "${DEST}.out" || true
@@ -61,22 +67,18 @@ build:
 	grep '!!' *.glg *.alg || true;
 	# Finally done.
 	chktex -I0 -q *.tex
-	@echo "XXX THINK ABOUT GREPPING OUT CITATION LINES FROM *.aux TO DETERMINE"
-	@echo "XXX WHEN THE LIST OF REFERENCES CHANGES SO BIBTEX SHOULD BE RERUN."
-	@echo "XXX MAKE %.bbl DEPEND ON %.aux SO LATEX WILL BE RUN FIRST IF NECESSARY"
 
 build_run:
-	make run_latex PROGRAM="${PROGRAM}" SOURCE="${SOURCE}" DEST="${DEST}"
+	make run_latex
 	# Rebuild the glossary; see foo.glg for errors
 	# Rebuild the acronym list; see foo.alg for errors
 	# Sometimes glossary produces an empty foo.glo, though I cannot figure out why.
 	# The source files change between different runs; it seems that including
 	# the output files causes the source files to change on the next latex run.
 	# I haven't investigated much further, I don't really care.
-	BASE=$$( basename "${SOURCE}" .tex ); \
-	make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.glg" OUTPUT="$$BASE.gls" INPUT="$$BASE.glo"; \
-	make run_makeindex STYLE="$$BASE.ist" LOG="$$BASE.alg" OUTPUT="$$BASE.acn" INPUT="$$BASE.acr"
-	# The next time lates is run is will include the new glossary and acronyms 
+	make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.glg" OUTPUT="${BASENAME}.gls" INPUT="${BASENAME}.glo"
+	make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.alg" OUTPUT="${BASENAME}.acn" INPUT="${BASENAME}.acr"
+	# The next time latex is run is will include the new glossary and acronyms 
 	# if they've changed.
 
 build_loop:
@@ -102,7 +104,7 @@ build_loop:
 	set -e; \
 	for i in $$( seq 1 4 ); do \
 		echo "iteration $$i starting"; \
-		make $$( echo "$$SOURCE" | sed -e 's/tex$$/bbl/' ); \
+		make "${BASENAME}.bbl"; \
 		if [ -e build/ran_bibtex ]; then \
 			echo "ran_bibtex exists, running latex again"; \
 			make build_run; \
@@ -320,7 +322,8 @@ build/timing-run-include.tex: stats-full-run/timing
 	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes, %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@" || (rm -f "$@"; false)
 
 # Build stats from the directory created by gen-stats.
-# XXX THIS DOESN'T HAPPEN AUTOMATICALLY - MAKE THAT WORK.
+# NOTE: this won't happen automatically when the directory's contents change;
+# you'll need to run make realclean or delete results manually.
 build/stats-normal.txt: stats-normal
 	DIR="$<" FILE="$@" make parse-stats
 
