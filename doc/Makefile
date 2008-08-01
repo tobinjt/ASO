@@ -372,6 +372,7 @@ check-contractions:
 
 todo:
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib || true
+	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | wc
 
 2up: logparser-2up.ps logparser-2up.pdf
 

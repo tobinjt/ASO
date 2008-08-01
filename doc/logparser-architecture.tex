@@ -1,5 +1,7 @@
 \section{Parser Architecture}
 
+XXX REWRITE AS NECESSARY TO MERGE AND SUPPLEMENT THE EXISTING CONTENT\@.
+
 \subsection{Parser design}
 
 \label{parser design}
@@ -23,14 +25,14 @@ three parts:
         been identified by the rules: actions modify data structures,
         handle complications, and cause data to be saved to the database.
         The actions perform the work of reconstructing the journey a mail
-        takes through Postfix.  Full details of actions can be found in
-        \sectionref{actions-in-detail} and \sectionref{adding new actions}
-        XXX IMPROVE THIS SENTENCE\@.
+        takes through Postfix.  Details of the actions available in the
+        Postfix parser can be found in \sectionref{actions-in-detail}, and
+        \sectionref{adding new actions} describes the process of adding new
+        actions.
 
     \item [framework] The framework is responsible for loading rules,
         managing data structures, finding the rule which matches each log
-        line, invoking the correct action, etc\@.  The framework provides
-        the structure which actions and rules plug into.  The framework is
+        line, invoking the correct action, etc\@.  The framework is
         described in detail in \sectionref{framework}.  XXX EXTEND
         FRAMEWORK SECTION IF NECESSARY\@.
 
@@ -62,24 +64,20 @@ provided by the framework, freeing them to concentrate on the task of
 accurately reconstructing each mail's journey through Postfix and dealing
 with the complications described in \sectionref{additional complications}.
 
-XXX CLARIFY THE SENTENCE STARTING WITH ``Although this may see'' IN THE
-NEXT PARAGRAPH\@.
-
 Separating the rules from the actions and framework makes it possible to
-parse new log lines without modifying the core parsing algorithm.  Although
-this may seem like a trivial point, is it substantially more difficult to
-understand a program's entire parsing algorithm, identify the correct
-location to change and make the appropriate changes, versus adding a new
-rule with the action to invoke, a \regex{} to match the log lines, and the
-specification of the data to extract.  Bear in mind that the changes must
-be made without adversely affecting existing parsing, particularly as there
-may be edge cases which are not immediately obvious.\footnote{See
-\sectionref{yet-more-aborted-delivery-attempts} for a complication which
-occurs only four times in \numberOFlogFILES{} log files tested.}  Requiring
+parse new log lines without modifying the core parsing algorithm.  Adding a
+new rule with the action to invoke and a \regex{} to match the log lines is
+trivial in comparison to understanding a program's entire parsing
+algorithm, identifying the correct location to change and making the
+appropriate changes.  Bear in mind that the changes must be made without
+adversely affecting existing parsing, particularly as there may be edge
+cases which are not immediately obvious ---
+\sectionref{yet-more-aborted-delivery-attempts} describes a complication which
+occurs only four times in \numberOFlogFILES{} log files tested.  Requiring
 changes to the parser's code also complicates upgrades, as the changes must
 be preserved during the upgrade, and may clash with changes made by the
-developer.\footnote{See \sectionref{adding new actions} for how to add new
-actions}  \parsername{} allows the user to add new rules to the database
+developer (\sectionref{adding new actions} describes safely adding new
+actions).  \parsername{} allows the user to add new rules to the database
 without changing the parsing algorithm, unless the new log lines to be
 parsed require functionality not already provided by the algorithm.  If the
 new log lines do require new functionality, new actions can be added to the
@@ -87,32 +85,37 @@ parser without modifying existing actions or other parts of the algorithm;
 only in the rare case that the new actions require support from other
 sections of the code will more extensive changes be required.
 
-XXX CHANGE THIS\@; THE PARSER DESIGN IS NOVEL, DO NOT STRESS THE SIMILARITY
-TOO MUCH\@.
-
 There is some similarity between the parser's design and William Wood's
 \ATN{}~\cite{atns, nlpip}, a tool used in Computational Linguistics for
 creating grammars to parse or generate sentences.  The resemblance between
 \ATN{} and the parser is accidental, but it is interesting how two
 apparently different approaches share an underlying separation of concerns;
 this appears to be a natural division of responsibility and functionality.
+\Tableref{Similarities between ATN and this architecture} shows the
+similarities.
 
 % Do Not Reformat!
 
-\begin{tabular}[]{lll}
-    \textit{\ATN{}\/}   & \textit{Parser\/} & \textit{Similarity\/}     \\
-    Networks            & Algorithm         & Determines the sequence 
-                                              of transitions            \\
-                        &                   & or actions which 
-                                              constitutes a valid       \\
-                        &                   & input.                    \\
-    Transitions         & Actions           & Save data and impose
-                                              conditions the            \\
-                        &                   & input must meet to be
-                                              considered valid.         \\
-    Abbreviations       & Rules             & Responsible for 
-                                              classifying input.        \\
-\end{tabular}
+\begin{table}[ht]
+    \caption{Similarities between ATN and this architecture}
+    \empty{}\label{Similarities between ATN and this architecture}
+    \begin{tabular}[]{lll}
+        \tableline{}
+        \ATN{}          & Architecture  & Similarity                \\
+        \tableline{}
+        Networks        & Algorithm     & Determines the sequence 
+                                        of transitions              \\
+                        &               & or actions which 
+                                        constitutes a valid  input. \\
+        Transitions     & Actions       & Save data and impose
+                                        conditions the              \\
+                        &               & input must meet to be
+                                        considered valid.           \\
+        Abbreviations   & Rules         & Responsible for 
+                                        classifying input.          \\
+        \tableline{}
+    \end{tabular}
+\end{table}
 
 \subsection{Rule characteristics}
 

@@ -330,9 +330,11 @@ protect the administrator in as far as is reasonable, e.g.\ the restriction
 because the parameter it checks (the hostname given in the HELO command) is
 under the control of the remote client.  Despite this, it is possible for
 the administrator to make catastrophic mistakes, e.g.\ rejecting mail for
-all users --- the administrator must be cognisant of the ramifications of
-their configuration changes.  XXX UNIX DOES NOT STOP YOU DOING STUPID
-THINGS BECAUSE THAT WOULD ALSO STOP YOU DOING CLEVER THINGS\@.
+all users --- the administrator must be cognisant of the effects of their
+configuration changes.  This is similar to one of UNIX's design
+philosophies: \textit{``UNIX was not designed to stop its users from doing
+stupid things, as that would also stop them from doing clever things''\/}
+--- Doug Gwyn~\cite{unix-philosophy}.
 
 Postfix uses simple lookup tables as the deciding factor when evaluating
 some restrictions, e.g.\ in the example restriction below\newline
