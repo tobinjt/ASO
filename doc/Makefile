@@ -127,7 +127,6 @@ logparser.deps: build/stats-cached-discarded-include-for-graph.tex	\
 		build/stats-normal-filesize-line-count-include.tex	\
 		build/stats-normal-shuffle-reverse-include.tex		\
 		build/restriction-table-include.tex			\
-		\
 		build/logparser-flow-chart-part-1.pdf			\
 		build/logparser-flow-chart-part-1.ps			\
 		build/logparser-flow-chart-part-2.pdf			\
@@ -136,7 +135,8 @@ logparser.deps: build/stats-cached-discarded-include-for-graph.tex	\
 		build/plot-mails-received.pdf				\
 		build/mails-received-include-for-graph.tex		\
 		build/full-ruleset-vs-minimum-ruleset-include.tex	\
-		build/timing-run-include.tex
+		build/timing-run-include.tex				\
+		build/sample-sql-output-include.tex
 	touch "$@"
 
 # Additional logparser.deps dependencies are included from Makefile.deps-pdf 
@@ -320,6 +320,10 @@ full-ruleset-vs-minimum-ruleset:
 
 build/timing-run-include.tex: stats-full-run/timing
 	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes, %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@" || (rm -f "$@"; false)
+
+build/sample-sql-output-include.tex: db.full-run.sq3 generate-sample-sql-output.sql
+	sqlite3.6.0 -separator ' & ' -bail "$<" < "generate-sample-sql-output.sql" > "$@" || ( rm -f "$@"; false )
+	sed -i -e 's/, [^ ]\+ / /' -e 's/\(\.[0-9]\{3\}\)[0-9]*%$$/\1%/' -e 's/$$/ \\\\/' -e 's/_/\\_/g' -e 's/%/\\%/g' "$@"
 
 # Build stats from the directory created by gen-stats.
 # NOTE: this won't happen automatically when the directory's contents change;

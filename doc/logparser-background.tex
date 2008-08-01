@@ -37,14 +37,11 @@ SELECT name, description, restriction_name, hits_total
     ORDER BY hits_total DESC;
 \end{verbatim}
 
-If the database supports sub-selects percentages can be obtained:
-\footnote{\SQL{} note: $||$ is the concatenation operator in SQLite3; if
-the database containing the extracted data does not support this syntax,
-then simply remove `` $||$ '$\%$'\hspace{1ex}'' from the query --- the
-results will be the same, just slightly less visually pleasing.}
+If the database supports sub-selects percentages can be obtained for the
+top ten restrictions:
 
 \begin{verbatim}
-SELECT name, description, restriction_name, hits_total,
+SELECT restriction_name, hits_total,
         (hits_total * 100.0 /
             (SELECT SUM(hits_total)
                 FROM rules
@@ -53,10 +50,23 @@ SELECT name, description, restriction_name, hits_total,
         ) || '%' AS percentage
     FROM rules
     WHERE postfix_action = 'REJECTED'
-    ORDER BY hits_total DESC;
+    ORDER BY hits_total DESC
+    LIMIT 10;
 \end{verbatim}
 
-XXX GIVE SAMPLE OUTPUT FOR THE SNIPPET ABOVE\@.
+\begin{table}[ht]
+    \caption{Truncated sample output from SQL query showing percentages}
+    \empty{}\label{Truncated sample output from SQL query showing
+    percentages}
+    \begin{tabular}[]{lrr}
+        \tableline{}
+        Restriction & Number of hits & Percentage of hits \\
+        \tableline{}%
+        \input{build/sample-sql-output-include.tex}
+        \tableline{}
+    \end{tabular}
+\end{table}
+
 
 Another example is determining which restrictions are not effective: this
 shows which restrictions had fewer than 100 hits on the last log file
