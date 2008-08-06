@@ -1,3 +1,5 @@
+# Cause make to delete output files when a command fails.
+.DELETE_ON_ERROR:
 # NOTE: you need to run 'make clean' between running 'make foo.dvi' and 'make
 # foo.pdf', otherwise latex will only be run once and it will get very confused.
 all: logparser.pdf
@@ -325,35 +327,8 @@ build/sample-sql-output-include.tex: db.full-run.sq3 generate-sample-sql-output.
 	sqlite3.6.0 -separator ' & ' -bail "$<" < "generate-sample-sql-output.sql" > "$@" || ( rm -f "$@"; false )
 	sed -i -e 's/, [^ ]\+ / /' -e 's/\(\.[0-9]\{3\}\)[0-9]*%$$/\1%/' -e 's/$$/ \\\\/' -e 's/_/\\_/g' -e 's/%/\\%/g' "$@"
 
-# Build stats from the directory created by gen-stats.
-# NOTE: this won't happen automatically when the directory's contents change;
-# you'll need to run make realclean or delete results manually.
-build/stats-normal.txt: stats-normal
-	DIR="$<" FILE="$@" make parse-stats
-
-build/stats-cached.txt: stats-normal
-	DIR="$<" FILE="$@" make parse-stats
-
-build/stats-shuffle.txt: stats-shuffle
-	DIR="$<" FILE="$@" make parse-stats
-
-build/stats-reverse.txt: stats-reverse
-	DIR="$<" FILE="$@" make parse-stats
-
-build/stats-discarded.txt: stats-normal-regex
-	DIR="$<" FILE="$@" make parse-stats
-
-build/stats-normal-minimum-ruleset.txt: stats-normal-minimum-ruleset
-	DIR="$<" FILE="$@" make parse-stats
-
-build/stats-reverse-minimum-ruleset.txt: stats-reverse-minimum-ruleset
-	DIR="$<" FILE="$@" make parse-stats
-
-build/stats-shuffle-minimum-ruleset.txt: stats-shuffle-minimum-ruleset
-	DIR="$<" FILE="$@" make parse-stats
-
-parse-stats:
-	perl ../stats/parse-stats "${DIR}" > "${FILE}" || (rm -f "${FILE}"; false)
+build/results-%: results/stats-%
+	perl ../stats/parse-stats "$<" > "$@"
 
 # Cleanup.
 clean:
