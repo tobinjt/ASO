@@ -38,7 +38,10 @@ SELECT name, description, restriction_name, hits_total
 \end{verbatim}
 
 If the database supports sub-selects percentages can be obtained for the
-top ten restrictions:
+top ten restrictions (sample output shown in \tableref{Truncated sample
+output from SQL query showing percentages}):
+
+XXX GENERATE THE FOLLOWING FROM THE SQL FILE FED TO SQLITE\@.
 
 \begin{verbatim}
 SELECT restriction_name, hits_total,
@@ -62,7 +65,7 @@ SELECT restriction_name, hits_total,
         \tableline{}
         Restriction & Number of hits & Percentage of hits \\
         \tableline{}%
-        \input{build/sample-sql-output-include.tex}
+        \input{build/include-sample-sql-output}
         \tableline{}
     \end{tabular}
 \end{table}
@@ -434,7 +437,7 @@ Some widely deployed policy servers:
 
         \begin{table}[ht]
             \caption{Summary of rejections}\label{Summary of rejections}
-            \input{build/restriction-table-include.tex}
+            \input{build/include-restriction-summary-table}
         \end{table}
 
     \item Using a scoring system such as

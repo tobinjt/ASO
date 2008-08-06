@@ -6,5 +6,5 @@ set output "../build/plot-cached-discarded-factor.ps"
 # Add a % sign on the y axis
 set format y "% g%%"
 
-plot "../build/stats-cached-discarded-factor.txt" using 1 with lines \
+plot "../build/stats-cached-regexes-vs-discarded-regexes" using 1 with lines \
     title "Increase in parsing time when not caching compiled regexes"

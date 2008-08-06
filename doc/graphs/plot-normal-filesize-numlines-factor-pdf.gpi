@@ -4,7 +4,7 @@ set xlabel "Log file"
 set ylabel "Ratio of line count / 10000 and file size in MB\n to parsing time in seconds"
 set output "../build/plot-normal-filesize-numlines-factor.pdf"
 
-plot "../build/stats-normal-filesize-numlines-factor.txt" using 1 with lines \
+plot "../build/stats-input-size-vs-parsing-time" using 1 with lines \
         title "Ratio of line count (/ 10000) to parsing time in seconds", \
-    "../build/stats-normal-filesize-numlines-factor.txt" using 2 with lines \
+    "../build/stats-input-size-vs-parsing-time" using 2 with lines \
         title "Ratio of file size in MB to parsing time in seconds"

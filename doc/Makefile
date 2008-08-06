@@ -4,13 +4,13 @@
 # foo.pdf', otherwise latex will only be run once and it will get very confused.
 all: logparser.pdf
 
-logparser.pdf: logparser.deps logparser-*.tex \
+logparser.pdf: logparser.deps logparser.pdf.deps logparser-*.tex \
 		logparser-bibliography.bib logparser-bibliography-style.bst
 
 %.pdf: %.tex
 	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@" BASENAME=$$( basename "$<" .tex )
 
-logparser.dvi: logparser.deps logparser-*.tex \
+logparser.dvi: logparser.deps logparser.ps.deps logparser-*.tex \
 		logparser-bibliography.bib logparser-bibliography-style.bst
 
 %.dvi: %.tex
@@ -131,22 +131,18 @@ logparser.deps: \
 		build/include-cached-regexes-vs-discarded-regexes.tex		\
 		build/include-restriction-summary-table.tex			\
 		build/include-mails-received-table.tex				\
-		build/logparser-flow-chart-part-1.pdf			\
-		build/logparser-flow-chart-part-1.ps			\
-		build/logparser-flow-chart-part-2.pdf			\
-		build/logparser-flow-chart-part-2.ps			\
-		build/full-ruleset-vs-minimum-ruleset-include.tex	\
-		build/timing-run-include.tex				\
-		build/sample-sql-output-include.tex
+		build/include-full-ruleset-vs-minimum-ruleset.tex		\
+		build/include-sample-sql-output.tex				\
+		build/include-timing-run-duration.tex
 	touch "$@"
 
-# Additional logparser.deps dependencies are included from Makefile.deps-pdf 
-# and -ps; -ps is generated from -pdf, to avoid duplication.  Make will 
-# automatically rebuild -ps if it is missing or out of date.
+# Additional dependencies are included from Makefile.deps-pdf and -ps; -ps is
+# generated from -pdf, to avoid duplication.  Make will automatically rebuild
+# -ps if it is missing or out of date.
 include Makefile.deps-pdf
 include Makefile.deps-ps
 Makefile.deps-ps: Makefile.deps-pdf
-	sed -e 's/\.pdf/.ps/' "$<" > "$@"
+	sed -e 's/\.pdf/.ps/g' "$<" > "$@"
 
 build/logparser-flow-chart-%.pdf: logparser-flow-chart-%.dot
 	dot -o "$@" -Tpdf -x "$<"
@@ -166,6 +162,9 @@ build/plot-%.pdf: graphs/plot-%-pdf.gpi
 graphs/plot-%-pdf.gpi: graphs/plot-%.gpi
 	sed -e 's/ps/pdf/g' "$<" > "$@"
 
+build/results-%: results/results-%
+	perl ../stats/parse-stats "$<" > "$@"
+
 build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset--comment-stripped: build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset
 	sed -e '/^#/d' "$<" > "$@"
 
@@ -180,18 +179,20 @@ build/stats-normal-and-reverse-vs-shuffle: build/results--skip_inserting_results
 	paste -d ' ' $^ | awk 'BEGIN { print "# normal/shuffle reverse/shuffle"; } $$1 != "#" {print ($$3 * 100 / $$9), " ", ($$15 * 100 / $$9) }' > "$@"
 
 # Log 22 stats
-stats-log22-distribution-by-rule.txt:
-	sqlite3 -separator ' ' ../sql/db.sq3 "select hits, program from rules where hits > 0 order by hits;" | nl > "$@"
+build/stats-log22-distribution-by-rule: db.log22.sq3
+	sqlite3 -separator ' ' "$<" "select hits, program from rules where hits > 0 order by hits;" > "$@.tmp"
+	nl < "$@.tmp" > "$@"
+	rm -f "$@.tmp"
 
-stats-log22-rule-count-by-program.txt:
-	sqlite3 -separator ' ' ../sql/db.sq3 "select sum(hits), count(*), program from rules group by program;" | awk '$$1 > 0 { print }' | sed -e 's,postfix/,,' | nl > "$@"
+build/stats-log22-rule-count-by-program: db.log22.sq3
+	sqlite3 -separator ' ' "$<" "select sum(hits), count(*), program from rules group by program;" | awk '$$1 > 0 { print }' | sed -e 's,postfix/,,' | nl > "$@"
 
-stats-hits.txt: db.full-run.sq3
+build/stats-hits: db.full-run.sq3
 	sqlite3 -separator ' ' "$<" "select hits_total from rules order by hits_total;" > "$@.tmp"
 	nl "$@.tmp" > "$@"
-	rm "$@.tmp"
+	rm -f "$@.tmp"
 
-# Stats for cached/discarded regexs: all logs, logs 22,62-68, all other logs.
+# Stats for cached regexes vs discarded regexs: all logs, logs 22,62-68, all other logs.
 build/stats-cached-regexes-vs-discarded-regexes-stddev: build/stats-cached-regexes-vs-discarded-regexes
 	perl ../stats/stddev "$<" > "$@"
 	echo "Row: All logs" >> "$@"
@@ -299,20 +300,23 @@ build/include-mails-received-table.tex:				\
 	perl mk-stats-cached-discarded-include $^ > "$@"
 	sed -i -e 's/\\%//g' "$@"
 
-build/action-distribution.txt: db.full-run.sq3
+# Distribution of actions to rules.
+build/stats-action-distribution: db.full-run.sq3
 	sqlite3 -separator ' ' "$<" 'select action, count(action) from rules group by action order by count(action);' > "$@.tmp"
-	nl "$@.tmp" > "$@" || (rm -f "$@"; false)
+	nl "$@.tmp" > "$@"
+	rm -f "$@.tmp"
 
-build/full-ruleset-vs-minimum-ruleset-include.tex: build/stats-normal-full-ruleset-vs-minimum-ruleset.txt
+# Minimum ruleset vs maximum ruleset.
+build/include-full-ruleset-vs-minimum-ruleset.tex: build/stats-normal-full-ruleset-vs-minimum-ruleset
 	awk 'BEGIN { sum = 0; } { sum += $$2; } END { printf "%.3g\\%%%%\n", sum / NR }' "$<" > "$@" || (rm -f "$@"; false)
 
-build/stats-normal-full-ruleset-vs-minimum-ruleset.txt: build/stats-normal.txt build/stats-normal-minimum-ruleset.txt
+build/stats-normal-full-ruleset-vs-minimum-ruleset: build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--minimum_ruleset
 	INPUT="$^" OUTPUT="$@" make full-ruleset-vs-minimum-ruleset
 
-build/stats-reverse-full-ruleset-vs-minimum-ruleset.txt: build/stats-reverse.txt build/stats-reverse-minimum-ruleset.txt
+build/stats-reverse-full-ruleset-vs-minimum-ruleset: build/results--skip_inserting_results--cache_compiled_regexes--reverse_ordering--maximum_ruleset build/results--skip_inserting_results--cache_compiled_regexes--reverse_ordering--minimum_ruleset
 	INPUT="$^" OUTPUT="$@" make full-ruleset-vs-minimum-ruleset
 
-build/stats-shuffle-full-ruleset-vs-minimum-ruleset.txt: build/stats-shuffle.txt build/stats-shuffle-minimum-ruleset.txt
+build/stats-shuffle-full-ruleset-vs-minimum-ruleset: build/results--skip_inserting_results--cache_compiled_regexes--shuffle_ordering--maximum_ruleset build/results--skip_inserting_results--cache_compiled_regexes--shuffle_ordering--minimum_ruleset
 	INPUT="$^" OUTPUT="$@" make full-ruleset-vs-minimum-ruleset
 
 full-ruleset-vs-minimum-ruleset:
@@ -320,15 +324,14 @@ full-ruleset-vs-minimum-ruleset:
 	# multiple file names
 	paste -d ' ' ${INPUT} | awk '!/^#/ { print $$1, (($$3 -$$9) * 100 / $$9)}' > "${OUTPUT}"
 
-build/timing-run-include.tex: stats-full-run/timing
+# Duration of the full run parsing all 93 log files.
+build/include-timing-run-duration.tex: results/stats-full-run/timing
 	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes, %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@" || (rm -f "$@"; false)
 
-build/sample-sql-output-include.tex: db.full-run.sq3 generate-sample-sql-output.sql
+# Sample output from an SQL query.
+build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql
 	sqlite3.6.0 -separator ' & ' -bail "$<" < "generate-sample-sql-output.sql" > "$@" || ( rm -f "$@"; false )
 	sed -i -e 's/, [^ ]\+ / /' -e 's/\(\.[0-9]\{3\}\)[0-9]*%$$/\1%/' -e 's/$$/ \\\\/' -e 's/_/\\_/g' -e 's/%/\\%/g' "$@"
-
-build/results-%: results/results-%
-	perl ../stats/parse-stats "$<" > "$@"
 
 # Cleanup.
 clean:
@@ -338,7 +341,7 @@ clean:
 
 realclean: veryclean
 veryclean: clean
-	rm -f build/stats-* build/include-* build/plot-*
+	rm -f build/stats-* build/include-* build/plot-* build/logparser-flow-chart*
 
 check:
 	chktex -I0 -q *.tex

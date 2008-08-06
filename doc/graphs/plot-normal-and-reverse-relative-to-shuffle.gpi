@@ -6,5 +6,5 @@ set output "../build/plot-normal-and-reverse-relative-to-shuffle.ps"
 # Add a % sign on the y axis
 set format y "% g%%"
 
-plot "../build/stats-normal-shuffle-reverse-factor.txt" using 1 with lines title "Normal", \
-    "../build/stats-normal-shuffle-reverse-factor.txt" using 2 with lines title "Reverse"
+plot "../build/stats-normal-and-reverse-vs-shuffle" using 1 with lines title "Normal", \
+    "../build/stats-normal-and-reverse-vs-shuffle" using 2 with lines title "Reverse"

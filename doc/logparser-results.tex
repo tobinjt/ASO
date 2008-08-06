@@ -28,8 +28,8 @@ other graphs do not contribute to these figures.
 \showgraph{build/plot-mails-received}{Number of mails received via SMTP per
 day}{Mails received per day}
 
-\showtable{build/mails-received-include-for-graph}{Number of mails received
-via SMTP per day}{Number of mails received per day: statistics}
+\showtable{build/include-mails-received-table}{Number of mails received via
+SMTP per day}{Number of mails received per day: statistics}
 
 When generating the timing data used in this section, \numberOFlogFILES{}
 log files (totaling 10.08 GB, \numberOFlogLINEShuman{} log lines) were each
@@ -51,9 +51,9 @@ with:
 \end{tabular}
 
 Parsing all \numberOFlogFILES{} log files in one run took
-\input{build/timing-run-include.tex}.  The computer was dedicated to the
-task of gathering statistics from test runs, and was not used for any other
-purpose while test runs were ongoing; any services not necessary for
+\input{build/include-timing-run-duration}.  The computer was dedicated to
+the task of gathering statistics from test runs, and was not used for any
+other purpose while test runs were ongoing; any services not necessary for
 running the tests were disabled.
 
 \subsubsection{Architecture Scalability: Input Size}
@@ -76,9 +76,9 @@ than average size (shown in \graphref{parsing time vs file size vs number
 of lines graph}); this is explained fully in \sectionref{Explaining the
 peaks in log file size}.  
 
-\showtable{build/stats-normal-filesize-line-count-include}{Ratio of file
-size and number of lines to parsing time}{parsing time vs file size vs
-number lines factor table}
+\showtable{build/include-file-size-and-number-of-lines-vs-parsing-time}{Ratio
+of file size and number of lines to parsing time}{parsing time vs file size
+vs number lines factor table}
 
 \showgraph{build/plot-normal-filesize-numlines}{Parsing time, file size,
 and number of lines}{parsing time vs file size vs number of lines graph}
@@ -195,7 +195,7 @@ and programming.
 relative to shuffled ordering}{Parsing time relative to shuffled ordering
 graph}
 
-\showtable{build/stats-normal-shuffle-reverse-include}{Parsing time
+\showtable{build/include-normal-and-reverse-vs-shuffle}{Parsing time
 relative to shuffled ordering}{Parsing time relative to shuffled ordering
 table}
 
@@ -243,16 +243,15 @@ ruleset over minimum ruleset} that the increased number of rules noticeably
 increases parsing time with reverse ordering, and to a lesser extent with
 shuffled ordering.  The normal ordering (where are the most frequently
 matching rules are tried first) shows a mean increase of
-\input{build/full-ruleset-vs-minimum-ruleset-include.tex} in parsing time
-for a \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.
-Log files 22 and 62--68 show much smaller increases for shuffled and
-reversed ordering than other log files do, because the majority of log
-lines in those log files are parsed by Postfix components with a small
-number of parsing rules, so removing unnecessary rules has little effect on
-the total number of rules used.  These results show that the architecture
-scales very well as the number of rules increases, and that optimally
-sorting the rules is an important optimisation contributing to this
-scalability.
+\input{build/include-full-ruleset-vs-minimum-ruleset} in parsing time for a
+\numberOFrulesMAXIMUMpercentage{} increase in the number of rules.  Log
+files 22 and 62--68 show much smaller increases for shuffled and reversed
+ordering than other log files do, because the majority of log lines in
+those log files are parsed by Postfix components with a small number of
+parsing rules, so removing unnecessary rules has little effect on the total
+number of rules used.  These results show that the architecture scales very
+well as the number of rules increases, and that optimally sorting the rules
+is an important optimisation contributing to this scalability.
 
 \subsubsection{Caching compiled regexs}
 
@@ -296,7 +295,7 @@ increases in parsing time when not caching compiled \regexes{} for
 different groups of log files are summarised in \tableref{Increase in
 parsing time when not caching compiled regexes table}.
 
-\showtable{build/stats-cached-discarded-include-for-graph} {Increase in
+\showtable{build/include-cached-regexes-vs-discarded-regexes} {Increase in
 parsing time when not caching compiled regexes} {Increase in parsing time
 when not caching compiled regexes table}
 
