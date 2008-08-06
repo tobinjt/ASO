@@ -125,17 +125,16 @@ build_loop:
 
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
-logparser.deps: build/stats-cached-discarded-include-for-graph.tex	\
-		build/stats-normal-filesize-line-count-include.tex	\
-		build/stats-normal-shuffle-reverse-include.tex		\
-		build/restriction-table-include.tex			\
+logparser.deps: \
+		build/include-file-size-and-number-of-lines-vs-parsing-time.tex	\
+		build/include-normal-and-reverse-vs-shuffle.tex 		\
+		build/include-cached-regexes-vs-discarded-regexes.tex		\
+		build/include-restriction-summary-table.tex			\
+		build/include-mails-received-table.tex				\
 		build/logparser-flow-chart-part-1.pdf			\
 		build/logparser-flow-chart-part-1.ps			\
 		build/logparser-flow-chart-part-2.pdf			\
 		build/logparser-flow-chart-part-2.ps			\
-		build/plot-mails-received.ps				\
-		build/plot-mails-received.pdf				\
-		build/mails-received-include-for-graph.tex		\
 		build/full-ruleset-vs-minimum-ruleset-include.tex	\
 		build/timing-run-include.tex				\
 		build/sample-sql-output-include.tex
@@ -167,18 +166,18 @@ build/plot-%.pdf: graphs/plot-%-pdf.gpi
 graphs/plot-%-pdf.gpi: graphs/plot-%.gpi
 	sed -e 's/ps/pdf/g' "$<" > "$@"
 
-build/stats-normal-stripped.txt: build/stats-normal.txt
+build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset--comment-stripped: build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset
 	sed -e '/^#/d' "$<" > "$@"
 
 # Factored stats for graphs.
-build/stats-normal-filesize-numlines-factor.txt: build/stats-normal-stripped.txt wc.txt file-sizes.txt
-	paste -d ' ' $^ | awk 'BEGIN { print "# line-count file-size"; }; $$1 != "#" {print ($$3 * 10 * 1000 / $$8), " ", ($$3 * 1000 * 1000 / $$11) }' > "$@"
+build/stats-input-size-vs-parsing-time: build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset--comment-stripped wc.txt file-sizes.txt
+	paste -d ' ' $^ | awk 'BEGIN { print "# line-count file-size"; }; {print ($$3 * 10 * 1000 / $$8), " ", ($$3 * 1000 * 1000 / $$11) }' > "$@"
 
-build/stats-cached-discarded-factor.txt: build/stats-cached.txt build/stats-discarded.txt
+build/stats-cached-regexes-vs-discarded-regexes: build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset build/results--skip_inserting_results--discard_compiled_regexes--normal_ordering--maximum_ruleset
 	paste -d ' ' $^ | awk '$$1 != "#" {print ($$9 * 100 / $$3) - 100 }' > "$@"
 
-build/stats-normal-shuffle-reverse-factor.txt: build/stats-normal.txt build/stats-shuffle.txt build/stats-reverse.txt
-	paste -d ' ' $^ | awk '$$1 != "#" {print ($$3 * 100 / $$9), " ", ($$15 * 100 / $$9) }' > "$@"
+build/stats-normal-and-reverse-vs-shuffle: build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset build/results--skip_inserting_results--cache_compiled_regexes--shuffle_ordering--maximum_ruleset build/results--skip_inserting_results--cache_compiled_regexes--reverse_ordering--maximum_ruleset
+	paste -d ' ' $^ | awk 'BEGIN { print "# normal/shuffle reverse/shuffle"; } $$1 != "#" {print ($$3 * 100 / $$9), " ", ($$15 * 100 / $$9) }' > "$@"
 
 # Log 22 stats
 stats-log22-distribution-by-rule.txt:
@@ -193,111 +192,112 @@ stats-hits.txt: db.full-run.sq3
 	rm "$@.tmp"
 
 # Stats for cached/discarded regexs: all logs, logs 22,62-68, all other logs.
-build/stats-cached-discarded-stats.txt: build/stats-cached-discarded-factor.txt
+build/stats-cached-regexes-vs-discarded-regexes-stddev: build/stats-cached-regexes-vs-discarded-regexes
 	perl ../stats/stddev "$<" > "$@"
 	echo "Row: All logs" >> "$@"
 
-build/stats-cached-discarded-stats-fast.txt: build/stats-cached-discarded-factor.txt
+build/stats-cached-regexes-vs-discarded-regexes-logs-22-62-68-stddev: build/stats-cached-regexes-vs-discarded-regexes
 	sed -e '1,21d; 23,61d; 69,$$d;' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: Logs 22 and 62--68" >> "$@"
 
-build/stats-cached-discarded-stats-slow.txt: build/stats-cached-discarded-factor.txt
+build/stats-cached-regexes-vs-discarded-regexes-other-logs-stddev: build/stats-cached-regexes-vs-discarded-regexes
 	sed -e '22d; 62,68d;' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: All logs except 22 and 62--68" >> "$@"
 
-build/stats-cached-discarded-include-for-graph.tex: build/stats-cached-discarded-stats.txt build/stats-cached-discarded-stats-fast.txt build/stats-cached-discarded-stats-slow.txt 
-	perl mk-stats-cached-discarded-include $^ > "$@" || (rm -f "$@"; false)
+build/include-cached-regexes-vs-discarded-regexes.tex: build/stats-cached-regexes-vs-discarded-regexes-stddev build/stats-cached-regexes-vs-discarded-regexes-logs-22-62-68-stddev build/stats-cached-regexes-vs-discarded-regexes-other-logs-stddev
+	perl mk-stats-cached-discarded-include $^ > "$@"
 
 # File size and number of lines ratios: stddev, mean, etc.
-build/stats-normal-filesize-stddev.txt: build/stats-normal-filesize-numlines-factor.txt
+build/stats-file-size-vs-parsing-time-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$2}' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: File size vs. parsing time" >> "$@"
 
-build/stats-normal-filesize-stddev-22_62-68.txt: build/stats-normal-filesize-numlines-factor.txt
+build/stats-file-size-vs-parsing-time-logs-22-62-68-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$2}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
 	echo "Row: File size vs. parsing time (logs 22, 62--68)" >> "$@"
 
-build/stats-normal-filesize-stddev-other.txt: build/stats-normal-filesize-numlines-factor.txt
+build/stats-file-size-vs-parsing-time-other-logs-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
 	echo "Row: File size vs. parsing time (all other logs)" >> "$@"
 
-build/stats-normal-line-count-stddev.txt: build/stats-normal-filesize-numlines-factor.txt
+build/stats-number-of-lines-vs-parsing-time-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: Number of lines vs. parsing time" >> "$@"
 
-build/stats-normal-line-count-stddev-22_62-68.txt: build/stats-normal-filesize-numlines-factor.txt
+build/stats-number-of-lines-vs-parsing-time-logs-22-62-68-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
 	echo "Row: Number of lines vs. parsing time (logs 22, 62--68)" >> "$@"
 
-build/stats-normal-line-count-stddev-other.txt: build/stats-normal-filesize-numlines-factor.txt
+build/stats-number-of-lines-vs-parsing-time-other-logs-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
 	echo "Row: Number of lines vs. parsing time (all other logs)" >> "$@"
 
-build/stats-normal-filesize-line-count-include.tex: 			\
-		build/stats-normal-filesize-stddev.txt			\
-		build/stats-normal-filesize-stddev-22_62-68.txt		\
-		build/stats-normal-filesize-stddev-other.txt 		\
-		build/stats-normal-line-count-stddev.txt		\
-		build/stats-normal-line-count-stddev-22_62-68.txt	\
-		build/stats-normal-line-count-stddev-other.txt
-	perl mk-stats-cached-discarded-include $^ | sed -e 's/\\%//g' > "$@" || (rm -f "$@"; false)
+build/include-file-size-and-number-of-lines-vs-parsing-time.tex: 			\
+		build/stats-file-size-vs-parsing-time-stddev				\
+		build/stats-file-size-vs-parsing-time-logs-22-62-68-stddev		\
+		build/stats-file-size-vs-parsing-time-other-logs-stddev 		\
+		build/stats-number-of-lines-vs-parsing-time-stddev			\
+		build/stats-number-of-lines-vs-parsing-time-logs-22-62-68-stddev	\
+		build/stats-number-of-lines-vs-parsing-time-other-logs-stddev
+	perl mk-stats-cached-discarded-include $^ | sed -e 's/\\%//g' > "$@"
 
 # Normal/shuffle/reverse ratios: stddev, mean, etc.
-build/stats-normal-shuffle-stddev.txt: build/stats-normal-shuffle-reverse-factor.txt
+build/stats-normal-vs-shuffle-stddev: build/stats-normal-and-reverse-vs-shuffle
 	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: Normal (all logs)" >> "$@"
 
-build/stats-normal-shuffle-stddev-22_62-68.txt: build/stats-normal-shuffle-reverse-factor.txt
+build/stats-normal-vs-shuffle-logs-22-62-68-stddev: build/stats-normal-and-reverse-vs-shuffle
 	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
 	echo "Row: Normal (logs 22, 62--68)" >> "$@"
 
-build/stats-normal-shuffle-stddev-other.txt: build/stats-normal-shuffle-reverse-factor.txt
+build/stats-normal-vs-shuffle-other-logs-stddev: build/stats-normal-and-reverse-vs-shuffle
 	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
 	echo "Row: Normal (all other logs)" >> "$@"
 
-build/stats-normal-reverse-stddev.txt: build/stats-normal-shuffle-reverse-factor.txt
+build/stats-reverse-vs-shuffle-stddev: build/stats-normal-and-reverse-vs-shuffle
 	awk '!/#/ {print $$2}' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: Reverse (all logs)" >> "$@"
 
-build/stats-normal-reverse-stddev-22_62-68.txt: build/stats-normal-shuffle-reverse-factor.txt
+build/stats-reverse-vs-shuffle-logs-22-62-68-stddev: build/stats-normal-and-reverse-vs-shuffle
 	awk '!/#/ {print $$2}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
 	echo "Row: Reverse (logs 22, 62--68)" >> "$@"
 
-build/stats-normal-reverse-stddev-other.txt: build/stats-normal-shuffle-reverse-factor.txt
+build/stats-reverse-vs-shuffle-other-logs-stddev: build/stats-normal-and-reverse-vs-shuffle
 	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
 	echo "Row: Reverse (all other logs)" >> "$@"
 
-build/stats-normal-shuffle-reverse-include.tex: 		\
-		build/stats-normal-shuffle-stddev.txt		\
-		build/stats-normal-shuffle-stddev-22_62-68.txt	\
-		build/stats-normal-shuffle-stddev-other.txt 	\
-		build/stats-normal-reverse-stddev.txt		\
-		build/stats-normal-reverse-stddev-22_62-68.txt	\
-		build/stats-normal-reverse-stddev-other.txt
+build/include-normal-and-reverse-vs-shuffle.tex: 			\
+		build/stats-normal-vs-shuffle-stddev			\
+		build/stats-normal-vs-shuffle-logs-22-62-68-stddev	\
+		build/stats-normal-vs-shuffle-other-logs-stddev		\
+		build/stats-reverse-vs-shuffle-stddev			\
+		build/stats-reverse-vs-shuffle-logs-22-62-68-stddev	\
+		build/stats-reverse-vs-shuffle-other-logs-stddev	\
+		
 	perl mk-stats-cached-discarded-include $^ > "$@" || (rm -f "$@"; false)
 
-build/restriction-table-include.tex: db.full-run.sq3
-	perl mk-restriction-summary-table > "$@" || (rm -f "$@"; false)
+build/include-restriction-summary-table.tex: db.full-run.sq3
+	perl mk-restriction-summary-table > "$@"
 
 # Number of mails received per day
-build/mails-received-stats.txt: mails-received.txt
+build/stats-mails-received-stddev: mails-received.txt
 	awk '{print $$2}' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: All days" >> "$@"
 
-build/mails-received-weekends-stats.txt: mails-received.txt
+build/stats-mails-received-weekends-stddev: mails-received.txt
 	awk '((NR % 7) == 2) || ((NR % 7) == 3) { print $$2 }' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: Weekend days" >> "$@"
 
-build/mails-received-weekdays-stats.txt: mails-received.txt
+build/stats-mails-received-weekdays-stddev: mails-received.txt
 	awk '((NR % 7) != 2) && ((NR % 7) != 3) { print $$2 }' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: Week days" >> "$@"
 
-build/mails-received-include-for-graph.tex: 		\
-		build/mails-received-stats.txt		\
-		build/mails-received-weekdays-stats.txt	\
-		build/mails-received-weekends-stats.txt
+build/include-mails-received-table.tex:				\
+		build/stats-mails-received-stddev		\
+		build/stats-mails-received-weekends-stddev	\
+		build/stats-mails-received-weekdays-stddev
 	perl mk-stats-cached-discarded-include $^ > "$@"
-	sed -i -e 's/\\%//g' "$@" || (rm -f "$@"; false)
+	sed -i -e 's/\\%//g' "$@"
 
 build/action-distribution.txt: db.full-run.sq3
 	sqlite3 -separator ' ' "$<" 'select action, count(action) from rules group by action order by count(action);' > "$@.tmp"
@@ -327,7 +327,7 @@ build/sample-sql-output-include.tex: db.full-run.sq3 generate-sample-sql-output.
 	sqlite3.6.0 -separator ' & ' -bail "$<" < "generate-sample-sql-output.sql" > "$@" || ( rm -f "$@"; false )
 	sed -i -e 's/, [^ ]\+ / /' -e 's/\(\.[0-9]\{3\}\)[0-9]*%$$/\1%/' -e 's/$$/ \\\\/' -e 's/_/\\_/g' -e 's/%/\\%/g' "$@"
 
-build/results-%: results/stats-%
+build/results-%: results/results-%
 	perl ../stats/parse-stats "$<" > "$@"
 
 # Cleanup.
@@ -338,7 +338,7 @@ clean:
 
 realclean: veryclean
 veryclean: clean
-	rm -f build/*
+	rm -f build/stats-* build/include-* build/plot-*
 
 check:
 	chktex -I0 -q *.tex

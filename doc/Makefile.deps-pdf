@@ -5,7 +5,8 @@ logparser.deps: build/plot-cached-discarded-factor.pdf			\
 		build/plot-hits.pdf					\
 		build/plot-action-distribution.pdf			\
 		build/plot-full-ruleset-vs-minimum-ruleset.pdf		\
-		build/plot-normal-and-reverse-relative-to-shuffle.pdf
+		build/plot-normal-and-reverse-relative-to-shuffle.pdf	\
+		build/plot-mails-received.pdf
 
 build/plot-cached-discarded-factor.pdf: build/stats-cached-discarded-factor.txt
 build/plot-normal-shuffle-reverse.pdf: build/stats-normal.txt build/stats-shuffle.txt build/stats-reverse.txt
