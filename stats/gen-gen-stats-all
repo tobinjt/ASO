@@ -122,7 +122,11 @@ sub print_commands {
         my $arguments = join q{ }, @{$result->{arguments}};
         my $directory = join q{--}, q{/home/tobinjt/results/results}, @{$result->{directory}};
         print $fh <<"COMMAND";
-LOGPARSER_SWITCHES="$options" bash ../stats/gen-stats "$directory" $arguments
+if [ ! -d "$directory" ]; then
+    echo LOGPARSER_SWITCHES="$options" bash ../stats/gen-stats "$directory" $arguments
+else
+    echo "Skipping existing directory $directory"
+fi
 COMMAND
     }
 }
