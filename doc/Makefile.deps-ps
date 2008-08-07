@@ -9,5 +9,5 @@ logparser.ps.deps:								\
 			build/graph-input-size-vs-parsing-time.ps		\
 			build/graph-input-size-vs-parsing-time-ratio.ps		\
 			build/graph-mails-received.ps				\
-			build/graph-normal-and-reverse-vs-shuffle.ps
+			build/graph-optimal-and-reverse-vs-shuffle.ps
 	touch "$@"

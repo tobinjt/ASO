@@ -89,7 +89,7 @@ non-boolean parameter.
 
 =item sort_rules
 
-How to sort the rules returned from the database: C<normal> (most efficient,
+How to sort the rules returned from the database: C<optimal> (most efficient,
 default), C<shuffle>, or C<reverse> (least efficient).  Useful for checking new
 rules: you should obtain the same results regardless of the order the rules are
 tried in; if not you have overlapping rules and need to rationalise your rule
@@ -225,7 +225,7 @@ sub options_for_new {
     my $year = $date[5] + 1900;
     return {
         optional_argument   => {
-            sort_rules              => q{normal},
+            sort_rules              => q{optimal},
             username                => undef,
             password                => undef,
             year                    => $year,
@@ -1967,7 +1967,7 @@ sub load_rules {
     }
 
     $self->{sort_rules} = lc $self->{sort_rules};
-    if ($self->{sort_rules} eq q{normal}) {
+    if ($self->{sort_rules} eq q{optimal}) {
         # Normal, most efficient order.
         @results = sort { $b->{hits} <=> $a->{hits} } @results;
     } elsif ($self->{sort_rules} eq q{reverse}) {
@@ -1978,7 +1978,7 @@ sub load_rules {
         @results = shuffle(@results);
     } else {
         croak qq{load_rules: unknown sort_rules value: $self->{sort_rules}\n},
-            qq{Valid values: normal, reverse, shuffle\n};
+            qq{Valid values: optimal, reverse, shuffle\n};
     }
 
     # Regardless of the sort order we always respect priority; not doing so

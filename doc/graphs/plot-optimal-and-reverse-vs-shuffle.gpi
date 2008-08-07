@@ -1,0 +1,10 @@
+load "plot-defaults-ps.gpi"
+
+set xlabel "Log file"
+set ylabel "Parsing time relative to shuffled ordering"
+set output "../build/graph-optimal-and-reverse-vs-shuffle.ps"
+# Add a % sign on the y axis
+set format y "% g%%"
+
+plot "../build/stats-optimal-and-reverse-vs-shuffle" using 1 with lines title "Optimal", \
+    "../build/stats-optimal-and-reverse-vs-shuffle" using 2 with lines title "Reverse"

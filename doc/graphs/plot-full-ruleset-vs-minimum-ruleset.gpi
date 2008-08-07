@@ -8,6 +8,6 @@ set output "../build/graph-full-ruleset-vs-minimum-ruleset.ps"
 set format y "% g%%"
 set yrange [-2:*]
 
-plot "../build/stats-normal-full-ruleset-vs-minimum-ruleset" using 2 with lines title "Normal ordering", \
+plot "../build/stats-optimal-full-ruleset-vs-minimum-ruleset" using 2 with lines title "Optimal ordering", \
     "../build/stats-shuffle-full-ruleset-vs-minimum-ruleset" using 2 with lines title "Shuffled ordering", \
     "../build/stats-reverse-full-ruleset-vs-minimum-ruleset" using 2 with lines title "Reversed ordering"

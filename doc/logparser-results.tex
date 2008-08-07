@@ -4,9 +4,6 @@ XXX NEED AN INTRODUCTION\@.
 
 XXX COMPARE SAVING RESULTS TO RAM DISK VERSUS SAVING TO HARD DISK\@.
 
-XXX CHANGE normal TO optimal IN ORDERING STUFF, INCLUDING IN GRAPH CAPTIONS
-AND AXIS LABELS\@.
-
 XXX USE THE DATA COLLECTED ABOUT NUMBER OF RULES TRIED\@.  MAYBE INCLUDE IN
 ORDERINGS SECTION\@?
 
@@ -169,7 +166,7 @@ rule orderings:
 
 \begin{description}
 
-    \item [normal]  The most optimal order, according to the hypothesis:
+    \item [optimal]  The most optimal order, according to the hypothesis:
         rules which match most often will be tried first.
 
     \item [shuffle] This is intended to represent a randomly ordered rule
@@ -184,17 +181,17 @@ rule orderings:
 \end{description}
 
 \Graphref{Parsing time relative to shuffled ordering graph} shows the
-parsing times of normal and reverse orderings relative to shuffled
+parsing times of optimal and reverse orderings relative to shuffled
 ordering; the mean relative parsing times for different groupings of log
 files are given in \tableref{Parsing time relative to shuffled ordering
 table}.  Overall this optimisation provides a modest but worthwhile
 performance increase of approximately 10\%, for a small investment in time
 and programming.
 
-\showgraph{build/graph-normal-and-reverse-vs-shuffle}{Parsing time relative
+\showgraph{build/graph-optimal-and-reverse-vs-shuffle}{Parsing time relative
 to shuffled ordering}{Parsing time relative to shuffled ordering graph}
 
-\showtable{build/include-normal-and-reverse-vs-shuffle}{Parsing time
+\showtable{build/include-optimal-and-reverse-vs-shuffle}{Parsing time
 relative to shuffled ordering}{Parsing time relative to shuffled ordering
 table}
 
@@ -229,7 +226,7 @@ files, to improve its parsing and ensure it correctly parses logs generated
 by later Postfix versions.  A second set of statistics was generated using
 the minimum ruleset and compared to the statistics generated using the full
 ruleset: the percentage parsing time increase when using the full ruleset
-instead of the minimal ruleset for normal, shuffled and reversed orderings
+instead of the minimal ruleset for optimal, shuffled and reversed orderings
 is shown in \graphref{Percentage parsing time increase of maximum ruleset
 over minimum ruleset}.
 
@@ -240,7 +237,7 @@ time increase of maximum ruleset over minimum ruleset}
 It is clear from \graphref{Percentage parsing time increase of maximum
 ruleset over minimum ruleset} that the increased number of rules noticeably
 increases parsing time with reverse ordering, and to a lesser extent with
-shuffled ordering.  The normal ordering (where are the most frequently
+shuffled ordering.  The optimal ordering (where the most frequently
 matching rules are tried first) shows a mean increase of
 \input{build/include-full-ruleset-vs-minimum-ruleset} in parsing time for a
 \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.  Log

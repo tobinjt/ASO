@@ -48,7 +48,7 @@ my @options = (
         discard_compiled_regexes    => q{--discard_compiled_regex},
     },
     {
-        normal_ordering             => q{--sort_rules=normal},
+        optimal_ordering            => q{--sort_rules=optimal},
         shuffle_ordering            => q{--sort_rules=shuffle},
         reverse_ordering            => q{--sort_rules=reverse},
     },

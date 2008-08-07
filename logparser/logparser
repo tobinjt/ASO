@@ -338,9 +338,9 @@ new rules or the parser itself.
 
 =over 4
 
-=item --sort_rules normal|shuffle|reverse
+=item --sort_rules optimal|shuffle|reverse
 
-Whether to sort the rules for maximum efficiency (normal), minimal efficiency
+Whether to sort the rules for maximum efficiency (optimal), minimal efficiency
 (reverse), or randomly (shuffle).  Run time increases by about 20% when using
 reverse sorting, though it is highly data dependant.  This is useful for
 detecting overlapping rules: you should get exactly the same results in the
