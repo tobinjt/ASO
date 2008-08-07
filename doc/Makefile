@@ -136,13 +136,30 @@ logparser.deps: \
 		build/include-timing-run-duration.tex
 	touch "$@"
 
-# Additional dependencies are included from Makefile.deps-pdf and -ps; -ps is
-# generated from -pdf, to avoid duplication.  Make will automatically rebuild
-# -ps if it is missing or out of date.
-include Makefile.deps-pdf
+# Additional dependencies are included from Makefile.deps-ps and
+# build/Makefile.graph-deps-pdf; which is generated from Makefile.deps-ps, to
+# avoid duplication.  Make will automatically rebuild
+# build/Makefile.graph-deps-pdf if it is missing or out of date.
+include build/Makefile.deps-pdf
 include Makefile.deps-ps
-Makefile.deps-ps: Makefile.deps-pdf
-	sed -e 's/\.pdf/.ps/g' "$<" > "$@"
+build/Makefile.deps-pdf: Makefile.deps-ps
+	sed -e 's/\.ps/.pdf/g' "$<" > "$@"
+
+# Graph dependencies are generated to avoid having to manually update
+# them every time a graph changes.
+include build/Makefile.graph-deps-ps
+include build/Makefile.graph-deps-pdf
+build/Makefile.graph-deps-pdf: build/Makefile.graph-deps-ps
+	sed -e 's/\.ps/.pdf/g' "$<" > "$@"
+
+build/Makefile.graph-deps-ps: graphs/*
+	set -e;											\
+	for file in $^; do									\
+		output=$$( sed -n -e 's!^set output "../\(.*\)"!\1!p' "$$file" );		\
+		if [ -n "$$output" ]; then							\
+			sed -n -e 's!^.*"../\([^"]\+\)" using.*$$!'"$$output"': \1!p' "$$file";	\
+		fi;										\
+	done > "$@"
 
 build/logparser-flow-chart-%.pdf: logparser-flow-chart-%.dot
 	dot -o "$@" -Tpdf -x "$<"
@@ -333,7 +350,8 @@ clean:
 
 realclean: veryclean
 veryclean: clean
-	rm -f build/stats-* build/include-* build/graph-* build/logparser-flow-chart*
+	rm -f	build/stats-* build/include-* build/graph-* \
+		build/logparser-flow-chart* build/Makefile.*
 
 check:
 	chktex -I0 -q *.tex
