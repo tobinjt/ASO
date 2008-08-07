@@ -2,7 +2,7 @@ load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
 set ylabel "Percentage parsing time increase of \nmaximum ruleset over minimum ruleset"
-set output "../build/plot-full-ruleset-vs-minimum-ruleset.ps"
+set output "../build/graph-full-ruleset-vs-minimum-ruleset.ps"
 
 # Add a % sign on the y axis
 set format y "% g%%"

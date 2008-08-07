@@ -2,7 +2,7 @@ load "plot-defaults-ps.gpi"
 
 set xlabel "Rule"
 set ylabel "Number of hits"
-set output "../build/plot-hits.ps"
+set output "../build/graph-hits.ps"
 
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse
@@ -11,4 +11,4 @@ set key top left Left reverse
 set yrange [0:9e6]
 set title "Number of hits"
 
-plot "../stats-hits.txt" using 1:2 title "Number of hits"
+plot "../build/stats-hits" using 1:2 title "Number of hits"

@@ -1,36 +1,25 @@
 # Makefile.deps-ps is created from Makefile.deps-pdf
-logparser.ps.deps:	build/plot-cached-discarded-factor.ps			\
-			build/plot-normal-filesize-numlines-factor.ps		\
-			build/plot-normal-filesize-numlines.ps			\
-			build/plot-hits.ps					\
-			build/plot-action-distribution.ps			\
-			build/plot-full-ruleset-vs-minimum-ruleset.ps		\
-			build/plot-normal-and-reverse-relative-to-shuffle.ps	\
-			build/plot-mails-received.ps				\
+logparser.ps.deps:								\
 			build/logparser-flow-chart-part-1.ps			\
-			build/logparser-flow-chart-part-2.ps
+			build/logparser-flow-chart-part-2.ps			\
+			build/graph-action-distribution.ps			\
+			build/graph-cached-regexes-vs-discarded-regexes.ps	\
+			build/graph-full-ruleset-vs-minimum-ruleset.ps		\
+			build/graph-hits.ps					\
+			build/graph-input-size-vs-parsing-time.ps		\
+			build/graph-input-size-vs-parsing-time-ratio.ps	\
+			build/graph-mails-received.ps				\
+			build/graph-normal-and-reverse-vs-shuffle.ps
 	touch "$@"
 
-build/plot-cached-discarded-factor.ps:			build/stats-cached-regexes-vs-discarded-regexes
-build/plot-normal-shuffle-reverse.ps:			build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset		\
-							build/results--skip_inserting_results--cache_compiled_regexes--shuffle_ordering--maximum_ruleset	\
-							build/results--skip_inserting_results--cache_compiled_regexes--reverse_ordering--maximum_ruleset
-build/plot-normal-shuffle-factor.ps:			build/stats-normal-and-reverse-vs-shuffle
-build/plot-normal-reverse-factor.ps:			build/stats-normal-and-reverse-vs-shuffle
-build/plot-normal-filesize-numlines-factor.ps:		build/stats-input-size-vs-parsing-time
-build/plot-normal-filesize-numlines.ps:		build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset		\
+build/graph-cached-regexes-vs-discarded-regexes.ps:	build/stats-cached-regexes-vs-discarded-regexes
+build/graph-input-size-vs-parsing-time-ratio.ps:	build/stats-input-size-vs-parsing-time
+build/graph-input-size-vs-parsing-time.ps:		build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset		\
 							file-sizes.txt												\
 							wc.txt
-build/plot-log22-distribution-by-rule.ps:		build/stats-log22-distribution-by-rule
-build/plot-log22-distribution-versus-rule-count.ps:	build/stats-log22-rule-count-by-program
-build/plot-hits.ps:					build/stats-hits
-build/plot-hits-high.ps:				build/stats-hits
-build/plot-hits-middle.ps:				build/stats-hits
-build/plot-hits-low.ps:				build/stats-hits
-build/plot-log22-log-lines.ps:				build/stats-log22-rule-count-by-program
-build/plot-log22-rules.ps:				build/stats-log22-rule-count-by-program
-build/plot-action-distribution.ps:			build/stats-action-distribution
-build/plot-full-ruleset-vs-minimum-ruleset.ps:		build/stats-normal-full-ruleset-vs-minimum-ruleset	\
+build/graph-hits.ps:					build/stats-hits
+build/graph-action-distribution.ps:			build/stats-action-distribution
+build/graph-full-ruleset-vs-minimum-ruleset.ps:	build/stats-normal-full-ruleset-vs-minimum-ruleset	\
 							build/stats-shuffle-full-ruleset-vs-minimum-ruleset	\
 							build/stats-reverse-full-ruleset-vs-minimum-ruleset
-build/plot-normal-and-reverse-relative-to-shuffle.ps:	build/stats-normal-and-reverse-vs-shuffle
+build/graph-normal-and-reverse-relative-to-shuffle.ps:	build/stats-normal-and-reverse-vs-shuffle

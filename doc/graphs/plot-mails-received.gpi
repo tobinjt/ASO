@@ -2,7 +2,7 @@ load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
 set ylabel "Number of mails received via SMTP per day"
-set output "../build/plot-mails-received.ps"
+set output "../build/graph-mails-received.ps"
 
 set xtics 0,7
 

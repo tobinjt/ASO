@@ -25,7 +25,7 @@ much larger log files.  Note that \graphref{Mails received per day} and
 mails received by \SMTP{} only; in particular the mail loops noticeable in
 other graphs do not contribute to these figures.
 
-\showgraph{build/plot-mails-received}{Number of mails received via SMTP per
+\showgraph{build/graph-mails-received}{Number of mails received via SMTP per
 day}{Mails received per day}
 
 \showtable{build/include-mails-received-table}{Number of mails received via
@@ -80,10 +80,10 @@ peaks in log file size}.
 of file size and number of lines to parsing time}{parsing time vs file size
 vs number lines factor table}
 
-\showgraph{build/plot-normal-filesize-numlines}{Parsing time, file size,
+\showgraph{build/graph-input-size-vs-parsing-time}{Parsing time, file size,
 and number of lines}{parsing time vs file size vs number of lines graph}
 
-\showgraph{build/plot-normal-filesize-numlines-factor}{Ratio of file size
+\showgraph{build/graph-input-size-vs-parsing-time-ratio}{Ratio of file size
 and number of lines to parsing time}{parsing time vs file size vs number
 lines factor}
 
@@ -191,9 +191,8 @@ table}.  Overall this optimisation provides a modest but worthwhile
 performance increase of approximately 10\%, for a small investment in time
 and programming.
 
-\showgraph{build/plot-normal-and-reverse-relative-to-shuffle}{Parsing time
-relative to shuffled ordering}{Parsing time relative to shuffled ordering
-graph}
+\showgraph{build/graph-normal-and-reverse-vs-shuffle}{Parsing time relative
+to shuffled ordering}{Parsing time relative to shuffled ordering graph}
 
 \showtable{build/include-normal-and-reverse-vs-shuffle}{Parsing time
 relative to shuffled ordering}{Parsing time relative to shuffled ordering
@@ -234,7 +233,7 @@ instead of the minimal ruleset for normal, shuffled and reversed orderings
 is shown in \graphref{Percentage parsing time increase of maximum ruleset
 over minimum ruleset}.
 
-\showgraph{build/plot-full-ruleset-vs-minimum-ruleset}{Percentage parsing
+\showgraph{build/graph-full-ruleset-vs-minimum-ruleset}{Percentage parsing
 time increase of maximum ruleset over minimum ruleset}{Percentage parsing
 time increase of maximum ruleset over minimum ruleset}
 
@@ -277,9 +276,9 @@ Caching compiled \regexes{} is probably the single most effective
 optimisation possible in the parser's implementation, and was quite simple
 to implement.
 
-\showgraph{build/plot-cached-discarded-factor}{Increase in parsing time
-when not caching compiled regexes}{Increase in parsing time when not
-caching compiled regexes graph}
+\showgraph{build/graph-cached-regexes-vs-discarded-regexes}{Increase in
+parsing time when not caching compiled regexes}{Increase in parsing time
+when not caching compiled regexes graph}
 
 Two large dips can be seen in \graphref{Increase in parsing time when not
 caching compiled regexes graph} at log files 22 and 62--68, corresponding
@@ -383,7 +382,7 @@ distribution~\cite{powerlaw} --- it is obvious that a small number of rules
 match the vast majority of the lines, and more than half the rules match
 fewer than 100 times.
 
-\showgraph{build/plot-hits}{Hits per rule}{rule hits graph}
+\showgraph{build/graph-hits}{Hits per rule}{rule hits graph}
 
 Warnings are issued for any log lines which are not parsed; no warnings are
 issued for unparsed log lines while testing with the \numberOFlogFILES{}

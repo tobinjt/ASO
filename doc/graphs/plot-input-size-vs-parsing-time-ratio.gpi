@@ -1,8 +1,8 @@
-load "plot-defaults-pdf.gpi"
+load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
 set ylabel "Ratio of line count / 10000 and file size in MB\n to parsing time in seconds"
-set output "../build/plot-normal-filesize-numlines-factor.pdf"
+set output "../build/graph-input-size-vs-parsing-time-ratio.ps"
 
 plot "../build/stats-input-size-vs-parsing-time" using 1 with lines \
         title "Ratio of line count (/ 10000) to parsing time in seconds", \

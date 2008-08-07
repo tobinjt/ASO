@@ -2,7 +2,7 @@ load "plot-defaults-ps.gpi"
 
 set xlabel "Action"
 set ylabel "Number of rules"
-set output "../build/plot-action-distribution.ps"
+set output "../build/graph-action-distribution.ps"
 
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse

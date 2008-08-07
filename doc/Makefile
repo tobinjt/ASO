@@ -150,17 +150,17 @@ build/logparser-flow-chart-%.pdf: logparser-flow-chart-%.dot
 build/logparser-flow-chart-%.ps: logparser-flow-chart-%.dot
 	dot -o "$@" -Tps -x "$<"
 
-build/plot-%.ps: graphs/plot-%.gpi
-	cd graphs && gnuplot "../$<" || (rm -f "../$@"; false)
+build/graph-%.ps: graphs/plot-%.gpi
+	cd graphs && gnuplot "../$<"
 
-build/plot-%.pdf: graphs/plot-%-pdf.gpi
-	cd graphs && gnuplot "../$<" || (rm -f "../$@"; false)
+build/graph-%.pdf: build/plot-%-pdf.gpi
+	cd build && gnuplot "../$<"
 
 # Stop make deleting the intermediate gnuplot file, because there's no point
 # in recreating it each time make runs.
-.PRECIOUS: graphs/plot-%-pdf.gpi
-graphs/plot-%-pdf.gpi: graphs/plot-%.gpi
-	sed -e 's/ps/pdf/g' "$<" > "$@"
+.PRECIOUS: build/plot-%-pdf.gpi
+build/plot-%-pdf.gpi: graphs/plot-%.gpi
+	sed -e '/^load/s,","../graphs/,' -e 's/ps/pdf/g' "$<" > "$@"
 
 build/results-%: results/results-%
 	perl ../stats/parse-stats "$<" > "$@"
@@ -178,15 +178,7 @@ build/stats-cached-regexes-vs-discarded-regexes: build/results--skip_inserting_r
 build/stats-normal-and-reverse-vs-shuffle: build/results--skip_inserting_results--cache_compiled_regexes--normal_ordering--maximum_ruleset build/results--skip_inserting_results--cache_compiled_regexes--shuffle_ordering--maximum_ruleset build/results--skip_inserting_results--cache_compiled_regexes--reverse_ordering--maximum_ruleset
 	paste -d ' ' $^ | awk 'BEGIN { print "# normal/shuffle reverse/shuffle"; } $$1 != "#" {print ($$3 * 100 / $$9), " ", ($$15 * 100 / $$9) }' > "$@"
 
-# Log 22 stats
-build/stats-log22-distribution-by-rule: db.log22.sq3
-	sqlite3 -separator ' ' "$<" "select hits, program from rules where hits > 0 order by hits;" > "$@.tmp"
-	nl < "$@.tmp" > "$@"
-	rm -f "$@.tmp"
-
-build/stats-log22-rule-count-by-program: db.log22.sq3
-	sqlite3 -separator ' ' "$<" "select sum(hits), count(*), program from rules group by program;" | awk '$$1 > 0 { print }' | sed -e 's,postfix/,,' | nl > "$@"
-
+# Hits per rule.
 build/stats-hits: db.full-run.sq3
 	sqlite3 -separator ' ' "$<" "select hits_total from rules order by hits_total;" > "$@.tmp"
 	nl "$@.tmp" > "$@"
@@ -341,7 +333,7 @@ clean:
 
 realclean: veryclean
 veryclean: clean
-	rm -f build/stats-* build/include-* build/plot-* build/logparser-flow-chart*
+	rm -f build/stats-* build/include-* build/graph-* build/logparser-flow-chart*
 
 check:
 	chktex -I0 -q *.tex

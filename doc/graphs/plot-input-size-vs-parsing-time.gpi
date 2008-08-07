@@ -1,8 +1,8 @@
-load "plot-defaults-pdf.gpi"
+load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
 set ylabel "Parsing time in seconds, file size in MB,\n and number of log lines / 10000"
-set output "../build/plot-normal-filesize-numlines.pdf"
+set output "../build/graph-input-size-vs-parsing-time.ps"
 
 # Put the legend at the top left, Left justified text.
 set key top left Left reverse

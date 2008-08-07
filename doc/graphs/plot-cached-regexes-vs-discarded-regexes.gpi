@@ -2,7 +2,7 @@ load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
 set ylabel "Increase in parsing time when not caching compiled regexes"
-set output "../build/plot-cached-discarded-factor.ps"
+set output "../build/graph-cached-regexes-vs-discarded-regexes.ps"
 # Add a % sign on the y axis
 set format y "% g%%"
 

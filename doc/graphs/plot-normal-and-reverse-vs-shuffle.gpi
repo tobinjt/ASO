@@ -2,7 +2,7 @@ load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
 set ylabel "Parsing time relative to shuffled ordering"
-set output "../build/plot-normal-and-reverse-relative-to-shuffle.ps"
+set output "../build/graph-normal-and-reverse-vs-shuffle.ps"
 # Add a % sign on the y axis
 set format y "% g%%"
 
