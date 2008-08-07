@@ -13,6 +13,14 @@ logparser.pdf: logparser.deps logparser.pdf.deps logparser-*.tex \
 logparser.dvi: logparser.deps logparser.ps.deps logparser-*.tex \
 		logparser-bibliography.bib logparser-bibliography-style.bst
 
+sgai-2008.pdf: sgai-2008.deps sgai-2008.pdf.deps spmpsci.bst \
+		logparser-bibliography.bib
+
+sgai-2008.deps:									\
+			build/include-timing-run-duration.tex			\
+			build/include-full-ruleset-vs-minimum-ruleset.tex
+	touch "$@"
+
 %.dvi: %.tex
 	make build PROGRAM="latex"    SOURCE="$<" DEST="$@" BASENAME=$$( basename "$<" .tex )
 
@@ -50,6 +58,9 @@ run_latex:
 
 run_makeindex:
 	set -e; \
+	if [ ! -f "${STYLE}" ]; then \
+		exit; \
+	fi; \
 	touch "${INPUT}.old"; \
 	if ! cmp -s "${INPUT}" "${INPUT}.old"; then \
 		makeindex -s "${STYLE}" -t "${LOG}" -o "${OUTPUT}" "${INPUT}"; \
@@ -161,12 +172,14 @@ build/Makefile.graph-deps-ps: graphs/*
 		fi;										\
 	done > "$@"
 
+# Flowchart
 build/logparser-flow-chart-%.pdf: logparser-flow-chart-%.dot
 	dot -o "$@" -Tpdf -x "$<"
 
 build/logparser-flow-chart-%.ps: logparser-flow-chart-%.dot
 	dot -o "$@" -Tps -x "$<"
 
+# Graphs
 build/graph-%.ps: graphs/plot-%.gpi
 	cd graphs && gnuplot "../$<"
 

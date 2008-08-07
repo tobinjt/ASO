@@ -11,3 +11,11 @@ logparser.ps.deps:								\
 			build/graph-mails-received.ps				\
 			build/graph-optimal-and-reverse-vs-shuffle.ps
 	touch "$@"
+
+sgai-2008.ps.deps:								\
+			build/graph-action-distribution.ps			\
+			build/graph-input-size-vs-parsing-time.ps		\
+			build/graph-input-size-vs-parsing-time-ratio.ps		\
+			build/graph-hits.ps					\
+			build/graph-optimal-and-reverse-vs-shuffle.ps		\
+			build/graph-full-ruleset-vs-minimum-ruleset.ps		\
