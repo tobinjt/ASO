@@ -158,6 +158,7 @@ build/Makefile.deps-pdf: Makefile.deps-ps
 
 # Graph dependencies are generated to avoid having to manually update
 # them every time a graph changes.
+include build/Makefile.graph-deps
 include build/Makefile.graph-deps-ps
 include build/Makefile.graph-deps-pdf
 build/Makefile.graph-deps-pdf: build/Makefile.graph-deps-ps
@@ -170,6 +171,12 @@ build/Makefile.graph-deps-ps: graphs/*
 		if [ -n "$$output" ]; then							\
 			sed -n -e 's!^.*"../\([^"]\+\)" using.*$$!'"$$output"': \1!p' "$$file";	\
 		fi;										\
+	done > "$@"
+
+build/Makefile.graph-deps: graphs/*
+	set -e;												\
+	for file in $^; do										\
+		sed -n -e 's!^load "\(.*\)"$$!'"$$file"': graphs/\1\n\ttouch '"$$file"'!p' "$$file";	\
 	done > "$@"
 
 # Flowchart
