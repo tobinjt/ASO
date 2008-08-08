@@ -177,6 +177,7 @@ build/Makefile.graph-deps: graphs/*
 	set -e;												\
 	for file in $^; do										\
 		sed -n -e 's!^load "\(.*\)"$$!'"$$file"': graphs/\1\n\ttouch '"$$file"'!p' "$$file";	\
+		sed -n -e 's!^load "\(.*\)-ps.gpi"$$!'"$$file"': graphs/\1-pdf.gpi!p' "$$file";		\
 	done > "$@"
 
 # Flowchart
