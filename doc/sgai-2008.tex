@@ -52,6 +52,12 @@
     \end{table}
 }
 
+\newcommand{\tableline}[0]{%
+    \noalign{\smallskip}%
+    \hline%
+    \noalign{\smallskip}%
+}
+
 % Replacement for \ref{}, adds the page number too.
 \newcommand{\refwithpage}[1]{%
     \empty{}\vref{#1}%
@@ -74,6 +80,12 @@
 }
 \newcommand{\Graphref}[1]{%
     \refwithlabel{Figure}{#1}%
+}
+\newcommand{\tableref}[1]{%
+    \refwithlabel{tbl.}{#1}%
+}
+\newcommand{\Tableref}[1]{%
+    \refwithlabel{Table}{#1}%
 }
 
 % A command to format a Postfix daemon's name
@@ -312,18 +324,22 @@ semantics.
 
 \label{Framework}
 
-The framework provides utility and support functions for the actions and
-rules.  It provides shared storage to pass data between actions, most
-notably the data structures used to represent each connection and mail.  It
-loads and validates rules, controls parsing of log files, invokes actions,
-tracks how often each rule matches, to optimise rule ordering (see
-\sectionref{Rule ordering}), and stores results in the database.  The
-framework is independent of the parser being written: the same
-functionality will be required for most or all parsers.
+The framework takes care of miscellaneous support functions and low level
+details of parsing, freeing the authors of actions to concentrate on
+writing productive code.  It provides the link between actions and rules,
+allowing either to be improved independently of the other.  It provides
+shared storage to pass data between actions, loads and validates rules,
+controls parsing of log files, invokes actions, tracks how often each rule
+matches (to optimise rule ordering \sectionref{Rule ordering}), and
+stores results in the database.  The framework is largely independent of
+the parser being written: the same functionality will be required for most
+or all parsers.  The framework is the core of the architecture and is
+deliberately quite simple: the rules deal with the varying log lines, and
+the actions deal with the intricacies and complications encountered when
+parsing.
 
 The function which finds the rule matching the log line and invokes the
-requested action can be expressed in pseudo-code (with indentation denoting
-flow of control):
+requested action can be expressed in pseudo-code as:
 
 % DO NOT REFORMAT!
 
@@ -337,21 +353,9 @@ for each line in the input files:
     warn the user that the input line was not parsed
 \end{verbatim}
 
-The framework takes care of miscellaneous support functions and low level
-details of parsing, freeing the authors of actions to concentrate on
-writing productive code.  It provides the link between actions and rules,
-allowing either to be improved independently of the other.  The framework
-is the core of the architecture and is deliberately quite simple: the rules
-deal with the varying log lines, and the actions deal with the intricacies
-and complications encountered when parsing.  XXX MAYBE REMOVE FIRST TWO
-SENTENCES\@.
-
 \subsection{Actions}
 
 \label{Actions}
-
-XXX CARL WONDERS IF THE NUMBERS HERE ARE TYPICAL\@?  ALSO SAY SOMETHING
-LIKE REJECTION AND IGNORE DO NOT IMPLY UNGRAMMATICAL\@.
 
 Each action contains the code required to deal with log lines from a
 particular category, e.g.\ rejections.  The actions are parser-specific:
@@ -362,35 +366,37 @@ rules; the distribution of rules to actions is very skewed, as shown in
 \graphref{Distribution of rules per action}.  The distribution is skewed
 for the same reason the architecture is so successful in enabling users to
 parse new log lines: most new log lines can be parsed by a combination of a
-new rule and an existing action.
-\showgraph{build/graph-action-distribution}{Distribution of rules per
-action}{Distribution of rules per action} Unsurprisingly the action with
-the highest number of associated rules is \texttt{REJECTION}, the action
-which handles Postfix rejecting a mail; it is followed by
+new rule and an existing action.  It is expected that parsers utilising
+this architecture will have a high ratio of rules to actions, XXX FINISH
+THIS SENTENCE\@.  \showgraph{build/graph-action-distribution}{Distribution
+of rules per action}{Distribution of rules per action} Unsurprisingly the
+action with the highest number of associated rules is \texttt{REJECTION},
+the action which handles Postfix rejecting a mail; it is followed by
 \texttt{SAVE\_BY\_QUEUEID}, the action responsible for handling informative
 inputs: these are log lines that supplement the data gathered from other
 log lines (such as rejections), but that do not by themselves represent
 interesting events.  The third most common action is, perhaps surprisingly,
 \texttt{IGNORE}: the \texttt{IGNORE} action does nothing when executed,
-allowing uninteresting log lines to be parsed without causing any effects.
-The parser warns about every unparsed log line, to alert the user that they
-need to alter or extend their ruleset; the Postfix parser successfully
-parses every input line in the \numberOFlogFILESall{} log files it is
-currently being tested with.  The remaining actions have only one or two
-associated rules: in some cases this is because there will only ever be one
-type of log line for that action, e.g.\ all log lines showing that a remote
-client has connected are matched by a single rule and handled by the
-\texttt{CONNECT} action; in other cases the action is required to address a
-deficiency in the log files, or a complication which arises during parsing.
+allowing uninteresting log lines to be parsed without causing any effects
+(neither \texttt{REJECTION} nor \texttt{IGNORE} imply that the input is
+ungrammatical or unparsed).  The parser warns about every unparsed log
+line, to alert the user that they need to alter or extend their ruleset;
+the Postfix parser successfully parses every input line in the
+\numberOFlogFILESall{} log files it is currently being tested with.  The
+remaining actions have only one or two associated rules: in some cases this
+is because there will only ever be one type of log line for that action,
+e.g.\ all log lines showing that a remote client has connected are matched
+by a single rule and handled by the \texttt{CONNECT} action; in other cases
+the action is required to address a deficiency in the log files, or a
+complication which arises during parsing.
 
 \label{example action}
 
 Using the \texttt{CONNECT} action as an example, it creates a new data
 structure for each client connecting, and saves the data extracted by the
-rule (shown in \sectionref{example rule}).  If the data structure already
-exists it is treated as a symptom of a bug, and the action issues a warning
-containing the full contents of the data structure, plus the log line which
-has just been parsed.
+rule.  If the data structure already exists it is treated as a symptom of a
+bug, and the action issues a warning containing the full contents of the
+data structure, plus the log line which has just been parsed.
 
 The ability to add special purpose actions to deal with difficulties and
 new requirements which are discovered during parser development is one of
@@ -538,33 +544,31 @@ for in-depth discussion.
 
 \label{example rule}
 
-This example rule matches the message logged by Postfix when a remote
-client connects to deliver mail; it would match the following sample log
-line:
+The example rule in \tableref{Example rule} matches the message logged by
+Postfix when a remote client connects to deliver mail; it would match the
+following sample log line:
 
 \begin{verbatim}
     connect from client.example.com[1.2.3.4]
 \end{verbatim}
 
 % Do not reformat this!
-% XXX CONSIDER USING A TABLE ENVIRONMENT; IT DID NOT LOOK GREAT BEFORE.
-\begin{tabular}[]{ll}
-    \hline
-    \noalign{\smallskip}
-    Attribute                 & Value                                            \\
-    \noalign{\smallskip}
-    \hline
-    \noalign{\smallskip}
-    program                   & \daemon{smtpd}                                   \\
-    regex                     & \verb!^connect from (__HOSTNAME__)\[(__IP__)\]$! \\
-    result\_cols              &                                                  \\
-    connection\_cols~\empty{} & client\_hostname = 1; client\_ip = 2             \\
-    action                    & CONNECT                                          \\
-    priority                  & 0                                                \\
-    \noalign{\smallskip}
-    \hline
-    \noalign{\smallskip}
-\end{tabular}
+\begin{table}[htbp]
+    \caption{Example rule}
+    \empty{}\label{Example rule}
+    \begin{tabular}[]{ll}
+        \tableline{}%
+        Attribute                 & Value                                            \\
+        \tableline{}%
+        program                   & \daemon{smtpd}                                   \\
+        regex                     & \verb!^connect from (__HOSTNAME__)\[(__IP__)\]$! \\
+        result\_cols              &                                                  \\
+        connection\_cols~\empty{} & client\_hostname = 1; client\_ip = 2             \\
+        action                    & CONNECT                                          \\
+        priority                  & 0                                                \\
+        \tableline{}%
+    \end{tabular}
+\end{table}
 
 \noindent{}The \texttt{CONNECT} action is described in \sectionref{example
 action}.
@@ -632,24 +636,24 @@ the parsing times averaged.  Saving results to the database was disabled
 for the test runs, as that dominates the run time of the program, and the
 tests are aimed at measuring the speed of the parser rather than the speed
 of the database and the disks the database is stored on.  The computer used
-for test runs was a Dell Optiplex 745:
+for test runs was a Dell Optiplex 745 described in \tableref{Computer used
+to generate statistics}.
 
-\begin{tabular}[]{ll}
-    \hline
-    \noalign{\smallskip}
-    XXX         & XXX NEED LABELS\@.                                \\
-    \noalign{\smallskip}
-    \hline
-    \noalign{\smallskip}
-    CPU         & One dual core 2.40GHz Intel\textregistered{}
-                    Core\texttrademark{}2 CPU,                      \\
-                & with 32KB L1 cache and 4MB L2 cache.              \\
-    RAM         & 2GB 667 MHz DDR RAM\@.                            \\
-    Hard disk   & One Seagate Barracuda 7200 RPM 250GB SATA disk.   \\
-    \noalign{\smallskip}
-    \hline
-    \noalign{\smallskip}
-\end{tabular}
+\begin{table}[htbp]
+    \caption{Computer used to generate statistics}
+    \empty{}\label{Computer used to generate statistics}
+    \begin{tabular}[]{ll}
+        \tableline{}
+        Component type  & Component in use                                  \\
+        \tableline{}
+        CPU             & One dual core 2.40GHz Intel\textregistered{}
+                            Core\texttrademark{}2 CPU,                      \\
+                        & with 32KB L1 cache and 4MB L2 cache.              \\
+        RAM             & 2GB 667 MHz DDR RAM\@.                            \\
+        Hard disk       & One Seagate Barracuda 7200 RPM 250GB SATA disk.   \\
+        \tableline{}
+    \end{tabular}
+\end{table}
 
 Parsing all \numberOFlogFILES{} log files in one run took
 \input{build/include-timing-run-duration}.  The computer was dedicated to
@@ -718,8 +722,6 @@ optimisation provides a modest but worthwhile reduction in parsing time of
 approximately 10\%.  \showgraph{build/graph-hits}{Hits per rule}{rule hits
 graph} \showgraph{build/graph-optimal-and-reverse-vs-shuffle}{Parsing time
 relative to shuffled ordering}{Parsing time relative to shuffled}
-
-\newpage{}
 
 \noindent\textbf{Why are there dips in the graphs?}
 

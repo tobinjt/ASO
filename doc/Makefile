@@ -2,7 +2,7 @@
 .DELETE_ON_ERROR:
 # NOTE: you need to run 'make clean' between running 'make foo.dvi' and 'make
 # foo.pdf', otherwise latex will only be run once and it will get very confused.
-all: logparser.pdf
+all: sgai-2008.pdf
 
 logparser.pdf: logparser.deps logparser.pdf.deps logparser-*.tex \
 		logparser-bibliography.bib logparser-bibliography-style.bst
@@ -332,9 +332,11 @@ build/include-mails-received-table.tex:				\
 
 # Distribution of actions to rules.
 build/stats-action-distribution: db.full-run.sq3
-	sqlite3 -separator ' ' "$<" 'select action, count(action) from rules group by action order by count(action);' > "$@.tmp"
+	sqlite3 -separator ' ' "$<" 'SELECT action, count(action) FROM rules GROUP BY action ORDER BY count(action);' > "$@.tmp"
 	nl "$@.tmp" > "$@"
 	rm -f "$@.tmp"
+	# Turn everything to lowercase.
+	sed -i -e 's/^\(.*\)$$/\L\1\E/' "$@"
 
 # Minimum ruleset vs maximum ruleset.
 build/include-full-ruleset-vs-minimum-ruleset.tex: build/stats-optimal-full-ruleset-vs-minimum-ruleset
@@ -367,7 +369,7 @@ build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.
 clean:
 	rm -f	*.acn *.acr *.alg *.aux *.bbl *.blg *.cbk *.cit *.deps *.dvi \
 		*.glg *.glo *.gls *.idx *.ist *.lof *.log *.lot *.old *.out \
-		*.pdf *.ps *.toc
+		*.pdf *.ps *.toc *.cite
 
 realclean: veryclean
 veryclean: clean
