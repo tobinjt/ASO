@@ -2387,23 +2387,24 @@ sub prune_aborted_mails {
 
 =over 4
 
-=item $self->filter_regex($regex, $strict)
+=item $self->filter_regex($regex, %options)
 
 Substitutes certain keywords in the regex with regex snippets, e.g.
 __SMTP_CODE__ is replaced with C<\d{3}>.  Every regex loaded from the database
 will be processed by filter_regex(), allowing each regex to be largely
-self-documenting, be far simpler than it would otherwise have been, and allowing
-bugs in the regex components to be fixed in one place only.
+self-documenting and far simpler than it would otherwise have been, and also
+allowing bugs in the regex components to be fixed in one place only.
 
 The full list of keywords which are expanded is:
 
 __SENDER__, __RECIPIENT__, __MESSAGE_ID__, __HELO__, __EMAIL__, __HOSTNAME__,
-__IP__, __IPv4__, __IPv6__, __SMTP_CODE__, __RESTRICTION_START__, __QUEUEID__,
+__CLIENT_IP__, __CLIENT_HOSTNAME__, __SERVER_IP__, __SERVER_HOSTNAME__, __IP__,
+__IPv4__, __IPv6__, __SMTP_CODE__, __RESTRICTION_START__, __QUEUEID__,
 __COMMAND__, __SHORT_CMD__, __DELAYS__, __DELAY__, __DSN__ and __CONN_USE__.
 
 __RESTRICTION_START__ matches:
 
-    /(__QUEUEID__): reject(?:_warning)?: (?:RCPT|DATA) from (?>(__HOSTNAME__)\\[)(?>(__IP__)\\]): (__SMTP_CODE__)(?: __DSN__)?/gx;
+    /(__QUEUEID__): reject(?:_warning)?: (?:RCPT|DATA) from (?>(__CLIENT_HOSTNAME__)\\[)(?>(__CLIENT_IP__)\\]): (__SMTP_CODE__)(?: __DSN__)?/gx;
 
 __SHORT_CMD__ matches:
 
@@ -2415,22 +2416,52 @@ separate rules matching lost connections or timeouts after DATA.
 
 The other names should be reasonably self-explanatory.
 
-$strict makes some regex components more restrictive about what they match, e.g.
-__SENDER__ changes from C<.*?> to C<< [^>]*? >>; B<logs2regexs> needs the more
-restrictive regex components, because it uses them in isolation, whereas
-ASO::Parser needs the less restrictive components to match email addresses like
-B<< <>@example.com >>.
+%options changes how filter_regex() operates.  The following keys are accepted:
+
+=over 8
+
+=item strict
+
+If C<$options{strict}> is true regex components will be more restrictive about
+what they match, e.g.  __SENDER__ changes from C<.*?> to C<< [^>]*? >>;
+B<logs2regexs> needs the more restrictive regex components, because it uses them
+in isolation, whereas ASO::Parser needs the less restrictive components to match
+email addresses like B<< <>@example.com >>.  Default: not strict.
+
+=item restriction_start_only
+
+If C<$options{restriction_start_only}> is true, only C<__RESTRICTION_START__>
+will be substituted in $regex.  This is used when extracting keywords to
+automatically populate each rule's result_cols and connection_cols.  Default:
+substitute all keywords.
+
+=back
 
 =back
 
 =cut
 
 sub filter_regex {
-    my ($self, $regex, $strict) = @_;
+    my ($self, $regex, %options) = @_;
 
+    my %default_options = (
+        strict                  => 0,
+        restriction_start_only  => 0,
+    );
+    foreach my $option (keys %options) {
+        if (not exists $default_options{$option}) {
+            $self->my_die(qq{filter_regex(): unknown option $option});
+        }
+    }
+
+    $regex =~ s/__RESTRICTION_START__   /(__QUEUEID__): reject(?:_warning)?: (?:RCPT|DATA) from (?>(__CLIENT_HOSTNAME__)\\[)(?>(__CLIENT_IP__)\\]): (__SMTP_CODE__)(?: __DSN__)?/gmx;
+    if ($options{restriction_start_only}) {
+        return $regex;
+    }
     # I'm deliberately allowing a trailing . in $hostname_re.
     my $hostname_re = qr/(?:unknown|(?:[-.\w]+))/mx;
     my $ipv6_chunk  = qr/(?:[0-9A-Fa-f]{1,4})/mx;
+    # XXX THIS ALLOWS IPv6 ADDRESSES WITH 12 CHUNKS.
     my $ipv6_re = qr/(?:
  (?>(?:${ipv6_chunk}:){7}${ipv6_chunk})             # Full address
 |(?>(?:${ipv6_chunk}:){1,6}(?::${ipv6_chunk}){1,6}) # Elided address, missing
@@ -2446,7 +2477,6 @@ sub filter_regex {
 
     $regex =~ s/__SENDER__              /__EMAIL__/gmx;
     $regex =~ s/__RECIPIENT__           /__EMAIL__/gmx;
-    $regex =~ s/__RESTRICTION_START__   /(__QUEUEID__): reject(?:_warning)?: (?:RCPT|DATA) from (?>(__HOSTNAME__)\\[)(?>(__IP__)\\]): (__SMTP_CODE__)(?: __DSN__)?/gmx;
     # message-ids initially look like email addresses, but really they can be
     # absolutely anything; just like email addresses in fact.
     # E.g.  <%RND_DIGIT[10].%STATWORD@mail%SINGSTAT.%RND_FROM_DOMAIN>
@@ -2460,11 +2490,15 @@ sub filter_regex {
 #   This doesn't work, as it matches valid addresses, not real world addresses.
 #   $regex =~ s/__EMAIL__               /$RE{Email}{Address}/gx;
 #   Wibble: from=<<>@inprima.locaweb.com.br>; just match anything as an address.
-    if ($strict) {
+    if ($options{strict}) {
         $regex =~ s/__EMAIL__           /[^>]*?/gmx;
     } else {
         $regex =~ s/__EMAIL__           /.*?/gmx;
     }
+    $regex =~ s/__CLIENT_IP__           /__IP__/gmx;
+    $regex =~ s/__CLIENT_HOSTNAME__     /__HOSTNAME__/gmx;
+    $regex =~ s/__SERVER_IP__           /__IP__/gmx;
+    $regex =~ s/__SERVER_HOSTNAME__     /__HOSTNAME__/gmx;
     # This doesn't match, for varous reason - I think numeric subnets are one.
     #$regex =~ s/__HOSTNAME__           /$RE{net}{domain}{-nospace}/gx;
     $regex =~ s/__HOSTNAME__            /$hostname_re/gmx;

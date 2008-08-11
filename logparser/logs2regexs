@@ -159,7 +159,7 @@ sub compile_regexs {
             # Make filtered_regex() use strict regex components, to avoid greedy
             # matching problems.
             my $filtered_regex = ASO::Parser::filter_regex(
-                undef, $unfiltered_regex, 1);
+                undef, $unfiltered_regex, strict => 1);
             push @regex_pairs, [$replacement, qr/$filtered_regex/];
         } else {
             my $filtered_regex = ASO::Parser::filter_regex(undef, $regex);
