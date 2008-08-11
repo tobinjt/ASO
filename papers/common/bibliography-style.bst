@@ -1,1 +1,0 @@
-../../doc/logparser-bibliography-style.bst

@@ -1,9 +1,0 @@
-# These are standard settings used in most graphs.
-# Show horizontal lines on the graph.
-set grid y
-# Don't continue the scales to the next round number; stop at the topmost point.
-set autoscale xfixmax
-# Make the y axis start at 0.
-set yrange [0:*]
-# Put the legend at the bottom left, Left justified text.
-set key bottom left Left reverse
