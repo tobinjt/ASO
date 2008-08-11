@@ -144,6 +144,7 @@ logparser.deps: \
 		build/include-mails-received-table.tex				\
 		build/include-full-ruleset-vs-minimum-ruleset.tex		\
 		build/include-sample-sql-output.tex				\
+		build/include-sample-sql-query.tex				\
 		build/include-timing-run-duration.tex
 	touch "$@"
 
@@ -364,6 +365,10 @@ build/include-timing-run-duration.tex: results/stats-full-run/timing
 build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql
 	sqlite3.6.0 -separator ' & ' -bail "$<" < "generate-sample-sql-output.sql" > "$@" || ( rm -f "$@"; false )
 	sed -i -e 's/, [^ ]\+ / /' -e 's/\(\.[0-9]\{3\}\)[0-9]*%$$/\1%/' -e 's/$$/ \\\\/' -e 's/_/\\_/g' -e 's/%/\\%/g' "$@"
+
+# The sample SQL query itself.
+build/include-sample-sql-query.tex: generate-sample-sql-output.sql
+	( echo '\begin{verbatim}'; cat "$<"; echo '\end{verbatim}' ) > "$@"
 
 # Cleanup.
 clean:
