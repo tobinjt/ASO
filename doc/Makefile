@@ -406,8 +406,9 @@ logparser-2up.ps: logparser.ps
 logparser-2up.pdf: logparser-2up.ps
 	ps2pdf "$<" "$@"
 
-xpdf: logparser.pdf
-	xpdf "$<" &
+xpdf: all
+	xpdf logparser.pdf &
+	xpdf sgai-2008.pdf &
 
 spellcheck:
 	for file in *.tex; do aspell -t -c "$$file"; done

@@ -38,7 +38,7 @@
 
 % \showgraph{filename}{caption}{label}
 \newcommand{\showgraph}[3]{%
-    \begin{figure}[hbt!]%
+    \begin{figure}[hbtp]%
         \caption{#2}\label{#3}%
         \includegraphics{#1}%
     \end{figure}%
@@ -46,7 +46,7 @@
 
 %\showtable{filename}{caption}{label}
 \newcommand{\showtable}[3]{
-    \begin{table}[ht]
+    \begin{table}[hbtp]
         \caption{#2}\label{#3}
         \input{#1}
     \end{table}
@@ -159,19 +159,9 @@ Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
     of accumulated data.
 }
 
-XXX DISCUSS COMPLEXITY\@?  EVEN JUST MENTION THAT COMPLEXITY RISES WHEN
-INCREMENTAL PARSING IS USED, BUT THAT EXTERNAL TOOLS COULD BE USED TO DEAL
-WITH IT, AND THAT IT IS ENTIRELY DEPENDANT ON THE RULESET USED\@?
+XXX DISCUSS COMPLEXITY\@?
 
-XXX MAYBE MERGE THE AUTHOR SECTIONS IF DESPERATE FOR SPACE\@.
-
-XXX REVIEWER SUGGESTED COMPARING TO EXISTING WORK, BUT I DID NOT FIND ANY
-SIMILAR EXISTING WORK\@.  I SHOULD REALLY SEARCH AGAIN\@.
-
-XXX OVERLAP DETECTION\@: L1 n L2 = E* --- ((E* --- L1) u (E* --- L2)).
-PERL REGEXES ARE AT LEAST AS POWERFUL AS A PUSHDOWN AUTOMATA --- SEE
-CHOMSKY'S HIERARCHY TO MAKE SURE\@.  CONTAINMENT CANNOT BE DETERMINED FOR
-CFGs, INTERSECTION IS POSSIBLE\@.
+XXX MAYBE MERGE THE AUTHOR SECTIONS IF DESPERATE\@.
 
 \section{Introduction}
 
@@ -227,6 +217,12 @@ the majority of log lines, parsing specific log lines with great accuracy,
 but in an inextensible fashion; others sloppily parsed the majority of log
 lines, but were incapable of distinguishing between log lines of the same
 type, e.g.\ rejections, and extracted only a portion of the data required.
+The only prior published work on the subject of parsing Postfix log files
+is~\cite{log-mail-analyser}, which aims to present correlated log data in a
+form suitable for a systems administrator to search using the myriad of
+standard Unix text processing utilities already available.  A full state of
+the art review is outside the scope of this paper but will be included in
+the thesis resulting from this work.
 
 The solution developed is conceptually simple: provide a few generic
 functions (\textit{actions\/}), each capable of dealing with an entire
@@ -529,8 +525,23 @@ a facility for specifying the order of overlapping rules: the priority
 field in each rule (defaults to zero).  Rules are sorted by priority,
 highest first, and then rules with the same priority are sorted by the
 number of successful matches they had parsing the previous log file.
-Negative priorities may be useful for catchall rules.  XXX DETECTING
-OVERLAP\@.
+Negative priorities may be useful for catchall rules.
+
+Storing the rules separately to the parser allows external tools to be
+written to detect overlapping rules.  Traditional regexes are equivalent in
+computational power to Finite Automata (FA); it is possible to convert
+between regexes and FA, so regex overlap could be calculated by finding the
+intersection of two FA XXX REFERENCE\@.  Perl 5.10 regexes are more
+powerful than traditional regexes, e.g.\ it is possible to match correctly
+nested and balanced brackets to an arbitrary depth:
+\newline{}\tab{}\verb!/^[^<>]*(<(?:(?>[^<>]+)|(?1))*>)[^<>]*$/!\newline{}
+Perl 5.10 regexes can maintain an arbitrary state stack and are thus
+equivalent in computational power to Pushdown Automata (PA), so overlap
+detection would require calculating the intersection of two PA.\@  XXX
+REFERENCE OR SOMETHING\@.
+
+XXX OVERLAP DETECTION\@: L1 n L2 = E* --- ((E* --- L1) u (E* --- L2)).
+CONTAINMENT CANNOT BE DETERMINED FOR CFGs, INTERSECTION IS POSSIBLE\@.
 
 It is possible to define pathological regexes, which fall into two main
 categories: regexes which match every input line, and regexes which consume
@@ -590,7 +601,7 @@ action}.
     \item [Partially context-sensitive actions and cascaded parsing:]
         Actions can consult the results (or lack of results) of previous
         actions when executing, providing some context sensitivity.
-        Actions can not inspect past or upcoming inputs, however actions
+        Actions can not inspect past or future inputs, however actions
         can return a modified input line that will be parsed as if read
         from the input stream, allowing for a simplified version of
         cascaded parsing~\cite{cascaded-parsing}.
@@ -676,14 +687,12 @@ is better in both cases).  The ratios are quite tightly banded across the
 graph, showing that the algorithm scales linearly.  The ratio increases
 (i.e.\ improves) for log files 22 and 62--68 despite their larger than
 average size (shown in \graphref{Parsing time, file size, and number of
-lines}); this is explained in \sectionref{Why are there dips in the
-graphs?}.  \showgraph{build/graph-input-size-vs-parsing-time}{Parsing time,
+lines}).  \showgraph{build/graph-input-size-vs-parsing-time}{Parsing time,
 file size, and number of lines}{Parsing time, file size, and number of
 lines} \showgraph{build/graph-input-size-vs-parsing-time-ratio}{Ratio of
 file size and number of lines to parsing time}{parsing time vs file size vs
 number lines factor}
 
-\newpage
 \subsection{Rule Ordering}
 
 \label{Rule ordering}
@@ -701,7 +710,7 @@ performed with different rule orderings:
 
 \begin{description}
 
-    \item [normal]  Hypothetically the most optimal order: rules which
+    \item [optimal]  Hypothetically the most optimal order: rules which
         match most often will be tried first.
 
     \item [shuffle] Random ordering, intended to represent an unsorted rule
@@ -717,50 +726,11 @@ performed with different rule orderings:
 \end{description}
 
 \Graphref{Parsing time relative to shuffled} shows the parsing times of
-normal and reversed orderings relative to shuffled ordering.  Overall this
+optimal and reversed orderings relative to shuffled ordering.  Overall this
 optimisation provides a modest but worthwhile reduction in parsing time of
 approximately 10\%.  \showgraph{build/graph-hits}{Hits per rule}{rule hits
 graph} \showgraph{build/graph-optimal-and-reverse-vs-shuffle}{Parsing time
 relative to shuffled ordering}{Parsing time relative to shuffled}
-
-\noindent\textbf{Why are there dips in the graphs?}
-
-XXX MAYBE REDUCE THIS\@?
-
-\label{Why are there dips in the graphs?}
-
-The dips at log files 22 and 62--68 in \graphref{Parsing time relative to
-shuffled} correspond to peaks in log file size in \graphref{Parsing time,
-file size, and number of lines}, and peaks in \graphref{parsing time vs
-file size vs number lines factor}, where a peak means that performance is
-better.  The explanation for this took some time to arrive at, but it turns
-out to be reasonably simple.  The large log files in question were caused
-by a mail forwarding loop, where the distribution of log lines is quite
-different to normal, resulting in different performance characteristics.
-The vast majority of log lines when a mail loop occurs are from Postfix
-components which have a small number of rules associated with them, whereas
-in general the majority of log lines are from the Postfix component
-(\daemon{smtpd}) with the highest number of rules.  Furthermore in normal
-log files the majority of log lines are distributed much more evenly across
-rules than the majority of log lines during a mail loop.
-
-\newpage
-
-These two characteristics combine to reduce the average number of rules
-required to parse a log line when there is a mail loop, as shown by the
-peaks in \graphref{parsing time vs file size vs number lines factor} and
-troughs in \graphref{Parsing time relative to shuffled}.  When the rule
-ordering is reversed the majority of log lines generated by a mail loop
-will be parsed using very few rules, because there are very few rules for
-the Postfix components producing the log lines.  Without a mail loop the
-Postfix components producing the majority of log lines have a large number
-of rules associated with them, and reverse ordering deliberately starts
-with the least likely rules and moves towards the most likely.  This leads
-to a noticeable drop in the average time required to parse a log line
-during a mail loop, as shown in \graphref{Parsing time relative to
-shuffled}.  The number of rules which need to be consulted when the
-ordering is shuffled varies between the optimal and the pessimal, with the
-performance varying proportionally.
 
 \subsection{Architecture Scalability: Number of Rules}
 
@@ -773,7 +743,7 @@ number of rules required to parse the \numberOFlogFILES{} log files is
 second set of statistics was generated using the minimum ruleset and the
 results compared to the statistics generated using the full ruleset: the
 percentage parsing time increase when using the full ruleset instead of the
-minimal ruleset for normal, shuffled and reversed orderings is shown in
+minimal ruleset for optimal, shuffled and reversed orderings is shown in
 \graphref{Percentage parsing time increase of maximum ruleset over minimum
 ruleset}.
 \showgraph{build/graph-full-ruleset-vs-minimum-ruleset}{Percentage parsing
@@ -783,7 +753,7 @@ time increase of maximum ruleset over minimum ruleset}
 It is clear from \graphref{Percentage parsing time increase of maximum
 ruleset over minimum ruleset} that the increased number of rules has a
 noticeable performance impact with reverse ordering, and to a lesser extent
-with shuffled ordering.  The normal ordering (where are the most frequently
+with shuffled ordering.  The optimal ordering (where the most frequently
 matching rules are tried first) shows a mean increase of
 \input{build/include-full-ruleset-vs-minimum-ruleset} in parsing time for a
 \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.  These
