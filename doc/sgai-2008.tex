@@ -22,6 +22,10 @@
 \usepackage{makeidx}
 \usepackage{multicol}
 
+% Embed SVN Id etc.
+\usepackage{svn}
+
+% XXX REMOVE THESE AND CHECK RESULTING LENGTH
 \setlength{\floatsep}{0pt}
 \setlength{\intextsep}{0pt}
 \setlength{\textfloatsep}{0pt}
@@ -105,6 +109,10 @@
     169%
 }
 
+\newcommand{\numberOFruleINTERSECTIONS}[0]{%
+    14196%
+}
+
 \newcommand{\numberOFrulesMINIMUM}[0]{%
     115%
 }
@@ -158,6 +166,9 @@ Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
     input increases, making it suitable for parsing large corpora or months
     of accumulated data.
 }
+
+\SVN$Id$
+\SVNId{}  \today{}
 
 XXX DISCUSS COMPLEXITY\@?
 
@@ -253,7 +264,7 @@ rules.  Each will be discussed separately, but first an overview:
         validation of rules, shared data storage, storage of results, and
         other support functions.
 
-    \item [Actions]  The actions perform the work required to deal with a
+    \item [Actions]  Each action performs the work required to deal with a
         category of log lines, e.g.\ processing data from rejections.
 
     \item [Rules]  The rules are responsible for classifying or matching
@@ -326,13 +337,13 @@ writing productive code.  It provides the link between actions and rules,
 allowing either to be improved independently of the other.  It provides
 shared storage to pass data between actions, loads and validates rules,
 controls parsing of log files, invokes actions, tracks how often each rule
-matches (to optimise rule ordering \sectionref{Rule ordering}), and
-stores results in the database.  The framework is largely independent of
-the parser being written: the same functionality will be required for most
-or all parsers.  The framework is the core of the architecture and is
-deliberately quite simple: the rules deal with the varying log lines, and
-the actions deal with the intricacies and complications encountered when
-parsing.
+matches to optimise rule ordering (\sectionref{Rule ordering}), and stores
+results in the database.  The framework is largely independent of the
+parser being written: the same functionality will be required for most or
+all parsers.  The framework is the core of the architecture and is
+deliberately quite simple: the rules deal with the variation in log lines,
+and the actions deal with the intricacies and complications encountered
+when parsing.
 
 The function which finds the rule matching the log line and invokes the
 requested action can be expressed in pseudo-code as:
@@ -405,10 +416,10 @@ some cases the new action will require the cooperation of other actions,
 e.g.\ to set or check a flag; there is a possibility of introducing failure
 by modifying existing actions, but modifications will be smaller and occur
 less frequently than with a monolithic architecture, thus failures should
-be less likely, and easier to test for and diagnose.  The parser can be
-written in an object oriented style, allowing sub-classes to extend or
-override actions in addition to adding new actions; because each action is
-an independent function, the sub-class need only modify the action it is
+be less likely, and will be easier to test for and diagnose.  The parser
+can be written in an object oriented style, allowing sub-classes to extend
+or override actions in addition to adding new actions; because each action
+is an independent function, the sub-class need only modify the action it is
 interested in, rather than reproducing large chunks of functionality.
 
 \label{complications}
@@ -416,15 +427,14 @@ interested in, rather than reproducing large chunks of functionality.
 During development of the parser it became apparent that in addition to the
 obvious variety in log lines, there were a large number of complications to
 be overcome.  Some were the result of deficiencies in Postfix's logging
-(some of those deficiencies were improved or resolved by later versions of
-Postfix); others were due to the vagaries of process scheduling, client
-behaviour, and administrative actions.  All were successfully accommodated
-in the parser: adding new actions was enough for several of the
-complications; others required modifications to a single existing action to
-work around the difficulties; the remainder were resolved by adapting
-actions to pass information to subsequent actions (via the framework),
-those subsequent actions then check for the extra information and change
-their behaviour appropriately.
+(some of which were improved on or resolved by later versions of Postfix);
+others were due to the vagaries of process scheduling, client behaviour,
+and administrative actions.  All were successfully accommodated in the
+parser: adding new actions was enough for several of the complications;
+others required modifications to a single existing action to work around
+the difficulties; the remainder were resolved by adapting actions to pass
+information to subsequent actions (via the framework), which check for the
+extra information and change their behaviour appropriately.
 
 Actions may also return a modified input line which will be parsed as if
 read from the input stream, allowing for a simplified version of cascaded
@@ -436,81 +446,39 @@ specific rules and actions parsing the remainder.
 
 \label{Rules}
 
-Rules categorise inputs, specifying both the data to be extracted from each
-log line and the action to invoke.  The Postfix parser stores the rules in
-the same SQL database that the results are stored in, removing any doubt as
-to which set of rules was used to produce a set of results; other
-implementations are free to store the rules in whatever fashion suits their
-needs.  Similarly implementations are free to require additional attributes
-in their rules; the framework requires \texttt{regex} and \texttt{action}
-attributes, to determine whether a rule matches the current input line, and
-which action to invoke if it does.  Rules used by the Postfix parser
-define the following attributes: XXX DO I NEED TO LIST ALL THE
-ATTRIBUTES\@?
+Rules categorise inputs, specifying both the regex to match against each
+log line and the action to invoke when the match is successful.  The
+Postfix parser stores its rules in the same SQL database the results are
+stored in, removing any doubt as to which set of rules was used to produce
+a set of results; other implementations are free to store the rules in
+whatever fashion suits their needs.  
 
-\begin{description}
+The framework requires that each rule have \texttt{action} and
+\texttt{regex} attributes; each implementation is free to add any
+additional attributes it requires.  The Postfix parser adds several
+attributes to optimise rule ordering (\sectionref{Rule ordering}), to
+restrict which log lines rules can be matched against, and to describe each
+rule.  Data is automatically extracted and saved from the log line based on
+keywords in the rule's regex, but there is also a facility to specify extra
+data to be saved.
 
-    \item [program] The Postfix program whose log lines the regex should be
-        applied to.  This avoids needlessly trying regexes that will not
-        match the log line, or worse, might match unintentionally.  Rules
-        whose program is ``\texttt{*}'' will be tried against any log lines
-        not parsed by program specific rules, allowing generic rules to be
-        written.  This is a literal ``\texttt{*}'', not a wildcard or
-        regex.
-
-    \item [regex] The Regular Expression to match the log line against.
-
-    \item [result\_cols] Specifies how the fields in the log line will be
-        extracted.  The format is:
-        \tab{} \texttt{smtp\_code = 1; recipient = 2, sender = 4;} \newline
-        i.e.\ semi-colon or comma separated assignment statements, with the
-        variable name on the left and the matching capture from the regex
-        on the right.
-
-    \item [result\_data] Sometimes rules need to supply a piece of data
-        which is not present in the log line: e.g.\ setting
-        \texttt{smtp\_code} when mail is accepted.  The format is the same
-        as for \texttt{result\_cols}, except that arbitrary data is
-        permitted on the right hand side of the assignment.
-
-    \item [action] The action that will be invoked when this rule matches a
-        log line.
-
-    \item [hits] This counter is used to optimise the order in which rules
-        are tried against the input lines.  Assuming that the distribution
-        of log lines is reasonably consistent between log files, rules
-        matching more frequently will be tried before rules matching less
-        frequently, reducing the parser's execution time.
-
-    \item [priority] Priority overrides hits when sorting rules, allowing
-        more specific rules to take precedence over more general rules.  To
-        illustrate: most warnings are ignored by a rule whose regex matches
-        \verb!^warning:.*$!, but some warnings require a different action
-        to be taken, e.g.\ when a client tries to send a mail larger than
-        the maximum size the server accepts, the data structure for that
-        mail must be discarded because it will not have all the data
-        required to save it to the database.
-
-\end{description}
-
-Adding new rules is simple: simply define all the required attributes and
-append the new rule to wherever the existing rules are stored.  The
-software developed for this project includes a utility based on
-SLCT~\cite{slct-paper} to aid in producing regexes to parse previously
-unparsed inputs.  Storing the rules separately allows other approaches to
-rule management to be used, e.g.\ instead of manually adding new rules when
-unparsed log lines are seen, machine learning techniques could be used to
-automatically generate new rules, based on the existing rules and input
-lines.  If this approach was taken the choice of machine learning technique
-would be constrained by the size of typical data sets: the
-\numberOFlogFILES{} log files used to generate statistics contain
-\numberOFlogLINEShuman{} log lines.  Techniques which require the full data
-set when training would be impractical; Instance Based
-Learning~\cite{instance-based-learning} techniques which automatically
-determine which inputs from the training set are valuable and which inputs
-can be discarded would probably reduce the data required to a manageable
-size.  This avenue of research and development has not been pursued by the
-authors, but could easily be independently undertaken.
+Adding new rules is simple: define all the required attributes and append
+the new rule to wherever the existing rules are stored.  The Postfix parser
+supplies a utility based on SLCT~\cite{slct-paper} to aid in producing
+regexes from previously unparsed inputs.  Storing the rules separately
+allows other approaches to rule management to be used, e.g.\ instead of
+manually adding new rules when unparsed log lines are seen, machine
+learning techniques could be used to automatically generate new rules,
+based on the existing rules and input lines.  If this approach was taken
+the choice of machine learning technique would be constrained by the size
+of typical data sets: the \numberOFlogFILES{} log files used to generate
+statistics contain \numberOFlogLINEShuman{} log lines.  Techniques which
+require the full data set when training would be impractical; Instance
+Based Learning~\cite{instance-based-learning} techniques which
+automatically determine which inputs from the training set are valuable and
+which inputs can be discarded would probably reduce the data required to a
+manageable size.  This avenue of research and development has not been
+pursued by the authors, but could easily be independently undertaken.
 
 \label{overlapping rules}
 
@@ -521,26 +489,26 @@ wins, and the order in which rules are tried against each line may change
 between log files.  Overlapping rules are frequently a requirement,
 allowing a more specific rule to match some log lines and a more general
 rule to match the majority, e.g.\ separating SMTP delivery to specific
-sites from SMTP delivery to the rest of the world.  The algorithm provides
-a facility for specifying the order of overlapping rules: the priority
-field in each rule (defaults to zero).  Rules are sorted by priority,
-highest first, and then rules with the same priority are sorted by the
-number of successful matches they had parsing the previous log file.
-Negative priorities may be useful for catchall rules.
+sites from SMTP delivery to the rest of the world.  Overlapping rules
+should have a priority attribute to specify the order in which they should
+be used; negative priorities may be useful for catchall rules.
 
 Storing the rules separately to the parser allows external tools to be
 written to detect overlapping rules.  Traditional regexes are equivalent in
 computational power to Finite Automata (FA); it is possible to convert
-between regexes and FA, so regex overlap could be calculated by finding a
+between regexes and FA, so regex overlap could be detected by finding a
 non-empty intersection of two FA\@.  Perl 5.10 regexes are more powerful
 than traditional regexes, e.g.\ it is possible to match correctly nested
 and balanced brackets to an arbitrary depth:
 \newline{}\tab{}\verb!/^[^<>]*(<(?:(?>[^<>]+)|(?1))*>)[^<>]*$/!\newline{}
 Perl 5.10 regexes can maintain an arbitrary state stack and are thus
 equivalent in computational power to Pushdown Automata (PA), so overlap
-detection may require calculating the intersection of two PA.\@  Whether
-intersection of FA or PA is required, detecting overlap between $n$ rules
-has $\mathcal{O}(n(n-1)/2)$ complexity.  XXX IMPROVE THE MATH DISPLAY\@.
+detection may require calculating the intersection of two PA.\@  Detecting
+overlap between $n$ regexes requires $\frac{n(n-1)}{2}$ intersections to be
+calculated, giving $O(n^2)$ complexity.  This is certainly not a task to be
+performed on every parsing run: detecting overlap amongst the Postfix
+parser's \numberOFrules{} rules would require \numberOFruleINTERSECTIONS{}
+intersections to be calculated.
 
 It is possible to define pathological regexes, which fall into two main
 categories: regexes which match every input line, and regexes which consume
