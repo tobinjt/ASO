@@ -9,6 +9,5 @@ set key top left Left reverse
 # Let the X axis continue to the next round number for this graph.
 #set autoscale
 set yrange [0:9e6]
-set title "Number of hits"
 
 plot "../build/stats-hits" using 1:2 title "Number of hits"

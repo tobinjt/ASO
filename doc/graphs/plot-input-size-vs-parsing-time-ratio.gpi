@@ -1,10 +1,10 @@
 load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
-set ylabel "Ratio of line count / 10000 and file size in MB\n to parsing time in seconds"
+set ylabel "Ratio of number of log lines and \nfile size to parsing time"
 set output "../build/graph-input-size-vs-parsing-time-ratio.ps"
 
 plot "../build/stats-input-size-vs-parsing-time" using 1 with lines \
-        title "Ratio of line count (/ 10000) to parsing time in seconds", \
+        title "Ratio of number of lines (/ 10000) to parsing time in seconds", \
     "../build/stats-input-size-vs-parsing-time" using 2 with lines \
         title "Ratio of file size in MB to parsing time in seconds"

@@ -11,5 +11,5 @@ plot "../build/results--skip_inserting_results--cache_compiled_regexes--optimal_
     "../file-sizes.txt" using :($2 / 1000 / 1000) with lines \
         title "File size in MB", \
     "../wc.txt" using :($2 / 10000) with lines \
-        title "Log lines / 10000"
+        title "Number of log lines / 10000"
 

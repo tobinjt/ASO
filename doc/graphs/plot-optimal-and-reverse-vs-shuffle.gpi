@@ -5,6 +5,9 @@ set ylabel "Parsing time relative to shuffled ordering"
 set output "../build/graph-optimal-and-reverse-vs-shuffle.ps"
 # Add a % sign on the y axis
 set format y "% g%%"
+# Remove the horizontal lines.
+set grid noy
 
-plot "../build/stats-optimal-and-reverse-vs-shuffle" using 1 with lines title "Optimal", \
-    "../build/stats-optimal-and-reverse-vs-shuffle" using 2 with lines title "Reverse"
+plot "../build/stats-optimal-and-reverse-vs-shuffle" using 1 with lines title "Optimal ordering", \
+    "../build/stats-optimal-and-reverse-vs-shuffle" using 2 with lines title "Reverse ordering", \
+    100 with lines title "Shuffled ordering"
