@@ -1,4 +1,5 @@
 % $Id$
+% XXX REMOVE draft OPTION
 \documentclass[draft]{svmult}
 
 % Useful stuff for math mode.
@@ -365,11 +366,6 @@ for each line in the input files:
 
 \label{Actions}
 
-XXX RENAME ``REJECTION'' TO ``MAIL\_REJECTED'' AND ``IGNORE'' TO
-``UNINTERESTING\_LOG\_LINE'' OR SOMETHING ELSE THAT MAKES IT BRUTALLY
-OBVIOUS THE PARSER IS SUCCESSFULLY DEALING WITH THE LOG LINES\@.  I SHOULD
-PROBABLY RENAME ``SAVE\_BY\_QUEUEID'' TOO\@.
-
 Each action contains the code required to deal with a particular type of
 log lines, e.g.\ rejections.  The actions are parser-specific: each parser
 author will need to write the actions required from scratch, unless
@@ -384,31 +380,32 @@ this architecture will have a high ratio of rules to actions, hopefully
 resulting in simpler rules and clearer distinctions between log lines.
 \showgraph{build/graph-action-distribution}{Distribution of rules per
 action}{Distribution of rules per action} Unsurprisingly the action with
-the highest number of associated rules is \texttt{DELIVERY\_REJECTED}, the action
-which handles Postfix rejecting a mail; it is followed by
+the highest number of associated rules is \texttt{DELIVERY\_REJECTED}, the
+action which handles Postfix rejecting a mail; it is followed by
 \texttt{SAVE\_DATA}, the action responsible for handling informative
 inputs: these are log lines that supplement the data gathered from other
-log lines (such as rejections), but that do not by themselves represent
-interesting events.  The third most common action is, perhaps surprisingly,
-\texttt{UNINTERESTING}: this action does nothing when executed,
-allowing uninteresting log lines to be parsed without causing any effects
-(it does not imply that the input is
-ungrammatical or unparsed).  The framework warns about every unparsed log
-line, to alert the user that they need to alter or extend their ruleset;
-the Postfix log parser successfully parses every input line in the
-\numberOFlogFILESall{} log files it is currently being tested with.  The
-remaining actions have only one or two associated rules: in some cases this
-is because there will only ever be one type of log line for that action,
-e.g.\ all log lines showing that a remote client has connected are matched
-by a single rule and handled by the \texttt{CONNECT} action; in other cases
-the action is required to address a deficiency in the log files, or a
-complication which arises during parsing.  Taking the \texttt{CONNECT}
-action as an example, it creates a new data structure for each client
-connecting, and saves the data extracted by the rule (in memory,
-subsequently to be entered into the database).  If the data structure
-already exists it is treated as a symptom of a bug, and the action issues a
-warning containing the full contents of the data structure, plus the log
-line which has just been parsed.
+log lines, but that do not by themselves represent interesting events.  The
+third most common action is, perhaps surprisingly, \texttt{UNINTERESTING}:
+this action does nothing when executed, allowing uninteresting log lines to
+be parsed without causing any effects (it does not imply that the input is
+ungrammatical or unparsed).  Generally rules specifying the
+\texttt{UNINTERESTING} action parse log lines which are not associated with
+a specific mail, e.g.\ warnings about configuration files changing.  The
+framework warns about every unparsed log line, to alert the user that they
+need to alter or extend their ruleset; the Postfix log parser successfully
+parses every input line in the \numberOFlogFILESall{} log files it is
+currently being tested with.  The remaining actions have only one or two
+associated rules: in some cases this is because there will only ever be one
+type of log line for that action, e.g.\ all log lines showing that a remote
+client has connected are matched by a single rule and handled by the
+\texttt{CONNECT} action; in other cases the action is required to address a
+deficiency in the log files, or a complication which arises during parsing.
+Taking the \texttt{CONNECT} action as an example, it creates a new data
+structure for each client connecting, and saves the data extracted by the
+rule (in memory, subsequently to be entered into the database).  If the
+data structure already exists it is treated as a symptom of a bug, and the
+action issues a warning containing the full contents of the data structure,
+plus the log line which has just been parsed.
 
 The ability to add special purpose actions to deal with difficulties and
 new requirements which are discovered during parser development is one of
@@ -425,8 +422,6 @@ can be written in an object oriented style, allowing sub-classes to extend
 or override actions in addition to adding new actions; because each action
 is an independent function, the sub-class need only modify the action it is
 interested in, rather than reproducing large chunks of functionality.
-
-\label{complications}
 
 During development of the Postfix log parser it became apparent that in
 addition to the obvious variety in log lines, there were a large number of
@@ -482,8 +477,6 @@ which inputs can be discarded would probably reduce the data required to a
 manageable size.  This avenue of research and development has not been
 pursued by the authors, but could easily be independently undertaken.
 
-\label{overlapping rules}
-
 The architecture does not try to detect overlapping rules: that
 responsibility is left to the author of the rules.  Unintentionally
 overlapping rules lead to inconsistent parsing and data extraction because
@@ -525,8 +518,6 @@ the match is successful; usually CPU time is consumed by a regex with a lot
 of alteration and variable quantifiers failing to match.  This topic is
 beyond the scope of this paper, see~\cite{mastering-regular-expressions}
 for in-depth discussion.
-
-\label{example rule}
 
 The example rule in \tableref{Example rule} matches the following sample
 log line logged by Postfix when a remote client connects to deliver mail:
@@ -663,8 +654,6 @@ lines factor}
 \subsection{Rule Ordering}
 
 \label{Rule ordering}
-\label{rule ordering for efficiency}
-\label{rule efficiency}
 
 At the time of writing there are \numberOFrules{} different rules, with the
 top 10\% matching the vast majority of the log lines, and the remaining log
