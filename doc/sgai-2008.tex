@@ -158,19 +158,19 @@ Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
     must allow users to easily adapt or extend the parser to parse new
     inputs, without requiring that the user have an in-depth knowledge and
     understanding of the parser's internal workings.  This paper presents a
-    novel parsing architecture which aims to make the process of parsing
-    new inputs as simple as possible, enabling users to trivially add new
-    rules (to parse variants of existing inputs) and relatively easily add
-    new actions (to process a previously unknown class of input).  The
-    architecture scales linearly as the number of rules and/or size of
-    input increases, making it suitable for parsing large corpora or months
-    of accumulated data.
+    novel parsing architecture designed for Postfix log files which aims to
+    make the process of parsing new inputs as simple as possible, enabling
+    users to trivially add new rules (to parse variants of existing inputs)
+    and relatively easily add new actions (to process a previously unknown
+    class of input).  The architecture scales linearly as the number of
+    rules and/or size of input increases, making it suitable for parsing
+    large corpora or months of accumulated data.
 }
 
 \SVN$Id$
 \SVNId{}  \today{}
 
-XXX DISCUSS COMPLEXITY\@?
+%XXX DISCUSS COMPLEXITY\@?
 
 \section{Introduction}
 
@@ -228,12 +228,12 @@ great accuracy, but without any provision for readily parsing new or
 similar log lines; others sloppily parsed the majority of log lines, but
 were incapable of distinguishing between log lines of the same type, e.g.\
 rejections, and extracted only a small portion of the data required.  The
-only prior published work on the subject of parsing Postfix log files
-is~\cite{log-mail-analyser}, which aims to present correlated log data in a
-form suitable for a systems administrator to search using the myriad of
-standard Unix text processing utilities already available.  A full state of
-the art review is outside the scope of this paper but will be included in
-the thesis resulting from this work.
+only prior published work on the subject of parsing Postfix log files that
+we are aware of is~\cite{log-mail-analyser}, which aims to present
+correlated log data in a form suitable for a systems administrator to
+search using the myriad of standard Unix text processing utilities already
+available.  A full state of the art review is outside the scope of this
+paper but will be included in the thesis resulting from this work.
 
 The solution developed is conceptually simple: provide a few generic
 functions (\textit{actions\/}), each capable of dealing with an entire
@@ -242,13 +242,14 @@ precise patterns (\textit{rules\/}), each of which matches all log lines of
 a specific type, and only that type (e.g.\ rejection by a specific DNSBL).
 XXX IMPROVE:\@ It is an accepted standard to separate the parsing procedure
 from the declarative grammar it operates with.  Part of the novelty here is
-that the grammars (rules and actions) are themselves procedures.  This
-architecture is ideally suited to parsing inputs where the input is not
-fully understood or does not conform to a fixed grammar: the architecture
-warns about unparsed inputs and other errors, but continues on parsing as
-best it can, allowing the developer of a new parser to decide which
-deficiencies are most important and require attention first, rather than
-being forced to fix the first error which arises.
+in the way that the grammars (rules and actions) are themselves procedures.
+The relationship to another procedural framework (ATN) is discussed below.
+This architecture is ideally suited to parsing inputs where the input is
+not fully understood or does not conform to a fixed grammar: the
+architecture warns about unparsed inputs and other errors, but continues on
+parsing as best it can, allowing the developer of a new parser to decide
+which deficiencies are most important and require attention first, rather
+than being forced to fix the first error which arises.
 
 \section{Architecture}
 
@@ -364,6 +365,11 @@ for each line in the input files:
 
 \label{Actions}
 
+XXX RENAME ``REJECTION'' TO ``MAIL\_REJECTED'' AND ``IGNORE'' TO
+``UNINTERESTING\_LOG\_LINE'' OR SOMETHING ELSE THAT MAKES IT BRUTALLY
+OBVIOUS THE PARSER IS SUCCESSFULLY DEALING WITH THE LOG LINES\@.  I SHOULD
+PROBABLY RENAME ``SAVE\_BY\_QUEUEID'' TOO\@.
+
 Each action contains the code required to deal with a particular type of
 log lines, e.g.\ rejections.  The actions are parser-specific: each parser
 author will need to write the actions required from scratch, unless
@@ -396,12 +402,13 @@ is because there will only ever be one type of log line for that action,
 e.g.\ all log lines showing that a remote client has connected are matched
 by a single rule and handled by the \texttt{CONNECT} action; in other cases
 the action is required to address a deficiency in the log files, or a
-complication which arises during parsing.  Using the \texttt{CONNECT}
+complication which arises during parsing.  Taking the \texttt{CONNECT}
 action as an example, it creates a new data structure for each client
-connecting, and saves the data extracted by the rule.  If the data
-structure already exists it is treated as a symptom of a bug, and the
-action issues a warning containing the full contents of the data structure,
-plus the log line which has just been parsed.
+connecting, and saves the data extracted by the rule (in memory,
+subsequently to be entered into the database).  If the data structure
+already exists it is treated as a symptom of a bug, and the action issues a
+warning containing the full contents of the data structure, plus the log
+line which has just been parsed.
 
 The ability to add special purpose actions to deal with difficulties and
 new requirements which are discovered during parser development is one of
@@ -732,15 +739,16 @@ requires new rules to be written; improving the latter is more intrusive as
 it requires changes to actions, and it can also be much harder to notice a
 deficiency.
 
-Warnings are issued for any log lines which are not parsed; no
-warnings are issued for unparsed log lines while parsing the
-\numberOFlogFILES{} test log files, so it can be safely concluded that
-there are zero false negatives.  False positives are harder to quantify:
-manually verifying that the correct regex parsed each of the
-\numberOFlogLINES{} log lines is infeasible, making it impossible to
-quantify the false positive rate; however a random sample of 6039 log lines
-(0.00994\% of the total) was parsed and the results manually verified by
-inspection to ensure that the correct regex parsed each log line.
+Warnings are issued for any log lines which are not parsed; no warnings are
+issued for unparsed log lines while parsing the \numberOFlogFILES{} test
+log files, so it can be safely concluded that there are zero false
+negatives.  False positives are harder to quantify: manually verifying that
+the correct regex parsed each of the \numberOFlogLINES{} log lines is
+infeasible, making it impossible to quantify the false positive rate.  A
+random sample of 6039 log lines (0.00994\% of the total) was parsed and the
+results manually verified by inspection to ensure that the correct regex
+parsed each log line.  The sample contained zero false positives, and this
+check has been automated to ensure continued accuracy.
 
 Coverage of mails is much more difficult to determine accurately than
 coverage of log lines.  The implementation can dump its state tables in a
@@ -750,18 +758,18 @@ implementation issues warnings when it detects any errors, some of which
 may alert the user to a problem.  There should be few or no warnings when
 parsing, and when finished parsing the state table should only contain
 entries for mails which had yet to be delivered when the log files ended,
-or were accepted before the log files began.  A sample of 6000 log lines
-was parsed with all debugging options enabled, resulting in 167,448 lines
-of output.  All 167,448 lines were examined in conjunction with the input
-log file and a dump of the resulting database, verifying that for each of
-the input lines the implementation used the correct rule and executed the
-correct action, which in turn produced the correct result and inserted the
-correct data in the database.  The log segment produced 4 warnings (about
-mails which had started before the log file segment), 10 mails remaining in
-the state tables, and 1625 connections correctly entered in the database.
-No error messages were produced, therefore there were no false negatives.
-Given the evidence detailed above, the authors are confident that the false
-positive rate when reconstructing a mail is zero.
+or were accepted before the log files began.  A second sample of 6000 log
+lines was parsed with all debugging options enabled, resulting in 167,448
+lines of output.  All 167,448 lines were examined in conjunction with the
+input log file and a dump of the resulting database, verifying that for
+each of the input lines the implementation used the correct rule and
+executed the correct action, which in turn produced the correct result and
+inserted the correct data in the database.  The log segment produced 4
+warnings (about mails which had started before the log file segment), 10
+mails remaining in the state tables, and 1625 connections correctly entered
+in the database.  No error messages were produced, therefore there were no
+false negatives.  Given the evidence detailed above, the authors are
+confident that the false positive rate when reconstructing a mail is zero.
 
 
 \section{Conclusion}
