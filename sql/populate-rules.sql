@@ -84,7 +84,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^lost connection after __SHORT_CMD__ from __CLIENT_HOSTNAME__\[__CLIENT_IP__\]$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -95,7 +95,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^timeout after __SHORT_CMD__ from __CLIENT_HOSTNAME__\[__CLIENT_IP__\]$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -106,7 +106,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^too many errors after (?:\w+|END-OF-MESSAGE) (?:\(\d+ bytes\) )?from __CLIENT_HOSTNAME__\[__CLIENT_IP__\]$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -118,7 +118,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^gethostbyaddr: __CLIENT_HOSTNAME__ != __CLIENT_IP__$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -130,7 +130,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^warning: .*$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -141,7 +141,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^table .* has changed -- restarting$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -152,7 +152,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^fatal: .*$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -164,7 +164,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(?:(?:after|before) input_transp_cleanup: cleanup flags = .*|auto_clnt_close: disconnect private/anvil stream|auto_clnt_open: connected to __CLIENT_IP__:\d+|auto_clnt_open: connected to (?:public|private)/.*|before input_transp_cleanup: cleanup flags = enable_header_body_filter enable_automatic_bcc enable_address_mapping enable_milters|check_access: __EMAIL__|check_addr_access: __CLIENT_IP__|check_domain_access: __CLIENT_HOSTNAME__|>>> CHECKING RECIPIENT MAPS <<<|check_mail_access: __EMAIL__|check_namadr_access: name __CLIENT_HOSTNAME__ addr __CLIENT_IP__|check_server_access: MX __EMAIL__|check_table_result: .*|connect to subsystem .+|ctable_locate: install entry key .*|ctable_locate: leave existing entry key .+|ctable_locate: move existing entry key .*|ctable_locate: purge entry key .+|dict_cidr_lookup: .* (?:__CLIENT_HOSTNAME__|__CLIENT_IP__)|dict_pcre_lookup: .*|dns_get_answer: type MX for .*|dns_query: .*|>>> END Client host RESTRICTIONS <<<|>>> END Data command RESTRICTIONS <<<|>>> END Recipient address RESTRICTIONS <<<|event_cancel_timer: .*|event_disable_readwrite: fd \d+|event_enable_read: fd \d+|event_extend: fd \d+|event_request_timer: .*|extract_addr: in: <__EMAIL__>, result: __EMAIL__|extract_addr: input: <__EMAIL__>|fsspace: .: block size \d+, blocks free .+|generic_checks: .*|[<>] __CLIENT_HOSTNAME__\[__CLIENT_IP__\]: .*|input attribute (?:name|value): .*|__CLIENT_IP__:\d+:? wanted attribute: .*|lookup __CLIENT_HOSTNAME__ type MX flags 0|mail_addr_find: __EMAIL__ -> .*|maps_find: (?:canonical_maps|local_recipient_maps|recipient_canonical_maps|virtual_alias_maps): .*|match_hostaddr: __CLIENT_IP__ ~\? \[__CLIENT_IP__\](?:/\d+)?|match_hostaddr: __CLIENT_IP__ ~\? __CLIENT_IP__(?:/\d+)?|match_hostname: __CLIENT_HOSTNAME__ ~\? __CLIENT_IP__(?:/\d+)?|match_hostname: __CLIENT_HOSTNAME__ ~\? \[__CLIENT_IP__\](?:/\d+)?|match_list_match: .+ no match|match_string: .* ~\? .*|name_mask: .*|permit_auth_destination: __EMAIL__|permit_inet_interfaces: __CLIENT_HOSTNAME__ __CLIENT_IP__|permit_mynetworks: __CLIENT_HOSTNAME__ __CLIENT_IP__|private/anvil: wanted attribute: .*|(?:private|public)/.* socket: wanted attribute: .*|rec_put: type .* len \d+ data.*|reject_invalid_hostname: __CLIENT_HOSTNAME__|reject_non_fqdn_address: .+|reject_non_fqdn_hostname: __CLIENT_HOSTNAME__|reject_rbl: Client host __CLIENT_IP__|reject_unauth_destination: __EMAIL__|reject_unauth_pipelining: DATA|reject_unknown_address: __EMAIL__|reject_unknown_client: __CLIENT_HOSTNAME__ __CLIENT_IP__|reject_unknown_mailhost: __CLIENT_HOSTNAME__|resolve_clnt: .*flags= .+|rewrite_clnt: local: __EMAIL__ -> __EMAIL__|send attr .* =.*|smtpd_check_addr: .+|smtpd_check_queue: .*|smtpd_check_rewrite: trying: permit_inet_interfaces|>>> START Client host RESTRICTIONS <<<|>>> START Data command RESTRICTIONS <<<|>>> START Recipient address RESTRICTIONS <<<|trying... \[(__CLIENT_IP__)\]|vstream_buf_get_ready: fd \d* got \d*|vstream_fflush_some: fd \d* flush \d*|watchdog_pat: .*)$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -201,7 +201,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: User unknown(?: in \w+ \w+ table)?; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_unlisted_recipient',
@@ -216,7 +216,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(.*?)>: Recipient address rejected: User unknown in \w+ \w+ table; from=<(.*?)> to=<.*?> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         -1,
         'REJECTED',
@@ -231,7 +231,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: User unknown in \w+ \w+ table; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_unlisted_sender',
@@ -245,7 +245,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(.*)>: Sender address rejected: User unknown in \w+ \w+ table; from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         -1,
         'REJECTED',
@@ -260,7 +260,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Domain not found; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_unknown_sender_domain',
@@ -274,7 +274,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(.*)>: Sender address rejected: Domain not found; from=<.*> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         -1,
         'REJECTED',
@@ -289,7 +289,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Domain not found; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_unknown_recipient_domain',
@@ -308,7 +308,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using sbl-xbl.spamhaus.org;(?:((?:(?:(?: http://www.spamhaus.org/SBL/sbl.lasso\?query=\w+)|(?: http://www.spamhaus.org/query/bl\?ip=\5))(?: /)?)*);)? (?>from=<(__SENDER__)>) to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 8, data = 6, sender = 7',
         'helo = 9, client_ip = 5',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_rbl_client',
@@ -325,7 +325,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using zen.spamhaus.org; (?:((?:http://www.spamhaus.org/(?:query/bl\?ip=\5|SBL/sbl.lasso\?query=[^\s]+))| / )+; )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 8, data = 6, sender = 7',
         'helo = 9, client_ip = 5',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_rbl_client',
@@ -340,7 +340,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using list.dsbl.org; (?:(?>(http://dsbl.org/listing\?\5);) )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 8, data = 6, sender = 7',
         'helo = 9, client_ip = 5',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_rbl_client',
@@ -354,7 +354,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using relays.ordb.org; (?>(This mail was handled by an open relay - please visit <http://ORDB.org/lookup/\?host=\5>);) from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 8, data = 6, sender = 7',
         'helo = 9, client_ip = 5',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_rbl_client',
@@ -369,7 +369,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using cbl.abuseat.org;(?>( Blocked - see http://cbl.abuseat.org/lookup.cgi\?ip=\5);)? from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 8, data = 6, sender = 7',
         'helo = 9, client_ip = 5',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_rbl_client',
@@ -386,7 +386,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]>: Client host rejected: Greylisted, see (http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 9, data = 7, sender = 8',
         'helo = 10, client_hostname = 5, client_ip= 6',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_policy_service',
@@ -400,7 +400,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Greylisted, see (http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+) from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, data = 6, sender = 7',
         'helo = 8',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_policy_service',
@@ -414,7 +414,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in loopback address space \(127.0.0.0/8\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_mx_access',
@@ -428,7 +428,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(172.16.0.0/12\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_mx_access',
@@ -442,7 +442,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(172.16.0.0/12\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_recipient_mx_access',
@@ -456,7 +456,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(127.16.0.0/12\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_mx_access',
@@ -470,7 +470,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(127.16.0.0/12\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_recipient_mx_access',
@@ -484,7 +484,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_mx_access',
@@ -498,7 +498,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(192.168.0.0/16\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_recipient_mx_access',
@@ -513,7 +513,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in private address space \(10.0.0.0/8\); from=<.*?> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_mx_access',
@@ -527,7 +527,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in private address space \(10.0.0.0/8\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_recipient_mx_access',
@@ -541,7 +541,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in local address space \(169.254.0.0/16\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_mx_access',
@@ -555,7 +555,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in "this" address space \(0.0.0.0/8\); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_mx_access',
@@ -569,7 +569,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in "this" address space \(0.0.0.0/8\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_mx_access',
@@ -583,7 +583,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Address uses MX in loopback address space \(127.0.0.0/8\); from=<(__SENDER__)> to=<__SENDER__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_recipient_mx_access',
@@ -597,7 +597,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in test address space \(192.0.2.0/24\); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_mx_access',
@@ -611,7 +611,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Address uses MX in reserved address space \(240.0.0.0/4\); from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_mx_access',
@@ -625,7 +625,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <__SENDER__>: Sender address rejected: Address uses MX in multicast address space \(224.0.0.0/4\); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_mx_access',
@@ -639,7 +639,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ Server configuration (?:problem|error); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'Server misconfiguration',
@@ -653,7 +653,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__HELO__)>: Helo command rejected: You are not in cs.tcd.ie; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
         'recipient = 7, sender = 6',
         'helo = 5',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_helo_access',
@@ -667,7 +667,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: (Mail to this address bounces); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 7, data = 6',
         'helo = 8',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_recipient_access',
@@ -680,7 +680,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <__CLIENT_HOSTNAME__\[__CLIENT_IP__\]>: Client host rejected: (Do something sensible with mail to root.|Please contact John Tobin at 1534|Stop sending phishing scams); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 7, sender = 6, data = 5',
         'helo = 8',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_client_access',
@@ -696,7 +696,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ (?><(.*?)>:) Helo command rejected: need fully-qualified hostname; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
         'recipient = 7, sender = 6',
         'helo = 5',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_non_fqdn_hostname, reject_non_fqdn_helo_hostname',
@@ -711,7 +711,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Relay access denied; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'permit_mynetworks, reject_unauth_destination',
@@ -725,7 +725,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ Client host rejected: cannot find your hostname, \[__CLIENT_IP__\]; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_unknown_client',
@@ -741,7 +741,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(.*?)>: Helo command rejected: (invalid ip address|Invalid name); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
         'recipient = 8, sender = 7, data = 6',
         'helo = 5',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_invalid_helo_hostname',
@@ -755,7 +755,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: recipient address unknown; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_recipient_access',
@@ -769,7 +769,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: sender address unknown; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_access',
@@ -783,7 +783,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: User no longer receiving mail at this address; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_recipient_access',
@@ -797,7 +797,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <__CLIENT_HOSTNAME__(?>\[__CLIENT_IP__\]>:) Client host rejected: Alias root to something useful.; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_client_access',
@@ -812,7 +812,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Recipient address rejected: alias root to some other user, damnit.; from=<(__RECIPIENT__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_recipient_access',
@@ -827,7 +827,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__HELO__)>: Helo command rejected: You are not me\.?; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
         'recipient = 7, sender = 6',
         'helo = 5',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_helo_access',
@@ -841,7 +841,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: need fully-qualified address; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 5, sender = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_non_fqdn_sender',
@@ -855,7 +855,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: need fully-qualified address; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 6, sender = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_non_fqdn_sender',
@@ -871,7 +871,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'sender = 5',
         'helo = 6',
         'recipient = unknown',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_multi_recipient_bounce',
@@ -887,7 +887,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <DATA>: Data command rejected: Improper use of SMTP command pipelining; from=<(__SENDER__)> (?:to=<(__RECIPIENT__)> )?proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_unauth_pipelining',
@@ -904,7 +904,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'smtp_code = 4',
         'client_hostname = 2, client_ip = 3, helo = 5',
         'sender = unknown, recipient = unknown',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'message_size_limit',
@@ -918,7 +918,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Stop flooding our users with mail.; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_access',
@@ -934,7 +934,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'smtp_code = 4',
         'client_hostname = 2, client_ip = 3',
         'sender = unknown, recipient = unknown',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_client_access',
@@ -948,7 +948,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Malformed DNS server reply; from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 6, recipient = 5',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_unknown_sender_domain',
@@ -962,7 +962,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: Malformed DNS server reply; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'reject_unknown_sender_domain',
@@ -976,7 +976,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]>: Client host rejected: Please stop sending us unwanted call for papers.; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 7, recipient = 8',
         'client_hostname = 5, client_ip = 6, helo = 9',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_client_access',
@@ -990,7 +990,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: This address is not in use.; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_access',
@@ -1004,7 +1004,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(__SENDER__)>: Sender address rejected: We don.t want your spam.; from=<__SENDER__> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_access',
@@ -1018,7 +1018,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <(?:__CLIENT_HOSTNAME__)\[(?:__CLIENT_IP__)\]>: Client host rejected: Fix your mail system please, you.ve filling up our mail queue.; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_access',
@@ -1033,7 +1033,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__RESTRICTION_START__ <__CLIENT_HOSTNAME__\[__CLIENT_IP__\]>: Client host rejected: Don.t want this mail; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5, recipient = 6',
         'helo = 7',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_sender_access',
@@ -1047,7 +1047,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): reject: CONNECT from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: 554 5.7.1 <__CLIENT_HOSTNAME__\[__CLIENT_IP__\]>: Client host rejected: TOO MANY CONNECTIONS; proto=E?SMTP$',
         '',
         'client_hostname = 2, client_ip = 3',
-        'REJECTION',
+        'DELIVERY_REJECTED',
         1,
         'REJECTED',
         'check_client_access',
@@ -1083,7 +1083,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^NOQUEUE: warn: __SHORT_CMD__ from (?:__CLIENT_HOSTNAME__)\[(?:__CLIENT_IP__)\]: Logging HELO; from=<(?:__SENDER__)> to=<(?:__RECIPIENT__)> proto=E?SMTP helo=<(?:__HELO__)>$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         5,
         'IGNORED'
@@ -1096,7 +1096,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): warn: (?:__SHORT_CMD__|DATA) from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: Logging HELO; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 4, recipient = 5',
         'client_hostname = 2, client_ip = 3, helo = 6',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1108,7 +1108,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): warn: (?:__SHORT_CMD__|DATA) from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: Logging HELO; from=<(__SENDER__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 4',
         'client_hostname = 2, client_ip = 3, helo = 5',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1120,7 +1120,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): hold: DATA from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: <(__RECIPIENT__)>: Recipient address triggers HOLD action; from=<(__SENDER__)> to=<(\4)> proto=E?SMTP helo=<(__HELO__)>$',
         'recipient = 4, sender = 3',
         'client_hostname = 2, client_ip = 3, helo = 5',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1175,7 +1175,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(delivery temporarily suspended: connect to (__SERVER_HOSTNAME__)\[(__SERVER_IP__)\]: Connection (?:refused|timed out)\)$',
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1187,7 +1187,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(delivery temporarily suspended: lost connection with (__SERVER_HOSTNAME__)\[(__SERVER_IP__)\] while receiving the initial server greeting\)$',
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1199,7 +1199,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^__QUEUEID__: skipped, still being delivered$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -1212,7 +1212,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(delivery temporarily suspended: lost connection with (127.0.0.1)\[(127.0.0.1)\] while sending end of data -- message may be sent more than once\)$',
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         10,
         'INFO'
@@ -1225,7 +1225,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^warning: .+$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -1237,7 +1237,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=bounced \(bad address syntax\)$',
         'recipient = 5',
         '',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1251,7 +1251,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'server_hostname = 3',
         'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1263,7 +1263,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^fatal: (__QUEUEID__): timeout receiving delivery status from transport: \w+$',
         '',
         '',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1275,7 +1275,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=deferred \(unknown mail transport error\)$',
         'recipient = 2',
         '',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1299,7 +1299,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2, data = 5, smtp_code = 6',
         'server_hostname = 3, server_ip = 4',
         'client_ip = 127.0.0.1, client_hostname = localhost',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'SENT'
 );
@@ -1314,7 +1314,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=127.0.0.1\[127.0.0.1\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=sent \(((250) .*)\)$',
         'recipient = 2, smtp_code = 4, data = 3',
         '',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         5,
         'SENT'
@@ -1331,7 +1331,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         'server_hostname = 1, server_ip = 2',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -1348,7 +1348,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1366,7 +1366,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2, smtp_code = 6, data = 5',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1382,7 +1382,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'server_hostname = 3',
         'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'BOUNCED'
 );
@@ -1396,7 +1396,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'server_hostname = 3',
         'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1409,7 +1409,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         '',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -1425,7 +1425,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2, smtp_code = 6, data = 5',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'BOUNCED'
 );
@@ -1439,7 +1439,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         '',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -1453,7 +1453,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2, smtp_code = 6, data = 5',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1466,7 +1466,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         '',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -1481,7 +1481,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'data = 4, smtp_code = 5',
         'server_hostname = 2, server_ip = 3',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         -1,
         -- XXX is INFO right here?
@@ -1496,7 +1496,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         '',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -1509,7 +1509,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1523,7 +1523,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'data = 3',
         'server_hostname = 2, server_ip = 3',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1537,7 +1537,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         '',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -1550,7 +1550,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1565,7 +1565,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1578,7 +1578,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         'server_hostname = 2, server_ip = 3',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1592,7 +1592,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         'server_hostname = 2, server_ip = 3',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1606,7 +1606,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_hostname = localhost, server_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'BOUNCED'
 );
@@ -1621,7 +1621,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1635,7 +1635,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'server_hostname = 3, server_ip = 4',
         'smtp_code = 552',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'BOUNCED'
 );
@@ -1653,7 +1653,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         'server_hostname = 2, server_ip = 3',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1666,7 +1666,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2, data = 5, smtp_code = 6',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1683,7 +1683,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient= 2',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1697,7 +1697,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1710,7 +1710,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2',
         'server_hostname = 3, server_ip = 4',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1723,7 +1723,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'data = 4, smtp_code = 5',
         'server_hostname= 2, server_ip = 3',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1737,7 +1737,7 @@ VALUES('Lost connection after data', 'Lost connection after end-of-data - messag
         '',
         'server_hostname = 2, server_ip = 3',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1752,7 +1752,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'server_hostname = 4',
         'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'BOUNCED'
 );
@@ -1766,7 +1766,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'server_hostname = 4',
         'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'BOUNCED'
 );
@@ -1778,7 +1778,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): enabling PIX workarounds: disable_esmtp delay_dotcrlf for (__SERVER_HOSTNAME__)\[(__SERVER_IP__)\]:25$',
         '',
         'server_hostname = 2, server_ip = 3',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1790,7 +1790,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^connect to (__SERVER_HOSTNAME__)\[(__SERVER_IP__)\]: Network is unreachable(?: \(port \d+\))?$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         1,
         'IGNORED'
 );
@@ -1826,7 +1826,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         'smtp_code = 250',
         'server_hostname = localhost, server_ip = 127.0.0.1, client_ip = 127.0.0.1, client_hostname = localhost',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'SENT'
 );
@@ -1838,7 +1838,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^table .* has changed -- restarting$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -1851,7 +1851,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(temporary failure. Command output: (.*)\)$',
         'recipient = 2, data = 3',
         '',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1863,7 +1863,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(?:__RECIPIENT__)>,)? relay=local, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=deferred \(error reading forwarding file: Permission denied\)$',
         'recipient = 2, data = 3',
         '',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1876,7 +1876,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2',
         '',
         'smtp_code = 554',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'BOUNCED'
 );
@@ -1888,7 +1888,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^warning: (?:required alias not found: .*|pipe_command_read: read time limit exceeded|premature end-of-input on .* socket while reading input attribute name|__QUEUEID__: defer service failure|close file .*.forward: Permission denied)$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -1902,7 +1902,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         'smtp_code = 550',
         'client_ip = 127.0.0.1, client_hostname = localhost, server_ip = 127.0.0.1, server_hostname = localhost',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'BOUNCED'
 );
@@ -1915,7 +1915,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2, data = 3',
         '',
         'smtp_code = 250',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'SENT'
 );
@@ -1929,7 +1929,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'recipient = 2',
         '',
         'smtp_code = 250',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'SENT'
 );
@@ -1941,7 +1941,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(temporary failure\)$',
         'recipient = 2',
         '',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1953,7 +1953,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^warning: database .* is older than source file .*$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -1966,7 +1966,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(cannot find alias database owner\)$',
         'recipient = 2',
         '',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'INFO'
 );
@@ -1981,7 +1981,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '',
         'smtp_code = 550',
         'server_hostname = localhost, server_ip = 127.0.0.1, client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'BOUNCED'
 );
@@ -1993,7 +1993,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^warning: cannot find alias database owner for .*$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2005,7 +2005,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^warning: (__QUEUEID__): address with illegal extension: .*$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         1,
         'IGNORED'
 );
@@ -2017,7 +2017,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^warning: file .*.forward is not a regular file$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2029,7 +2029,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(?:__RECIPIENT__)>,)? relay=local, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=bounced \((Command time limit exceeded: .+)\)$',
         'recipient = 2, data = 3',
         '',
-        'SAVE_BY_QUEUEID',
+        'SAVE_DATA',
         1,
         'BOUNCED'
 );
@@ -2076,7 +2076,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^Deleted: \d+ message(?:s)?$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2088,7 +2088,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^fatal: usage: postsuper .*$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2100,7 +2100,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^fatal: invalid directory name: .*$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2112,7 +2112,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^Released from hold: 3 messages$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2124,7 +2124,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(?:Renamed to match inode number: \d+ messages|warning: QUEUE FILE NAMES WERE CHANGED TO MATCH INODE NUMBERS)$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2152,7 +2152,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^warning: __QUEUEID__: read timeout on cleanup socket$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2164,7 +2164,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^warning: stripping too many comments from address: .*$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2176,7 +2176,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^warning: cleanup socket: unexpected EOF in data, record type \d+ length \d+$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2188,7 +2188,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^warning: pipe_command_read: read time limit exceeded$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2200,7 +2200,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^fatal: watchdog timeout$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2212,7 +2212,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^table .* has changed -- restarting$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2270,7 +2270,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^reload configuration .*$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2296,7 +2296,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^warning: .*$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2336,7 +2336,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^libsldap: Status: 2  Mesg: Unable to load configuration ./var/ldap/ldap_client_file. \(..\).$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2347,7 +2347,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^libsldap: Status: 7  Mesg: Session error no available conn.$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2358,7 +2358,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^libsldap: Status: 91  Mesg: openConnection: simple bind failed - Can.t connect to the LDAP server$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );
@@ -2369,7 +2369,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^libsldap: Status: 81  Mesg: openConnection: simple bind failed - Can.t contact LDAP server$',
         '',
         '',
-        'IGNORE',
+        'UNINTERESTING',
         0,
         'IGNORED'
 );

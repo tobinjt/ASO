@@ -272,7 +272,7 @@ sub init_globals {
     # maybe_remove_faked() to check if a message-id contains a queueid.
     $self->{queueid_regex}    = $self->filter_regex(q{__QUEUEID__});
     $self->{queueid_regex}    = qr/$self->{queueid_regex}/mx;
-    # Used to set warning in REJECTION.
+    # Used to set warning in DELIVERY_REJECTED.
     $self->{reject_warning}   =
             $self->filter_regex(q{^__QUEUEID__:\sreject_warning:});
     $self->{reject_warning}   = qr/$self->{reject_warning}/mx;
@@ -299,7 +299,7 @@ sub init_globals {
     # 
     # Occasionally mail currently being delivered will be deleted by postsuper;
     # maintain a cache of recently deleted mail in postsuper_deleted_queueids so
-    # that SAVE_BY_QUEUEID can check the cache and discard lines for recently
+    # that SAVE_DATA can check the cache and discard lines for recently
     # deleted mail.  There's a loss of information here, particularly if the log
     # line is smtp delivering to a proxy and in future we start connecting pre-
     # and post-proxy queueids.
@@ -314,13 +314,13 @@ sub init_globals {
     # Actions available to rules.
     $self->{actions} = {};
     $self->add_actions(qw(
-        IGNORE
+        UNINTERESTING
         CONNECT
         DISCONNECT
-        SAVE_BY_QUEUEID
+        SAVE_DATA
         COMMIT
         TRACK
-        REJECTION
+        DELIVERY_REJECTED
         EXPIRY
         MAIL_PICKED_FOR_DELIVERY
         PICKUP
@@ -745,17 +745,17 @@ digging into the internals.
 
 =over  4
 
-=item IGNORE
+=item UNINTERESTING
 
-IGNORE just returns successfully; it is used when a line needs to be parsed for
-completeness but doesn't either provide any useful data or require anything to
-be done.
+UNINTERESTING just returns successfully; it is used when a line needs to be
+parsed for completeness but doesn't either provide any useful data or require
+anything to be done.
 
 =back
 
 =cut
 
-sub IGNORE {
+sub UNINTERESTING {
     my ($self, $rule, $line, $matches) = @_;
     return;
 }
@@ -890,7 +890,7 @@ sub DISCONNECT {
 
 =over  4
 
-=item SAVE_BY_QUEUEID
+=item SAVE_DATA
 
 Use the queueid from $rule and @matches to find the correct connection and call
 $self->save() with the appropriate arguments - see save() in SUBROUTINES for
@@ -902,7 +902,7 @@ but failed is_valid_program_combination(), COMMIT() will be attempted again.
 
 =cut
 
-sub SAVE_BY_QUEUEID {
+sub SAVE_DATA {
     my ($self, $rule, $line, $matches) = @_;
     my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
     # Deal with this mail being deleted mid-delivery.
@@ -993,7 +993,7 @@ sub COMMIT {
     }
     if (not $self->is_valid_program_combination($connection)) {
         # This is generally due to out of order log lines; the next time
-        # SAVE_BY_QUEUEID() is called it will try COMMIT() again.
+        # SAVE_DATA() is called it will try COMMIT() again.
         $connection->{invalid_program_combination}++;
         return;
     }
@@ -1100,7 +1100,7 @@ sub EXPIRY {
 
 =over  4
 
-=item REJECTION
+=item DELIVERY_REJECTED
 
 Deal with postfix rejecting an SMTP command from the remote client: log the
 rejection with the accepted mail if there is one, otherwise log it with the
@@ -1110,7 +1110,7 @@ connection.
 
 =cut
 
-sub REJECTION {
+sub DELIVERY_REJECTED {
     my ($self, $rule, $line, $matches) = @_;
     my $connection;
     my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
@@ -1501,7 +1501,7 @@ because sometimes the recipient won't have been logged yet, and we need to fake
 a value.  Calls COMMIT() to do the real work.  Adds deleted connections to the
 cache in postsuper_deleted_queueids; when a mail currently being delivered is
 deleted, we get log messages for the mail after this action finished and the
-mail has been removed from the state tables.  SAVE_BY_QUEUEID will check
+mail has been removed from the state tables.  SAVE_DATA will check
 postsuper_deleted_queueids and discard the log line if the queueid if found.
 
 =back
@@ -1514,7 +1514,7 @@ sub DELETE {
     my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
     my $connection = $self->get_connection_by_queueid($queueid);
     $self->save($connection, $line, $rule, $matches);
-    # Cache for SAVE_BY_QUEUEID to check, to avoid creating a new connection
+    # Cache for SAVE_DATA to check, to avoid creating a new connection
     # after this one has been deleted.
     $self->{postsuper_deleted_queueids}->{$queueid} = $connection;
 
@@ -1913,7 +1913,7 @@ sub load_rules {
             rule             => $rule,
         };
 
-        if ($rule_hash->{action} eq q{REJECTION}) {
+        if ($rule_hash->{action} eq q{DELIVERY_REJECTED}) {
             foreach my $cols (qw(connection_cols result_cols)) {
                 # Add the extra captures, but allow them to be overridden.
                 $rule_hash->{$cols} = {
@@ -2262,7 +2262,7 @@ sub prune_postsuper_deleted_queueids {
     my ($self) = @_;
     my $count = 0;
 
-    # This is dependant on the time difference used in SAVE_BY_QUEUEID.
+    # This is dependant on the time difference used in SAVE_DATA.
     foreach my $queueid (keys %{$self->{postsuper_deleted_queueids}}) {
         my $connection = $self->{postsuper_deleted_queueids}->{$queueid};
         if ($connection->{results}->[-1]->{timestamp}

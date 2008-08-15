@@ -312,12 +312,13 @@ fields:
 
 \label{results table}
 
-Every interesting\footnote{All log lines are interesting unless the action
-of the rule which parses them is \texttt{INFO} or \texttt{IGNORE}, as
-described in \sectionref{actions-in-detail}.} log line will have an entry
-in the results table, e.g.\ rejecting an \SMTP{} command, delivering a
-mail, or bouncing a mail (see \sectionref{postfix_action} for typical
-values of \texttt{postfix\_action}).  Each row is associated with a single
+Every interesting\footnote{All log lines are interesting unless the
+postfix\_action of the rule which parses them is \texttt{INFO} or
+\texttt{IGNORE}, as described in \sectionref{actions-in-detail}.} log line
+will have an entry in the results table, e.g.\ rejecting an \SMTP{}
+command, delivering a mail, or bouncing a mail (see
+\sectionref{postfix_action} for typical values of
+\texttt{postfix\_action}).  Each row is associated with a single
 connection, though there may be many results per connection.
 
 \begin{description}
@@ -996,6 +997,10 @@ The actions:
         deals with is described fully in \sectionref{Mail deleted before
         delivery is attempted}.  
 
+    \item [DELIVERY\_REJECTED] Deals with Postfix rejecting an \SMTP{}
+        command from the remote client: log the rejection with a mail if
+        there is a queueid in the log line, or with the connection if not.
+
     \item [DISCONNECT] Deal with the remote client disconnecting: enter the
         connection in the database, perform any required cleanup, and
         delete the connection from the state tables.  This action deals
@@ -1010,10 +1015,6 @@ The actions:
         be committed the EXPIRY action sets a flag marking the mail as
         expired; the flag later causes the valid combinations check to be
         skipped, so the mail will be committed.
-
-    \item [IGNORE] This rule just returns successfully; it is used when a
-        line needs to be parsed for completeness but does not either
-        provide any useful data or require anything to be done.
 
     \item [MAIL\_PICKED\_FOR\_DELIVERY] This action represents Postfix
         picking a mail from the queue to deliver. This action is used for
@@ -1040,11 +1041,7 @@ The actions:
         active connections to be cleaned up, entered in the database, and
         deleted from the state tables.
 
-    \item [REJECTION] Deal with Postfix rejecting an \SMTP{} command from
-        the remote client: log the rejection with a mail if there is a
-        queueid in the log line, or with the connection if not.
-
-    \item [SAVE\_BY\_QUEUEID] Find the correct mail based on the queueid in
+    \item [SAVE\_DATA] Find the correct mail based on the queueid in
         the log line, and save the data extracted by the \regex{} to it.
 
     \item [SMTPD\_DIED] Sometimes a \daemon{smtpd} dies or exits
@@ -1079,6 +1076,10 @@ The actions:
         checks if the child has already been tracked, either by this parent
         or by another parent, and issues appropriate warnings in either
         case.
+
+    \item [UNINTERESTING] This rule just returns successfully; it is used when a
+        line needs to be parsed for completeness but does not either
+        provide any useful data or require anything to be done.
 
 \end{description}
 

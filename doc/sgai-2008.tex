@@ -384,15 +384,15 @@ this architecture will have a high ratio of rules to actions, hopefully
 resulting in simpler rules and clearer distinctions between log lines.
 \showgraph{build/graph-action-distribution}{Distribution of rules per
 action}{Distribution of rules per action} Unsurprisingly the action with
-the highest number of associated rules is \texttt{REJECTION}, the action
+the highest number of associated rules is \texttt{DELIVERY\_REJECTED}, the action
 which handles Postfix rejecting a mail; it is followed by
-\texttt{SAVE\_BY\_QUEUEID}, the action responsible for handling informative
+\texttt{SAVE\_DATA}, the action responsible for handling informative
 inputs: these are log lines that supplement the data gathered from other
 log lines (such as rejections), but that do not by themselves represent
 interesting events.  The third most common action is, perhaps surprisingly,
-\texttt{IGNORE}: the \texttt{IGNORE} action does nothing when executed,
+\texttt{UNINTERESTING}: this action does nothing when executed,
 allowing uninteresting log lines to be parsed without causing any effects
-(neither \texttt{REJECTION} nor \texttt{IGNORE} imply that the input is
+(it does not imply that the input is
 ungrammatical or unparsed).  The framework warns about every unparsed log
 line, to alert the user that they need to alter or extend their ruleset;
 the Postfix log parser successfully parses every input line in the
