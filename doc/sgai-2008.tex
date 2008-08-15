@@ -227,8 +227,8 @@ some ignored the majority of log lines, parsing specific log lines with
 great accuracy, but without any provision for readily parsing new or
 similar log lines; others sloppily parsed the majority of log lines, but
 were incapable of distinguishing between log lines of the same type, e.g.\
-rejections, and extracted only a small portion of the data required.  The only
-prior published work on the subject of parsing Postfix log files
+rejections, and extracted only a small portion of the data required.  The
+only prior published work on the subject of parsing Postfix log files
 is~\cite{log-mail-analyser}, which aims to present correlated log data in a
 form suitable for a systems administrator to search using the myriad of
 standard Unix text processing utilities already available.  A full state of
@@ -298,9 +298,9 @@ process.
 There is some similarity between the architecture and William Wood's
 Augmented Transition Networks (ATN)~\cite{atns, nlpip}, a tool used in
 Computational Linguistics for creating grammars to parse or generate
-sentences.  The resemblance between ATN and the parser is accidental, but
-it is interesting how two different approaches have a similar division of
-responsibilities, while having different semantics.
+sentences.  The resemblance between ATN and the architecture is accidental,
+but it is interesting how two different approaches have a similar division
+of responsibilities, while having different semantics.
 
 % Do Not Reformat!
 
@@ -310,17 +310,17 @@ responsibilities, while having different semantics.
     \begin{tabular}[]{lll}
         \hline
         \noalign{\smallskip}
-        ATN           & Parser    & Similarity                          \\
+        ATN           & Architecture    & Similarity                          \\
         \noalign{\smallskip}
         \hline
         \noalign{\smallskip}
-        Networks      & Framework & Determines the sequence of
-                                    transitions or actions which        \\
-                      &           & constitutes a valid input.          \\
-        Transitions   & Actions   & Save data and impose conditions the
-                                    input must meet to be               \\
-                      &           & considered valid.                   \\
-        Abbreviations & Rules     & Responsible for classifying input.  \\
+        Networks      & Framework       & Determines the sequence of
+                                          transitions or actions which        \\
+                      &                 & constitutes a valid input.          \\
+        Transitions   & Actions         & Save data and impose conditions the
+                                          input must meet to be               \\
+                      &                 & considered valid.                   \\
+        Abbreviations & Rules           & Responsible for classifying input.  \\
         \noalign{\smallskip}
         \hline
         \noalign{\smallskip}
@@ -367,7 +367,7 @@ for each line in the input files:
 Each action contains the code required to deal with a particular type of
 log lines, e.g.\ rejections.  The actions are parser-specific: each parser
 author will need to write the actions required from scratch, unless
-extending an existing parser.  In the Postfix parser developed for this
+extending an existing parser.  In the Postfix log parser developed for this
 project there are \numberOFactions{} actions and \numberOFrules{} rules,
 with a very skewed distribution of rules to actions as shown in
 \graphref{Distribution of rules per action}.  The distribution is skewed
@@ -387,9 +387,9 @@ interesting events.  The third most common action is, perhaps surprisingly,
 \texttt{IGNORE}: the \texttt{IGNORE} action does nothing when executed,
 allowing uninteresting log lines to be parsed without causing any effects
 (neither \texttt{REJECTION} nor \texttt{IGNORE} imply that the input is
-ungrammatical or unparsed).  The parser warns about every unparsed log
+ungrammatical or unparsed).  The framework warns about every unparsed log
 line, to alert the user that they need to alter or extend their ruleset;
-the Postfix parser successfully parses every input line in the
+the Postfix log parser successfully parses every input line in the
 \numberOFlogFILESall{} log files it is currently being tested with.  The
 remaining actions have only one or two associated rules: in some cases this
 is because there will only ever be one type of log line for that action,
@@ -421,13 +421,13 @@ interested in, rather than reproducing large chunks of functionality.
 
 \label{complications}
 
-During development of the Postfix parser it became apparent that in
+During development of the Postfix log parser it became apparent that in
 addition to the obvious variety in log lines, there were a large number of
 complications to be overcome.  Some were the result of deficiencies in
 Postfix's logging (some of which were improved on or resolved by later
 versions of Postfix); others were due to the vagaries of process
 scheduling, client behaviour, and administrative actions.  All were
-successfully accommodated in the Postfix parser: adding new actions was
+successfully accommodated in the Postfix log parser: adding new actions was
 enough to overcome several of the complications; others required
 modifications to a single existing action to work around the difficulties;
 the remainder were resolved by adapting actions to pass information to
@@ -445,31 +445,31 @@ number of rules and actions to parse a single input line.
 
 Rules categorise inputs, specifying both the regex to match against each
 log line and the action to invoke when the match is successful.  The
-Postfix parser stores its rules in the same SQL database the results are
-stored in, removing any doubt as to which set of rules was used to produce
-a set of results; other implementations are free to store the rules in
-whatever fashion suits their needs.  The framework requires each rule to
+Postfix log parser stores its rules in the same SQL database the results
+are stored in, removing any doubt as to which set of rules was used to
+produce a set of results; other implementations are free to store the rules
+in whatever fashion suits their needs.  The framework requires each rule to
 have \texttt{action} and \texttt{regex} attributes; each implementation is
-free to add any additional attributes it requires.  The Postfix parser adds
-several attributes to optimise rule ordering (\sectionref{Rule ordering}),
-to restrict which log lines rules can be matched against, and to describe
-each rule.  Data is automatically extracted and saved from the log line
-based on keywords in the rule's regex, but there is also a facility to
-specify extra data to be saved.
+free to add any additional attributes it requires.  The Postfix log parser
+adds several attributes to optimise rule ordering (\sectionref{Rule
+ordering}), to restrict which log lines rules can be matched against, and
+to describe each rule.  Data is automatically extracted and saved from the
+log line based on keywords in the rule's regex, but there is also a
+facility to specify extra data to be saved.
 
 Adding new rules is simple: define all the required attributes and append
-the new rule to wherever the existing rules are stored.  The Postfix parser
-supplies a utility based on SLCT~\cite{slct-paper} to aid in producing
-regexes from previously unparsed inputs.  Storing the rules separately
-allows other approaches to rule management to be used, e.g.\ instead of
-manually adding new rules when unparsed log lines are seen, machine
-learning techniques could be used to automatically generate new rules,
-based on the existing rules and input lines.  If this approach was taken
-the choice of machine learning technique would be constrained by the size
-of typical data sets: the \numberOFlogFILES{} log files used to generate
-statistics contain \numberOFlogLINEShuman{} log lines.  Techniques which
-require the full data set when training would be impractical; Instance
-Based Learning~\cite{instance-based-learning} techniques which
+the new rule to wherever the existing rules are stored.  The Postfix log
+parser supplies a utility based on SLCT~\cite{slct-paper} to aid in
+producing regexes from previously unparsed inputs.  Storing the rules
+separately allows other approaches to rule management to be used, e.g.\
+instead of manually adding new rules when unparsed log lines are seen,
+machine learning techniques could be used to automatically generate new
+rules, based on the existing rules and input lines.  If this approach was
+taken the choice of machine learning technique would be constrained by the
+size of typical data sets: the \numberOFlogFILES{} log files used to
+generate statistics contain \numberOFlogLINEShuman{} log lines.  Techniques
+which require the full data set when training would be impractical;
+Instance Based Learning~\cite{instance-based-learning} techniques which
 automatically determine which inputs from the training set are valuable and
 which inputs can be discarded would probably reduce the data required to a
 manageable size.  This avenue of research and development has not been
@@ -477,16 +477,19 @@ pursued by the authors, but could easily be independently undertaken.
 
 \label{overlapping rules}
 
-The parser does not try to detect overlapping rules: that responsibility is
-left to the author of the rules.  Unintentionally overlapping rules lead to
-inconsistent parsing and data extraction because the first matching rule
-wins, and the order in which rules are tried against each line may change
-between log files.  Overlapping rules are frequently a requirement,
-allowing a more specific rule to match some log lines and a more general
-rule to match the majority, e.g.\ separating SMTP delivery to specific
-sites from SMTP delivery to the rest of the world.  Overlapping rules
-should have a priority attribute to specify the order in which they should
-be used; negative priorities may be useful for catchall rules.
+The architecture does not try to detect overlapping rules: that
+responsibility is left to the author of the rules.  Unintentionally
+overlapping rules lead to inconsistent parsing and data extraction because
+the first matching rule wins, and the order in which rules are tried
+against each line may change between log files.  Overlapping rules are
+frequently a requirement, allowing a more specific rule to match some log
+lines and a more general rule to match the majority, e.g.\ separating SMTP
+delivery to specific sites from SMTP delivery to the rest of the world.
+This can simplify both the general rule and the more specific rule;
+additionally rules from different sources can be combined with a minimum of
+prior cooperation or modification required.  Overlapping rules should have
+a priority attribute to specify the order in which they should be used;
+negative priorities may be useful for catchall rules.
 
 Storing the rules separately to the parser allows external tools to be
 written to detect overlapping rules.  Traditional regexes are equivalent in
@@ -502,7 +505,7 @@ detection may require calculating the intersection of two PA.\@  Detecting
 overlap between $n$ regexes requires $\frac{n(n-1)}{2}$ intersections to be
 calculated, giving $O(n^2x)$ complexity, where $O(x)$ is the complexity of
 calculating intersection.  This is certainly not a task to be performed on
-every parsing run: detecting overlap amongst the Postfix parser's
+every parsing run: detecting overlap amongst the Postfix log parser's
 \numberOFrules{} rules would require calculating
 \numberOFruleINTERSECTIONS{} intersections.
 
@@ -590,18 +593,19 @@ log line logged by Postfix when a remote client connects to deliver mail:
 
 \section{Results}
 
-Parsing efficiency is an obvious concern when the parser routinely needs to
-parse very large log files.  The mail server which generated the log files
-used in testing this parser accepts approximately 10,000 mails for 700
-users a day.  Median log file size is 50MB, containing 285,000 log lines
---- large scale mail servers would have much larger log files.  When
-generating the timing data used in this section, \numberOFlogFILES{} log
-files (totaling 10.08 GB, \numberOFlogLINEShuman{} log lines) were each
-parsed 10 times and the parsing times averaged.  Saving results to the
-database was disabled for the test runs, as that dominates the run time of
-the program, and the tests are aimed at measuring the speed of the parser
-rather than the speed of the database and the disks the database is stored
-on.  The computer used for test runs was a Dell Optiplex 745 described in
+Parsing efficiency is an obvious concern when the Postfix log parser
+routinely needs to parse very large log files.  The mail server which
+generated the log files used in testing the Postfix log parser accepts
+approximately 10,000 mails for 700 users a day.  Median log file size is
+50MB, containing 285,000 log lines --- large scale mail servers would have
+much larger log files.  When generating the timing data used in this
+section, \numberOFlogFILES{} log files (totaling 10.08 GB,
+\numberOFlogLINEShuman{} log lines) were each parsed 10 times and the
+parsing times averaged.  Saving results to the database was disabled for
+the test runs, as that dominates the run time of the program, and the tests
+are aimed at measuring the speed of the Postfix log parser rather than the
+speed of the database and the disks the database is stored on.  The
+computer used for test runs was a Dell Optiplex 745 described in
 \tableref{Computer used to generate statistics}.  Parsing all
 \numberOFlogFILES{} log files in one run took
 \input{build/include-timing-run-duration}.  The computer was dedicated to
@@ -634,19 +638,20 @@ time in seconds, file size in MB, and number of log lines in tens of
 thousands, for each of the \numberOFlogFILES{} log files.  All three lines
 run roughly in parallel, giving the impression that the algorithm scales
 linearly with input size.  This impression is borne out by
-\graphref{parsing time vs file size vs number lines factor} which plots
-both the ratio of file size vs parsing time, and the ratio of number of log
-lines vs parsing time (higher is better in both cases).  The ratios are
+\graphref{parsing time vs file size vs number lines factor}: the ratios are
 quite tightly banded across the graph, showing that the algorithm scales
 linearly.  The ratio increases (i.e.\ improves) for log files 22 and 62--68
-despite their larger than average size (shown in \graphref{Parsing time,
-file size, and number of lines}).
+despite their larger than average size (due to a mail forwarding loop
+resulting in a greatly increased number of mails delivered and log lines
+generated).
 
 \showgraph{build/graph-input-size-vs-parsing-time}{Parsing time, file size,
 and number of lines}{Parsing time, file size, and number of lines}
 \showgraph{build/graph-input-size-vs-parsing-time-ratio}{Ratio of number of
 lines and file size to parsing time}{parsing time vs file size vs number
 lines factor}
+
+% XXX MAYBE ADD A TABLE SHOWING MEAN AND STDDEV OF THE RATIOS?
 
 \subsection{Rule Ordering}
 
@@ -693,7 +698,7 @@ relative to shuffled ordering}{Parsing time relative to shuffled}
 How any architecture scales as the number of rules increases is important,
 but it is particularly important in this architecture because it is
 expected that there will be a large number of rules.  There are
-\numberOFrules{} rules in the full Postfix parser ruleset, whereas the
+\numberOFrules{} rules in the full Postfix log parser ruleset, whereas the
 minimum number of rules required to parse the \numberOFlogFILES{} log files
 is \numberOFrulesMINIMUM{}, \numberOFrulesMINIMUMpercentage{} of the full
 ruleset.  A second set of statistics was generated using the minimum
@@ -720,14 +725,12 @@ this.
 
 \label{coverage}
 
-The parser's coverage of Postfix log files is separated into two parts: log
-line coverage and mail coverage.  The former is initially more important,
-as the parser must successfully parse every line if it is to be complete,
-but subsequently the latter takes precedence because reproducing the path a
-mail takes through Postfix is the aim of the parser.  Improving the former
-is less intrusive, as it just requires new rules to be written; improving
-the latter is more intrusive as it requires changes to actions, and it can
-also be much harder to notice a deficiency.
+The Postfix log parser's coverage of log files is separated into two parts:
+log line coverage and mail coverage (the former is a requirement for the
+latter to be achieved).  Improving the former is less intrusive, as it just
+requires new rules to be written; improving the latter is more intrusive as
+it requires changes to actions, and it can also be much harder to notice a
+deficiency.
 
 Warnings are issued for any log lines which are not parsed; no
 warnings are issued for unparsed log lines while parsing the
@@ -740,25 +743,25 @@ quantify the false positive rate; however a random sample of 6039 log lines
 inspection to ensure that the correct regex parsed each log line.
 
 Coverage of mails is much more difficult to determine accurately than
-coverage of log lines.  The parser can dump its state tables in a human
-readable form; examining these tables with reference to the log files is
-the best way to detect mails which were not handled properly.  The parser
-issues warnings when it detects any errors, some of which may alert the
-user to a problem.  There should be few or no warnings when parsing, and
-when finished parsing the state table should only contain entries for mails
-which had yet to be delivered when the log files ended, or were accepted
-before the log files began.  A sample of 6000 log lines was parsed with all
-debugging options enabled, resulting in 167,448 lines of output.  All
-167,448 lines were examined in conjunction with the input log file and a
-dump of the resulting database, verifying that for each of the input lines
-the parser used the correct rule and executed the correct action, which in
-turn produced the correct result and inserted the correct data in the
-database.  The log segment produced 4 warnings (about mails which had
-started before the log file segment), 10 mails remaining in the state
-tables, and 1625 connections correctly entered in the database.  No error
-messages were produced, therefore there were no false negatives.  Given the
-evidence detailed above, the authors are confident that the false positive
-rate when reconstructing a mail is zero.
+coverage of log lines.  The implementation can dump its state tables in a
+human readable form; examining these tables with reference to the log files
+is the best way to detect mails which were not handled properly.  The
+implementation issues warnings when it detects any errors, some of which
+may alert the user to a problem.  There should be few or no warnings when
+parsing, and when finished parsing the state table should only contain
+entries for mails which had yet to be delivered when the log files ended,
+or were accepted before the log files began.  A sample of 6000 log lines
+was parsed with all debugging options enabled, resulting in 167,448 lines
+of output.  All 167,448 lines were examined in conjunction with the input
+log file and a dump of the resulting database, verifying that for each of
+the input lines the implementation used the correct rule and executed the
+correct action, which in turn produced the correct result and inserted the
+correct data in the database.  The log segment produced 4 warnings (about
+mails which had started before the log file segment), 10 mails remaining in
+the state tables, and 1625 connections correctly entered in the database.
+No error messages were produced, therefore there were no false negatives.
+Given the evidence detailed above, the authors are confident that the false
+positive rate when reconstructing a mail is zero.
 
 
 \section{Conclusion}
@@ -787,24 +790,25 @@ best it can, allowing the developer of a new parser to decide which
 deficiencies are most important and require attention first, rather than
 being forced to fix the first error which arises.
 
-The dataset gathered by the parser provides the foundation for the future
-of this project: applying machine-learning algorithms to the data to
-analyse and optimise the set of rules in use, followed by identifying
-patterns in the data which could be used to write new filters to recognise
-and reject spam rather than accepting it.  The parser provides the data in
-a normalised form which is far easier to use as input to new or existing
-implementations of machine-learning algorithms than trying to adapt each
-algorithm to extract data directly from the log files.  The current focus
-is on clustering and decision trees to optimise the order in which rules
-are applied; future efforts will involve using data gathered by the parser
-to train and test new filters.  This task is very similar to optimising a
-black box application based on its inputs and outputs, and this approach
-could be applied to optimising the behaviour of any system given sufficient
-logging to analyse.  An alternative approach to black box optimisation
-which uses application profiling in conjunction with the application's
-error messages to improve the error messages shown to users is described
-in~\cite{black-box-error-reporting}; profiling data may be useful in
-supplementing systems which fail to provide adequate log messages.
+The dataset gathered by the Postfix log parser provides the foundation for
+the future of this project: applying machine-learning algorithms to the
+data to analyse and optimise the set of rules in use, followed by
+identifying patterns in the data which could be used to write new filters
+to recognise and reject spam rather than accepting it.  The parser provides
+the data in a normalised form which is far easier to use as input to new or
+existing implementations of machine-learning algorithms than trying to
+adapt each algorithm to extract data directly from the log files.  The
+current focus is on clustering and decision trees to optimise the order in
+which rules are applied; future efforts will involve using data gathered by
+the parser to train and test new filters.  This task is very similar to
+optimising a black box application based on its inputs and outputs, and
+this approach could be applied to optimising the behaviour of any system
+given sufficient logging to analyse.  An alternative approach to black box
+optimisation which uses application profiling in conjunction with the
+application's error messages to improve the error messages shown to users
+is described in~\cite{black-box-error-reporting}; profiling data may be
+useful in supplementing systems which fail to provide adequate log
+messages.
 
 The Postfix log file parser based on this architecture provides a basis for
 systems administrators to monitor the effectiveness of their anti-spam
