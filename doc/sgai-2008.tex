@@ -31,6 +31,12 @@
 %\setlength{\intextsep}{0pt}
 %\setlength{\textfloatsep}{0pt}
 
+% Acronyms and glossary entries.
+% global=true prevents acronyms being expanded twice
+\usepackage[global=true,acronym=true]{glossary}
+%\makeglossary{}
+%\makeacronym{}
+
 % Nicer citation lists - smaller spaces.
 \usepackage{cite}
 % Check for unused references.
@@ -43,7 +49,7 @@
 
 % \showgraph{filename}{caption}{label}
 \newcommand{\showgraph}[3]{%
-    \begin{figure}[hbtp]%
+    \begin{figure}[btp]%
         \caption{#2}\label{#3}%
         \includegraphics{#1}%
     \end{figure}%
@@ -173,6 +179,12 @@ Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
 
 %XXX DISCUSS COMPLEXITY\@?
 
+\newacronym{PDA}{Pushdown Automata}{}
+\newacronym{FA}{Finite Automata}{}
+\newacronym{CFL}{Context Free Languages}{}
+\newacronym{SLCT}{Simple Logfile Clustering Tool}{}
+\newacronym{SMTP}{Simple Mail Transfer Protocol}{}
+
 \section{Introduction}
 
 \label{Introduction}
@@ -189,14 +201,14 @@ mistakenly rejected will receive an immediate non-delivery notice; load is
 reduced on mail servers (allowing more intensive content-based techniques
 to be used); users have less mail to wade through.  Improving the
 performance of anti-spam techniques which are applied when mail is being
-transferred via SMTP\footnotemark{} is the goal of this project, by
+transferred via \SMTP{}\footnotemark{} is the goal of this project, by
 providing a platform for reasoning about anti-spam filters.  The approach
 chosen to measure performance was to analyse the log files produced by the
 mail server, rather than modifying the mail server to generate performance
 statistics: this approach improves the chances of other sites testing and
 utilising the software.  The need arose for a parser capable of dealing
 with the great number and variety of log lines produced by
-Postfix~\cite{postfix}, the SMTP server in use.  The parser must be
+Postfix~\cite{postfix}, the \SMTP{} server in use.  The parser must be
 designed so that adding support for parsing new log lines is a simple task,
 as the log lines to be parsed will change over time.  The variety in log
 lines occurs for several reasons:\footnotetext{Simple Mail Transfer
@@ -461,7 +473,7 @@ facility to specify extra data to be saved.
 
 Adding new rules is simple: define all the required attributes and append
 the new rule to wherever the existing rules are stored.  The Postfix log
-parser supplies a utility based on SLCT~\cite{slct-paper} to aid in
+parser supplies a utility based on \SLCT{}~\cite{slct-paper} to aid in
 producing regexes from previously unparsed inputs.  Storing the rules
 separately allows other approaches to rule management to be used, e.g.\
 instead of manually adding new rules when unparsed log lines are seen,
@@ -483,9 +495,9 @@ overlapping rules lead to inconsistent parsing and data extraction because
 the first matching rule wins, and the order in which rules are tried
 against each line may change between log files.  Overlapping rules are
 frequently a requirement, allowing a more specific rule to match some log
-lines and a more general rule to match the majority, e.g.\ separating SMTP
-delivery to specific sites from SMTP delivery to the rest of the world.
-This can simplify both the general rule and the more specific rule;
+lines and a more general rule to match the majority, e.g.\ separating
+\SMTP{} delivery to specific sites from \SMTP{} delivery to the rest of the
+world.  This can simplify both the general rule and the more specific rule;
 additionally rules from different sources can be combined with a minimum of
 prior cooperation or modification required.  Overlapping rules should have
 a priority attribute to specify the order in which they should be used;
@@ -493,21 +505,27 @@ negative priorities may be useful for catchall rules.
 
 Storing the rules separately to the parser allows external tools to be
 written to detect overlapping rules.  Traditional regexes are equivalent in
-computational power to Finite Automata (FA); it is possible to convert
-between regexes and FA, so regex overlap could be detected by finding a
-non-empty intersection of two FA\@.  Perl 5.10 regexes are more powerful
-than traditional regexes, e.g.\ it is possible to match correctly nested
-and balanced brackets to an arbitrary depth:
+computational power to \FA{}; it is possible to convert between regexes and
+\FA{}, so regex overlap could be detected by finding a non-empty
+intersection of two \FA{}\@.  One formula for \FA{} intersection is given
+in~\cite{intersection-of-NFA-using-Z}: $FA1 \cap{} FA2 =
+\overline{(\overline{FA1} \cup{} \overline{FA2})}$.  Perl 5.10 regexes are
+more powerful than traditional regexes, e.g.\ it is possible to match
+correctly nested and balanced brackets to an arbitrary depth:
 \newline{}\tab{}\verb!/^[^<>]*(<(?:(?>[^<>]+)|(?1))*>)[^<>]*$/!\newline{}
 Perl 5.10 regexes can maintain an arbitrary state stack and are thus
-equivalent in computational power to Pushdown Automata (PA), so overlap
-detection may require calculating the intersection of two PA.\@  Detecting
-overlap between $n$ regexes requires $\frac{n(n-1)}{2}$ intersections to be
-calculated, giving $O(n^2x)$ complexity, where $O(x)$ is the complexity of
-calculating intersection.  This is certainly not a task to be performed on
-every parsing run: detecting overlap amongst the Postfix log parser's
-\numberOFrules{} rules would require calculating
-\numberOFruleINTERSECTIONS{} intersections.
+equivalent in computational power to \PDA{}, so overlap detection may
+require calculating the intersection of two \PDA{}\@.  \CFL{} are
+equivalent in computational power to \PDA{}, and intersection of two
+\CFL{s} is not closed (i.e.\ intersection can produce a language which
+cannot be parsed by a \CFL{}), e.g.\ $a^{*}b^{n}c^{n} \cap a^{n}b^{n}c^{*}
+\rightarrow a^{n}b^{n}c^{n}$, so \PDA{} intersection may not be meaningful
+in some cases.  Detecting overlap between $n$ regexes requires
+$\frac{n(n-1)}{2}$ intersections to be calculated, giving $O(n^2x)$
+complexity, where $O(x)$ is the complexity of calculating intersection.
+This is certainly not a task to be performed on every parsing run:
+detecting overlap amongst the Postfix log parser's \numberOFrules{} rules
+would require calculating \numberOFruleINTERSECTIONS{} intersections.
 
 It is possible to define pathological regexes, which fall into two main
 categories: regexes which match every input line, and regexes which consume
@@ -521,7 +539,7 @@ for in-depth discussion.
 
 The example rule in \tableref{Example rule} matches the following sample
 log line logged by Postfix when a remote client connects to deliver mail:
-\newline{}\tab{}\verb!connect from client.example.com[1.2.3.4]!
+\newline{}\tab{}\verb!connect from client.example.com[192.0.2.3]!
 
 % Do not reformat this!
 \begin{table}[htbp]
