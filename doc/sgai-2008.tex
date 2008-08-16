@@ -388,21 +388,18 @@ for each line in the input files:
 \label{Actions}
 
 Each action contains the code required to deal with a particular type of
-log lines, e.g.\ rejections.  The actions are parser-specific: each parser
+log line, e.g.\ rejections.  The actions are parser-specific: each parser
 author will need to write the actions required from scratch, unless
 extending an existing parser.  In the Postfix log parser developed for this
 project there are \numberOFactions{} actions and \numberOFrules{} rules,
 with a very skewed distribution of rules to actions as shown in
-\graphref{Distribution of rules per action}.  The distribution is skewed
-for the same reason the architecture is so successful in enabling users to
-parse new log lines: most new log lines can be parsed by a combination of a
-new rule and an existing action.  It is expected that parsers utilising
-this architecture will have a high ratio of rules to actions, hopefully
-resulting in simpler rules and clearer distinctions between log lines.
-\showgraph{build/graph-action-distribution}{Distribution of rules per
-action}{Distribution of rules per action} Unsurprisingly the action with
-the highest number of associated rules is \texttt{DELIVERY\_REJECTED}, the
-action which handles Postfix rejecting a mail; it is followed by
+\graphref{Distribution of rules per action}.  It is expected that parsers
+utilising this architecture will have a high ratio of rules to actions,
+hopefully resulting in simpler rules and clearer distinctions between
+inputs.  \showgraph{build/graph-action-distribution}{Distribution of rules
+per action}{Distribution of rules per action} Unsurprisingly the action
+with the highest number of associated rules is \texttt{DELIVERY\_REJECTED},
+the action which handles Postfix rejecting a mail; it is followed by
 \texttt{SAVE\_DATA}, the action responsible for handling informative
 inputs: these are log lines that supplement the data gathered from other
 log lines, but that do not by themselves represent interesting events.  The
@@ -608,10 +605,9 @@ log line logged by Postfix when a remote client connects to deliver mail:
 
     \item [Line oriented:]  The architecture is line oriented at present:
         there is no facility for rules to consume more input or push unused
-        input back onto the input stream (however actions may change input
-        lines and cause the modified line to be re-parsed).  This was not a
-        deliberate decision, rather a consequence of the line oriented
-        nature of the log files; more flexible approaches could be pursued.
+        input back onto the input stream.  This was not a deliberate
+        decision, rather a consequence of the line oriented nature of the
+        log files; more flexible approaches could be pursued.
 
 \end{description}
 
@@ -626,11 +622,10 @@ much larger log files.  When generating the timing data used in this
 section, \numberOFlogFILES{} log files (totaling 10.08 GB,
 \numberOFlogLINEShuman{} log lines) were each parsed 10 times and the
 parsing times averaged.  Saving results to the database was disabled for
-the test runs, as that dominates the run time of the program, and the tests
-are aimed at measuring the speed of the Postfix log parser rather than the
-speed of the database and the disks the database is stored on.  The
-computer used for test runs was a Dell Optiplex 745 described in
-\tableref{Computer used to generate statistics}.  Parsing all
+the test runs, as the tests are aimed at measuring the speed of the Postfix
+log parser rather than the speed of the database and the disks the database
+is stored on.  The computer used for test runs was a Dell Optiplex 745
+described in \tableref{Computer used to generate statistics}.  Parsing all
 \numberOFlogFILES{} log files in one run took
 \input{build/include-timing-run-duration}.  The computer was dedicated to
 the task of gathering statistics from test runs, and was not used for any
@@ -716,7 +711,6 @@ relative to shuffled ordering}{Parsing time relative to shuffled}
 
 \subsection{Architecture Scalability: Number of Rules}
 
-\newpage{} % XXX
 How any architecture scales as the number of rules increases is important,
 but it is particularly important in this architecture because it is
 expected that there will be a large number of rules.  There are
