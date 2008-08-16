@@ -57,13 +57,23 @@
 
 %\showtable{filename}{caption}{label}
 \newcommand{\showtable}[3]{
-    \begin{table}[hbtp]
+    \begin{table}[btp]
         \caption{#2}\label{#3}
         \input{#1}
     \end{table}
 }
 
-\newcommand{\tableline}[0]{%
+\newcommand{\tabletopline}[0]{%
+    \hline%
+    \noalign{\smallskip}%
+}
+
+\newcommand{\tablebottomline}[0]{%
+    \noalign{\smallskip}%
+    \hline%
+}
+
+\newcommand{\tablemiddleline}[0]{%
     \noalign{\smallskip}%
     \hline%
     \noalign{\smallskip}%
@@ -174,10 +184,8 @@ Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
     large corpora or months of accumulated data.
 }
 
-\SVN$Id$
-\SVNId{}  \today{}
-
-%XXX DISCUSS COMPLEXITY\@?
+%\SVN$Id$
+%\SVNId{}  \today{}
 
 \newacronym{PDA}{Pushdown Automata}{}
 \newacronym{FA}{Finite Automata}{}
@@ -247,22 +255,22 @@ correlated log data in a form suitable for a systems administrator to
 search using the myriad of standard Unix text processing utilities already
 available.  A full state of the art review is outside the scope of this
 paper but will be included in the thesis resulting from this work.
+The relationship to another procedural framework (ATN) is discussed below.
 
 The solution developed is conceptually simple: provide a few generic
 functions (\textit{actions\/}), each capable of dealing with an entire
-category of log lines (e.g.\ rejections), accompanied by a multitude of
-precise patterns (\textit{rules\/}), each of which matches all log lines of
-a specific type, and only that type (e.g.\ rejection by a specific DNSBL).
-XXX IMPROVE:\@ It is an accepted standard to separate the parsing procedure
-from the declarative grammar it operates with.  Part of the novelty here is
-in the way that the grammars (rules and actions) are themselves procedures.
-The relationship to another procedural framework (ATN) is discussed below.
-This architecture is ideally suited to parsing inputs where the input is
-not fully understood or does not conform to a fixed grammar: the
-architecture warns about unparsed inputs and other errors, but continues on
-parsing as best it can, allowing the developer of a new parser to decide
-which deficiencies are most important and require attention first, rather
-than being forced to fix the first error which arises.
+category of log lines (e.g.\ rejecting a mail), accompanied by a multitude
+of precise patterns (\textit{rules\/}), each of which matches all log lines
+of a specific type, and only that type (e.g.\ rejection by a specific
+DNSBL).  It is an accepted standard to separate the parsing procedure from
+the declarative grammar it operates with.  Part of the novelty here is in
+the way that the grammar is itself partially procedural (each action is a
+separate procedure).  This architecture is ideally suited to parsing inputs
+where the input is not fully understood or does not conform to a fixed
+grammar: the architecture warns about unparsed inputs and other errors, but
+continues on parsing as best it can, allowing the developer of a new parser
+to decide which deficiencies are most important and require attention
+first, rather than being forced to fix the first error which arises.
 
 \section{Architecture}
 
@@ -309,16 +317,17 @@ with the intricacies of the input being parsed, complications arising,
 etc.;\ the framework provides services to actions and manages the parsing
 process.
 
-There is some similarity between the architecture and William Wood's
-Augmented Transition Networks (ATN)~\cite{atns, nlpip}, a tool used in
-Computational Linguistics for creating grammars to parse or generate
-sentences.  The resemblance between ATN and the architecture is accidental,
-but it is interesting how two different approaches have a similar division
-of responsibilities, while having different semantics.
+There is some similarity (shown in \tableref{Similarities with ATN})
+between the architecture and William Wood's Augmented Transition Networks
+(ATN)~\cite{atns, nlpip}, a tool used in Computational Linguistics for
+creating grammars to parse or generate sentences.  The resemblance between
+ATN and the architecture is accidental, but it is interesting how two
+different approaches have a similar division of responsibilities, while
+having different semantics.
 
 % Do Not Reformat!
 
-\begin{table}[ht]
+\begin{table}[hbtp]
     \caption{Similarities with ATN}\label{Similarities with ATN}
     % The \smallskip{} below stop the text hitting the lines.
     \begin{tabular}[]{lll}
@@ -401,23 +410,23 @@ third most common action is, perhaps surprisingly, \texttt{UNINTERESTING}:
 this action does nothing when executed, allowing uninteresting log lines to
 be parsed without causing any effects (it does not imply that the input is
 ungrammatical or unparsed).  Generally rules specifying the
-\texttt{UNINTERESTING} action parse log lines which are not associated with
-a specific mail, e.g.\ warnings about configuration files changing.  The
-framework warns about every unparsed log line, to alert the user that they
-need to alter or extend their ruleset; the Postfix log parser successfully
-parses every input line in the \numberOFlogFILESall{} log files it is
-currently being tested with.  The remaining actions have only one or two
-associated rules: in some cases this is because there will only ever be one
-type of log line for that action, e.g.\ all log lines showing that a remote
-client has connected are matched by a single rule and handled by the
-\texttt{CONNECT} action; in other cases the action is required to address a
-deficiency in the log files, or a complication which arises during parsing.
-Taking the \texttt{CONNECT} action as an example, it creates a new data
-structure for each client connecting, and saves the data extracted by the
-rule (in memory, subsequently to be entered into the database).  If the
-data structure already exists it is treated as a symptom of a bug, and the
-action issues a warning containing the full contents of the data structure,
-plus the log line which has just been parsed.
+\texttt{UNINTERESTING} action are rules to parse log lines which are not
+associated with a specific mail, e.g.\ warnings about configuration files
+changing.  The framework warns about every unparsed log line, to alert the
+user that they need to alter or extend their ruleset; the Postfix log
+parser successfully parses every input line in the \numberOFlogFILESall{}
+log files it is currently being tested with.  The remaining actions have
+only one or two associated rules: in some cases this is because there will
+only ever be one type of log line for that action, e.g.\ all log lines
+showing that a remote client has connected are matched by a single rule and
+handled by the \texttt{CONNECT} action; in other cases the action is
+required to address a deficiency in the log files, or a complication which
+arises during parsing.  Taking the \texttt{CONNECT} action as an example,
+it creates a new data structure for each client connecting, and saves the
+data extracted by the rule (in memory, subsequently to be entered into the
+database).  If the data structure already exists it is treated as a symptom
+of a bug, and the action issues a warning containing the full contents of
+the data structure, plus the log line which has just been parsed.
 
 The ability to add special purpose actions to deal with difficulties and
 new requirements which are discovered during parser development is one of
@@ -511,7 +520,7 @@ intersection of two \FA{}\@.  One formula for \FA{} intersection is given
 in~\cite{intersection-of-NFA-using-Z}: $FA1 \cap{} FA2 =
 \overline{(\overline{FA1} \cup{} \overline{FA2})}$.  Perl 5.10 regexes are
 more powerful than traditional regexes, e.g.\ it is possible to match
-correctly nested and balanced brackets to an arbitrary depth:
+correctly balanced brackets nested to an arbitrary depth:
 \newline{}\tab{}\verb!/^[^<>]*(<(?:(?>[^<>]+)|(?1))*>)[^<>]*$/!\newline{}
 Perl 5.10 regexes can maintain an arbitrary state stack and are thus
 equivalent in computational power to \PDA{}, so overlap detection may
@@ -546,14 +555,14 @@ log line logged by Postfix when a remote client connects to deliver mail:
     \caption{Example rule}
     \empty{}\label{Example rule}
     \begin{tabular}[]{ll}
-        \tableline{}%
+        \tabletopline{}%
         Attribute                 & Value                                            \\
-        \tableline{}%
+        \tablemiddleline{}%
         %program                   & \daemon{smtpd}                                   \\
         regex                     & \verb!^connect from (__HOSTNAME__)\[(__IP__)\]$! \\
         action                    & CONNECT                                          \\
         %priority                  & 0                                                \\
-        \tableline{}%
+        \tablebottomline{}%
     \end{tabular}
 \end{table}
 
@@ -579,10 +588,9 @@ log line logged by Postfix when a remote client connects to deliver mail:
         cascaded parsing~\cite{cascaded-parsing}.
 
     \item [Matching rules to log lines is simple:]  The first matching rule
-        wins: there is no backtracking to try alternate rules, no attempt
-        is made to pick a \textit{best\/} rule; the first rule which
-        matches the line is the rule which parses it and determines the
-        action that will be invoked.
+        determines the action that will be invoked: there is no
+        backtracking to try alternate rules, no attempt is made to pick a
+        \textit{best\/} rule.
 
     \item [Transduction:]  The parser can be thought of as implementing
         transduction: it takes data in one form (log files) and transforms
@@ -629,19 +637,20 @@ the task of gathering statistics from test runs, and was not used for any
 other purpose while test runs were ongoing; any services not necessary for
 running the tests were disabled.
 
+% XXX MAYBE CHANGE POSITIONING
 \begin{table}[htbp]
     \caption{Computer used to generate statistics}
     \empty{}\label{Computer used to generate statistics}
     \begin{tabular}[]{ll}
-        \tableline{}
-        Component type  & Component in use                                  \\
-        \tableline{}
-        CPU             & One dual core 2.40GHz Intel\textregistered{}
-                            Core\texttrademark{}2 CPU,                      \\
-                        & with 32KB L1 cache and 4MB L2 cache.              \\
-        RAM             & 2GB 667 MHz DDR RAM\@.                            \\
-        Hard disk       & One Seagate Barracuda 7200 RPM 250GB SATA disk.   \\
-        \tableline{}
+        \tabletopline{}
+        Component  & Component used                                 \\
+        \tablemiddleline{}
+        CPU        & 1 dual core 2.40GHz Intel\textregistered{}
+                     Core\texttrademark{}2 CPU,                      
+                     with 32KB L1 and 4MB L2 cache.                 \\
+        RAM        & 2GB 667 MHz DDR RAM\@.                         \\
+        Hard disk  & 1 Seagate Barracuda 7200 RPM 250GB SATA disk.  \\
+        \tablebottomline{}
     \end{tabular}
 \end{table}
 
@@ -666,8 +675,6 @@ and number of lines}{Parsing time, file size, and number of lines}
 \showgraph{build/graph-input-size-vs-parsing-time-ratio}{Ratio of number of
 lines and file size to parsing time}{parsing time vs file size vs number
 lines factor}
-
-% XXX MAYBE ADD A TABLE SHOWING MEAN AND STDDEV OF THE RATIOS?
 
 \subsection{Rule Ordering}
 
@@ -709,6 +716,7 @@ relative to shuffled ordering}{Parsing time relative to shuffled}
 
 \subsection{Architecture Scalability: Number of Rules}
 
+\newpage{} % XXX
 How any architecture scales as the number of rules increases is important,
 but it is particularly important in this architecture because it is
 expected that there will be a large number of rules.  There are
@@ -720,20 +728,18 @@ ruleset and the parsing times compared to those generated using the full
 ruleset: the percentage parsing time increase when using the full ruleset
 instead of the minimal ruleset for optimal, shuffled and reversed orderings
 is shown in \graphref{Percentage parsing time increase of maximum ruleset
-over minimum ruleset}.
+over minimum ruleset}.  It is clear from \graphref{Percentage parsing time
+increase of maximum ruleset over minimum ruleset} that the increased number
+of rules has a noticeable performance impact with reverse ordering, and a
+lesser impact with shuffled ordering.  The optimal ordering shows a mean
+increase of \input{build/include-full-ruleset-vs-minimum-ruleset} in
+parsing time for a \numberOFrulesMAXIMUMpercentage{} increase in the number
+of rules.  These results show that the architecture scales very well as the
+number of rules increases, and that sorting the rules is an important
+optimisation enabling this.
 \showgraph{build/graph-full-ruleset-vs-minimum-ruleset}{Percentage parsing
 time increase of maximum ruleset over minimum ruleset}{Percentage parsing
 time increase of maximum ruleset over minimum ruleset}
-
-It is clear from \graphref{Percentage parsing time increase of maximum
-ruleset over minimum ruleset} that the increased number of rules has a
-noticeable performance impact with reverse ordering, and a lesser impact
-with shuffled ordering.  The optimal ordering shows a mean increase of
-\input{build/include-full-ruleset-vs-minimum-ruleset} in parsing time for a
-\numberOFrulesMAXIMUMpercentage{} increase in the number of rules.  These
-results show that the architecture scales very well as the number of rules
-increases, and that sorting the rules is an important optimisation enabling
-this.
 
 \subsection{Coverage}
 
