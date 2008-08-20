@@ -80,6 +80,7 @@ build:
 	grep '!!' *.glg *.alg || true;
 	# Finally done.
 	chktex -I0 -q *.tex
+	chktex -q --nowarn 1 *.bbl
 
 build_run:
 	make run_latex
