@@ -1,6 +1,6 @@
 % $Id$
-% XXX REMOVE draft OPTION
-\documentclass[draft]{svmult}
+\documentclass{svmult}
+%\documentclass[draft]{svmult}
 
 % Useful stuff for math mode.
 \usepackage{amstext}
@@ -25,11 +25,6 @@
 
 % Embed SVN Id etc.
 \usepackage{svn}
-
-% XXX REMOVE THESE AND CHECK RESULTING LENGTH
-%\setlength{\floatsep}{0pt}
-%\setlength{\intextsep}{0pt}
-%\setlength{\textfloatsep}{0pt}
 
 % Acronyms and glossary entries.
 % global=true prevents acronyms being expanded twice
@@ -164,10 +159,15 @@
 
 \title*{A User-Extensible and Adaptable Parser Architecture}
 \author{John Tobin and Carl Vogel}
-\institute{John Tobin \at{} School of Computer Science and Statistics,
-Trinity College, Dublin 2, Ireland. \newline{} \email{tobinjt@cs.tcd.ie}
-\and{} Carl Vogel \at{} School of Computer Science and Statistics,
-Trinity College, Dublin 2, Ireland. \newline{} \email{vogel@cs.tcd.ie}}
+\institute{John Tobin \email{tobinjt@cs.tcd.ie}
+            \and{} Carl Vogel \email{vogel@cs.tcd.ie}
+            \at{} School of Computer Science and Statistics,
+                    Trinity College, Dublin 2, Ireland.
+                    \newline{}
+                    Supported by Science Foundation Ireland RFP
+                    05/RF/CMS002.
+            }
+
 \maketitle
 
 \abstract{%
@@ -427,14 +427,15 @@ function which must be modified to support new behaviour, with all the
 attendant risks of adversely affecting the existing parser, when a new
 requirement arises an independent action can be written to satisfy it.  In
 some cases the new action will require the cooperation of other actions,
-e.g.\ to set or check a flag; there is a possibility of introducing failure
-by modifying existing actions, but modifications will be smaller and occur
-less frequently than with a monolithic architecture, thus failures should
-be less likely, and will be easier to test for and diagnose.  The parser is
-written in an object oriented style, allowing sub-classes to extend or
-override actions in addition to adding new actions; because each action is
-an independent procedure, the sub-class need only modify the action it is
-overriding, rather than reproducing large chunks of functionality.
+e.g.\ to set or check a flag.  There is a possibility of introducing
+failure when modifying existing actions, but the modifications will be
+smaller and occur less frequently than with a monolithic architecture, thus
+failures will be less likely and will be easier to test for and diagnose.
+The parser is written in an object oriented style, allowing sub-classes to
+extend or override actions in addition to adding new actions; because each
+action is an independent procedure, the sub-class need only modify the
+action it is overriding, rather than reproducing large chunks of
+functionality.
 
 During development of the Postfix log parser it became apparent that in
 addition to the obvious variety in log lines, there were a large number of
@@ -508,7 +509,7 @@ written to detect overlapping rules.  Traditional regexes are equivalent in
 computational power to \FA{}; it is possible to convert between regexes and
 \FA{}, so regex overlap could be detected by finding a non-empty
 intersection of two \FA{}\@.  One formula for \FA{} intersection is given
-in~\cite{intersection-of-NFA-using-Z}: $FA1 \cap{} FA2 =
+in for example~\cite{intersection-of-NFA-using-Z}: $FA1 \cap{} FA2 =
 \overline{(\overline{FA1} \cup{} \overline{FA2})}$.  Perl 5.10 regexes are
 more powerful than traditional regexes, e.g.\ it is possible to match
 correctly balanced brackets nested to an arbitrary depth:
@@ -519,9 +520,9 @@ require calculating the intersection of two \PDA{}\@.  \CFL{} are
 equivalent in computational power to \PDA{}, and intersection of two
 \CFL{s} is not closed, i.e.\ intersection can produce a language which
 cannot be parsed by a \CFL{}, e.g.\ $a^{*}b^{n}c^{n} \cap a^{n}b^{n}c^{*}
-\rightarrow a^{n}b^{n}c^{n}$, so the results of \PDA{} intersection may not
-be meaningful in some cases.  Detecting overlap between $n$ regexes
-requires $n(n-1)/2$ intersections to be calculated, resulting in $O(n^2x)$
+\rightarrow a^{n}b^{n}c^{n}$, so the results of \PDA{} intersection may be
+intractable in some cases.  Detecting overlap between $n$ regexes requires
+$n(n-1)/2$ intersections to be calculated, resulting in $O(n^2x)$
 complexity, where $O(x)$ is the complexity of calculating intersection.
 This is certainly not a task to be performed on every parsing run:
 detecting overlap amongst the Postfix log parser's \numberOFrules{} rules
@@ -618,16 +619,14 @@ section, \numberOFlogFILES{} log files (totaling 10.08 GB,
 \numberOFlogLINEShuman{} log lines) were each parsed 10 times and the
 parsing times averaged.  Saving results to the database was disabled for
 the test runs, as the tests are aimed at measuring the speed of the Postfix
-log parser rather than the speed of the database and the disks the database
-is stored on.  The computer used for test runs was a Dell Optiplex 745
-described in \tableref{Computer used to generate statistics}; it was
-dedicated to the task of gathering statistics from test runs, and was not
-used for any other purpose while test runs were ongoing --- any services
-not necessary for running the tests were disabled.  Parsing all
-\numberOFlogFILES{} log files in one run took
+log parser rather than the speed of the database.  The computer used for
+test runs was a Dell Optiplex 745 described in \tableref{Computer used to
+generate statistics}; it was dedicated to the task of gathering statistics
+from test runs, and was not used for any other purpose while test runs were
+ongoing --- any services not necessary for running the tests were disabled.
+Parsing all \numberOFlogFILES{} log files in one run took
 \input{build/include-timing-run-duration}.
 
-% XXX MAYBE CHANGE POSITIONING
 \begin{table}[htbp]
     \caption{Computer used to generate statistics}
     \empty{}\label{Computer used to generate statistics}
@@ -669,14 +668,15 @@ lines factor}
 
 \label{Rule ordering}
 
-At the time of writing the Postfix log parser has \numberOFrules{} different rules, with the
-top 10\% matching the vast majority of log lines, and the remaining log
-lines split across the other 90\% of the rules in a Power Law distribution
-(as shown in \graphref{rule hits graph}).  Assuming that the distribution
-of log lines is reasonably consistent over time, parser efficiency should
-benefit from trying more frequently matching rules before those which match
-less frequently.  To test this hypothesis three full test runs were
-performed with different rule orderings:
+At the time of writing the Postfix log parser has \numberOFrules{}
+different rules: the top 10\% match the vast majority of log lines, with
+the remaining log lines split across the other 90\% of the rules.  The
+distribution resembles a Power Law distribution, as shown in \graphref{rule
+hits graph}.  Assuming that the distribution of log lines is reasonably
+consistent over time, parser efficiency should benefit from trying more
+frequently matching rules before those which match less frequently.  To
+test this hypothesis three full test runs were performed with different
+rule orderings:
 
 \begin{description}
 
