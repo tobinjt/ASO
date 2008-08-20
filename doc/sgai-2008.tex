@@ -162,7 +162,7 @@
 
 \begin{document}
 
-\title*{A user-extensible and adaptable parser architecture}
+\title*{A User-Extensible and Adaptable Parser Architecture}
 \author{John Tobin and Carl Vogel}
 \institute{John Tobin \at{} School of Computer Science and Statistics,
 Trinity College, Dublin 2, Ireland. \newline{} \email{tobinjt@cs.tcd.ie}
@@ -331,15 +331,15 @@ having different quite semantics.
     \caption{Similarities with ATN}\label{Similarities with ATN}
     % The \smallskip{} below stop the text hitting the lines.
     \begin{tabular}[]{lll}
-        \tabletopline{}
+        \tabletopline{}%
         ATN           & Architecture    & Similarity                                \\
-        \tablemiddleline{}
+        \tablemiddleline{}%
         Networks      & Framework       & Determines the sequence of transitions or \\
                       &                 & actions which constitutes a valid input.  \\
         Transitions   & Actions         & Save data and impose conditions the       \\
                       &                 & input must meet to be considered valid.   \\
         Abbreviations & Rules           & Responsible for classifying input.        \\
-        \tablebottomline{}
+        \tablebottomline{}%
     \end{tabular}
 \end{table}
 
@@ -620,45 +620,44 @@ parsing times averaged.  Saving results to the database was disabled for
 the test runs, as the tests are aimed at measuring the speed of the Postfix
 log parser rather than the speed of the database and the disks the database
 is stored on.  The computer used for test runs was a Dell Optiplex 745
-described in \tableref{Computer used to generate statistics}.  Parsing all
+described in \tableref{Computer used to generate statistics}; it was
+dedicated to the task of gathering statistics from test runs, and was not
+used for any other purpose while test runs were ongoing --- any services
+not necessary for running the tests were disabled.  Parsing all
 \numberOFlogFILES{} log files in one run took
-\input{build/include-timing-run-duration}.  The computer was dedicated to
-the task of gathering statistics from test runs, and was not used for any
-other purpose while test runs were ongoing; any services not necessary for
-running the tests were disabled.
+\input{build/include-timing-run-duration}.
 
 % XXX MAYBE CHANGE POSITIONING
 \begin{table}[htbp]
     \caption{Computer used to generate statistics}
     \empty{}\label{Computer used to generate statistics}
     \begin{tabular}[]{ll}
-        \tabletopline{}
+        \tabletopline{}%
         Component  & Component used                                 \\
-        \tablemiddleline{}
+        \tablemiddleline{}%
         CPU        & 1 dual core 2.40GHz Intel\textregistered{}
                      Core\texttrademark{}2 CPU,                      
                      with 32KB L1 and 4MB L2 cache.                 \\
         RAM        & 2GB 667 MHz DDR RAM\@.                         \\
         Hard disk  & 1 Seagate Barracuda 7200 RPM 250GB SATA disk.  \\
-        \tablebottomline{}
+        \tablebottomline{}%
     \end{tabular}
 \end{table}
 
 \subsection{Architecture Scalability: Input Size}
 
 An important property of a parser is how parsing time scales relative to
-input size: does it scale linearly, polynomially, or exponentially?
-\Graphref{Parsing time, file size, and number of lines} shows the parsing
-time in seconds, file size in MB, and number of log lines in tens of
-thousands, for each of the \numberOFlogFILES{} log files.  All three lines
-run roughly in parallel, giving the impression that the algorithm scales
-linearly with input size.  This impression is borne out by
-\graphref{parsing time vs file size vs number lines factor}: the ratios are
-quite tightly banded across the graph, showing that the algorithm scales
-linearly.  The ratio increases (i.e.\ improves) for log files 22 and 62--68
-despite their large size (due to a mail forwarding loop
-resulting in a greatly increased number of mails delivered and log lines
-generated).
+input size: linearly, polynomially, or exponentially?  \Graphref{Parsing
+time, file size, and number of lines} shows the parsing time in seconds,
+file size in MB, and number of log lines in tens of thousands, for each of
+the \numberOFlogFILES{} log files.  All three lines run roughly in
+parallel, giving the impression that the algorithm scales linearly with
+input size.  This impression is borne out by \graphref{parsing time vs file
+size vs number lines factor}: the ratios are tightly banded across the
+graph, showing that the algorithm scales linearly.  The ratios increase
+(i.e.\ improve) for log files 22 and 62--68 despite their large size due to
+a mail forwarding loop resulting in a greatly increased number of mails
+delivered and log lines generated.
 
 \showgraph{build/graph-input-size-vs-parsing-time}{Parsing time, file size,
 and number of lines}{Parsing time, file size, and number of lines}
@@ -670,26 +669,24 @@ lines factor}
 
 \label{Rule ordering}
 
-At the time of writing there are \numberOFrules{} different rules, with the
-top 10\% matching the vast majority of the log lines, and the remaining log
+At the time of writing the Postfix log parser has \numberOFrules{} different rules, with the
+top 10\% matching the vast majority of log lines, and the remaining log
 lines split across the other 90\% of the rules in a Power Law distribution
 (as shown in \graphref{rule hits graph}).  Assuming that the distribution
-of log lines is reasonably steady over time, parser efficiency should
+of log lines is reasonably consistent over time, parser efficiency should
 benefit from trying more frequently matching rules before those which match
 less frequently.  To test this hypothesis three full test runs were
 performed with different rule orderings:
 
 \begin{description}
 
-    \item [optimal]  Hypothetically the most optimal order: rules which
-        match most often will be tried first.
+    \item [optimal]  Hypothetically the best order: rules which match most
+        often will be tried first.
 
     \item [shuffle] Random ordering, intended to represent an unsorted rule
-        set.  The rules will be shuffled once before use and will retain
-        that ordering for the entirety of the log file.  Note that the
-        ordering will change every time the parser is executed, so 10
-        different orderings will be generated for each log file in the test
-        run.
+        set.  Note that the ordering will change every time the parser is
+        executed, so 10 different orderings will be generated for each log
+        file in the test run.
 
     \item [reverse] Hypothetically the worst order: the most frequently
         matching rules will be tried last.
@@ -699,16 +696,20 @@ performed with different rule orderings:
 \Graphref{Parsing time relative to shuffled} shows the parsing times of
 optimal and reversed orderings as a percentage of the parsing time of
 shuffled ordering.  Overall this optimisation provides a modest but
-worthwhile reduction in parsing time of approximately 10\%.
+worthwhile reduction in parsing time of approximately 10\%.  Optimal rule
+ordering is also beneficial in other ways, as shown in
+\sectionref{Architecture Scalability: Number of Rules}.
 \showgraph{build/graph-hits}{Hits per rule}{rule hits graph}
 \showgraph{build/graph-optimal-and-reverse-vs-shuffle}{Parsing time
 relative to shuffled ordering}{Parsing time relative to shuffled}
 
 \subsection{Architecture Scalability: Number of Rules}
 
+\label{Architecture Scalability: Number of Rules}
+
 How any architecture scales as the number of rules increases is important,
 but it is particularly important in this architecture because it is
-expected that there will be a large number of rules.  There are
+expected that typical parsers will have a large number of rules.  There are
 \numberOFrules{} rules in the full Postfix log parser ruleset, whereas the
 minimum number of rules required to parse the \numberOFlogFILES{} log files
 is \numberOFrulesMINIMUM{}, \numberOFrulesMINIMUMpercentage{} of the full
@@ -717,62 +718,70 @@ ruleset and the parsing times compared to those generated using the full
 ruleset: the percentage parsing time increase when using the full ruleset
 instead of the minimal ruleset for optimal, shuffled and reversed orderings
 is shown in \graphref{Percentage parsing time increase of maximum ruleset
-over minimum ruleset}.  It is clear from \graphref{Percentage parsing time
-increase of maximum ruleset over minimum ruleset} that the increased number
-of rules has a noticeable performance impact with reverse ordering, and a
-lesser impact with shuffled ordering.  The optimal ordering shows a mean
-increase of \input{build/include-full-ruleset-vs-minimum-ruleset} in
-parsing time for a \numberOFrulesMAXIMUMpercentage{} increase in the number
-of rules.  These results show that the architecture scales very well as the
-number of rules increases, and that sorting the rules is an important
-optimisation enabling this.
-\showgraph{build/graph-full-ruleset-vs-minimum-ruleset}{Percentage parsing
-time increase of maximum ruleset over minimum ruleset}{Percentage parsing
-time increase of maximum ruleset over minimum ruleset}
+over minimum ruleset}.  It is clear that the increased number of rules has
+a noticeable performance impact with reverse ordering, and a lesser impact
+with shuffled ordering.  The optimal ordering shows a mean increase of
+\input{build/include-full-ruleset-vs-minimum-ruleset} in parsing time for a
+\numberOFrulesMAXIMUMpercentage{} increase in the number of rules.  These
+results show that the architecture scales very well as the number of rules
+increases, and that sorting the rules is an important optimisation enabling
+this.  \showgraph{build/graph-full-ruleset-vs-minimum-ruleset}{Percentage
+parsing time increase of maximum ruleset over minimum ruleset}{Percentage
+parsing time increase of maximum ruleset over minimum ruleset}
 
 \subsection{Coverage}
 
 \label{coverage}
 
-The Postfix log parser's coverage of log files is separated into two parts:
-log line coverage and mail coverage (the former is a requirement for the
-latter to be achieved).  Improving the former is less intrusive, as it just
-requires new rules to be written; improving the latter is more intrusive as
-it requires changes to actions, and it can also be much harder to notice a
-deficiency.
+The Postfix log parser requires two different types of coverage to be
+measured: log lines parsed and mail delivery attempts correctly understood
+(the former is a requirement for the latter to be achieved).  Improving the
+former is less intrusive, as it just requires new rules to be written;
+improving the latter is more intrusive as it requires changes to actions,
+and it can also be much harder to notice a deficiency.
 
-Warnings are issued for any log lines which are not parsed; no warnings are
-issued for unparsed log lines while parsing the \numberOFlogFILES{} test
-log files, so it can be safely concluded that there are zero false
-negatives.  False positives are harder to quantify: manually verifying that
-the correct regex parsed each of the \numberOFlogLINES{} log lines is
-infeasible, making it impossible to quantify the false positive rate.  A
-random sample of 6039 log lines (0.00994\% of the total) was parsed and the
-results manually verified by inspection to ensure that the correct regex
-parsed each log line.  The sample contained zero false positives, and this
-check has been automated to ensure continued accuracy.
+Measuring Postfix log parser coverage begins with log line coverage.
+Warnings are issued for any log lines which are not parsed; no such
+warnings are issued while parsing the \numberOFlogFILES{} test log files,
+so it can be safely concluded that there are zero false negatives.  False
+positives are harder to quantify: manually verifying that the correct rule
+parsed each of the \numberOFlogLINES{} log lines is infeasible, making it
+impossible to quantify the false positive rate.  A random sample of 6039
+log lines (0.00994\% of the total) was parsed and the results manually
+verified by inspection to ensure that the correct rule parsed each log
+line.  The sample contained zero false positives, and this check has been
+automated to ensure continued accuracy.
 
-Coverage of mails is much more difficult to determine accurately than
-coverage of log lines.  The implementation can dump its state tables in a
-human readable form; examining these tables with reference to the log files
-is the best way to detect mails which were not handled properly.  The
-implementation issues warnings when it detects any errors, some of which
-may alert the user to a problem.  There should be few or no warnings when
-parsing, and when finished parsing the state table should only contain
-entries for mails which had yet to be delivered when the log files ended,
-or were accepted before the log files began.  A second sample of 6000 log
-lines was parsed with all debugging options enabled, resulting in 167,448
-lines of output.  All 167,448 lines were examined in conjunction with the
-input log file and a dump of the resulting database, verifying that for
-each of the input lines the implementation used the correct rule and
-executed the correct action, which in turn produced the correct result and
-inserted the correct data in the database.  The log segment produced 4
-warnings (about mails which had started before the log file segment), 10
-mails remaining in the state tables, and 1625 connections correctly entered
-in the database.  No error messages were produced, therefore there were no
-false negatives.  Given the evidence detailed above, the authors are
-confident that the false positive rate when reconstructing a mail is zero.
+The proportion of mail delivery attempts correctly understood is much more
+difficult to determine accurately than coverage of log lines.  The
+implementation can dump its state tables in a human readable form;
+examining these tables with reference to the log files is the best way to
+detect mails which were not handled properly.  The implementation issues
+warnings when it detects any errors, which should alert the user to a
+problem.  There should be few or no warnings when parsing, and when
+finished parsing the state table should only contain entries for mails
+which had yet to be delivered when the log files ended, or were accepted
+before the log files began.  A second sample of 6000 log lines was parsed
+with all debugging options enabled, resulting in 167,448 lines of output.
+All 167,448 lines were examined in conjunction with the input log file and
+a dump of the resulting database, verifying that for each of the input
+lines the implementation used the correct rule and executed the correct
+action, which in turn produced the correct result and inserted the correct
+data in the database.  The log segment produced 4 warnings (about mails
+which had started before the log file segment), 10 mails remaining in the
+state tables, and 1625 connections correctly entered in the database.  No
+error messages were produced, therefore there were no false negatives.
+Given the evidence detailed above, the authors are confident that the false
+positive rate when reconstructing a mail is zero.
 
+Experience implementing the Postfix log parser shows that full input
+coverage is relatively easy to achieve with this architecture, and that
+with sufficient time and effort full understanding of the input is
+possible.  Postfix log files would require substantial time and effort to
+correctly parse regardless of the architecture used; this architecture
+enables an iterative approach to be used (similar to Stepwise
+Refinement~\cite{stepwise-refinement}), as is practiced in many other
+software engineering disciplines.
 
 \section{Conclusion}
 
@@ -780,19 +789,19 @@ The architecture's greatest strength is the ease with which it can be
 adapted to deal with new requirements and inputs.  Parsing a variation of
 an existing input is a trivial task: simply modify an existing rule or add
 a new one with an appropriate regex and the task is complete; knowledge of
-the framework is not required when writing rules.  Parsing a new category
+the framework is not required.  Parsing a new category
 of input is achieved by writing a new action and appropriate rules; quite
 often the action will not need to interact directly with existing actions,
 but when interaction is required the framework provides the necessary
 facilities.  The decoupling of rules from actions allows different sets of
-rules to be used with the same actions: e.g.\ a parser might have actions
+rules to be used with the same actions, e.g.\ a parser might have actions
 to process versions one and two of a file format; the parser will then
-parse either version one, version two, or both versions depending on the
+parse either version one, version two, or both versions, depending on the
 ruleset selected.  The architecture makes it possible to apply commonly
 used programming techniques such as object orientation, inheritance,
-composition, delegation and roles when designing and implementing a parser,
+composition, delegation, and roles when designing and implementing a parser,
 simplifying the process of working within a team with shared
-responsibility, or when developing and testing additional functionality.
+responsibility for a parser, or when developing and testing additional functionality.
 This architecture is ideally suited to parsing inputs where the input is
 not fully understood or does not follow a fixed grammar: the architecture
 warns about unparsed inputs and other errors, but continues on parsing as
@@ -813,7 +822,7 @@ which rules are applied; future efforts will involve using data gathered by
 the parser to train and test new filters.  This task is very similar to
 optimising a black box application based on its inputs and outputs, and
 this approach could be applied to optimising the behaviour of any system
-given sufficient logging to analyse.  An alternative approach to black box
+given sufficient log messages to analyse.  An alternative approach to black box
 optimisation which uses application profiling in conjunction with the
 application's error messages to improve the error messages shown to users
 is described in~\cite{black-box-error-reporting}; profiling data may be
@@ -822,12 +831,12 @@ messages.
 
 The Postfix log file parser based on this architecture provides a basis for
 systems administrators to monitor the effectiveness of their anti-spam
-measures and adapt their defences to combat the new techniques used by
-those sending spam.  The parser is a fully usable application, built to
-address a genuine need, rather than a proof of concept whose sole purpose
-is to illustrate a new idea; it deals with the oddities and difficulties
-which occur in the real world, rather than a clean, idealised scenario
-developed to showcase the best features of a new approach.
+measures and adapt their defences to combat new techniques used by those
+sending spam.  This parser is a fully usable application, built to address
+a genuine need, rather than a proof of concept whose sole purpose is to
+illustrate a new idea; it deals with the oddities and difficulties which
+occur in the real world, rather than a clean, idealised scenario developed
+to showcase the best features of a new approach.
 
 \bibliographystyle{spmpsci}
 \bibliography{logparser-bibliography.bib}
