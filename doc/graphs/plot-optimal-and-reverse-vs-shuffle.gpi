@@ -8,6 +8,6 @@ set format y "% g%%"
 # Remove the horizontal lines.
 set grid noy
 
-plot "../build/stats-optimal-and-reverse-vs-shuffle" using 1 with lines title "Optimal ordering", \
-    "../build/stats-optimal-and-reverse-vs-shuffle" using 2 with lines title "Reverse ordering", \
-    100 with lines title "Shuffled ordering"
+plot "../build/stats-optimal-and-reverse-vs-shuffle" using 2 with lines title "Reverse ordering", \
+    100 with lines title "Shuffled ordering", \
+    "../build/stats-optimal-and-reverse-vs-shuffle" using 1 with lines title "Optimal ordering"

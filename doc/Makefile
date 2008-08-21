@@ -15,6 +15,8 @@ logparser.dvi: logparser.deps logparser.ps.deps logparser-*.tex \
 
 sgai-2008.pdf: sgai-2008.deps sgai-2008.pdf.deps spmpsci.bst \
 		logparser-bibliography.bib
+sgai-2008.dvi: sgai-2008.deps sgai-2008.ps.deps spmpsci.bst \
+		logparser-bibliography.bib
 
 sgai-2008.deps:									\
 			build/include-timing-run-duration.tex			\
