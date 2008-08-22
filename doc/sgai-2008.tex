@@ -176,7 +176,7 @@
     inputs, without requiring that the user have an in-depth knowledge and
     understanding of the parser's internal workings.  This paper presents a
     novel parsing architecture, designed for parsing Postfix log files,
-    which aims to make the process of parsing new inputs as simple as
+    that aims to make the process of parsing new inputs as simple as
     possible, enabling users to trivially add new rules (to parse variants
     of existing inputs) and relatively easily add new actions (to process a
     previously unknown class of input).  The architecture scales linearly
@@ -209,7 +209,7 @@ spam, but rejecting mail during the delivery attempt is preferable: senders
 of non-spam mail that is mistakenly rejected will receive an immediate
 non-delivery notice; load is reduced on the accepting mail server (allowing
 more intensive content-based techniques to be used); users have less mail
-to wade through.  Improving the performance of anti-spam techniques which
+to wade through.  Improving the performance of anti-spam techniques that
 are applied when mail is being transferred via \SMTP{}\footnotemark{} is
 the goal of this project, by providing a platform for reasoning about
 anti-spam filters.  The approach chosen to measure performance is to
@@ -271,7 +271,7 @@ inputs where the input is not fully understood or does not conform to a
 fixed grammar: the architecture warns about unparsed inputs and other
 errors, but continues on parsing as best it can, allowing the developer of
 a new parser to decide which deficiencies are most important and require
-attention first, rather than being forced to fix the first error which
+attention first, rather than being forced to fix the first error that
 arises.
 
 \section{Architecture}
@@ -283,22 +283,22 @@ rules.  Each will be discussed separately, but first an overview:
 
 \begin{description}
 
-    \item [Framework]  The framework is the structure which actions and
-        rules plug into.  It provides the parsing loop, loading and
-        validation of rules, shared data storage, storage of results, and
+    \item [Framework]  The framework is the structure that actions and
+        rules plug into.  It provides the parsing loop, shared data
+        storage, loading and validation of rules, storage of results, and
         other support functions.
 
     \item [Actions]  Each action performs the work required to deal with a
         category of inputs, e.g.\ processing data from rejections.
 
     \item [Rules]  The rules are responsible for classifying or matching
-        inputs, specifying the action to invoke and the regex which matches
+        inputs, specifying the action to invoke and the regex that matches
         the inputs and extracts data.
 
 \end{description}
 
 For each input the framework tries each rule in turn until it finds a rule
-which matches the input, then invokes the action specified by that rule.
+that matches the input, then invokes the action specified by that rule.
 
 Decoupling the parsing rules from their associated actions and the
 framework allows new rules to be written and tested without requiring
@@ -317,12 +317,12 @@ the higher level details of assembling the required data, dealing with the
 intricacies of the input being parsed, complications arising, etc.;\ the
 framework provides services to actions and manages the parsing process.
 
-There is some similarity (shown in \tableref{Similarities with ATN})
-between the architecture and William Wood's \ATN{}~\cite{atns, nlpip}, a
-tool used in Computational Linguistics for creating grammars to parse or
-generate sentences.  The resemblance between \ATN{} and the architecture is
-accidental, but it is interesting how two different approaches share a
-similar division of responsibilities, while having different semantics.
+Some similarity exists between the architecture and William Wood's
+\ATN{}~\cite{atns, nlpip}, a tool used in Computational Linguistics for
+creating grammars to parse or generate sentences.  The resemblance between
+\ATN{} and the architecture (shown in \tableref{Similarities with ATN}) is
+accidental, but it is obvious that the two approaches share a similar
+division of responsibilities, although having different semantics.
 
 % Do Not Reformat!
 
@@ -334,9 +334,9 @@ similar division of responsibilities, while having different semantics.
         ATN           & Parser Architecture & Similarity                                \\
         \tablemiddleline{}%
         Networks      & Framework           & Determines the sequence of transitions or \\
-                      &                     & actions which constitutes a valid input.  \\
+                      &                     & actions that constitutes a valid input.   \\
         Transitions   & Actions             & Saves data and imposes conditions the     \\
-                      &                     & input must meet to be considered valid.   \\
+                      &                     & input must meet to be accepted as valid.  \\
         Abbreviations & Rules               & Responsible for classifying input.        \\
         \tablebottomline{}%
     \end{tabular}
@@ -347,20 +347,20 @@ similar division of responsibilities, while having different semantics.
 \label{Framework}
 
 The framework takes care of miscellaneous support functions and low level
-details of parsing, freeing the authors of actions to concentrate on
-writing productive code.  It provides the link between actions and rules,
-allowing either to be improved independently of the other.  It provides
-shared storage to pass data between actions, loads and validates rules,
-manages parsing, invokes actions, tracks how often each rule matches to
-optimise rule ordering (\sectionref{Rule ordering}), and stores results in
-the database.  The framework is largely independent of the parser being
+details of parsing, freeing the programmers writing actions to concentrate
+on writing productive code.  It provides the link between actions and
+rules, allowing either to be improved independently of the other.  It
+provides shared storage to pass data between actions, loads and validates
+rules, manages parsing, invokes actions, tracks how often each rule matches
+to optimise rule ordering (\sectionref{Rule ordering}), and stores results
+in the database.  The framework is largely independent of the parser being
 written: the same functionality will be required for most or all parsers,
 though some specialised support functions may be provided.  The framework
 is the core of the architecture and is deliberately quite simple: the rules
 deal with the variation in inputs, and the actions deal with the
 intricacies and complications encountered when parsing.
 
-The function which finds the rule matching the input and invokes the
+The function that finds the rule matching the input and invokes the
 requested action can be expressed in pseudo-code as:
 
 % DO NOT REFORMAT!
@@ -382,46 +382,46 @@ for each input:
 Each action contains the code required to deal with a particular category
 of input, e.g.\ rejections.  The actions are parser-specific: each parser
 author will need to write the required actions from scratch, unless
-extending an existing parser.  It is expected that parsers utilising this
-architecture will have a high ratio of rules to actions, hopefully
-resulting in simpler rules and clearer distinctions between the inputs
-parsed by different rules.  In the Postfix log parser developed for this
-project there are \numberOFactions{} actions and \numberOFrules{} rules,
-with a very uneven distribution of rules to actions as shown in
-\graphref{Distribution of rules per action}.
+extending an existing parser.  It is anticipated that parsers utilising
+this architecture will have a high ratio of rules to actions, with the aim
+of having simpler rules and clearer distinctions between the inputs parsed
+by different rules.  In the Postfix log parser developed for this project
+there are \numberOFactions{} actions and \numberOFrules{} rules, with an
+uneven distribution of rules to actions as shown in \graphref{Distribution
+of rules per action}.
 \showgraph{build/graph-action-distribution}{Distribution of rules per
 action}{Distribution of rules per action} Unsurprisingly the action with
-the highest number of associated rules is \texttt{DELIVERY\_REJECTED}, the
-action which handles Postfix rejecting a mail delivery attempt; it is
-followed by \texttt{SAVE\_DATA}, the action responsible for handling
-informative log lines, which supplement the data gathered from other log
-lines but do not by themselves represent interesting events.  The third
-most common action is, perhaps surprisingly, \texttt{UNINTERESTING}: this
-action does nothing when executed, allowing uninteresting log lines to be
-parsed without causing any effects (it does not imply that the input is
-ungrammatical or unparsed).  Generally rules specifying the
-\texttt{UNINTERESTING} action are rules to parse log lines which are not
-associated with a specific mail, e.g.\ notices about configuration files
-changing.  The remaining actions only have one or two associated rules: in
-some cases this is because there will only ever be one log line variant for
-that action, e.g.\ all log lines showing that a remote client has connected
-are matched by a single rule and handled by the \texttt{CONNECT} action; in
-other cases the action is required to address a deficiency in the log
-files, or a complication which arises during parsing.  Taking the
-\texttt{CONNECT} action as an example, it creates a new data structure in
-memory for each client connecting, and saves the data extracted by the
-rule; this data will subsequently be entered into the database.  If a data
-structure already exists for that connection it is treated as a symptom of
-a bug, and the action issues a warning containing the full contents of the
-existing data structure, plus the log line which has just been parsed.
+the most associated rules is \texttt{DELIVERY\_REJECTED}, the action that
+handles Postfix rejecting a mail delivery attempt; it is followed by
+\texttt{SAVE\_DATA}, the action responsible for handling informative log
+lines, that supplement the data gathered from other log lines but do not by
+themselves represent events.  The third most common action is, perhaps
+surprisingly, \texttt{UNINTERESTING}: this action does nothing when
+executed, allowing uninteresting log lines to be parsed without causing any
+effects (it does not imply that the input is ungrammatical or unparsed).
+Generally rules specifying the \texttt{UNINTERESTING} action are rules to
+parse log lines that are not associated with a specific mail, e.g.\
+notices about configuration files changing.  The remaining actions only
+have one or two associated rules: in some cases this is because there will
+only ever be one log line variant for that action, e.g.\ all log lines
+showing that a remote client has connected are matched by a single rule and
+handled by the \texttt{CONNECT} action; in other cases the action is
+required to address a deficiency in the log files, or a complication that
+arises during parsing.  Taking the \texttt{CONNECT} action as an example,
+it creates a new data structure in memory for each client connecting, and
+saves the data extracted by the rule; this data will subsequently be
+entered into the database.  If a data structure already exists for that
+connection it is treated as a symptom of a bug, and the action issues a
+warning containing the full contents of the existing data structure, plus
+the log line that has just been parsed.
 
 The ability to add special purpose actions to deal with difficulties and
-new requirements which are discovered during parser development is one of
-the strengths of this architecture.  Instead of writing one monolithic
-function which must be modified to support new behaviour, with all the
+new requirements that are discovered during parser development is one of
+the strengths of this architecture.  Instead of writing a single monolithic
+function that must be modified to support new behaviour, with all the
 attendant risks of adversely affecting the existing parser, when a new
-requirement arises an independent action can be written to satisfy it.  In
-some cases the new action will require the cooperation of other actions,
+requirement arises an independent action can be written to satisfy it.  
+Sometime the new action will require the cooperation of other actions,
 e.g.\ to set or check a flag.  There is a possibility of introducing
 failure when modifying existing actions, but the modifications will be
 smaller and occur less frequently than with a monolithic architecture, thus
@@ -433,7 +433,7 @@ need only modify the action it is overriding, rather than reproducing large
 chunks of functionality.
 
 During development of the Postfix log parser it became apparent that in
-addition to the obvious variety in log lines, there were a large number of
+addition to the obvious variety in log lines, there were many 
 complications to be overcome.  Some were the result of deficiencies in
 Postfix's logging (some of which were improved on or resolved by later
 versions of Postfix); others were due to the vagaries of process
@@ -444,10 +444,10 @@ modifications to a single existing action to work around the difficulties;
 the remainder were resolved by adapting existing actions to cooperate and
 exchange extra data, changing their behaviour as appropriate.
 
-Actions may return a modified input line which will be parsed as if read
+Actions may return a modified input line that will be parsed as if read
 from the input stream, allowing for a simplified version of cascaded
-parsing~\cite{cascaded-parsing}.  This is a powerful facility allowing a
-number of rules and actions to parse a single input.
+parsing~\cite{cascaded-parsing}.  This is a powerful facility allowing 
+several rules and actions to parse a single input.
 
 \subsection{Rules}
 
@@ -455,8 +455,8 @@ number of rules and actions to parse a single input.
 
 Rules categorise inputs, specifying both the regex to match against each
 input and the action to invoke when the match is successful.  The Postfix
-log parser stores its rules in the same SQL database the results are stored
-in, removing any doubt as to which set of rules was used to produce a set
+log parser stores the rules it uses in the same SQL database the results are stored
+in, removing any doubt about which set of rules was used to produce a set
 of results; other implementations are free to store the rules in whatever
 fashion suits their needs.  The framework warns about every unparsed input,
 to alert the user that they need to alter or extend their ruleset; the
@@ -468,7 +468,7 @@ requires.  The Postfix log parser adds several attributes to optimise rule
 ordering (\sectionref{Rule ordering}), to restrict which log lines each
 rule can be matched against, and to describe each rule.  Data is
 automatically extracted and saved from the log line based on keywords in
-the rule's regex, but there is also a facility to specify extra data to be
+the rule's regex, but there is also a mechanism to specify extra data to be
 saved.
 
 Parsing new inputs is generally achieved by creating a new rule that pairs
@@ -481,11 +481,11 @@ management can be used, e.g.\ instead of manually adding new rules, machine
 learning techniques could be used to automatically generate new rules,
 based on the existing rules and input lines.  If this approach was taken
 the choice of machine learning technique would be constrained by the size
-of typical data sets (see \sectionref{Results}).  Techniques which require
+of typical data sets (see \sectionref{Results}).  Techniques that require
 the full data set when training would be impractical: Instance Based
-Learning~\cite{instance-based-learning} techniques which automatically
+Learning~\cite{instance-based-learning} techniques that automatically
 determine which inputs from the training set are valuable and which inputs
-can be discarded would probably reduce the data required to a manageable
+can be discarded might reduce the data required to a manageable
 size.  This avenue of research and development has not been pursued by the
 authors, but could easily be undertaken independently.
 
@@ -493,7 +493,7 @@ The architecture does not try to detect overlapping rules: that
 responsibility is left to the author of the rules.  Unintentionally
 overlapping rules lead to inconsistent parsing and data extraction because
 the first matching rule wins, and the order in which rules are tried
-against each input may change between parser invocations.  Overlapping
+against each input might change between parser invocations.  Overlapping
 rules are frequently a requirement, allowing a more specific rule to match
 some inputs and a more general rule to match the remainder, e.g.\
 separating \SMTP{} delivery to specific sites from \SMTP{} delivery to the
@@ -506,7 +506,7 @@ negative priorities may be useful for catchall rules.
 Storing the rules separately to the parser allows external tools to be
 written to detect overlapping rules.  Traditional regexes are equivalent in
 computational power to \FA{}, and it is possible to convert between the
-two, so regex overlap could be detected by finding a non-empty intersection
+two, so regex overlap can be detected by finding a non-empty intersection
 of two \FA{}\@.  The standard equation for \FA{} intersection (given for
 example in~\cite{intersection-of-NFA-using-Z}) is: $FA1 \cap{} FA2 =
 \overline{(\overline{FA1} \cup{} \overline{FA2})}$.  Perl 5.10 regexes are
@@ -528,9 +528,9 @@ performed on every parsing run: detecting overlap amongst the Postfix log
 parser's \numberOFrules{} rules would require calculating
 \numberOFruleINTERSECTIONS{} intersections.
 
-It is possible to define pathological regexes, which fall into two main
-categories: regexes which match every input, and regexes which consume
-excessive amounts of CPU time during matching.  Defining a regex which
+It is possible to define pathological regexes that fall into two main
+categories: regexes that match every input, and regexes that consume
+excessive amounts of CPU time during matching.  Defining a regex that
 matches every input is trivial: \verb!/^/! matches the start of every
 input.  In general a regex will not consume much CPU time when the match is
 successful; usually CPU time is consumed when a regex with a lot of
@@ -573,7 +573,7 @@ log line logged by Postfix when a remote client connects to deliver mail:
     \item [Partially context-sensitive actions and cascaded parsing:]
         Actions can consult the results (or lack of results) of previous
         actions during execution, providing some context sensitivity.
-        Actions can not inspect past or future inputs, however actions can
+        Actions can not inspect past or future inputs, but actions can
         return a modified input that will be parsed as if read from the
         input stream, allowing for a simplified version of cascaded
         parsing~\cite{cascaded-parsing}.
@@ -591,7 +591,7 @@ log line logged by Postfix when a remote client connects to deliver mail:
     \item [Closer to Natural Language Processing than using a fixed
         grammar:] Unlike traditional parsers such as those used when
         compiling a programming language, this architecture does not
-        require a fixed grammar specification which inputs must adhere to.
+        require a fixed grammar specification that inputs must adhere to.
         The architecture is capable of dealing with interleaved inputs, out
         of order inputs, and ambiguous inputs where heuristics must be
         applied --- all have arisen and been successfully accommodated in
@@ -718,7 +718,7 @@ ruleset, and the parsing times compared to those generated using the full
 ruleset: the percentage parsing time increase when using the full ruleset
 instead of the minimal ruleset for optimal, shuffled and reversed orderings
 is shown in \graphref{Percentage parsing time increase of maximum ruleset
-over minimum ruleset}.  It is clear that the increased number of rules has
+over minimum ruleset}.  Clearly that the increased number of rules has
 a noticeable performance impact with reverse ordering, and a lesser impact
 with shuffled ordering.  The optimal ordering shows a mean increase of
 \input{build/include-full-ruleset-vs-minimum-ruleset} in parsing time for a
@@ -742,7 +742,7 @@ written; improving the latter is more intrusive as it requires changes to
 actions, and it can also be much harder to notice that a deficiency exists.
 
 Correct parsing of log lines must be measured first.  Warnings are issued
-for any log lines which are not parsed; no such warnings are issued while
+for any log lines that are not parsed; no such warnings are issued while
 parsing the \numberOFlogFILES{} log files, so it can be safely concluded
 that there are zero false negatives.  False positives are harder to
 quantify: manually verifying that the correct rule parsed each of the
@@ -758,7 +758,7 @@ The proportion of mail delivery attempts correctly understood is much more
 difficult to determine accurately than the proportion of log lines
 correctly parsed.  The implementation can dump its state tables in a human
 readable form; examining these tables with reference to the log files and
-database is the best way to detect mails which were not handled properly.
+database is the best way to detect mails that were not handled properly.
 The implementation issues warnings when it detects any errors or
 discrepancies, which should alert the user to a problem.  There should be
 few or no warnings during parsing, and when parsing is finished the state
@@ -806,14 +806,14 @@ inputs where the input is not fully understood or does not follow a fixed
 grammar: the architecture warns about unparsed inputs and other errors, but
 continues on parsing as best it can, allowing the developer of a new parser
 to decide which deficiencies are most important and require attention
-first, rather than being forced to fix the first error which arises.
+first, rather than being forced to fix the first error that arises.
 
 The dataset gathered by the Postfix log parser provides the foundation for
 the future of this project: applying machine-learning algorithms to the
 data to analyse and optimise the set of rules in use, followed by
-identifying patterns in the data which could be used to write new filters
+identifying patterns in the data that could be used to write new filters
 to recognise and reject spam rather than accepting it.  The parser provides
-the data in a normalised form which is far easier to use as input to new or
+the data in a normalised form that is far easier to use as input to new or
 existing implementations of machine-learning algorithms than trying to
 adapt each algorithm to extract data directly from the log files.  The
 current focus is on clustering and decision trees to optimise the order in
@@ -821,11 +821,11 @@ which rules are applied; future efforts will involve using data gathered by
 the parser to train and test new filters.  This task is very similar to
 optimising a black box application based on its inputs and outputs, and
 this approach could be applied to optimising the behaviour of any system
-given sufficient log messages to analyse.  An alternative approach to black
-box optimisation which uses application profiling in conjunction with the
+given sufficient log messages to analyse.  An alternate approach to black
+box optimisation that uses application profiling in conjunction with the
 application's error messages to improve the error messages shown to users
 is described in~\cite{black-box-error-reporting}; profiling data may be
-useful in supplementing systems which fail to provide adequate log
+useful in supplementing systems that fail to provide adequate log
 messages.
 
 The Postfix log file parser based on this architecture provides a basis for
@@ -833,7 +833,7 @@ systems administrators to monitor the effectiveness of their anti-spam
 measures and adapt their defences to combat new techniques used by those
 sending spam.  This parser is a fully usable application, built to address
 a genuine need, rather than a proof of concept whose sole purpose is to
-illustrate a new idea; it deals with the oddities and difficulties which
+illustrate a new idea; it deals with the oddities and difficulties that
 occur in the real world, rather than a clean, idealised scenario developed
 to showcase the best features of a new approach.
 

@@ -417,3 +417,8 @@ xpdf: all
 
 spellcheck:
 	for file in *.tex; do aspell -t -c "$$file"; done
+
+diction:
+	for file in *.tex; do \
+		untex -a -e "$$file" | diction --suggest | less -M "-PM$$file %lt/%L"; \
+	done
