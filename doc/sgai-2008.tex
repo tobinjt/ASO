@@ -230,8 +230,7 @@ definition is RFC~821~\cite{RFC821}, updated in RFC~2821~\cite{RFC2821}.}
 
     \item Log lines differ between versions of Postfix.
         
-    \item The mail administrator can define custom rejection
-        messages.
+    \item The mail administrator can define custom rejection messages.
 
     \item External resources utilised by Postfix (e.g.\ \DNSBL{} or policy
         servers~\cite{policy-servers}) can also change their messages,
@@ -400,27 +399,27 @@ surprisingly, \texttt{UNINTERESTING}: this action does nothing when
 executed, allowing uninteresting log lines to be parsed without causing any
 effects (it does not imply that the input is ungrammatical or unparsed).
 Generally rules specifying the \texttt{UNINTERESTING} action are rules to
-parse log lines that are not associated with a specific mail, e.g.\
-notices about configuration files changing.  The remaining actions only
-have one or two associated rules: in some cases this is because there will
-only ever be one log line variant for that action, e.g.\ all log lines
-showing that a remote client has connected are matched by a single rule and
-handled by the \texttt{CONNECT} action; in other cases the action is
-required to address a deficiency in the log files, or a complication that
-arises during parsing.  Taking the \texttt{CONNECT} action as an example,
-it creates a new data structure in memory for each client connecting, and
-saves the data extracted by the rule; this data will subsequently be
-entered into the database.  If a data structure already exists for that
-connection it is treated as a symptom of a bug, and the action issues a
-warning containing the full contents of the existing data structure, plus
-the log line that has just been parsed.
+parse log lines that are not associated with a specific mail, e.g.\ notices
+about configuration files changing.  The remaining actions only have one or
+two associated rules: in some cases this is because there will only ever be
+one log line variant for that action, e.g.\ all log lines showing that a
+remote client has connected are matched by a single rule and handled by the
+\texttt{CONNECT} action; in other cases the action is required to address a
+deficiency in the log files, or a complication that arises during parsing.
+Taking the \texttt{CONNECT} action as an example, it creates a new data
+structure in memory for each client connecting, and saves the data
+extracted by the rule; this data will subsequently be entered into the
+database.  If a data structure already exists for that connection it is
+treated as a symptom of a bug, and the action issues a warning containing
+the full contents of the existing data structure, plus the log line that
+has just been parsed.
 
 The ability to add special purpose actions to deal with difficulties and
 new requirements that are discovered during parser development is one of
 the strengths of this architecture.  Instead of writing a single monolithic
 function that must be modified to support new behaviour, with all the
 attendant risks of adversely affecting the existing parser, when a new
-requirement arises an independent action can be written to satisfy it.  
+requirement arises an independent action can be written to satisfy it.
 Sometime the new action will require the cooperation of other actions,
 e.g.\ to set or check a flag.  There is a possibility of introducing
 failure when modifying existing actions, but the modifications will be
@@ -433,20 +432,20 @@ need only modify the action it is overriding, rather than reproducing large
 chunks of functionality.
 
 During development of the Postfix log parser it became apparent that in
-addition to the obvious variety in log lines, there were many 
-complications to be overcome.  Some were the result of deficiencies in
-Postfix's logging (some of which were improved on or resolved by later
-versions of Postfix); others were due to the vagaries of process
-scheduling, client behaviour, and administrative actions.  All were
-successfully accommodated in the Postfix log parser: adding new actions was
-enough to overcome several of the complications; others required
-modifications to a single existing action to work around the difficulties;
-the remainder were resolved by adapting existing actions to cooperate and
-exchange extra data, changing their behaviour as appropriate.
+addition to the obvious variety in log lines, there were many complications
+to be overcome.  Some were the result of deficiencies in Postfix's logging
+(some of which were improved on or resolved by later versions of Postfix);
+others were due to the vagaries of process scheduling, client behaviour,
+and administrative actions.  All were successfully accommodated in the
+Postfix log parser: adding new actions was enough to overcome several of
+the complications; others required modifications to a single existing
+action to work around the difficulties; the remainder were resolved by
+adapting existing actions to cooperate and exchange extra data, changing
+their behaviour as appropriate.
 
 Actions may return a modified input line that will be parsed as if read
 from the input stream, allowing for a simplified version of cascaded
-parsing~\cite{cascaded-parsing}.  This is a powerful facility allowing 
+parsing~\cite{cascaded-parsing}.  This is a powerful facility allowing
 several rules and actions to parse a single input.
 
 \subsection{Rules}
@@ -455,12 +454,12 @@ several rules and actions to parse a single input.
 
 Rules categorise inputs, specifying both the regex to match against each
 input and the action to invoke when the match is successful.  The Postfix
-log parser stores the rules it uses in the same SQL database the results are stored
-in, removing any doubt about which set of rules was used to produce a set
-of results; other implementations are free to store the rules in whatever
-fashion suits their needs.  The framework warns about every unparsed input,
-to alert the user that they need to alter or extend their ruleset; the
-Postfix log parser successfully parses every log line in the
+log parser stores the rules it uses in the same SQL database the results
+are stored in, removing any doubt about which set of rules was used to
+produce a set of results; other implementations are free to store the rules
+in whatever fashion suits their needs.  The framework warns about every
+unparsed input, to alert the user that they need to alter or extend their
+ruleset; the Postfix log parser successfully parses every log line in the
 \numberOFlogFILESall{} log files it is currently being tested with.  The
 framework requires each rule to have \texttt{action} and \texttt{regex}
 attributes; each implementation is free to add any additional attributes it
@@ -485,9 +484,9 @@ of typical data sets (see \sectionref{Results}).  Techniques that require
 the full data set when training would be impractical: Instance Based
 Learning~\cite{instance-based-learning} techniques that automatically
 determine which inputs from the training set are valuable and which inputs
-can be discarded might reduce the data required to a manageable
-size.  This avenue of research and development has not been pursued by the
-authors, but could easily be undertaken independently.
+can be discarded might reduce the data required to a manageable size.  This
+avenue of research and development has not been pursued by the authors, but
+could easily be undertaken independently.
 
 The architecture does not try to detect overlapping rules: that
 responsibility is left to the author of the rules.  Unintentionally
@@ -718,8 +717,8 @@ ruleset, and the parsing times compared to those generated using the full
 ruleset: the percentage parsing time increase when using the full ruleset
 instead of the minimal ruleset for optimal, shuffled and reversed orderings
 is shown in \graphref{Percentage parsing time increase of maximum ruleset
-over minimum ruleset}.  Clearly that the increased number of rules has
-a noticeable performance impact with reverse ordering, and a lesser impact
+over minimum ruleset}.  Clearly that the increased number of rules has a
+noticeable performance impact with reverse ordering, and a lesser impact
 with shuffled ordering.  The optimal ordering shows a mean increase of
 \input{build/include-full-ruleset-vs-minimum-ruleset} in parsing time for a
 \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.  These
@@ -811,8 +810,8 @@ first, rather than being forced to fix the first error that arises.
 The dataset gathered by the Postfix log parser provides the foundation for
 the future of this project: applying machine-learning algorithms to the
 data to analyse and optimise the set of rules in use, followed by
-identifying patterns in the data that could be used to write new filters
-to recognise and reject spam rather than accepting it.  The parser provides
+identifying patterns in the data that could be used to write new filters to
+recognise and reject spam rather than accepting it.  The parser provides
 the data in a normalised form that is far easier to use as input to new or
 existing implementations of machine-learning algorithms than trying to
 adapt each algorithm to extract data directly from the log files.  The
@@ -825,8 +824,7 @@ given sufficient log messages to analyse.  An alternate approach to black
 box optimisation that uses application profiling in conjunction with the
 application's error messages to improve the error messages shown to users
 is described in~\cite{black-box-error-reporting}; profiling data may be
-useful in supplementing systems that fail to provide adequate log
-messages.
+useful in supplementing systems that fail to provide adequate log messages.
 
 The Postfix log file parser based on this architecture provides a basis for
 systems administrators to monitor the effectiveness of their anti-spam
