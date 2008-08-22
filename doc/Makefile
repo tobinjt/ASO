@@ -362,7 +362,7 @@ full-ruleset-vs-minimum-ruleset:
 
 # Duration of the full run parsing all 93 log files.
 build/include-timing-run-duration.tex: results/stats-full-run/timing
-	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes, %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@" || (rm -f "$@"; false)
+	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes and %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@" || (rm -f "$@"; false)
 
 # Sample output from an SQL query.
 build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql
