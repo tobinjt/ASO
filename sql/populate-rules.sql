@@ -1148,7 +1148,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): from=<(__SENDER__)>, size=(\d+), nrcpt=(\d+) \(queue active\)$',
         'sender = 2, size = 3',
         '',
-        'MAIL_PICKED_FOR_DELIVERY',
+        'MAIL_QUEUED',
         1,
         'INFO'
 );
@@ -2140,7 +2140,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         '^(__QUEUEID__): (?:resent-)?message-id=(__MESSAGE_ID__)$',
         'message_id = 2',
         '',
-        'MAIL_PICKED_FOR_DELIVERY',
+        'MAIL_QUEUED',
         '1',
         'PROCESSING'
 );

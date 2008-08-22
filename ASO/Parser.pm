@@ -322,7 +322,7 @@ sub init_globals {
         TRACK
         DELIVERY_REJECTED
         EXPIRY
-        MAIL_PICKED_FOR_DELIVERY
+        MAIL_QUEUED
         PICKUP
         CLONE
         TIMEOUT
@@ -1128,7 +1128,7 @@ sub DELIVERY_REJECTED {
 
 =over  4
 
-=item MAIL_PICKED_FOR_DELIVERY
+=item MAIL_QUEUED
 
 This action represents Postfix picking a mail from the queue to deliver.  This
 action is used for both qmgr and cleanup due to out of order log lines.
@@ -1159,7 +1159,7 @@ the line.
 
 =cut
 
-sub MAIL_PICKED_FOR_DELIVERY {
+sub MAIL_QUEUED {
     my ($self, $rule, $line, $matches) = @_;
     my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
 
@@ -1242,7 +1242,7 @@ sub PICKUP {
             # connection.  Let make_connection_by_queueid() do the logging.
             $connection = undef;
         } else {
-            # Delete the faked flag added by MAIL_PICKED_FOR_DELIVERY.
+            # Delete the faked flag added by MAIL_QUEUED.
             delete $connection->{faked};
         }
     }
@@ -1355,7 +1355,7 @@ finish.  Whew.
 
 There's also the problem of stray cleanup lines being logged after the timeout
 line.  This is dealt with by saving the queueid and discarded data structure in
-a global state table which is checked in MAIL_PICKED_FOR_DELIVERY.
+a global state table which is checked in MAIL_QUEUED.
 
 =back
 
@@ -2292,7 +2292,7 @@ sub prune_timeout_queueids {
     my ($self) = @_;
     my $count = 0;
 
-    # This is dependant on the time difference used in MAIL_PICKED_FOR_DELIVERY.
+    # This is dependant on the time difference used in MAIL_QUEUED.
     foreach my $queueid (keys %{$self->{timeout_queueids}}) {
         my $connection = $self->{timeout_queueids}->{$queueid};
         if ($connection->{results}->[-1]->{timestamp}

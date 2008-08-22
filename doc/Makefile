@@ -2,7 +2,7 @@
 .DELETE_ON_ERROR:
 # NOTE: you need to run 'make clean' between running 'make foo.dvi' and 'make
 # foo.pdf', otherwise latex will only be run once and it will get very confused.
-all: sgai-2008.pdf
+all: sgai-2008.pdf sgai-2008.ps
 
 logparser.pdf: logparser.deps logparser.pdf.deps logparser-*.tex \
 		logparser-bibliography.bib logparser-bibliography-style.bst
@@ -29,6 +29,8 @@ sgai-2008.deps:									\
 # This isn't a wildcard rule because it screws up later postscript wildcard 
 # rules.
 logparser.ps: logparser.dvi
+	dvips -o "$@" "$<"
+sgai-2008.ps: sgai-2008.dvi
 	dvips -o "$@" "$<"
 
 %.bbl: %-bibliography.bib
