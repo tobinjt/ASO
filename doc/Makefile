@@ -83,8 +83,7 @@ build:
 	grep ^Warning *.blg || true;
 	grep '!!' *.glg *.alg || true;
 	# Finally done.
-	chktex -I0 -q *.tex
-	chktex -q --nowarn 1 *.bbl
+	make check
 
 build_run:
 	make run_latex
@@ -389,6 +388,7 @@ veryclean: clean
 
 check:
 	chktex -I0 -q *.tex
+	chktex -q --nowarn 1 --nowarn 15 --nowarn 17 *.bbl
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:

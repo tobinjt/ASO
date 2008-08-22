@@ -794,12 +794,12 @@ indications:
 
     \item The indicator which more commonly introduces re-injection is when
         \daemon{qmgr} selects a mail with a previously unseen queueid for
-        delivery (action: MAIL\_PICKED\_FOR\_DELIVERY\@; flowchart:~3), in
-        which case a new data structure will be created for that mail.  The
-        mail will be flagged as having unknown origins; this flag should be
-        subsequently cleared once the origin has been established.  This
-        may also be an indicator that the mail is a bounce notification,
-        see \sectionref{identifying-bounce-notifications} for details.
+        delivery (action: MAIL\_QUEUED\@; flowchart:~3), in which case a
+        new data structure will be created for that mail.  The mail will be
+        flagged as having unknown origins; this flag should be subsequently
+        cleared once the origin has been established.  This may also be an
+        indicator that the mail is a bounce notification, see
+        \sectionref{identifying-bounce-notifications} for details.
 
     \item Local delivery re-injects the mail and logs a relayed delivery
         rather than delivering directly to a mailbox or program as it
@@ -1016,7 +1016,7 @@ The actions:
         expired; the flag later causes the valid combinations check to be
         skipped, so the mail will be committed.
 
-    \item [MAIL\_PICKED\_FOR\_DELIVERY] This action represents Postfix
+    \item [MAIL\_QUEUED] This action represents Postfix
         picking a mail from the queue to deliver. This action is used for
         both \daemon{qmgr} and \daemon{cleanup} as it needs to deal with
         out of order log lines; see \sectionref{discarding cleanup lines}
@@ -1543,7 +1543,7 @@ In the case where the \daemon{cleanup} line is still pending during the
 TIMEOUT action the algorithm updates a global cache of queueids, adding the
 queueid and the timestamp from the timeout line.  When the next
 \daemon{cleanup} line is parsed for that queueid the cache will be checked
-(during the MAIL\_PICKED\_FOR\_DELIVERY action),
+(during the MAIL\_QUEUED action),
 and the line will be deemed part of the discarded mail and discarded if it
 meets the following requirements:
 
