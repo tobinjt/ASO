@@ -21,7 +21,7 @@ graphs, and provide a platform on which new restrictions can be trialled
 and evaluated to determine if they are beneficial in the fight against
 spam.  The program parses Postfix log files and populates a database with
 the data gleaned from those log files, providing a consistent and simple
-view of the log files which future tools can utilise.  The gathered data
+view of the log files that future tools can utilise.  The gathered data
 can then be used to optimise current anti-spam measures, provide a baseline
 to test new anti-spam measures against, or to produce statistics showing
 how effective those measures are.
@@ -91,27 +91,27 @@ insulates both user and provider of the \API{} from changes in the
 implementation of the \API{}\@.  The algorithm implemented by the parser
 can be improved; support can be added for earlier or later releases of
 Postfix; bugs can be fixed or limitations removed from the parser; these
-changes will not cause the user to be negatively impacted.  Statistics
-and/or graphs can be generated from the database; new restrictions can be
+changes will not cause the user to be negatively affected.  Statistics
+and graphs can be generated from the database; new restrictions can be
 tested and the results inspected; trends in the fight against spam can
 emerge from historical data saved in the database; the parser remains the
 same as the usage adapts.  Using a database simplifies writing programs
-which need to interact with the data in several ways:
+that need to interact with the data in several ways:
 
 \begin{enumerate}
 
-    \item It is already possible to access databases from the vast majority
-        of programming languages, allowing a developer to access the data
-        gathered using their preferred programming language, rather than
-        being restricted to the language the parser is written in.  It is
-        often possible to write an interface layer allowing code written in
-        one language to be used in another language, but this greatly
-        increases the effort required to use the parser.
+    \item It is already possible to access databases from most programming
+        languages, allowing a developer to access the data gathered using
+        their preferred programming language, rather than being restricted
+        to the language the parser is written in.  It is often possible to
+        write an interface layer allowing code written in one language to
+        be used in another language, but this greatly increases the effort
+        required to use the parser.
 
     \item Databases provide complex querying and sorting functionality to
         the user without requiring large amounts of programming.  All
         databases provide a program, of varying complexity and
-        sophistication, which can be used for ad hoc queries with minimal
+        sophistication, that can be used for ad hoc queries with minimal
         investment of time.
 
     \item Databases are easily extensible, e.g.:
@@ -158,9 +158,9 @@ CREATE TRIGGER ON INSERT INTO results
         are the same everywhere (analogous to the overall similarities and
         minor differences between Irish English, British English, American
         English and Australian English).  Depending on the database in use
-        there may be tools available which reduce or remove the requirement
+        there may be tools available that reduce or remove the requirement
         to know \SQL{}; for SQLite (the default database used by the
-        implementation) there are several available~\cite{sqlite-guis}.
+        implementation) several are available~\cite{sqlite-guis}.
 
 \end{enumerate}
 
@@ -178,8 +178,8 @@ no access to the original log files.
 The \SMTPlong{}, originally defined in \RFC{}~821~\cite{RFC821} and updated
 in \RFC{}~2821~\cite{RFC2821}, is used for transferring mail between the
 sending and receiving \MTA{}\@.  It is a simple, human readable, plain text
-protocol, making it quite easy to test and debug problems with it.  Despite
-the simplicity of the protocol many virus and/or spam sending programs fail
+protocol, making it quite simple to test and debug problems with it.  Despite
+the simplicity of the protocol many virus and spam sending programs fail
 to implement it properly, so requiring strict adherence to the protocol
 specification is beneficial in protecting against spam and
 viruses.\footnote{\label{footnote:rfc760}Originally all mail servers
@@ -234,14 +234,14 @@ QUIT
 This client is so poorly written that not only does it present the sender
 and recipient addresses improperly, it ignores the error messages returned
 by the server and carries on regardless.  There are many spam and virus
-sending programs which are this deficient --- unfortunately others
+sending programs that are this deficient --- unfortunately others
 (particularly newer programs) were written by competent programmers, or
 utilise competently written programs (e.g.\ Postfix or Sendmail on Unix
 hosts, Microsoft Outlook on Windows hosts).  Traditionally a mail server
 would have done its best to deal with deficient clients, with the intention
 of accepting as much mail destined for its users as
 possible,\footref{footnote:rfc760} e.g.\ by ignoring the absence of a HELO
-command, or accepting sender or recipient addresses which were not enclosed
+command, or accepting sender or recipient addresses that were not enclosed
 in \texttt{<>}.  
 
 A detailed description of \SMTP{} is beyond the scope of this document:
@@ -259,18 +259,18 @@ restrictions, allowing an administrator to deploy those restrictions which
 they judge suitable for their site's needs, rather than a fixed set chosen
 by Postfix's author.  These restrictions can be selectively applied,
 combined and bypassed on a per-client, per-recipient or per-sender basis,
-allowing varying levels of stricture and/or permissiveness.  Postfix
-leverages simple lookup tables to support arbitrarily complicated
-user-defined sequences of restrictions and exceptions, with policy
+allowing varying levels of stricture and permissiveness.  Postfix leverages
+simple lookup tables to support arbitrarily complicated user-defined
+sequences of restrictions and exceptions, with policy
 servers\footnote{Policy servers will be explained in \sectionref{policy
 servers}.} as the ultimate in flexibility.  Administrators can also supply
 their own rejection messages to make it clear to senders why exactly their
 mail was rejected.  Unfortunately this flexibility has a cost: complexity
-in the log files generated.  While it is easy to use standard Unix text
+in the log files generated.  Although it is easy to use standard Unix text
 processing utilities to determine the fate of an individual email,
 following the journey an email takes through Postfix can be quite
-difficult.  For the majority of mails the journey is simple and brief, but
-the remaining minority can be quite complex (see \sectionref{additional
+difficult.  For most mails the journey is simple and brief, but the
+remaining minority can be quite complex (see \sectionref{additional
 complications} for details).
 
 Postfix's design follows the Unix philosophy of \textit{Write programs that
@@ -278,16 +278,16 @@ do one thing and do it well\/}~\cite{unix-philosophy}, and is separated
 into various component programs to perform the tasks required of an
 \MTA{}\@: receive mail, send mail, local delivery of mail, etc.\ --- full
 details can be found in~\cite{postfix-overview}.  Each log line contains
-the name of the Postfix component which produced it, and this information
+the name of the Postfix component that produced it, and this information
 is used when determining which rules should be used to parse each log line
 (see \sectionref{rule characteristics} for details).  This design has
-positive security implications also: those components which interact with
+positive security implications also: those components that interact with
 other hosts are not privileged,\footnote{Privilege in this case means the
 power to perform actions that are limited to the administrator, and not
 available to ordinary users.} so bugs in those components will not give an
-attacker extra privileges; those components which are privileged do not
+attacker extra privileges; those components that are privileged do not
 interact with other hosts, making it much more difficult for an attacker to
-exploit any bugs which may exist in those components.
+exploit any bugs that may exist in those components.
 
 \subsubsection{Mixing and matching Postfix restrictions}
 
@@ -318,9 +318,9 @@ continue processing the remainder of the restriction list, allowing more
 specific cases to be used as exceptions to more general cases.  When the
 result is the name of another restriction Postfix will evaluate the new
 restriction, allowing restrictions to be chosen based on the client \IP{}
-address, HELO hostname, sender address, recipient address,
-etc.\footnote{E.g.\ the administrator may require that all clients on the
-local network have valid \DNS{} entries, to prevent people sending mail
+address, client hostname, HELO hostname, sender address, or recipient
+address.\footnote{E.g.\ the administrator may require that all clients on
+the local network have valid \DNS{} entries, to prevent people sending mail
 from unknown machines.}  The administrator can define new restrictions as a
 list of existing restrictions, allowing arbitrarily long and complex
 sequences of lookups, restrictions and exceptions.  Postfix tries to
@@ -335,8 +335,8 @@ philosophies: \textit{``UNIX was not designed to stop its users from doing
 stupid things, as that would also stop them from doing clever things''\/}
 --- Doug Gwyn~\cite{unix-philosophy}.
 
-Postfix uses simple lookup tables as the deciding factor when evaluating
-some restrictions, e.g.\ in the example restriction below\newline
+Postfix uses simple lookup tables to make decisions when evaluating some
+restrictions, e.g.\ in the example restriction below\newline
 \tab{}\texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
 \newline The line above can be broken down as follows:
 
@@ -351,10 +351,10 @@ some restrictions, e.g.\ in the example restriction below\newline
 
 \end{description}
 
-The restriction \texttt{check\_client\_access} checks whether the \IP{}
-address of the connected client is found in the file and returned the
-associated action if found; the method of searching the file is dependant
-on the type of the file (\texttt{cidr} in the example) --- see
+The restriction \texttt{check\_client\_access} checks if the \IP{} address
+of the connected client is found in the file and returns the associated
+action if found; the method of searching the file is dependant on the type
+of the file (\texttt{cidr} in the example) --- see
 \cite{postfix-lookup-tables} for more details.  Other restrictions
 determine their result by consulting external sources, e.g.\
 \texttt{reject\_rbl\_client dnsbl.example.com} checks whether the \IP{}
@@ -392,7 +392,7 @@ Some widely deployed policy servers:
         are allowed to send mail claiming to be from a particular domain.
         The intention is to reduce spam from faked sender addresses,
         backscatter~\cite{postfix-backscatter} and
-        joe~jobs~\cite{Wikipedia-joe-job}; however there has been a lot of
+        joe~jobs~\cite{Wikipedia-joe-job}, but there has been considerable
         resistance to the proposal because it breaks or vastly complicates
         some features of \SMTP{}, e.g.\ forwarding mail from one company or
         university to another when a user changes jobs.
@@ -412,13 +412,13 @@ Some widely deployed policy servers:
         restrictions over the \numberOFlogFILES{} log files used in testing
         the parser are shown in \tableref{Summary of rejections}.
         Greylisting is obviously worth using, at least at the moment,
-        particularly when you factor in Greylisting's position as the final
-        restriction which a mail must overcome:\footnote{Greylisting is the
+        particularly when you consider Greylisting's position as the final
+        restriction that a mail must overcome:\footnote{Greylisting is the
         final restriction a mail must overcome in the configuration used on
         the mail server the log files were obtained from; an administrator
         is free to use Greylisting at whichever position in the restriction
         list they feel is most appropriate for their mail system.}
-        Greylisting only takes effect for mails which have passed every
+        Greylisting only takes effect for mails that have passed every
         other restriction.
 
         \begin{table}[ht]
@@ -431,9 +431,10 @@ Some widely deployed policy servers:
         against the sending system --- if the eventual score is higher than
         a threshold the mail is rejected.  Postfix's restrictions are
         binary, and the administrator must manually whitelist clients if
-        they are to bypass a restriction; using a threshold which requires
-        hitting several restrictions frees the administrator from
-        whitelisting clients which fall foul of one restriction only.
+        they are to bypass a restriction; using a threshold that requires a
+        delivery attempt to hit several restrictions frees the
+        administrator from whitelisting clients that fall foul of one
+        restriction only.
 
     \item Rate limiting on a per-sender, per-client or per-recipient basis
         as performed by Policyd~\cite{policyd}.

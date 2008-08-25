@@ -70,7 +70,7 @@
 }}
 
 \glossary{name={pickup},description={
-    Pickup is the service which deals with mail submitted locally via
+    Pickup is the service that deals with mail submitted locally via
     postdrop and sendmail; it passes all submitted mail to cleanup.  The
     definitive documentation is \url{http://www.postfix.org/pickup.8.html}.
 }}
@@ -92,7 +92,7 @@
 }}
 
 \glossary{name={qmgr},description={
-    Qmgr is the Postfix daemon which manages the mail queue, determining
+    Qmgr is the Postfix daemon that manages the mail queue, determining
     which mails will be delivered next.  Qmgr orders the mails based on the
     recipient for local mails and the destination server for remote
     addresses, ensuring that it balances the aims of achieving maximum
@@ -104,7 +104,7 @@
 \glossary{name={sendmail},description={
     Postfix provides a command that is compatible with the Sendmail
     (\url{http://www.sendmail.org/}) mail submission program that all Unix
-    commands which send mail depend on; Postfix sendmail executes postdrop
+    commands that send mail depend on; Postfix sendmail executes postdrop
     to place a new mail in the queue.  The definitive documentation is
     \url{http://www.postfix.org/sendmail.1.html}.
 }}
@@ -115,7 +115,7 @@
 }}
 
 \glossary{name={smtpd},description={
-    Smtpd is the Postfix program which accepts mail via \SMTP{}, and
+    Smtpd is the Postfix program that accepts mail via \SMTP{}, and
     implements all the anti-spam restrictions Postfix provides.  The
     definitive documentation is \url{http://www.postfix.org/smtpd.8.html}.
 }}
@@ -156,7 +156,7 @@
 }}
 
 \glossary{name={$<>$},sort={<>},description={
-    $<>$ is the sender address used for mail which should not be replied
+    $<>$ is the sender address used for mail that should not be replied
     to, e.g.\ bounce notifications.  In \SMTP{} all addresses are enclosed
     in $<>$, so \textit{username\at{}domain\/} becomes
     \textit{$<$username\at{}domain$>$\/}; thus $<>$ is actually an empty

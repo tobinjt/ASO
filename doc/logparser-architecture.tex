@@ -1,6 +1,6 @@
 \section{Parser Architecture}
 
-XXX REWRITE AS NECESSARY TO MERGE AND SUPPLEMENT THE EXISTING CONTENT\@.
+XXX REWRITE TO MERGE AND SUPPLEMENT THE EXISTING CONTENT\@.
 
 \subsection{Parser design}
 
@@ -24,21 +24,21 @@ three parts:
     \item [actions] Actions are invoked to deal with a log line once it has
         been identified by the rules: actions modify data structures,
         handle complications, and cause data to be saved to the database.
-        The actions perform the work of reconstructing the journey a mail
-        takes through Postfix.  Details of the actions available in the
-        Postfix parser can be found in \sectionref{actions-in-detail}, and
+        The actions do the work of reconstructing the journey a mail takes
+        through Postfix.  Details of the actions available in the Postfix
+        parser can be found in \sectionref{actions-in-detail}, and
         \sectionref{adding new actions} describes the process of adding new
         actions.
 
     \item [framework] The framework is responsible for loading rules,
-        managing data structures, finding the rule which matches each log
+        managing data structures, finding the rule that matches each log
         line, invoking the correct action, etc\@.  The framework is
         described in detail in \sectionref{framework}.  XXX EXTEND
         FRAMEWORK SECTION IF NECESSARY\@.
 
 \end{description}
 
-It may help to think of the rules and actions as components which plug into
+It may help to think of the rules and actions as components that plug into
 the framework.  
 
 \label{why separate rules, actions and framework?}
@@ -58,7 +58,7 @@ arising, etc; the framework provides services to actions and stores data.
 
 Decoupling the actions from the framework simplifies both framework and
 actions: the framework provides services to the actions, and does not need
-to deal with the complications which arise, or the task of reconstructing a
+to deal with the complications that arise, or the task of reconstructing a
 mail's journey through Postfix; actions benefit from having services
 provided by the framework, freeing them to concentrate on the task of
 accurately reconstructing each mail's journey through Postfix and dealing
@@ -71,26 +71,26 @@ trivial in comparison to understanding a program's entire parsing
 algorithm, identifying the correct location to change and making the
 appropriate changes.  Bear in mind that the changes must be made without
 adversely affecting existing parsing, particularly as there may be edge
-cases which are not immediately obvious ---
-\sectionref{yet-more-aborted-delivery-attempts} describes a complication which
-occurs only four times in \numberOFlogFILES{} log files tested.  Requiring
-changes to the parser's code also complicates upgrades, as the changes must
-be preserved during the upgrade, and may clash with changes made by the
-developer (\sectionref{adding new actions} describes safely adding new
-actions).  \parsername{} allows the user to add new rules to the database
-without changing the parsing algorithm, unless the new log lines to be
-parsed require functionality not already provided by the algorithm.  If the
-new log lines do require new functionality, new actions can be added to the
-parser without modifying existing actions or other parts of the algorithm;
-only in the rare case that the new actions require support from other
-sections of the code will more extensive changes be required.
+cases that are not immediately obvious ---
+\sectionref{yet-more-aborted-delivery-attempts} describes a complication
+that occurs only four times in \numberOFlogFILES{} log files tested.
+Requiring changes to the parser's code also complicates upgrades, as the
+changes must be preserved during the upgrade, and may clash with changes
+made by the developer (\sectionref{adding new actions} describes safely
+adding new actions).  \parsername{} allows the user to add new rules to the
+database without changing the parsing algorithm, unless the new log lines
+to be parsed require functionality not already provided by the algorithm.
+If the new log lines do require new functionality, new actions can be added
+to the parser without modifying existing actions or other parts of the
+algorithm; only in the rare event that the new actions require support from
+other sections of the code will more extensive changes be required.
 
 There is some similarity between the parser's design and William Wood's
 \ATN{}~\cite{atns, nlpip}, a tool used in Computational Linguistics for
 creating grammars to parse or generate sentences.  The resemblance between
-\ATN{} and the parser is accidental, but it is interesting how two
-apparently different approaches share an underlying separation of concerns;
-this appears to be a natural division of responsibility and functionality.
+\ATN{} and the parser is accidental, but it is obvious that the two
+different approaches share an underlying separation of concerns; this
+appears to be a natural division of responsibility and functionality.
 \Tableref{Similarities between ATN and this architecture} shows the
 similarities.
 
@@ -105,12 +105,12 @@ similarities.
         \tableline{}
         Networks        & Algorithm     & Determines the sequence 
                                         of transitions              \\
-                        &               & or actions which 
+                        &               & or actions that 
                                         constitutes a valid  input. \\
         Transitions     & Actions       & Save data and impose
                                         conditions the              \\
                         &               & input must meet to be
-                                        considered valid.           \\
+                                        accepted as valid.          \\
         Abbreviations   & Rules         & Responsible for 
                                         classifying input.          \\
         \tableline{}
@@ -121,7 +121,7 @@ similarities.
 
 \label{rule characteristics}
 
-Rule have certain characteristics which may help in understanding the
+Rule have certain characteristics that may help in understanding the
 parser:
 
 \begin{itemize}
@@ -137,7 +137,7 @@ parser:
         tried against it.
 
     \item The first matching rule wins: no further rules are tried against
-        that log line, but there is a facility for prioritising the rules
+        that log line, but there is a mechanism for prioritising the rules
         so that more specific rules can be tried first.
 
     \item Rules are completely self-contained and can be understood in
@@ -164,17 +164,17 @@ XXX IS THERE ANY PREVIOUS RESEARCH IN THIS AREA\@?
 
 XXX DFA COMPARISON\@.
 
-The parser does not try to detect overlapping rules; that
-responsibility is left to the author of the rules.  Unintentionally
-overlapping rules lead to inconsistent parsing and data extraction because
-the order in which rules are tried against each line may change between log
-files, and the first matching rule wins.  Overlapping rules are frequently
-a requirement, allowing a more specific rule to match some log lines and a
-more general rule to match the majority, e.g.\ separating \SMTP{} delivery
-to specific sites from \SMTP{} delivery to the rest of the world.  The
-algorithm provides a facility for ordering overlapping rules: the priority
-field in each rule (defaults to zero).  Negative priorities may be useful
-for catchall rules.
+The parser does not try to detect overlapping rules; that responsibility is
+left to the author of the rules.  Unintentionally overlapping rules lead to
+inconsistent parsing and data extraction because the order in which rules
+are tried against each line may change between log files, and the first
+matching rule wins.  Overlapping rules are frequently a requirement,
+allowing a more specific rule to match some log lines and a more general
+rule to match the majority, e.g.\ separating \SMTP{} delivery to specific
+sites from \SMTP{} delivery to the rest of the world.  The algorithm
+provides a mechanism for ordering overlapping rules: the priority field in
+each rule (defaults to zero).  Negative priorities may be useful for
+catchall rules.
 
 Detecting overlapping rules is difficult, but the following approaches may
 be helpful:
@@ -186,19 +186,18 @@ be helpful:
 
     \item Compare the results of parsing using sorted, shuffled and
         reversed rules (described in \sectionref{rule ordering for
-        efficiency}).  Parse a number of log files using optimal sorting,
-        then dump a textual representation of the rules, connections and
-        results tables.  Repeat with shuffled and reversed rules, starting
-        with a fresh database.  If there are no overlapping rules the
-        tables from each run will be identical; differences indicate
-        overlapping rules.  Which rules overlap can be determined by
-        examining the differences in the tables: each result contains a
-        reference to the rule which created it, if the references differ
-        between runs the two rules referenced in the differing results
-        overlap.  Unfortunately this method cannot prove the absence of
-        overlapping rules; it can detect overlapping rules, but only if
-        there are log lines in the input files which match more than one
-        rule.
+        efficiency}).  Parse several log files using optimal ordering, then
+        dump a textual representation of the rules, connections and results
+        tables.  Repeat with shuffled and reversed ordering, starting with
+        a fresh database.  If there are no overlapping rules the tables
+        from each run will be identical; differences indicate overlapping
+        rules.  The rules that overlap can be determined by examining the
+        differences in the tables: each result contains a reference to the
+        rule which created it, if the references differ between runs the
+        two rules referenced in the differing results overlap.
+        Unfortunately this method cannot prove the absence of overlapping
+        rules; it can detect overlapping rules, but only if there are log
+        lines in the input files that match more than one rule.
 
 \end{itemize}
 
@@ -208,13 +207,13 @@ be helpful:
 \label{framework}
 
 The intermingling of log entries from different mails immediately rules out
-the possibility of handling each mail in isolation; the parser must be
-capable of handling multiple mails in parallel, each potentially at a
-different stage in its journey, without any interference between mails ---
-except in the minority of cases where intra-mail interference is required.
-The best way to implement this is to maintain state information for every
-unfinished mail and manipulate the appropriate mail correctly for each log
-line encountered.
+the possibility of handling each mail in isolation; the parser must be able
+to handle multiple mails in parallel, each potentially at a different stage
+in its journey, without any interference between mails --- except in the
+minority of cases where intra-mail interference is required.  The best way
+to implement this is to maintain state information for every unfinished
+mail and manipulate the appropriate mail correctly for each log line
+encountered.
 
 This functionality is provided by the framework, which both drives parsing
 overall and provides services to the actions it invokes.  The framework is

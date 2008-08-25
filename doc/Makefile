@@ -420,5 +420,5 @@ spellcheck:
 
 diction:
 	for file in *.tex; do \
-		untex -a -e "$$file" | diction --suggest | less -M "-PM$$file %lt/%L"; \
+		untex -a -e "$$file" | diction --suggest --file diction-rules --no-default-file | less -M -w "-PM$$file %lt/%L"; \
 	done

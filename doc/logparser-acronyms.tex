@@ -23,30 +23,30 @@
     code needs to be informed of the functionality provided by the code.
     An API defines the interface provided to the user, and acts as a
     contract between the user and the provider: if the user adheres to the
-    API the provider guarantees it will work, while the provider is free to
-    change the implementation as long as the API is preserved.
+    API the provider guarantees it will work, but is free to change the
+    implementation provided the API is preserved.
 }}
 
 \newacronym{SMTP}{Simple Mail Transfer Protocol}{description={
-    SMTP is the protocol which transfers mail from the sender to the
+    SMTP is the protocol that transfers mail from the sender to the
     recipient across the Internet.  It is a simple, human readable, plain
-    text protocol, making it quite easy to test and debug problems with it.
-    A detailed description of \SMTP{} is beyond the scope of this document:
-    the original protocol definition is \RFC{}~821~\cite{RFC821}, updated
-    in \RFC{}~2821~\cite{RFC2821}; introductory guides can be found
+    text protocol, making it quite simple to test and debug problems with
+    it.  A detailed description of \SMTP{} is beyond the scope of this
+    document: the original protocol definition is \RFC{}~821~\cite{RFC821},
+    updated in \RFC{}~2821~\cite{RFC2821}; introductory guides can be found
     at~\cite{smtp-intro-01,smtp-intro-02}.
 }}
 
 \newacronym{LMTP}{Local Mail Transfer Protocol}{description={
     LMTP is a protocol derived from SMTP that removes the need for the
     server to maintain a mail delivery queue, instead relying on the client
-    to maintain it.  Typically the client would be an MTA, and the server
-    would be a delivery agent or a mail store.  Full details are available
+    to maintain it.  Typically the client is an MTA, and the server a
+    delivery agent or a mail store.  Full details are available
     in~\cite{lmtp-rfc}.
 }}
 
 \newacronym{MTA}{Mail Transfer Agent}{description={
-    A Mail Transfer Agent sends and/or receives mail via
+    A Mail Transfer Agent sends and receives mail via
     SMTP\backslashat{}.
 }}
 
@@ -72,12 +72,13 @@
 }}
 
 \newacronym{ISP}{Internet Service Provider}{description={
-    An ISP is a company which sells Internet access to consumers.
+    An ISP is a company that sells Internet access to consumers.
 }}
 
 \newacronym{LMA}{Log Mail Analyzer}{description={
     One of the other Postfix log parsers reviewed and the only example of
-    published prior art~\cite{log-mail-analyser} found by the author.
+    published prior art~\cite{log-mail-analyser} found that specifically
+    deals with parsing Postfix logs.
 }}
 
 \newacronym{CSV}{Comma-Separated Value}{description={
@@ -102,16 +103,16 @@
 \newacronym{pid}{Process Identifier}{description={
     There may be multiple copies of any program executing at any one time,
     so the program's name is not suitable as a distinguishing identifier;
-    instead each process executing is given a pid which is guaranteed to be
+    instead each process executing is given a pid that is guaranteed to be
     unique for the lifetime of the process.  Once the process has
     completed, the pid may be reused, as they are drawn from a finite pool.
 }}
 
 \newacronym{UCE}{Unsolicited Commercial Email}{description={
-    UCE is a more restrictive definition of spam than most people would
-    use: it only covers mail that is explicitly commercial, thus excluding
-    viruses, Bayesian poisoning mails, backscatter, and those annoying
-    chain letters you get from friends.
+    UCE is a more restrictive definition of spam than most people use: it
+    only covers mail that is explicitly commercial, thus excluding viruses,
+    Bayesian poisoning mails, backscatter, and those annoying chain letters
+    you get from friends.
 }}
 
 \newacronym{regex}{Regular Expression}{description={
@@ -149,7 +150,7 @@
 }}
 
 \newacronym{LCD}{Lowest Common Denominator}{description={
-    LCD is a mathematical term which is used figuratively to mean the least
+    LCD is a mathematical term that is used figuratively to mean the least
     useful member of a set of alternatives.
 }}
 
@@ -173,6 +174,6 @@
 \newacronym{NLP}{Natural Language Processing}{description={
     Natural Language Processing~\cite{Wikipedia-nlp} attempts to increase
     our understanding of the languages normally used by humans (e.g.\
-    English, Spanish, Japanese), with the goal of writing programs which
+    English, Spanish, Japanese), with the goal of writing programs that
     can understand human languages.
 }}

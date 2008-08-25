@@ -16,9 +16,9 @@ of (hopefully safe and reasonable) assumptions:
         course possible, particularly when suffering a deluge of spam or a
         mail loop.
 
-    \item Postfix logs sufficient information to make it possible to
-        accurately reconstruct the actions it has taken.  There are a
-        number of heuristics used when parsing; see
+    \item Postfix logs enough information to make it possible to accurately
+        reconstruct the actions it has taken.  There are several heuristics
+        used when parsing; see
         \sectionref{identifying-bounce-notifications},
         \sectionref{aborted-delivery-attempts} and \sectionref{pickup
         logging after cleanup} for details.
@@ -35,8 +35,8 @@ black box program based solely on its inputs and outputs.  Although the
 source code is available,\footnote{Reading and understanding the source
 code would require a significant investment of time: there are 375,750
 lines of code, documentation, etc.\ in Postfix 2.5.1's 17MB of source
-code.} there are advantages to treating Postfix as a black box while
-developing the parser:
+code.} there are advantages to treating Postfix as a black box during
+parser development:
 
 \begin{itemize}
 
@@ -50,10 +50,10 @@ developing the parser:
         processing.
 
     \item The parser acts as a second source of information, with the
-        information gathered from empirical evidence.  An interesting
-        project would be to compare the empirical knowledge inherent in the
-        parsing algorithm with the documentation and source code of
-        Postfix.
+        information gathered from empirical evidence.  A separate project
+        could compare the empirical knowledge inherent in the parsing
+        algorithm with the documentation and source code of Postfix to see
+        how closely the two agree.
 
 \end{itemize}
 
@@ -72,7 +72,7 @@ The database schema can be conceptually divided in two: the rules, which
 are used to parse log files, and the data saved from the parsing of log
 files.  Rules have the fields required to parse the log lines, extract data
 to be saved, and the action to be executed; they also have several fields
-which aid the user in understanding the meaning of the log lines parsed by
+that aid the user in understanding the meaning of the log lines parsed by
 each rule.  The rules are described in detail in \sectionref{rules} but the
 fields are covered in \sectionref{rule attributes}.
 
@@ -86,8 +86,8 @@ covered in detail in \sectionref{results table}.
 
 An important but easily overlooked benefit of storing the rules in the
 database is the connection between rules and results: if more information
-is required when examining a result, the rule which produced the result is
-available for inspection --- each result references the rule which created
+is required when examining a result, the rule that produced the result is
+available for inspection --- each result references the rule that created
 it.  There is no ambiguity about which rule resulted in a particular
 result, eliminating one potential source of confusion.
 
@@ -106,7 +106,7 @@ The following attributes are defined for each rule:
 
 \begin{description}
 
-    \item [id] A unique identifier for each rule which other tables can use
+    \item [id] A unique identifier for each rule that other tables can use
         to refer to a specific rule.
 
     \item [name] A short name for the rule.
@@ -116,8 +116,8 @@ The following attributes are defined for each rule:
         line to be logged).  This field describes the event causing the log
         lines this rule matches.
 
-    \item [restriction\_name] The restriction which caused the mail to be
-        rejected.  Only applicable to rules which have an action of
+    \item [restriction\_name] The restriction that caused the mail to be
+        rejected.  Only applicable to rules that have an action of
         \texttt{REJECTION}, other rules should have an empty string.
 
     \item [postfix\_action] This is the action Postfix must have taken to
@@ -130,7 +130,7 @@ The following attributes are defined for each rule:
             \item [ACCEPTED] Postfix has accepted a mail, and will
                 subsequently attempt to deliver it.
 
-            \item [BOUNCED] The mail has bounced, due to a mail loop,
+            \item [BOUNCED] The mail has bounced, because of a mail loop,
                 delivery failure, or five day timeout.
 
             \item [DELETED] The mail was deleted from the queue by an
@@ -148,16 +148,16 @@ The following attributes are defined for each rule:
                 mail will be generated and sent to the sender address.
 
             \item [INFO] Represents an unspecified intermediate action that
-                the parser is not interested in per se, but which does log
+                the parser is not interested in per se, but that does log
                 useful information, supplementing other log lines.
 
-            \item [IGNORED] An action which is not only uninteresting in
-                itself, but which also provides no useful data.
+            \item [IGNORED] An action that is not only uninteresting in
+                itself, but that also provides no useful data.
 
             \item [POSTFIX\_RELOAD] The administrator has instructed
                 Postfix to start or stop, and all existing \daemon{smtpd}
                 processes will be terminated.  This does not negatively
-                impact on the log files or mail queued by Postfix for
+                affect the log files or mail queued by Postfix for
                 delivery.
 
             \item [PROCESSING] \daemon{cleanup} is processing a mail
@@ -175,9 +175,9 @@ The following attributes are defined for each rule:
 
     \item [program] The program (\daemon{smtpd}, \daemon{qmgr}, etc.) whose
         log lines the rule applies to.  This avoids needlessly trying rules
-        which will not match the log line, or worse, might match
+        that will not match the log line, or worse, might match
         unintentionally.  Rules whose program is \texttt{*} will be tried
-        against any log lines which are not parsed by program specific
+        against any log lines that are not parsed by program specific
         rules.
 
     \item [regex] The \regex{} to match the log line against.  The \regex{}
@@ -190,18 +190,17 @@ The following attributes are defined for each rule:
         is compiled before attempting to parse the log file --- otherwise
         each \regex{} would be recompiled each time it was used, resulting
         in a large, data dependent slowdown.  Efficiency concerns are
-        discussed in \sectionref{parser efficiency}, with the impact of
-        caching compiled \regexes{} covered in \sectionref{Caching compiled
-        regexes}.
+        discussed in \sectionref{parser efficiency}, with caching compiled
+        \regexes{} covered in \sectionref{Caching compiled regexes}.
 
     \item [result\_cols, connection\_cols] Specifies how the fields in the
-        log line will be extracted.  The format is:
-        \newline \tab{} \texttt{smtp\_code = 1; recipient = 2, sender = 4;}
-        \newline i.e.\ semi-colon or comma separated assignment statements,
-        with the variable name on the left and the matching capture from
-        the \regex{} on the right hand side.  Data specified by
+        log line will be extracted.  The format is: \newline \tab{}
+        \texttt{smtp\_code = 1; recipient = 2, sender = 4;} \newline i.e.\
+        semi-colon or comma separated assignment statements, with the
+        variable name on the left and the matching capture from the
+        \regex{} on the right hand side.  Data specified by
         \texttt{result\_cols} will be entered in the \texttt{results}
-        table, while \texttt{connection\_cols} populates the
+        table, whereas \texttt{connection\_cols} populates the
         \texttt{connection} table.  The list of acceptable variable names
         is:
 
@@ -216,7 +215,7 @@ The following attributes are defined for each rule:
         in the database.
 
     \item [result\_data, connection\_data] Sometimes rules need to supply a
-        piece of data which is not present in the log line: e.g.\ setting
+        piece of data that is not present in the log line: e.g.\ setting
         \texttt{smtp\_code} when mail is accepted.  The format and allowed
         variables are the same as for \texttt{result\_cols} and
         \texttt{connection\_cols}, except that arbitrary
@@ -234,7 +233,7 @@ The following attributes are defined for each rule:
         containing the queueid, or zero if the log line does not contain a
         queueid.  Many log lines will not contain a queueid, e.g.\
         rejections logged before a mail has been accepted (a queueid will
-        not have been allocated), or log lines which are not tied to one
+        not have been allocated), or log lines that are not tied to one
         particular mail.
 
     \item [hits] This counter is maintained for every rule and incremented
@@ -294,8 +293,8 @@ fields:
         occasionally changes during a connection, presumably because spam
         or virus senders think it is a good idea.  By default Postfix only
         logs the HELO hostname when it rejects an \SMTP{} command, but it
-        is quite easy to rectify this, as described in \sectionref{logging
-        helo}.
+        is quite simple to rectify this, as described in
+        \sectionref{logging helo}.
 
     \item [queueid] The queueid of the mail if the connection represents an
         accepted mail, or \texttt{NOQUEUE} otherwise.
@@ -312,8 +311,10 @@ fields:
 
 \label{results table}
 
+XXX REWRITE THE SENTENCE AND FOOT NOTE\@.
+
 Every interesting\footnote{All log lines are interesting unless the
-postfix\_action of the rule which parses them is \texttt{INFO} or
+postfix\_action of the rule that parses them is \texttt{INFO} or
 \texttt{IGNORE}, as described in \sectionref{actions-in-detail}.} log line
 will have an entry in the results table, e.g.\ rejecting an \SMTP{}
 command, delivering a mail, or bouncing a mail (see
@@ -326,7 +327,7 @@ connection, though there may be many results per connection.
     \item [connection\_id] The id of the row in the connections table this
         result is associated with.
 
-    \item [rule\_id] The id of the entry in the rules table which matched
+    \item [rule\_id] The id of the entry in the rules table that matched
         the log line and created this result.
 
     \item [id] A unique identifier for this result.
@@ -382,7 +383,7 @@ comprehensible schema is essential when using the extracted data; it is
 more important when using the data than when storing it, because storing
 the data is a write-once operation, whereas utilising the data requires
 frequent searching, sorting and manipulation of the data to produce
-customised reports and/or statistics.
+customised reports or statistics.
 
 
 \subsection{Rules}
@@ -398,7 +399,7 @@ mail from a sender address because the appropriate \DNS{} entries are
 missing, i.e.\ mail could not be delivered to the sender's address (for
 full details see~\cite{reject-unknown-sender-domain}).
 
-The example rule below would match the following log line:
+The example rule below matches the following log line:
 
 \begin{verbatim}
 NOQUEUE: reject: RCPT from example.com[10.1.1.1]: 550
@@ -446,7 +447,7 @@ connection\_cols start at 5.  The various fields are used as follows;
         for the user's benefit.
 
     \item [program and regex:] If the program in the rule equals the
-        program which logged the log line, a match using the rule's
+        program that logged the log line, a match using the rule's
         \regex{} will be attempted against the log line; if the match is
         successful the action will be executed, if not the next rule will
         be tried.  If the program-specific rules do not match the log line,
@@ -460,9 +461,9 @@ connection\_cols start at 5.  The various fields are used as follows;
         connection\_data:] are \newline used by the action to extract and
         save data matched by the \regex{}.
 
-    \item [queueid:] The index of the capture in the \regex{} which
+    \item [queueid:] The index of the capture in the \regex{} that
         supplies the queueid, or zero if the log line does not contain a
-        queueid.  This allows the correct mail can be found by queueid and
+        queueid.  This allows the correct mail to be found by queueid and
         actions performed on it.
 
     \item [hits, hits\_total and priority:] hits and priority are used in
@@ -486,8 +487,8 @@ connection\_cols start at 5.  The various fields are used as follows;
 The log files produced by Postfix differ from installation to installation,
 because administrators have the freedom to choose the subset of available
 restrictions which suits their needs, including using different \DNSBL{}
-services, policy servers, or custom rejection messages.  To facilitate easy
-parsing of new log lines, the parser's design separates parsing rules from
+services, policy servers, or custom rejection messages.  To facilitate
+parsing new log lines, the parser's design separates parsing rules from
 parsing actions: adding new actions is difficult, but adding new rules to
 parse new rejection messages is trivial, and also occurs much more
 frequently.  The implementation provides a program to ease the process of
@@ -508,13 +509,13 @@ There are 4 steps in the algorithm:
 \begin{description}
 
     \item [Pre-process the file]  The new algorithm leverages the knowledge
-        gained while writing rules and performs a large number of
+        gained when writing rules and performs a large number of
         substitutions on the log input lines, replacing commonly occurring
         variable terms (e.g.\ email addresses, \IP{} addresses, the
         standard start of rejection messages, etc.) with \regex{} keywords
-        which the parser will expand when it loads the rule (see the
+        that the parser will expand when it loads the rule (see the
         \regex{} entry in \sectionref{rule attributes}).  The purpose of
-        this phase is to utilise existing knowledge to create more accurate
+        this step is to utilise existing knowledge to create more accurate
         \regexes{}.  The new log lines are written to a temporary file,
         which all subsequent stages use instead of the original input file.
 
@@ -541,17 +542,17 @@ There are 4 steps in the algorithm:
         incrementing it each time that word occurs in that position.
 
         The original algorithm only maintains counters for words whose hash
-        result from the previous phase has a high frequency; this reduces
+        result from the previous step has a high frequency; this reduces
         the number of counters maintained by the algorithm, reducing the
         memory requirements of the algorithm.
         
         As time goes on the amount of memory typically available increases
         and the requirement to reduce memory requirements decreases, hence
         the modified algorithm omits the hashing step and maintains
-        counters for all tokens. In addition the majority of unique or
-        infrequently occurring words will have been substituted with
-        keywords during the first phase, vastly reducing the number of
-        tuples to maintain counters for.
+        counters for all tokens. In addition most uncommon or infrequently
+        occurring words will have been substituted with keywords during the
+        first step, vastly reducing the number of tuples to maintain
+        counters for.
 
     \item [Classify words based on their frequency]  The frequency of each
         \textit{(word, word's position within the log line)\/} tuple is
@@ -574,7 +575,7 @@ There are 4 steps in the algorithm:
         threshold is independent of the threshold used to differentiate
         between fixed and variable words, but once again 1\% of input log
         lines is a good starting point; obviously the threshold depends on
-        the number and type of input log lines.  The new \regexes{} are
+        the number and content of input log lines.  The new \regexes{} are
         displayed for the user to add to the database, either as new rules
         or merged into the \regexes{} of existing rules; the counter for
         each \regex{} is also displayed, giving the user an indication of
@@ -586,9 +587,9 @@ There are 4 steps in the algorithm:
 
 \end{description}
 
-A second utility is also provided which reads a list of new \regexes{} and
+A second utility is also provided that reads a list of new \regexes{} and
 the input given to the first utility.  It tries to match each input log
-line against each \regex{}, counting the number of log lines which match
+line against each \regex{}, counting the number of log lines that match
 each \regex{}, warning the user if an input log line is matched by more
 than one \regex{}, and additionally warning if an input log line is not
 matched by any \regex{}.  It displays a summary of how many input log lines
@@ -613,7 +614,7 @@ Whereas the rules are quite simple and each rule is completely independent
 of the other rules, the algorithm is significantly more complicated and
 highly internally interdependent.  The algorithm deals with all the
 complications of parsing, the eccentricities and oddities of Postfix log
-files, presenting the resulting data in a normalised, easy to use
+files, presenting the resulting data in a normalised, simple to use
 representation.  The algorithm's task is to follow the journey each mail
 takes through Postfix, combining the data extracted by rules into a
 coherent whole, saving it in a useful and consistent form, and performing
@@ -635,7 +636,7 @@ This section covers the following topics:
     \item A high level overview of the algorithm.
 
     \item The first set of complications encountered: initially obvious
-        difficulties which had to be overcome.
+        difficulties that had to be overcome.
 
     \item A flow chart showing common paths a mail can take through the
         algorithm, a discussion of the emergent behaviour observed in the
@@ -646,7 +647,7 @@ This section covers the following topics:
     \item The actions the parser makes available to rules are covered in
         detail.
 
-    \item Additional complications which have arisen during the development
+    \item Additional complications that have arisen during the development
         of this parser are documented, the solutions to those
         complications, and where those solutions are implemented in the
         algorithm
@@ -683,12 +684,11 @@ TRACKING (\textsection{}5.4.3) COULD BE MOVED TO ADDITIONAL
 COMPLICATIONS\@.  POSSIBLY MERGE MAIL ENTRY AND DELIVERY IN HERE\@;
 TRACKING SHOULD BE IN COMPLICATIONS --- MERGE WITH RE-INJECTED MAILS\@.
 
-\Figureref{flow chart image part 1} and \figureref{flow
-chart image part 2} show the paths the data representing a mail can take
-through the parser algorithm.  The flow chart covers the most common paths
-only; there are additional, uncommon paths which are excluded for the sake
-of clarity; details of the deviations can be found in
-\sectionref{additional complications}.
+\Figureref{flow chart image part 1} and \figureref{flow chart image part 2}
+show the paths the data representing a mail can take through the parser
+algorithm.  The flow chart covers the most common paths only; there are
+additional, uncommon paths excluded for the sake of clarity; details of the
+deviations can be found in \sectionref{additional complications}.
 
 \showgraph{build/logparser-flow-chart-part-1}{Parser flow chart part
 1}{flow chart image part 1}
@@ -846,7 +846,7 @@ finally be described:
     \item The last alternative is that the mail is a parent mail (action:
         COMMIT\@; flowchart:~21).  Regardless of the state of its children
         its data is cleaned up and entered in the database (flowchart:~22).
-        The parent may have children which are waiting to be entered in the
+        The parent may have children that are waiting to be entered in the
         database (flowchart:~23); each of those children's data is cleaned
         up and entered in the database, then deleted from the state tables.
         The parent may also have outstanding children which are not yet
@@ -865,7 +865,7 @@ after the parent mail.
 \label{Emergent behaviour}
 
 The rules and actions exhibit emergent behaviour~\cite{Wikipedia-Emergence}
-which is far more complicated than the behaviour explicitly encoded in the
+that is far more complicated than the behaviour explicitly encoded in the
 algorithm.  The top-level parser could be written in pseudo-code like so
 (with indentation level indicating flow control):
 
@@ -896,7 +896,7 @@ in \sectionref{flow-chart} contains:
         by an action, determining what will happen next to a mail.
 
     \item Four implicit branches, where the transition is determined by the
-        next log line which is processed for that mail, e.g.\ state 1 can
+        next log line that is processed for that mail, e.g.\ state 1 can
         transition to either state 4 or state 5.  (1--\{4,5\},
         4--\{4,5,6\}, 5--\{4,5,6\}, 9--\{9,10,11,12\})
 
@@ -946,11 +946,11 @@ Each action is passed the same arguments:
 
             \item [timestamp] The time the line was logged at.
 
-            \item [host] The hostname of the server which logged the line.
+            \item [host] The hostname of the server that logged the line.
 
-            \item [program] The name of the program which logged the line.
+            \item [program] The name of the program that logged the line.
 
-            \item [pid] The \pid{} of the program which logged the line.
+            \item [pid] The \pid{} of the program that logged the line.
 
             \item [text] The remainder of the line.
 
@@ -1057,7 +1057,7 @@ The actions:
     \item [SMTPD\_WATCHDOG] \daemon{smtpd} processes have a watchdog timer
         to deal with unusual situations --- after five hours the timer will
         expire and the \daemon{smtpd} will exit.  This occurs very
-        infrequently, as there are many other timeouts which should occur
+        infrequently, as there are many other timeouts that should occur
         in the intervening hours: \DNS{} timeouts, timeouts reading data
         from the client, etc\@.  The active connection for that
         \daemon{smtpd} must be cleaned up, entered in the database, and
@@ -1095,7 +1095,7 @@ action}{Distribution of rules per action}
 
 Adding new actions is not as simple as adding new rules, though care has
 been taken in the parser's design and implementation to make adding new
-actions as painless as possible.  The implementor writes a subroutine which
+actions as painless as possible.  The implementor writes a subroutine that
 accepts the standard arguments given to actions, and registers it as an
 action\footnote{The new action must be registered before the rules are
 loaded, as it is an error for a rule to reference an unregistered action;
@@ -1144,7 +1144,7 @@ not an option.}
 \subsubsection{Summary}
 
 This section presented the core of the parser, starting with a very high
-level view and the initial complications which arose.  A flow chart showing
+level view and the initial complications that arose.  A flow chart showing
 the paths a mail may take through the nascent simplified algorithm was
 provided, followed by an explanation of those paths, and a discussion of
 the parser's emergent behaviour --- the data from the log files creates the
@@ -1293,10 +1293,10 @@ identified.
 
 Postfix 2.2.x (and presumably previous versions) lacks explicit logging
 when bounce notifications are generated; suddenly there will be log entries
-for a mail which lacks an obvious source.  There are similarities to the
+for a mail that lacks an obvious source.  There are similarities to the
 problem of re-injected mails discussed in \sectionref{tracking re-injected
 mail}, but unlike the solution described therein bounce notifications do
-not eventually have a log line which identifies their source.  Heuristics
+not eventually have a log line that identifies their source.  Heuristics
 must be used to identify bounce notifications, and those heuristics are:
 
 \begin{enumerate}
@@ -1362,8 +1362,8 @@ Some mail clients behave unexpectedly during the \SMTP{} dialogue: the
 client aborts the first delivery attempt after the first recipient is
 accepted, then makes a second delivery attempt for the same recipient which
 it continues with until delivery is complete.\footnote{Microsoft Outlook is
-one client which behaves in this fashion; no attempt has been made to
-identify other clients which act in a similar way.}  An example dialogue
+one client that behaves in this fashion; no attempt has been made to
+identify other clients that act in a similar way.}  An example dialogue
 exhibiting this behaviour is presented below (lines starting with a three
 digit number are sent by the server, the other lines are sent by the
 client):
@@ -1503,7 +1503,7 @@ following in the TIMEOUT action:
 
     \item If one or more recipients have been accepted Postfix will have
         allocated a queueid for the incoming mail, and there will be a mail
-        in the state tables which needs to be dealt with.
+        in the state tables that needs to be dealt with.
 
 \end{enumerate}
 
@@ -1531,11 +1531,11 @@ details.
 \label{discarding cleanup lines}
 
 The author has only observed this complication occurring after a timeout,
-though there may be other circumstances which trigger it.  Sometimes the
+though there may be other circumstances that trigger it.  Sometimes the
 \daemon{cleanup} line is logged after the timeout line; parsing this line
 causes the creation of a new state table entry for the queueid in the log
 line.  This is incorrect because the line actually belongs to the mail
-which has just been discarded; the next log line for that queueid will be
+that has just been discarded; the next log line for that queueid will be
 seen when the queueid is reused for a different mail, causing a queueid
 clash and the appropriate warning.
 
@@ -1650,7 +1650,7 @@ fails; a new mail is created when the \daemon{local} line is parsed and
 remains in the state tables; four warnings are issued per pair of out of
 order log lines.
 
-The solution to this problem is to examine the list of programs which have
+The solution to this problem is to examine the list of programs that have
 logged lines for each mail, comparing the list against a table of
 known-good combinations of programs (this check is performed during the
 COMMIT action).  If the mail's combination is found in the valid list the
@@ -1752,7 +1752,7 @@ grouped.  The DELETE action is responsible for handling this complication.
 
 \label{Further out of order log lines}
 
-This is yet another complication which only occurs during periods of
+This is yet another complication that only occurs during periods of
 extremely high load, when process scheduling vagaries and even hard disk
 access times cause strange behaviour.  In this complication bounce
 notification mails are created, delivered and deleted from the queue,
@@ -1830,7 +1830,7 @@ always room for improvement.
         logged if the mail is accepted.\footnote{Tested with Postfix
         2.2.10, 2.3.11 and 2.4.7; this may possibly have changed in Postfix
         2.5. XXX TEST THIS AGAIN.}  Rectifying this is relatively simple:
-        create a restriction which is guaranteed to warn for every accepted
+        create a restriction that is guaranteed to warn for every accepted
         mail, as follows:
 
         \begin{enumerate}
