@@ -2,7 +2,7 @@
 .DELETE_ON_ERROR:
 # NOTE: you need to run 'make clean' between running 'make foo.dvi' and 'make
 # foo.pdf', otherwise latex will only be run once and it will get very confused.
-all: sgai-2008.pdf sgai-2008.ps
+all: sgai-2008.pdf #sgai-2008.ps
 
 logparser.pdf: logparser.deps logparser.pdf.deps logparser-*.tex \
 		logparser-bibliography.bib logparser-bibliography-style.bst
@@ -20,7 +20,8 @@ sgai-2008.dvi: sgai-2008.deps sgai-2008.ps.deps spmpsci.bst \
 
 sgai-2008.deps:									\
 			build/include-timing-run-duration.tex			\
-			build/include-full-ruleset-vs-minimum-ruleset.tex
+			build/include-full-ruleset-vs-minimum-ruleset.tex	\
+			build/include-timing-run-throughput.tex
 	touch "$@"
 
 %.dvi: %.tex
@@ -149,7 +150,8 @@ logparser.deps: \
 		build/include-full-ruleset-vs-minimum-ruleset.tex		\
 		build/include-sample-sql-output.tex				\
 		build/include-sample-sql-query.tex				\
-		build/include-timing-run-duration.tex
+		build/include-timing-run-duration.tex				\
+		build/include-timing-run-throughput.tex
 	touch "$@"
 
 # Additional dependencies are included from Makefile.deps-ps and
@@ -363,11 +365,13 @@ full-ruleset-vs-minimum-ruleset:
 
 # Duration of the full run parsing all 93 log files.
 build/include-timing-run-duration.tex: results/stats-full-run/timing
-	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes and %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@" || (rm -f "$@"; false)
+	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes and %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@"
+build/include-timing-run-throughput.tex: results/stats-full-run/timing
+	awk -F': ' '/^Total time:/ { printf "%.3f MB parsed per minute\n", (10076909581 / (1024 * 1024)) / ($$3 / 60) }' "$<" > "$@"
 
 # Sample output from an SQL query.
 build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql
-	sqlite3.6.0 -separator ' & ' -bail "$<" < "generate-sample-sql-output.sql" > "$@" || ( rm -f "$@"; false )
+	sqlite3.6.0 -separator ' & ' -bail "$<" < "generate-sample-sql-output.sql" > "$@"
 	sed -i -e 's/, [^ ]\+ / /' -e 's/\(\.[0-9]\{3\}\)[0-9]*%$$/\1%/' -e 's/$$/ \\\\/' -e 's/_/\\_/g' -e 's/%/\\%/g' "$@"
 
 # The sample SQL query itself.

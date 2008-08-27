@@ -9,5 +9,7 @@ set key top left Left reverse
 # Let the X axis continue to the next round number for this graph.
 #set autoscale
 set yrange [0:9e6]
+# Disable scientific notation
+set format y "% .0f"
 
 plot "../build/stats-hits" using 1:2 title "Number of log lines"
