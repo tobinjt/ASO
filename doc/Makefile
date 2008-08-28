@@ -367,7 +367,7 @@ full-ruleset-vs-minimum-ruleset:
 build/include-timing-run-duration.tex: results/stats-full-run/timing
 	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes and %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@"
 build/include-timing-run-throughput.tex: results/stats-full-run/timing
-	awk -F': ' '/^Total time:/ { printf "%.3f MB parsed per minute\n", (10076909581 / (1024 * 1024)) / ($$3 / 60) }' "$<" > "$@"
+	awk -F': ' '/^Total time:/ { printf "%.3f MB (%.3f log lines) parsed per minute\n", (10076909581 / (1024 * 1024)) / ($$3 / 60), 60721709 / ($$3 / 60)}' "$<" > "$@"
 
 # Sample output from an SQL query.
 build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql
