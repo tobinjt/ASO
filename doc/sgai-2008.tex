@@ -200,7 +200,7 @@
 \label{Introduction}
 
 The architecture described herein was developed as part of a larger project
-to improve anti-spam defenses by analysing the performance of the set of
+to improve anti-spam defences by analysing the performance of the set of
 filters currently in use, optimising the order and membership of the set
 based on that analysis, and developing supplemental filters where
 deficiencies are identified.  Most anti-spam techniques are content-based
@@ -262,19 +262,19 @@ work.
 
 The solution developed is conceptually simple: provide a few generic
 functions (\textit{actions\/}), each capable of dealing with an entire
-category of inputs (e.g.\ rejecting a mail delivery attempt), accompanied by a multitude of
-precise patterns (\textit{rules\/}), each of which matches all inputs of
-a specific type and only that type (e.g.\ rejection by a specific
-\DNSBL{}).  It is an accepted standard to separate the parsing procedure
-from the declarative grammar it operates with; part of the novelty here is
-in the way that the grammar is itself partially procedural (each action is
-a separate procedure).  This architecture is ideally suited to parsing
-inputs where the input is not fully understood or does not conform to a
-fixed grammar: the architecture warns about unparsed inputs and other
-errors, but continues on parsing as best it can, allowing the developer of
-a new parser to decide which deficiencies are most important and require
-attention first, rather than being forced to fix the first error that
-arises.
+category of inputs (e.g.\ rejecting a mail delivery attempt), accompanied
+by a multitude of precise patterns (\textit{rules\/}), each of which
+matches all inputs of a specific type and only that type (e.g.\ rejection
+by a specific \DNSBL{}).  It is an accepted standard to separate the
+parsing procedure from the declarative grammar it operates with; part of
+the novelty here is in the way that the grammar is itself partially
+procedural (each action is a separate procedure).  This architecture is
+ideally suited to parsing inputs where the input is not fully understood or
+does not conform to a fixed grammar: the architecture warns about unparsed
+inputs and other errors, but continues parsing as best it can, allowing the
+developer of a new parser to decide which deficiencies are most important
+and require attention first, rather than being forced to fix the first
+error that arises.
 
 \section{Architecture}
 
@@ -291,7 +291,7 @@ rules.  Each will be discussed separately, but first an overview:
         other support functions.
 
     \item [Actions]  Each action performs the work required to deal with a
-        category of inputs, e.g.\ processing data from rejections.
+        single category of inputs, e.g.\ processing data from rejections.
 
     \item [Rules]  The rules are responsible for classifying
         inputs, specifying the action to invoke and the regex that matches
@@ -467,17 +467,17 @@ their ruleset; the Postfix log parser successfully parses every log line in
 the \numberOFlogFILESall{} log files it is currently being tested with.
 The framework requires each rule to have \texttt{action} and \texttt{regex}
 attributes; each implementation is free to add any additional attributes it
-requires.  The Postfix log parser adds several attributes: optimising rule
-ordering (\sectionref{Rule ordering}); restricting which log lines each
-rule can be matched against; and describing each rule.  Data is
-automatically extracted and saved from the input based on keywords in the
-rule's regex, but the Postfix log parser also provides a mechanism to
+requires.  The Postfix log parser adds attributes for several reasons:
+optimising rule ordering (\sectionref{Rule ordering}); restricting which
+log lines each rule can be matched against; and to describe each rule.
+Keywords in the rule's regex specify the data to be extracted from the
+input, but the Postfix log parser also provides a mechanism for rules to
 specify extra data to be saved.
 
 Parsing new inputs is generally achieved by creating a new rule that pairs
 an existing action with a new regex.  The Postfix log parser supplies a
 utility based on Simple Logfile Clustering Tool~\cite{slct-paper} to aid in
-producing regexes from unparsed log lines.  Separating the rules from the
+producing regexes from unparsed log lines.  Decoupling the rules from the
 actions and framework enables other rule management approaches to be used,
 e.g.\ instead of manually adding new rules, machine learning techniques
 could be used to automatically generate new rules.  If this approach was
@@ -517,15 +517,15 @@ in~\cite{intersection-of-NFA-using-Z}) is: $FA1 \cap{} FA2 =
 \overline{(\overline{FA1} \cup{} \overline{FA2})}$, which has considerable
 computation complexity.  Perl 5.10 regexes are more powerful than
 traditional regexes: it is possible to match correctly balanced brackets
-nested to an arbitrary depth, e.g.\ \verb!z<123<pq<>rs>j<r>ml>s! is matched
-by \verb!/^[^<>]*(<(?:(?>[^<>]+)|(?1))*>)[^<>]*$/! Perl 5.10
-regexes can maintain an arbitrary state stack and are thus equivalent in
-computational power to \PDA{} or \CFL{}, so detecting overlap may require
-calculating the intersection of two \PDA{} or \CFL{}\@.  The intersection
-of two \CFL{} is not closed, i.e.\ the resulting language cannot always be
-parsed by a \CFL{}, so intersection may be intractable in some cases e.g.:
+nested to an arbitrary depth, e.g.\
+\verb!/^[^<>]*(<(?:(?>[^<>]+)|(?1))*>)[^<>]*$/! matches
+\verb!z<123<pq<>rs>j<r>ml>s!. Perl 5.10 regexes can maintain an arbitrary
+state stack and are thus equivalent in computational power to \PDA{} or
+\CFL{}, so detecting overlap may require calculating the intersection of
+two \PDA{} or \CFL{}\@.  The intersection of two \CFL{} is not closed,
+i.e.\ the resulting language cannot always be parsed by a \CFL{}, so
+intersection may be intractable in some cases e.g.:
 $a^{*}b^{n}c^{n}~\cap~a^{n}b^{n}c^{*}~\rightarrow~a^{n}b^{n}c^{n}$.
-
 Detecting overlap amongst $n$ regexes requires calculating $n(n-1)/2$
 intersections, resulting in $O(n^2x)$ complexity, where $O(x)$ is the
 complexity of calculating intersection.  This is certainly not a task to be
@@ -535,12 +535,12 @@ parser's \numberOFrules{} rules would require calculating
 
 It is possible to define pathological regexes which fall into two main
 categories: regexes that match every input, and regexes that consume
-excessive amounts of CPU time during matching.  Defining a regex that
-matches all inputs is trivial: \verb!/^/! matches the start of every input.
+excessive amounts of CPU time during matching.  Defining a regex to match
+all inputs is trivial: \verb!/^/! matches the start of every input.
 Usually excessive CPU time is consumed when a regex with a lot of
-alteration and variable quantifiers fails to match; successful matching is
-generally quite fast.  See~\cite{mastering-regular-expressions} for
-in-depth discussion.
+alteration and variable quantifiers fails to match, but successful
+matching is generally quite fast (see~\cite{mastering-regular-expressions}
+for in-depth discussion).
 
 The example rule in \tableref{Example rule} matches the following sample
 log line logged by Postfix when a remote client connects to deliver mail:
@@ -582,16 +582,15 @@ log line logged by Postfix when a remote client connects to deliver mail:
         could be described as:
         \newline{}$\text{\textless{}input\textgreater{}} \mapsto
         \text{rule-1} | \text{rule-2} | \text{rule-3} | \dots |
-        \text{rule-n}$
+        \text{rule-n}$.
 
     \item [Context-aware actions:] Actions can consult the results (or lack
         of results) of previous actions during execution, providing some
         context sensitivity.  
         
-    \item [Cascaded parsing:] Actions can not inspect past or future
-        inputs, but actions can return a modified input to be parsed as if
-        read from the input stream, allowing for a simplified version of
-        cascaded parsing~\cite{cascaded-parsing}.
+    \item [Cascaded parsing:] Actions can return a modified input to be
+        parsed as if read from the input stream, allowing for a simplified
+        version of cascaded parsing~\cite{cascaded-parsing}.
 
     \item [Transduction:]  The architecture can be thought of as
         implementing transduction: it takes data in one form (log files)
@@ -628,7 +627,9 @@ Optiplex 745 described in \tableref{Computer used to generate statistics},
 dedicated to the task of gathering statistics from test runs.  Parsing all
 \numberOFlogFILES{} log files in one run took
 \input{build/include-timing-run-duration}, averaging
-\input{build/include-timing-run-throughput.tex}.
+\input{build/include-timing-run-throughput}; median throughput when parsing
+files separately was \input{build/include-median-throughput-MB}
+(\input{build/include-median-throughput-log-lines}) parsed per minute.
 
 % DO NOT REFORMAT!
 
@@ -700,14 +701,16 @@ three full test runs were performed with different rule orderings:
 
 \Graphref{Parsing time relative to shuffled} shows the parsing times of
 optimal and reverse orderings as a percentage of shuffled ordering parsing
-time.  This optimisation provides a modest but worthwhile reduction in
-parsing time of approximately 10\% with normal log files, less when a mail
-loop occurs and the distribution of log lines is unusual.  Optimal rule
-ordering has other benefits, described in \sectionref{Architecture
-Scalability: Number of Rules}.  \showgraph{build/graph-hits}{Number of log
-lines matched by each rule}{rule hits graph}
-\showgraph{build/graph-optimal-and-reverse-vs-shuffle}{Parsing time
-relative to shuffled ordering}{Parsing time relative to shuffled}
+time.  This optimisation provides a mean reduction in parsing time of
+\input{build/include-optimal-ordering-parsing-time-reduction-other-logs}\%
+with normal log files,
+\input{build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68}\%
+when a mail loop occurs and the distribution of log lines is unusual.
+Optimal rule ordering has other benefits, described in
+\sectionref{Architecture Scalability: Number of Rules}.
+\showgraph{build/graph-hits}{Number of log lines matched by each rule}{rule
+hits graph} \showgraph{build/graph-optimal-and-reverse-vs-shuffle}{Parsing
+time relative to shuffled ordering}{Parsing time relative to shuffled}
 
 \subsection{Architecture Scalability: Number of Rules}
 
@@ -716,22 +719,22 @@ relative to shuffled ordering}{Parsing time relative to shuffled}
 How any architecture scales as the number of rules increases is important,
 but it is particularly important for this architecture because it is
 expected that typical parsers will have a large number of rules.  There are
-\numberOFrules{} rules in the full Postfix log parser ruleset (it is tested
-with \numberOFlogFILESall{} log files), whereas the
-minimum number of rules required to parse the \numberOFlogFILES{} log files
-is \numberOFrulesMINIMUM{}, \numberOFrulesMINIMUMpercentage{} of the full
-ruleset.  A second set of test runs was performed using the minimum
-ruleset, and the parsing times compared to those generated using the full
-ruleset: the percentage parsing time increase when using the full ruleset
-instead of the minimal ruleset for optimal, shuffled and reverse orderings
-is shown in \graphref{Percentage parsing time increase of maximum ruleset
-over minimum ruleset}.  Clearly the increased number of rules has a
-noticeable performance impact with reverse ordering, and a lesser impact
-with shuffled ordering.  The optimal ordering shows a mean increase of
+\numberOFrules{} rules in the full Postfix log parser ruleset (parsing
+\numberOFlogFILESall{} log files), but the minimum number of rules required
+to parse the \numberOFlogFILES{} log files is \numberOFrulesMINIMUM{},
+\numberOFrulesMINIMUMpercentage{} of the full ruleset.  A second set of
+test runs was performed using the minimum ruleset, and the parsing times
+compared to those generated using the full ruleset: the percentage parsing
+time increase when using the full ruleset instead of the minimal ruleset
+for optimal, shuffled and reverse orderings is shown in
+\graphref{Percentage parsing time increase of maximum ruleset over minimum
+ruleset}.  Clearly the increased number of rules has a noticeable
+performance impact with reverse ordering, and a lesser impact with shuffled
+ordering.  The optimal ordering shows a mean increase of
 \input{build/include-full-ruleset-vs-minimum-ruleset} in parsing time for a
 \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.  These
-results show that the architecture scales very well as the number of rules
-increases, and that optimally ordering the rules is an important
+results show that the architecture scales extremely well as the number of
+rules increases, and that optimally ordering the rules is an important
 optimisation enabling this.
 \showgraph{build/graph-full-ruleset-vs-minimum-ruleset}{Percentage parsing
 time increase of maximum ruleset over minimum ruleset}{Percentage parsing
@@ -751,16 +754,15 @@ that a deficiency exists.
 
 Correct parsing of log lines must be measured first.  Warnings are issued
 for any log lines that are not parsed; no such warnings are issued while
-parsing the \numberOFlogFILES{} log files, therefore
-there are zero false negatives.  False positives are harder to
-quantify: manually verifying that the correct rule parsed each of the
-\numberOFlogLINES{} log lines is infeasible.  A random sample of 6,039 log
-lines (0.00994\% of \numberOFlogLINES{}) was parsed and the results
-manually verified by inspection to ensure that the correct rule parsed each
-log line.  The sample results contained zero false positives, and this
-check has been automated to ensure continued accuracy.  The authors are
-confident that zero false positives occur when parsing the
-\numberOFlogFILES{} log files.
+parsing the \numberOFlogFILES{} log files, therefore there are zero false
+negatives.  False positives are harder to quantify: manually verifying that
+the correct rule parsed each of the \numberOFlogLINES{} log lines is
+infeasible.  A random sample of 6,039 log lines (0.00994\% of
+\numberOFlogLINES{}) was parsed and the results manually verified by
+inspection to ensure that the correct rule's regex matched each log line.
+The sample results contained zero false positives, and this check has been
+automated to ensure continued accuracy.  The authors are confident that
+zero false positives occur when parsing the \numberOFlogFILES{} log files.
 
 The proportion of mail delivery attempts correctly understood is much more
 difficult to determine accurately than the proportion of log lines
@@ -814,14 +816,14 @@ simplifying the process of working within a team or when developing and
 testing additional functionality.  This architecture is ideally suited to
 parsing inputs where the input is not fully understood or does not follow a
 fixed grammar: the architecture warns about unparsed inputs and other
-errors, but continues on parsing as best it can, allowing the developer of
+errors, but continues parsing as best it can, allowing the developer of
 a new parser to decide which deficiencies are most important and require
 attention first, rather than being forced to fix the first error that
 arises.
 
 The data gathered by the Postfix log parser provides the foundation for the
 future of this project: applying machine-learning algorithms to the data to
-analyse and optimise the set of anti-spam measures in use, followed by
+analyse and optimise the set of anti-spam defences in use, followed by
 identifying patterns in the data that could be used to write new filters to
 recognise and reject spam rather than accepting it.  The parser provides
 the data in a normalised form that is far easier to use as input to new or

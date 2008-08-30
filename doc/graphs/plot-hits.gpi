@@ -12,4 +12,4 @@ set yrange [0:9e6]
 # Disable scientific notation
 set format y "% .0f"
 
-plot "../build/stats-hits" using 1:2 title "Number of log lines"
+plot "../build/stats-hits" using 1:2 title "Number of log lines matched"

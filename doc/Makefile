@@ -21,7 +21,11 @@ sgai-2008.dvi: sgai-2008.deps sgai-2008.ps.deps spmpsci.bst \
 sgai-2008.deps:									\
 			build/include-timing-run-duration.tex			\
 			build/include-full-ruleset-vs-minimum-ruleset.tex	\
-			build/include-timing-run-throughput.tex
+			build/include-timing-run-throughput.tex			\
+			build/include-median-throughput-log-lines.tex		\
+			build/include-median-throughput-MB.tex			\
+			build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex	\
+			build/include-optimal-ordering-parsing-time-reduction-other-logs.tex
 	touch "$@"
 
 %.dvi: %.tex
@@ -151,7 +155,9 @@ logparser.deps: \
 		build/include-sample-sql-output.tex				\
 		build/include-sample-sql-query.tex				\
 		build/include-timing-run-duration.tex				\
-		build/include-timing-run-throughput.tex
+		build/include-timing-run-throughput.tex				\
+		build/include-median-throughput-log-lines.tex			\
+		build/include-median-throughput-MB.tex
 	touch "$@"
 
 # Additional dependencies are included from Makefile.deps-ps and
@@ -367,7 +373,16 @@ full-ruleset-vs-minimum-ruleset:
 build/include-timing-run-duration.tex: results/stats-full-run/timing
 	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes and %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@"
 build/include-timing-run-throughput.tex: results/stats-full-run/timing
-	awk -F': ' '/^Total time:/ { printf "%.3f MB (%.3f log lines) parsed per minute\n", (10076909581 / (1024 * 1024)) / ($$3 / 60), 60721709 / ($$3 / 60)}' "$<" > "$@"
+	awk -F': ' '/^Total time:/ { printf "%.3f~MB (%'\''.3f log lines) parsed per minute%%\n", (10076909581 / (1024 * 1024)) / ($$3 / 60), 60721709 / ($$3 / 60)}' "$<" > "$@"
+build/include-median-throughput-MB.tex: build/results--skip_inserting_results--cache_compiled_regexes--optimal_ordering--maximum_ruleset--comment-stripped file-sizes.txt
+	paste -d ' ' $^ | awk '{ printf "%.3f\n", ($$8 / (1024 * 1024) ) / ($$3 / 60); }' | perl ../stats/stddev | awk '/Median:/ { print $$2 "~MB%" }' > "$@"
+build/include-median-throughput-log-lines.tex: build/results--skip_inserting_results--cache_compiled_regexes--optimal_ordering--maximum_ruleset--comment-stripped wc.txt
+	paste -d ' ' $^ | awk '{ printf "%.3f\n", $$8 / ($$3 / 60); }' | perl ../stats/stddev | awk '/Median:/ { printf "%'\''.3f log lines%\n", $$2 }' > "$@"
+
+build/include-optimal-ordering-parsing-time-reduction-other-logs.tex: build/stats-optimal-and-reverse-vs-shuffle 
+	sed -e '/^#/d' "$<" | sed -e '22d; 62,68d;' | awk '{print $$1}' | ../stats/stddev | awk '/Median:/ { printf "%.3f%%\n", 100 - $$2 }' > "$@"
+build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex: build/stats-optimal-and-reverse-vs-shuffle 
+	sed -e '/^#/d' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | awk '{print $$1}' | ../stats/stddev | awk '/Median:/ { printf "%.3f%%\n", 100 - $$2 }' > "$@"
 
 # Sample output from an SQL query.
 build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql
