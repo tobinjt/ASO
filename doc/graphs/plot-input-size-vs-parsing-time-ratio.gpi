@@ -5,6 +5,6 @@ set ylabel "Ratio of number of log lines and \nlog file size to parsing time"
 set output "../build/graph-input-size-vs-parsing-time-ratio.ps"
 
 plot "../build/stats-input-size-vs-parsing-time" using 1 with lines \
-        title "Ratio of number of log lines (/ 10000) to parsing time in seconds", \
+        title "Ratio of number of log lines in tens of thousands to parsing time in seconds", \
     "../build/stats-input-size-vs-parsing-time" using 2 with lines \
         title "Ratio of log file size in MB to parsing time in seconds"

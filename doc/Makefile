@@ -25,7 +25,8 @@ sgai-2008.deps:									\
 			build/include-median-throughput-log-lines.tex		\
 			build/include-median-throughput-MB.tex			\
 			build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex	\
-			build/include-optimal-ordering-parsing-time-reduction-other-logs.tex
+			build/include-optimal-ordering-parsing-time-reduction-other-logs.tex	\
+			build/include-top-ten-hits.tex
 	touch "$@"
 
 %.dvi: %.tex
@@ -383,6 +384,9 @@ build/include-optimal-ordering-parsing-time-reduction-other-logs.tex: build/stat
 	sed -e '/^#/d' "$<" | sed -e '22d; 62,68d;' | awk '{print $$1}' | ../stats/stddev | awk '/Median:/ { printf "%.3f%%\n", 100 - $$2 }' > "$@"
 build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex: build/stats-optimal-and-reverse-vs-shuffle 
 	sed -e '/^#/d' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | awk '{print $$1}' | ../stats/stddev | awk '/Median:/ { printf "%.3f%%\n", 100 - $$2 }' > "$@"
+
+build/include-top-ten-hits.tex: build/stats-hits
+	awk 'BEGIN { sum = 0; topten = 0 }; { sum += $$2 }; $$1 >= 160 { topten += $$2 }; END { printf "%'\''.3f%\n", topten * 100 / sum };' "$<" > "$@"
 
 # Sample output from an SQL query.
 build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql
