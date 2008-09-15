@@ -1,8 +1,9 @@
+# XXX REORDER THE NEXT PAGE OR SO.
 # Cause make to delete output files when a command fails.
 .DELETE_ON_ERROR:
 # NOTE: you need to run 'make clean' between running 'make foo.dvi' and 'make
 # foo.pdf', otherwise latex will only be run once and it will get very confused.
-all: sgai-2008.pdf #sgai-2008.ps
+all: sgai-2008-elsevier.pdf
 
 logparser.pdf: logparser.deps logparser.pdf.deps logparser-*.tex \
 		logparser-bibliography.bib logparser-bibliography-style.bst
@@ -12,6 +13,11 @@ logparser.pdf: logparser.deps logparser.pdf.deps logparser-*.tex \
 
 logparser.dvi: logparser.deps logparser.ps.deps logparser-*.tex \
 		logparser-bibliography.bib logparser-bibliography-style.bst
+
+sgai-2008-elsevier.pdf: sgai-2008.deps sgai-2008.pdf.deps elsarticle-num.bst \
+		logparser-bibliography.bib
+sgai-2008-elsevier.dvi: sgai-2008.deps sgai-2008.ps.deps elsarticle-num.bst \
+		logparser-bibliography.bib
 
 sgai-2008.pdf: sgai-2008.deps sgai-2008.pdf.deps spmpsci.bst \
 		logparser-bibliography.bib
@@ -411,7 +417,7 @@ veryclean: clean
 
 check:
 	chktex -I0 -q *.tex
-	chktex -q --nowarn 1 --nowarn 15 --nowarn 17 *.bbl
+	chktex -q --nowarn 1 --nowarn 15 --nowarn 17 --nowarn 6 *.bbl
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
