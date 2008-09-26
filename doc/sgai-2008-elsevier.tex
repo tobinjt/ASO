@@ -1,5 +1,5 @@
 % $Id$
-\documentclass[preprint,draft,numbers]{elsarticle}
+\documentclass[preprint,draft,numbers,1p]{elsarticle}
 
 % Useful stuff for math mode.
 \usepackage{amstext}
@@ -10,7 +10,7 @@
 \usepackage{lastpage}
 
 % Extra footnote functionality, including references to earlier footnotes.
-\usepackage[bottom]{footmisc}
+%\usepackage[bottom]{footmisc}
 
 % Tell Latex to use scalable fonts
 \usepackage{type1cm}
@@ -173,7 +173,7 @@
 \address{Supported by Science Foundation Ireland RFP 05/RF/CMS002.}
 
 \begin{keyword}
-    Parsing
+    Parsing \sep{} Postfix \sep{} Anti-Spam \sep{} log files
 \end{keyword}
 
 \begin{abstract}
@@ -212,7 +212,7 @@ to improve anti-spam defences by analysing the performance of the set of
 filters currently in use, optimising the order and membership of the set
 based on that analysis, and developing supplemental filters where
 deficiencies are identified.  Most anti-spam techniques are content-based
-(e.g.~\cite{a-plan-for-spam, word-stemming, relaxed-online-svms}) and
+(e.g.~\cite{a-plan-for-spam,word-stemming,relaxed-online-svms}) and
 require the mail to be accepted before determining if it is spam, but
 rejecting mail during the delivery attempt is preferable: senders of
 non-spam mail that is mistakenly rejected will receive an immediate
@@ -242,9 +242,9 @@ RFC~2821~\cite{RFC2821}.}
         
     \item The mail administrator can define custom rejection messages.
 
-    \item External resources utilised by Postfix (e.g.\ \DNSBL{} or policy
-        servers~\cite{policy-servers}) can change their messages without
-        warning.
+    \item External resources Postfix is configured to use (e.g.\ \DNSBL{}
+        or policy servers~\cite{policy-servers}) can change their messages
+        without warning.
 
 \end{itemize}
 
@@ -258,15 +258,15 @@ by the existing parsers severely limited their potential: some ignored the
 majority of log lines, parsing specific log lines accurately, but without
 any provision for parsing new or similar log lines; others sloppily parsed
 the majority of log lines, but were incapable of distinguishing between log
-lines of the same category, e.g.\ rejecting a mail delivery attempt.  The only prior published
-work on the subject of parsing Postfix log files that the authors are aware
-of is \textit{Log Mail Analyser: Architecture and Practical
-Utilizations\/}~\cite{log-mail-analyser}, which aims to extract data from
-log files, correlate it, and present it in a form suitable for a systems
-administrator to search using the myriad of standard Unix text processing
-utilities already available.  A full state of the art review is outside the
-scope of this paper but will be included in the thesis resulting from this
-work.
+lines of the same category, e.g.\ rejecting a mail delivery attempt.  The
+only prior published work on the subject of parsing Postfix log files that
+the authors are aware of is \textit{Log Mail Analyser: Architecture and
+Practical Utilizations\/}~\cite{log-mail-analyser}, which aims to extract
+data from log files, correlate it, and present it in a form suitable for a
+systems administrator to search using the myriad of standard Unix text
+processing utilities already available.  A full state of the art review is
+outside the scope of this paper but will be included in the thesis
+resulting from this work.
 
 The solution developed is conceptually simple: provide a few generic
 functions (\textit{actions\/}), each capable of dealing with an entire
@@ -434,8 +434,8 @@ Sometimes the new action will require the cooperation of other actions,
 e.g.\ to set or check a flag.  There is a possibility of introducing
 failure when modifying existing actions in this way, but the modifications
 will be smaller and occur less frequently than with a monolithic
-architecture, thus failures will be less likely to occur and will be easier to test
-for and diagnose.  The architecture can be implemented in an object
+architecture, thus failures will be less likely to occur and will be easier
+to test for and diagnose.  The architecture can be implemented in an object
 oriented style, allowing sub-classes to extend or override actions in
 addition to adding new actions; because each action is an independent
 procedure, the sub-class need only modify the action it is overriding,
@@ -536,8 +536,8 @@ $a^{*}b^{n}c^{n}~\cap~a^{n}b^{n}c^{*}~\rightarrow~a^{n}b^{n}c^{n}$.
 Detecting overlap amongst $n$ regexes requires calculating $n(n-1)/2$
 intersections, resulting in $O(n^2x)$ complexity, where $O(x)$ is the
 complexity of calculating intersection.  This is certainly not a task to be
-performed every time the parser is used: detecting overlap amongst the Postfix log
-parser's \numberOFrules{} rules would require calculating
+performed every time the parser is used: detecting overlap amongst the
+Postfix log parser's \numberOFrules{} rules would require calculating
 \numberOFruleINTERSECTIONS{} intersections.
 
 It is possible to define pathological regexes which fall into two main
@@ -605,7 +605,7 @@ log line logged by Postfix when a remote client connects to deliver mail:
         be more suitable for other implementations.
 
     \item [Closer to Natural Language Processing than using a fixed
-        grammar:] \hfill{}In contrast \newline{} to traditional parsers
+        grammar:] \empty{}~\newline{} In contrast to traditional parsers
         such as those used when compiling a programming language, this
         architecture does not require a fixed grammar specification that
         inputs must adhere to.  The architecture is capable of dealing with
@@ -633,7 +633,7 @@ than the speed of the database.  The computer used for test runs is a Dell
 Optiplex 745 described in \tableref{Computer used to generate statistics},
 dedicated to the task of gathering statistics from test runs.  Parsing all
 \numberOFlogFILES{} log files in one run took
-\input{build/include-timing-run-duration}, mean throughput is
+\input{build/include-timing-run-duration}, mean throughput
 \input{build/include-timing-run-throughput}; median throughput when parsing
 files separately was \input{build/include-median-throughput-MB}
 (\input{build/include-median-throughput-log-lines}) parsed per minute.
@@ -672,11 +672,11 @@ despite their large size; that unusually large size is due to mail
 forwarding loops resulting in a greatly increased number of mails delivered
 and log lines generated.
 
-\showgraph{build/graph-input-size-vs-parsing-time}{Parsing time, log file size,
-and number of log lines}{Parsing time, log file size, and number of log lines}
-\showgraph{build/graph-input-size-vs-parsing-time-ratio}{Ratio of number of
-log lines and log file size to parsing time}{parsing time vs log file size vs
-number lines factor}
+\showgraph{build/graph-input-size-vs-parsing-time}{Parsing time, log file
+size, and number of log lines}{Parsing time, log file size, and number of
+log lines} \showgraph{build/graph-input-size-vs-parsing-time-ratio}{Ratio
+of number of log lines and log file size to parsing time}{parsing time vs
+log file size vs number lines factor}
 
 \subsection{Rule Ordering}
 
@@ -697,10 +697,10 @@ runs were performed with different rule orderings:
     \item [optimal]  Hypothetically the best order: rules which match most
         often will be tried first.
 
-    \item [shuffled] Random ordering, intended to represent an unsorted rule
-        set.  Note that the ordering will change every time the parser is
-        executed, so 10 different orderings will be generated for each log
-        file in the test run.
+    \item [shuffled] Random ordering, intended to represent an unsorted
+        rule set.  Note that the ordering will change every time the parser
+        is executed, so 10 different orderings will be generated for each
+        log file in the test run.
 
     \item [reverse] Hypothetically the worst order: the most frequently
         matching rules will be tried last.
