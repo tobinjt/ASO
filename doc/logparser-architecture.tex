@@ -1,22 +1,33 @@
-\newpage{}
-
 \section{Parser Architecture}
 
 XXX REWRITE TO MERGE AND SUPPLEMENT THE EXISTING CONTENT\@.
 
-\subsection{Parser design}
+XXX NEEDS AN INTRODUCTION ONCE CONTENT HAS SETTLED\@.
+
+XXX MERGE SOME OF THE PAPER'S CONTENT IN HERE\@.
+
+\subsection{Parser architecture and design}
 
 \label{parser design}
 
 It should be clear from the earlier Postfix background (\sectionref{postfix
-background}) that log files produced by Postfix are not fixed; they vary
-widely from host to host, depending on the set of restrictions chosen by
-the administrator.  With this in mind, one of the parser's design aims was
-to make adding new rules as easy as possible, to enable administrators to
-properly parse their log files.  To enable this the parser is divided into
-three parts:
+background}) that log files produced by Postfix vary widely from host to
+host, depending on the set of restrictions chosen by the administrator.
+With this in mind, one of the parser's design aims was to make adding new
+rules as easy as possible, to enable administrators to properly parse their
+own log files.  To enable this the architecture is divided into three
+parts:
+
+XXX UPDATE SECTION REFERENCES BELOW\@: THEY NEED TO REFER TO BOTH THE
+ARCHITECTURE AND THE IMPLEMENTATION\@.
 
 \begin{description}
+
+    \item [framework] The framework is responsible for loading rules,
+        managing data structures, finding the rule that matches each log
+        line, invoking the correct action, etc\@.  The framework is
+        described in detail in \sectionref{framework}.  XXX EXTEND
+        FRAMEWORK SECTION IF NECESSARY\@.
 
     \item [rules] Rules match individual log lines and determine which
         actions will be executed.  Rules provide an easily extensible
@@ -32,20 +43,15 @@ three parts:
         \sectionref{adding new actions} describes the process of adding new
         actions.
 
-    \item [framework] The framework is responsible for loading rules,
-        managing data structures, finding the rule that matches each log
-        line, invoking the correct action, etc\@.  The framework is
-        described in detail in \sectionref{framework}.  XXX EXTEND
-        FRAMEWORK SECTION IF NECESSARY\@.
-
 \end{description}
 
 It may help to think of the rules and actions as components that plug into
-the framework.  
+the framework.  The framework tries each rule in turn until is finds one
+which matches the log line, then invokes the action specified by the rule.
 
 \label{why separate rules, actions and framework?}
 
-XXX MERGE THE NEXT TWO PARAGRAPHS\@.
+XXX MERGE THE NEXT TWO PARAGRAPHS\@.  PULL CONTENT FROM THE PAPER\@.
 
 Decoupling the parsing rules from the associated actions and framework
 allows new rules to be written and tested without requiring modifications
@@ -119,7 +125,12 @@ similarities.
     \end{tabular}
 \end{table}
 
-\subsection{Rule characteristics}
+\subsection{Rules}
+
+XXX TO BE WRITTEN\@.  TAKE CONTENT FROM THE PAPER AND POSSIBLY FROM THE
+IMPLEMENTATION SECTION\@.
+
+\subsubsection{Rule characteristics}
 
 \label{rule characteristics}
 
@@ -158,7 +169,7 @@ $\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
 \text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
 
 
-\subsection{Overlapping rules}
+\subsubsection{Overlapping rules}
 
 \label{overlapping rules}
 
@@ -206,6 +217,8 @@ be helpful:
 
 \subsection{Framework}
 
+XXX PULL CONTENT FROM THE PAPER FOR HERE\@; IT'S BETTER WRITTEN\@.
+
 \label{framework}
 
 The intermingling of log entries from different mails immediately rules out
@@ -249,9 +262,6 @@ for each line in the input files:
 
 \subsection{Actions}
 
-XXX TO BE WRITTEN\@.
-
-\subsection{Rules}
-
-XXX TO BE WRITTEN\@.
+XXX TO BE WRITTEN\@.  START WITH THE CONTENT FROM THE PAPER, THEN CHECK THE
+IMPLEMENTATION SECTION\@.
 
