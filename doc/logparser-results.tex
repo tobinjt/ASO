@@ -221,7 +221,7 @@ but it is particularly important in this architecture because it is
 expected that the typical parser will have a large number of rules.  There
 are \numberOFrules{} rules in the full Postfix ruleset, whereas the minimum
 number of rules required to parse the \numberOFlogFILES{} log files used
-when generating the results in this document is \numberOFrulesMINIMUM{},
+when generating the results in this thesis is \numberOFrulesMINIMUM{},
 \numberOFrulesMINIMUMpercentage{} of the full ruleset.  The full ruleset is
 larger because the Postfix parser is tested with \numberOFlogFILESall{} log
 files, to improve its parsing and ensure it correctly parses logs generated
@@ -416,7 +416,7 @@ Coverage of mails is much more difficult to determine accurately than
 coverage of log lines.  The parser can dump its state tables in a human
 readable form; examining these tables with reference to the log files is
 the best way to detect mails that were not handled properly (many of the
-complications discussed in \sectionref{additional complications} were
+complications discussed in \sectionref{complications} were
 detected in this way).  The parser issues warnings when it detects any
 errors, some of which may alert the user to a problem, e.g.\ when a queueid
 is reused before the previous mail is fully dealt with, when a queueid or
@@ -480,13 +480,12 @@ evidence that the false positive rate is quite low:
         that a log line would be associated with the wrong connection.
 
     \item When dealing with the complications described in
-        \sectionref{complications} and \sectionref{additional
-        complications} the solutions are as specific and restrictive as
-        possible, with the goal of minimising the number of false
-        positives.  In addition the solution to the \textit{Out of order
-        log files\/} complication described in \sectionref{out of order log
-        lines} imposes conditions that each reassembled mail must comply
-        with to be acceptable.
+        \sectionref{complications} the solutions are as specific and
+        restrictive as possible, with the goal of minimising the number of
+        false positives.  In addition the solution to the \textit{Out of
+        order log files\/} complication described in \sectionref{out of
+        order log lines} imposes conditions that each reassembled mail must
+        comply with to be acceptable.
 
     \item Every effort has been made while developing to make the parser as
         precise, demanding and particular as possible.

@@ -1,25 +1,26 @@
 \section{State of the Art Review}
 
-\label{other-parsers}
-
 \label{state of the art review}
 
+XXX UPDATE THE BLURBS\@.
 
 Ten other parsers, starting with the only previously published research in
 this area that the author is aware of, have been reviewed as part of the
-background research for this project.  None of the parsers reviewed perform
-the kind of advanced parsing and correlation required for this project; all
-except one (XXX IS THIS ACCURATE\@?) are intended to perform a specific
-parsing and reporting task, whereas \PLP{} is designed to be a generic
-parser, extracting data and leaving generation of reports from the data to
-other programs.  Some parsers save the data extracted to a data store, but
-the majority discard all data once they have finished running, making
-historical analysis impossible.  The parsers reviewed all produce a report
-of varying complexity and detail, whereas this project's parser does not
-produce a report at all; that responsibility is deferred to a separate
-program, to be developed later.  The parser developed for this project is
-designed to enable much more detailed log analysis by providing a stable
-platform for subsequent programs to develop upon.
+background research for this project.  Each of the parsers was tested with
+the \numberOFlogFILES{} test log files described in \sectionref{parser
+efficiency}.  None of the parsers reviewed perform the kind of advanced
+parsing and correlation required for this project; all except one (XXX IS
+THIS ACCURATE\@?) are intended to perform a specific parsing and reporting
+task, whereas \PLP{} is designed to be a generic parser, extracting data
+and leaving generation of reports from the data to other programs.  Some
+parsers save the data extracted to a data store, but the majority discard
+all data once they have finished running, making historical analysis
+impossible.  The parsers reviewed all produce a report of varying
+complexity and detail, whereas this project's parser does not produce a
+report at all; that responsibility is deferred to a separate program, to be
+developed later.  The parser developed for this project is designed to
+enable much more detailed log analysis by providing a stable platform for
+subsequent programs to develop upon.
 
 It is important to compare and contrast newly developed programs,
 algorithms, and parsers against those already available, to accurately
@@ -68,6 +69,14 @@ XXX EXTEND THIS\@.
 
 \subsection{Log Mail Analyser}
 
+XXX IS THE BDB STRUCTURE DOCUMENTED\@?
+
+XXX DESCRIBE THE \CSV{} FORMAT\@.
+
+XXX DESCRIBE THE MYSQL SCHEMA\@.
+
+IS THE SAME DATA STORED FOR ALL FORMATS\@?
+
 \label{prior art}
 
 There only appears to be one prior published paper about parsing Postfix
@@ -76,16 +85,18 @@ Utilizations\/}~\cite{log-mail-analyser}.  The aim of \LMA{} is quite
 different from this parser: it attempts to present correlated log data in a
 form suitable for a systems administrator to search using the myriad of
 standard Unix text processing utilities already available, producing both a
-\CSV{} file and either a MySQL or Berkeley DB database.  The decision to
-support both \CSV{} and Berkeley DB appears to have been a serious
-limitation: \CSV{} is a very simple format where a record is stored in a
-single line, with fields separated by a comma or other punctuation symbol.
-Problems with \CSV{} files include the need to escape separators in the
-data stored, providing multiple values for a field (e.g.\ multiple
-recipients), and adding new fields.  There is no mechanism to document the
-fields or the separator, unlike \SQL{} databases where every database
-includes a schema naming the fields and the type of data they store
-(integer, text, timestamp, etc.).
+\CSV{} file and either a MySQL (\url{http://www.mysql.com/}) or Berkeley DB
+(\url{http://www.oracle.com/database/berkeley-db/index.html}) database.
+XXX SHOULD THOSE URLS BE REFERENCES INSTEAD\@?  The decision to support
+both \CSV{} and Berkeley DB appears to have been a serious limitation:
+\CSV{} is a very simple format where a record is stored in a single line,
+with fields separated by a comma or other punctuation symbol.  Problems
+with \CSV{} files include the need to escape separators in the data stored,
+providing multiple values for a field (e.g.\ multiple recipients), and
+adding new fields.  There is no mechanism to document the fields or the
+separator, unlike \SQL{} databases where every database includes a schema
+naming the fields and the type of data they store (integer, text,
+timestamp, etc.).
 
 Berkeley DB only supports storing simple \textbf{(key, value)} pairs,
 unlike \SQL{} databases that store arbitrary tuples.  In \LMA{}'s main
@@ -103,9 +114,9 @@ of the three output formats: it does not provide the functionality of a
 basic \SQL{} database, not can it be used with standard Unix text
 processing tools.
 
-\LMA{} stores the following date: time and date, hostname and \IP{} address
-of client, \IP{} of server, sender and recipient addresses, \SMTP{} code,
-and size (for accepted mails only).  It omits XXX XXX\@.  Handling of
+\LMA{} stores the following date: time and date, client hostname and \IP{}
+address, server \IP{} address, sender and recipient addresses, \SMTP{}
+code, and size (for accepted mails only).  It omits XXX XXX\@.  Handling of
 multiple recipients, \SMTP{} codes or remote servers\footnote{A single mail
 may be sent to multiple remote servers if it was addressed to recipients in
 different domains, or Postfix needs to try multiple servers for one or more
@@ -149,12 +160,12 @@ results.
 \LMA{} does provide some simple reports: IP-STORY, FROM-STORY, DAILY-EMAIL
 and DAILY-REJECT\@.  The first three extract \CSV{} lines for the specified
 client \IP{} address, sender address, or date respectively.  DAILY-REJECT
-initially failed with an error message from the Perl interpreter; after
-making some corrections to the code it worked, and extracted the \CSV{}
-lines for the specified day where the \SMTP{} code signifies a rejection.
-All of these reports are trivially simple to produce from the \CSV{} file
-using the standard Unix tool \texttt{awk}; the most complicated,
-DAILY-REJECT, is merely:
+initially failed with an error message (XXX ADD THE ERROR MESSAGE) from the
+Perl interpreter; after making some corrections to the code it worked, and
+extracted the \CSV{} lines for the specified day where the \SMTP{} code
+signifies a rejection.  All of these reports are trivially simple to
+produce from the \CSV{} file using the standard Unix tool \texttt{awk}; the
+most complicated, DAILY-REJECT, is merely:
 
 \begin{verbatim}
 awk -F\| '$1 ~ /2007-01-26/ && $7 ~ /^[450]|deferred/
@@ -254,18 +265,18 @@ Pflogsumm's report includes the following:
 
 \begin{itemize}
 
-    \item Total number and bytes of mails accepted, delivered and rejected.
-
-    \item Total number of sender and recipient addresses and domains.
+    \item Total number of mails accepted, delivered, and rejected.  Total
+        size of mails accepted and delivered.  Total number of sender and
+        recipient addresses and domains.
 
     \item Per-hour averages and per-day summaries of the number of mails
         received, delivered, deferred, bounced, and rejected.
 
     \item For received mail: per-domain totals for mails sent, deferred,
         average delay, maximum delay, and bytes delivered.  For received
-        mail: per-domain totals for mails received and bytes received.
+        mail: per-domain totals for size and number of mails received.
 
-    \item Number of mails and bytes sent and received for each address.
+    \item Number and size of mails sent and received for each address.
 
     \item Summary of why mail delivery was deferred or failed, why mails
         were bounced, why mails were rejected, and warning messages.
@@ -295,6 +306,8 @@ report.
 \url{http://www.thesawmill.co.uk/formats/beta_postfix.html} \newline{}
 (Last checked 2007/12/04.)
 
+XXX CHECK ALL THIS AGAIN\@; GIVE EXAMPLE PRICES\@.
+
 Sawmill is a general purpose commercial product that parses 687 log file
 formats (correct as of 2007/12/04) and produces reports.  Its data
 extraction facilities are too limited to save sufficient data for the
@@ -314,6 +327,9 @@ associated cost the author has not experimented with it.  Presumably, as
 the company charges per report the user wishes to generate, the data store
 (if there is one) is deliberately inaccessible and undocumented to prevent
 the user bypassing the program and generating their own reports.
+
+XXX THE BLURB MENTIONS \SQL{} DB\@; CAN THAT BE ACCESSED SEPARATELY, IS THE
+FORMAT DOCUMENTED, ETC\@?
 
 \url{http://www.thesawmill.co.uk/formats/postfix.html} \newline{} Fields
 extracted: from, to, server, UID, relay, status, number of recipients,
@@ -371,6 +387,9 @@ XXX ADD A SUMMARY\@.
 \noindent{}\url{http://www.splunk.com/} \newline{}
 (Last checked 2008/04/29.)
 
+XXX THE FIRST PARAGRAPH NEEDS TO BE REWRITTEN\@; PICK POINTS, THEN COMPARE
+AND CONTRAST\@.
+
 Splunk aims to index all an organisation's log files, providing a
 centralised view capable of searching and correlating diverse log sources.
 The web interface supports complicated searches, providing statistics and
@@ -392,12 +411,13 @@ software, though most are variations of a bar or pie chart, except bubble
 and heatmap graphs.  It is easy to drill down through the graphs to extract
 a portion of the data (e.g.\ select the hour with the largest number of
 events, then select a particular host, and finally a specific address),
-though it is not possible to search on partial words.
+though it is not possible to search on partial words.  All searches
+performed using the indexed data returned reasonable results.  The web
+interface is quite attractive and simple to use when searching, but as an
+administrator it seems unnecessarily difficult to perform simple tasks.
 
-The web interface is quite attractive and simple to use when searching, but
-as an administrator it seems unnecessarily difficult to perform simple
-tasks.  When testing it took roughly 30 minutes to add a single log file to
-be indexed (log files must be indexed before searching), with the downside
+When testing it took roughly 30 minutes to add a single log file to be
+indexed (log files must be indexed before searching), with the downside
 that the log file was copied into a spool directory, doubling the disk
 space usage.  The most suitable test would be to index all the log files in
 a particular directory, but after three hours, numerous futile attempts,
@@ -406,18 +426,21 @@ Using the \CLI{} was more successful: invoking the command \newline{}
 \tab{} \texttt{splunk find logs }\textit{log-directory\/}\newline{} added
 40 of the \numberOFlogFILES{} log files to the queue for indexing.
 Repeated attempts enqueued the same 40 log files, without explaining why
-the others were excluded.\footnote{The log files appear to have only been
-indexed once; presumably Splunk keeps track of the files it has indexed and
-discards requests to index files for a second time.  This may or may not be
-a useful feature for \parsername{}.} There did not appear to be an option
-to order the log files to ensure they would be processed in the order they
-were created.  Subsequently the author was successful in adding a single
+the others were excluded.\footnote{The log files appear to have been
+indexed once only; presumably Splunk keeps track of the files it has
+indexed and discards requests to index files for a second time.  This may
+or may not be a useful feature for \parsername{}.} There did not appear to
+be an option to order the log files to ensure they would be processed in
+the order they were created, though this may not be necessary or beneficial
+with Splunk.  Subsequently the author was successful in adding a single
 file at a time using the \CLI{}; a simple loop to add all desired log files
 was sufficient to index all files.  Splunk will periodically check all
 those files for updates unless they are manually removed from its list;
 this may or may not be useful behaviour.  Splunk did not appear to have any
-difficulty in parsing the log files, once instructed to do so.  All
-searches performed using the indexed data returned reasonable results.
+difficulty in parsing the log files, once instructed to do so.
+\parsername{} parses the logs it is instructed to parse, in the order
+given; periodic parsing of logs is a task an administrator can easily
+achieve with \texttt{cron(8)} and \texttt{logrotate(8)}.
 
 Copious documentation is made available on \url{http://www.splunk.com/},
 but poor organisation and sheer abundance makes it extremely hard to find
@@ -430,10 +453,12 @@ how a newcomer would approach tasks or the questions they would ask.
 Splunk supports reading compressed log files without any configuration by
 the user.  The free version of Splunk limits the volume of data indexed per
 day to 500MB, though a trial Enterprise licence is available that allows
-indexing of up to 5GB of data per day.  The cheapest licensed version costs
-\$5000 (plus \$1000 support), and still limits the volume of data indexed
-per day to 500MB\@.  Typical log file sizes for a small scale mail server
-are given in \sectionref{parser efficiency}.
+indexing of up to 5GB of data per day.  In 2007 the cheapest licensed
+version cost \$5000 plus \$1000 support, and limited the volume of data
+indexed per day to 500MB\@.  Prices were removed from the Splunk website
+during 2008; now Splunk's sales team must be contacted for a quote.
+Typical log file sizes for a small scale mail server are given in
+\sectionref{parser efficiency}.
 
 When parsing Postfix log files Splunk extracts some standard fields: to and
 from addresses, HELO hostname, time and date, the host the log files were
@@ -453,6 +478,8 @@ importantly it makes no attempt to correlate log lines by queueid or
 \sectionref{complications}.  Some additional Postfix reports are supposedly
 available at \url{http://www.splunkbase.com/}, but the author was unable to
 find Postfix reports, or additional reports for any other log file types.
+
+\newpage{}
 
 \subsection{Isoqlog}
 

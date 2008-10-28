@@ -688,7 +688,7 @@ TRACKING SHOULD BE IN COMPLICATIONS --- MERGE WITH RE-INJECTED MAILS\@.
 show the paths the data representing a mail can take through the parser
 algorithm.  The flow chart covers the most common paths only; there are
 additional, uncommon paths excluded for the sake of clarity; details of the
-deviations can be found in \sectionref{additional complications}.
+deviations can be found in \sectionref{complications}.
 
 \showgraph{build/logparser-flow-chart-part-1}{Parser flow chart part
 1}{flow chart image part 1}
@@ -904,7 +904,7 @@ in \sectionref{flow-chart} contains:
 
 Several more states and corresponding branches are omitted for the sake of
 clarity (these extra states are caused by solving the complications
-described in \sectionref{additional complications}).
+described in \sectionref{complications}).
 
 The actions introduce some of the complexity seen in the flow chart: all
 explicit branches and the transitions between some stages (19--20,
@@ -1153,7 +1153,7 @@ The framework which holds the parser together was covered next, after which
 came a description of the current actions provided by the parser, and the
 algorithm for analysing unparsed log lines to create \regexes{} for new
 rules.  Detecting, diagnosing and defeating complications forms the largest
-single portion of this document, mirroring the development of the parser,
+single portion of this section, mirroring the development of the parser.
 The complications are described in the order they were overcome, with
 subsequent problems affecting fewer mails (often by an order or magnitude),
 though the time required to solve problems increased with each successive
@@ -1162,9 +1162,7 @@ problem.
 
 \subsection{Complications encountered}
 
-\label{additional complications}
 \label{complications}
-
 
 The complications described in this section are listed in the order in
 which they were encountered during development of the parser.  Each of

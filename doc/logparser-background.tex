@@ -3,18 +3,18 @@
 \label{background}
 
 This section provides background information helpful in understanding the
-remainder of the document.  It begins with a discussion of the motivation
+remainder of the thesis.  It begins with a discussion of the motivation
 underlying the project, followed by some technical information: the use of
 a database as an \API{}\@; a brief introduction to \SMTP{}\@; a longer
 introduction to Postfix, concentrating on anti-spam restrictions and policy
 servers.  The assumptions made in designing and implementing the parser are
-explained, as are the conventions used in this document.
+explained, as are the conventions used in this thesis.
 
 \subsection{Motivation}
 
 \label{motivation}
 
-This document and the program it describes are part of a larger project to
+This thesis and the program it describes are part of a larger project to
 optimise a mail server's Postfix-based anti-spam restrictions, generate
 statistics and graphs, and provide a platform on which new restrictions on
 trial can be evaluated to determine if they are beneficial in the fight
@@ -36,9 +36,10 @@ SELECT name, description, restriction_name, hits_total
     ORDER BY hits_total DESC;
 \end{verbatim}
 
-If the database supports sub-selects percentages can be obtained for the
-top ten restrictions (sample output shown in \tableref{Sample output from
-SQL query showing percentages}):
+If the database supports sub-selects (where the results of one query are
+used in another), percentages can be obtained for the top ten restrictions
+(sample output shown in \tableref{Sample output from SQL query showing
+percentages}):
 
 \input{build/include-sample-sql-query}
 
@@ -85,18 +86,16 @@ fashion proposed, implemented, and tested herein.
 \label{database as API}
 
 The database populated by this program provides a simple interface to
-Postfix log files.  Although the interface is a database schema, it is in
-effect quite similar to any other \APIlong{}~(\API{}) provided by shared
-code: it insulates both user and provider of the \API{} from changes in the
-implementation of the \API{}\@.  The algorithm implemented by the parser
-can be improved; support can be added for earlier or later releases of
-Postfix; bugs can be fixed or limitations removed from the parser; these
-changes will not cause the user to be negatively affected.  Statistics and
-graphs can be generated from the database; new restrictions can be tested
-and the results inspected; trends in the fight against spam can emerge from
-historical data saved in the database; the parser remains the same as the
-usage adapts.  Using a database simplifies writing programs that need to
-interact with the data in several ways:
+Postfix log files.  Although the interface is a database schema rather than
+a set of functions provided by shared code, it is in effect quite similar
+to any other \API{}: it provides a stable interface for users of the
+interface, allowing the implementation to be changed without adverse
+effects.  As long as the \API{} is maintained, the parser can be improved
+to handle additional complications; support can be added for earlier or
+later releases of Postfix; bugs can be fixed or limitations removed.
+
+Using a database simplifies writing programs that need to interact with the
+data in several ways:
 
 \begin{enumerate}
 
@@ -159,9 +158,9 @@ CREATE TRIGGER ON INSERT INTO results
         minor differences between Irish English, British English, American
         English, and Australian English).  Depending on the database in use
         there may be tools available that reduce or remove the requirement
-        to know \SQL{}; several are available~\cite{sqlite-guis} for
-        SQLite (the default database used by the parser
-        implementation).
+        to know \SQL{}; several are available for SQLite
+        (\url{http://www.sqlite.org/}), the default database used by the
+        parser implementation.
 
 \end{enumerate}
 
@@ -245,7 +244,7 @@ possible,\footref{footnote:rfc760} e.g.\ by ignoring the absence of a HELO
 command, or by accepting sender or recipient addresses that were not
 enclosed in \texttt{<>}.  
 
-A detailed description of \SMTP{} is beyond the scope of this document:
+A detailed description of \SMTP{} is beyond the scope of this thesis:
 introductory guides can be found at~\cite{smtp-intro-01,smtp-intro-02},
 and the definitive references are~\cite{RFC821,RFC2821}.
 
@@ -255,24 +254,23 @@ and the definitive references are~\cite{RFC821,RFC2821}.
 
 Postfix is a \MTAlong{}~(\MTA{}) with the following design aims (in order
 of importance): security, flexibility of configuration, scalability, and
-high performance.  It features extensive, extensible, optional anti-spam
-restrictions, allowing an administrator to deploy those restrictions which
-they judge suitable for their site's needs, rather than a fixed set chosen
-by Postfix's author.  These restrictions can be selectively applied,
-combined, and bypassed on a per-client, per-recipient, or per-sender basis,
-allowing varying levels of stricture and permissiveness.  Postfix leverages
-simple lookup tables to support arbitrarily complicated user-defined
-sequences of restrictions and exceptions, with policy
-servers\footnote{Policy servers will be explained in \sectionref{policy
-servers}.} as the ultimate in flexibility.  Administrators can also supply
-their own rejection messages to make it clear to senders why exactly their
-mail was rejected.  Unfortunately this flexibility has a cost: complexity
-in the log files generated.  Although it is easy to use standard Unix text
-processing utilities to determine the fate of an individual email,
-following the journey an email takes through Postfix can be quite
+high performance.  It features extensive optional anti-spam restrictions,
+allowing an administrator to deploy those restrictions which they judge
+suitable for their site's needs, rather than a fixed set chosen by
+Postfix's author.  These restrictions can be selectively applied, combined,
+and bypassed on a per-client, per-recipient, or per-sender basis, allowing
+varying levels of stricture and permissiveness.  Postfix leverages simple
+lookup tables to support arbitrarily complicated user-defined sequences of
+restrictions and exceptions; policy servers (\sectionref{policy servers})
+provide a simple way to write new restrictions.  Administrators can also
+supply their own rejection messages to make it clear to senders exactly why
+their mail was rejected.  Unfortunately this flexibility has a cost:
+complexity in the log files generated.  Although it is easy to use standard
+Unix text processing utilities to determine the fate of an individual
+email, following the journey an email takes through Postfix can be quite
 difficult.  For most mails the journey is simple and brief, but the
 remaining minority can have quite complex journeys (see
-\sectionref{additional complications} for details).
+\sectionref{complications} for details).
 
 Postfix's design follows the Unix philosophy of \textit{``Write programs
 that do one thing and do it well''\/}~\cite{unix-philosophy}, and is
@@ -472,13 +470,13 @@ Some widely deployed policy servers:
 
 
 
-\subsection{Conventions used in the document}
+\subsection{Conventions used}
 
 XXX MAYBE REWRITE SO THAT THIS IS NOT TRUE\@?  ARE THERE ANY OTHER
 CONVENTIONS\@?
 
 The words \textit{connection\/} and \textit{mail\/} are often used
-interchangeably in this document; in general the word used was chosen based
+interchangeably; in general the word used was chosen based
 on the context it appears in.
 
 \subsection{Summary}
