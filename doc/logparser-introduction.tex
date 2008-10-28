@@ -6,8 +6,8 @@ Most mail server administrators will have performed some basic processing
 of the log files produced by their mail server at one time or another,
 whether it was to debug a problem, explain to a user why their mail is
 being rejected, or check if new anti-spam measures are working.  The more
-adventurous will have generated statistics to show how many hits each of
-their anti-spam measures has had in the last week, and possibly even
+adventurous will have generated statistics to show how successful each of
+their anti-spam measures has been in the last week, and possibly even
 generated some graphs to clearly illustrate these statistics to management
 or users.\footnote{This was the author's first real foray into processing
 Postfix log files.}  Very few will have performed in-depth parsing and
@@ -27,7 +27,7 @@ of the connection; there are many ways in which the log lines may differ
 between servers, even within the same organisation --- servers may be
 configured differently, or running different versions of Postfix.  This
 paper documents the difficult process of parsing Postfix log files,
-presenting \PLP{}, a program that parses log files and places the resulting
+presenting \PLP{}, a program that parses Postfix log files and places the resulting
 data into a database for later use.  The gathered data can then be used to
 optimise current anti-spam measures, provide a baseline to test new
 anti-spam measures against, or to produce statistics showing how effective
@@ -39,11 +39,11 @@ detecting virus outbreaks that propagate via email; as a base for billing
 customers on a shared server.  Preserving the raw data enables users to
 develop a multitude of uses far beyond those conceived of by the author.
 
-\vspace{1em}\noindent\textbf{Layout of the paper:}
+\vspace{1em}\noindent\textbf{Layout:}
 
 Section~\ref{background} provides background information useful in
-understanding the paper, parser and algorithm.  It introduces the idea of
-using a database schema as an \API{}, providing an interface to the data
+understanding the thesis, parser, and architecture.  It introduces the idea
+of using a database schema as an \API{}, providing an interface to the data
 gathered that is language-neutral.  The novel separation of rules, actions
 and framework is discussed, giving the reasons that approach was taken when
 designing the parser.

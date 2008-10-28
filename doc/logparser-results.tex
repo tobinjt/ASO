@@ -95,8 +95,8 @@ file size varying between 30--100MB, except for log files 22 (200MB) and
 62--68 (400--900MB).  These large log files were caused by a user
 unintentionally creating a mail forwarding loop, resulting in a huge number
 of mail deliveries and up to an order of magnitude more log lines than is
-usual.  The user specified his mail forwarding as: \newline
-\tab{}\texttt{$\backslash$username, username@domain} \newline This
+usual.  The user specified his mail forwarding as: \newline{}
+\tab{}\texttt{$\backslash$username, username@domain} \newline{} This
 instructs Postfix to deliver the mail to the local user, and also forward a
 copy to the remote address; this is generally not a problem except that the
 remote address in this instance is the address the mail was originally sent
@@ -498,7 +498,7 @@ Whereas verifying by inspection that the parser correctly deals with all
 those log files is a tractable, if extremely time consuming, task.  A
 sample of log lines was obtained by randomly selecting a log file:
 
-\verb!    perl -Mstrict -Mwarnings -MList::Util=shuffle \!\newline
+\verb!    perl -Mstrict -Mwarnings -MList::Util=shuffle \!\newline{}
 \verb!            -e 'print [shuffle(@ARGV)]->[0];'!
 
 The first 6000 lines of this log file (roughly 0.01\% of the total number

@@ -3,7 +3,7 @@
 .DELETE_ON_ERROR:
 # NOTE: you need to run 'make clean' between running 'make foo.dvi' and 'make
 # foo.pdf', otherwise latex will only be run once and it will get very confused.
-all: sgai-2008-elsevier.pdf
+all: logparser.pdf
 
 logparser.pdf: logparser.deps logparser.pdf.deps logparser-*.tex \
 		logparser-bibliography.bib logparser-bibliography-style.bst
@@ -422,7 +422,7 @@ check:
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
 	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{e]/; p;' logparser-acronyms.tex \
-		| grep -f - -n $$(ls *.tex | grep -v ^logparser-acronyms.tex)
+		| grep -f - -n $$(ls logparser*.tex | grep -v ^logparser-acronyms.tex)
 
 # Check for contractons like "don't".
 check-contractions:
@@ -442,7 +442,6 @@ logparser-2up.pdf: logparser-2up.ps
 
 xpdf: all
 	xpdf logparser.pdf &
-	xpdf sgai-2008.pdf &
 
 spellcheck:
 	for file in *.tex; do aspell -t -c "$$file"; done
