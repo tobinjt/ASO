@@ -1,10 +1,34 @@
-\newpage
 \section{Postfix Parser Implementation}
+
+XXX WRITE AN INTRODUCTION\@.
+
+XXX UPDATE REFERENCES WHEN ARCHITECTURE AND IMPLEMENTATION ARE MORE FLESHED
+OUT\@.
+
+XXX FIGURE OUT WHEN TO USE ACTIONS AND WHEN TO USE ALGORITHM, ETC\@.
+
+XXX THIS MIGHT BE USEFUL SOMEWHERE\@:
+
+Whereas the rules are quite simple and each rule is completely independent
+of the other rules, the algorithm is significantly more complicated and
+highly internally interdependent.  The algorithm deals with all the
+complications of parsing, the eccentricities and oddities of Postfix log
+files, presenting the resulting data in a normalised, simple to use
+representation.  The algorithm's task is to follow the journey each mail
+takes through Postfix, combining the data extracted by rules into a
+coherent whole, saving it in a useful and consistent form, and performing
+housekeeping duties.
+
+Please refer to \sectionref{parser design} for a discussion of why the
+rules, actions and framework have been separated in the parser's design.
+In this section algorithm can be taken to mean the combination of framework
+and actions.
+
 
 \subsection{Assumptions}
 
-The algorithm described and the program implementing it make a small number
-of (hopefully safe and reasonable) assumptions:
+\parsername{} makes a small number of (hopefully safe and reasonable)
+assumptions:
 
 \begin{itemize}
 
@@ -31,14 +55,14 @@ of (hopefully safe and reasonable) assumptions:
 \end{itemize}
 
 In some ways this task is similar to reverse engineering or replicating a
-black box program based solely on its inputs and outputs.  Although the
-source code is available,\footnote{Reading and understanding the source
-code would require a significant investment of time: there are 375,750
-lines of code, documentation, etc.\ in Postfix 2.5.1's 17MB of source
-code.} there are advantages to treating Postfix as a black box during
-parser development:
+black box program based solely on its inputs and outputs.  There are advantages to
+treating Postfix as a black box during parser development:
 
 \begin{itemize}
+
+    \item Reading and understanding the source code would require a
+        significant investment of time: Postfix 2.5.5 has 17MB of source
+        code.  
 
     \item The parser is developed using real world log files rather than
         the idealised log files someone would naturally envisage reading
@@ -49,11 +73,11 @@ parser development:
         process scheduling independently interferes with logging and other
         processing.
 
-    \item The parser acts as a second source of information, with the
-        information gathered from empirical evidence.  A separate project
-        could compare the empirical knowledge inherent in the parsing
-        algorithm with the documentation and source code of Postfix to see
-        how closely the two agree.
+    \item The parser acts as a second source of information about Postfix's
+        operation, using information gathered from empirical evidence.  A
+        separate project could compare the empirical knowledge inherent in
+        the parsing algorithm with the documentation and source code of
+        Postfix to see how closely the two agree.
 
 \end{itemize}
 
@@ -62,18 +86,20 @@ parser development:
 \subsection{Database Schema}
 \label{database schema}
 
+XXX ADD A DIAGRAM OF THE DATABASE SCHEMA\@.
+
 The database is an integral part of the parser presented here: it stores
 the rules and the data gleaned by applying those rules to Postfix log
 files.  Understanding the database schema is important in understanding the
 actions of the parser, and essential to developing further applications
 which utilise the data gathered.
 
-The database schema can be conceptually divided in two: the rules, which
-are used to parse log files, and the data saved from the parsing of log
-files.  Rules have the fields required to parse the log lines, extract data
-to be saved, and the action to be executed; they also have several fields
-that aid the user in understanding the meaning of the log lines parsed by
-each rule.  The rules are described in detail in \sectionref{rules} but the
+The database schema can be conceptually divided in two: the rules used to
+parse log files, and the data saved from the parsing of log files.  Rules
+have the fields required to parse the log lines, extract data to be saved,
+and specify the action to be executed; they also have several fields that
+aid the user in understanding the meaning of the log lines parsed by each
+rule.  The rules are described in detail in \sectionref{rules} but the
 fields are covered in \sectionref{rule attributes}.
 
 The data saved from parsing the log files is also divided into two tables
@@ -85,15 +111,23 @@ results table for each row in the connections table; the fields will be
 covered in detail in \sectionref{results table}.
 
 An important but easily overlooked benefit of storing the rules in the
-database is the connection between rules and results: if more information
-is required when examining a result, the rule that produced the result is
-available for inspection --- each result references the rule that created
-it.  There is no ambiguity about which rule resulted in a particular
-result, eliminating one potential source of confusion.
+database is the link between rules and results: if more information is
+required when examining a result, the rule that produced the result is
+available for inspection: each result references the rule that created it.
+There is no ambiguity about which rule resulted in a particular result,
+eliminating one potential source of confusion.
+
+A clear, comprehensible schema is essential when using the extracted data;
+it is more important when using the data than when storing it, because
+storing the data is a write-once operation, whereas utilising the data
+requires frequent searching, sorting and manipulation of the data to
+produce customised reports or statistics.
 
 \subsubsection{Rules table}
 
 \label{rule attributes}
+
+XXX SHOULD I USE TEXTTT OR SIMILAR ON FIELD NAMES\@?
 
 Rules are discussed in detail in \sectionref{rules}, but the structure of
 the rules table is covered here.  Rules are created by the user, not the
@@ -104,10 +138,10 @@ action to take for that log line.
 
 The following attributes are defined for each rule:
 
-\begin{description}
+\begin{eqlist}
 
     \item [id] A unique identifier for each rule that other tables can use
-        to refer to a specific rule.
+        when referring to a specific rule.
 
     \item [name] A short name for the rule.
 
@@ -125,26 +159,30 @@ The following attributes are defined for each rule:
         values (IGNORED and INFO) have special meaning, as described below
         in the list of typical values.\label{postfix_action}
 
+        XXX SHOULD THIS LIST BE HERE\@?  MAYBE MOVE TO AFTER THE FIELD
+        LIST\@?  DO I NEED THIS LIST AT ALL\@?
+
         \begin{description}
 
             \item [ACCEPTED] Postfix has accepted a mail, and will
                 subsequently attempt to deliver it.
 
             \item [BOUNCED] The mail has bounced, because of a mail loop,
-                delivery failure, or five day timeout.
+                delivery failure, or five day timeout.\footnote{As with
+                much of Postfix's behaviour, five days is the default value
+                but can be changed by the administrator if they choose.}
 
             \item [DELETED] The mail was deleted from the queue by an
                 administrator.
 
             \item [DISCARDED] Postfix discarded the mail it was in the
                 process of accepting, because it was either larger than the
-                limit set by the administrator, or the client timed out or
-                disconnected.
+                size limit set by the administrator, or the client timed
+                out or disconnected.
 
             \item [EXPIRED] The mail has been in the queue for five
-                days\footnote{As with much of Postfix's behaviour, this is
-                the default value but can be changed by the administrator
-                if they choose.} without successful delivery.  A bounce
+                days\footnotemark[\value{footnote}]XXX CHECK IF THIS
+                FOOTNOTE MAKES SENSE without successful delivery.  A bounce
                 mail will be generated and sent to the sender address.
 
             \item [INFO] Represents an unspecified intermediate action that
@@ -180,72 +218,52 @@ The following attributes are defined for each rule:
         against any log lines that are not parsed by program specific
         rules.
 
-    \item [regex] The \regex{} to match the log line against.  The \regex{}
-        will first have several keywords expanded: this simplifies reading
-        and writing rules; avoids needless repetition of complex \regex{}
-        components; allows the components to be corrected and/or improved
-        in one location; and makes each \regex{} largely self-documenting.
+    \item [regex] XXX THIS NEEDS TO BE UPDATED ONCE AUTOMATIC DATA
+        EXTRACTION IS FINISHED\@.  The \regex{} to match the log line
+        against.  The \regex{} will first have several keywords expanded:
+        this simplifies reading and writing rules; avoids needless
+        repetition of complex \regex{} components; allows the components to
+        be corrected and/or improved in one location; and makes each
+        \regex{} largely self-documenting.  For efficiency the keywords are
+        expanded and every rule's \regex{} is compiled before attempting to
+        parse the log file --- otherwise each \regex{} would be recompiled
+        each time it was used, resulting in a large, data dependent
+        slowdown.  Efficiency concerns are discussed in \sectionref{parser
+        efficiency}, with caching compiled \regexes{} covered in
+        \sectionref{Caching compiled regexes}.
 
-        For efficiency the keywords are expanded and every rule's \regex{}
-        is compiled before attempting to parse the log file --- otherwise
-        each \regex{} would be recompiled each time it was used, resulting
-        in a large, data dependent slowdown.  Efficiency concerns are
-        discussed in \sectionref{parser efficiency}, with caching compiled
-        \regexes{} covered in \sectionref{Caching compiled regexes}.
+    \item [result\_data] Sometimes rules need to save a result that is not
+        present in the log line: e.g.\ setting \texttt{smtp\_code} when
+        mail is accepted.  The format is: \newline{} \tab{} \texttt{XXX
+        UPDATE EXAMPLE\@; smtp\_code = 550; recipient = 2, sender = 4;}
+        \newline{} i.e.\ semi-colon or comma separated assignment
+        statements, with the variable name on the left and the value on the
+        right hand side.\footnote{Commas and semi-colons cannot be escaped
+        and thus cannot be used.  This feature is intended for use with
+        small amounts of data rather than large amounts in any one rule, so
+        dealing with escape sequences was deemed unnecessary.}  Any field
+        in the results table can be set in this way; additionally
+        \texttt{child} and \texttt{pid} are accepted and used respectively
+        by the \texttt{TRACK}, \texttt{BOUNCE} and \texttt{SMTPD\_DIED}
+        actions, but do not cause data to be entered in the database.
 
-    \item [result\_cols, connection\_cols] Specifies how the fields in the
-        log line will be extracted.  The format is: \newline{} \tab{}
-        \texttt{smtp\_code = 1; recipient = 2, sender = 4;} \newline{} i.e.\
-        semi-colon or comma separated assignment statements, with the
-        variable name on the left and the matching capture from the
-        \regex{} on the right hand side.  Data specified by
-        \texttt{result\_cols} will be entered in the \texttt{results}
-        table, whereas \texttt{connection\_cols} populates the
-        \texttt{connection} table.  The list of acceptable variable names
-        is:
-
-        \texttt{connection\_cols: client\_hostname, client\_ip, server\_ip,
-        \newline{} \tab{} server\_hostname} and \texttt{helo}.\newline{}
-        \texttt{result\_cols: sender, recipient, smtp\_code, message\_id,
-        \newline{} \tab{} size,} and \texttt{data}
-
-        Additionally \texttt{child} and \texttt{pid} are accepted and used
-        respectively by the \texttt{TRACK}, \texttt{BOUNCE} and
-        \texttt{SMTPD\_DIED} actions, but do not cause data to be entered
-        in the database.
-
-    \item [result\_data, connection\_data] Sometimes rules need to supply a
-        piece of data that is not present in the log line: e.g.\ setting
-        \texttt{smtp\_code} when mail is accepted.  The format and allowed
-        variables are the same as for \texttt{result\_cols} and
-        \texttt{connection\_cols}, except that arbitrary
-        data\footnote{Commas and semi-colons cannot be escaped and thus
-        cannot be used.  This feature is intended for use with small
-        amounts of data rather than large amounts in any one rule, so
-        dealing with escape sequences was deemed unnecessary.} is permitted
-        on the right hand side of the assignment.
+    \item [connection\_data] The connections table equivalent of
+        \texttt{result\_data}.
 
     \item [action] The action that will be invoked when this rule matches a
         log line; a full list of actions and the parameters they are
         invoked with can be found in \sectionref{actions-in-detail}.
 
-    \item [queueid] Specifies the capturing field in the \regex{}
-        containing the queueid, or zero if the log line does not contain a
-        queueid.  Many log lines will not contain a queueid, e.g.\
-        rejections logged before a mail has been accepted (a queueid will
-        not have been allocated), or log lines that are not tied to one
-        particular mail.
-
     \item [hits] This counter is maintained for every rule and incremented
         each time the rule successfully matches.  At the start of each run
-        the program sorts the rules in descending order of hits, and at the
-        end of the run updates every rule's hits field in the database.
+        the parser sorts the rules in descending order of hits, and at the
+        end of the run it updates every rule's hits field in the database.
         Assuming that the distribution of log lines is reasonably
-        consistent between log files, rules matching more commonly
-        occurring log lines will be tried before rules matching less
-        commonly occurring log lines, reducing the program's execution
-        time.  Rule ordering for efficiency is discussed in
-        \sectionref{rule ordering for efficiency}.
+        consistent across log files, rules matching more commonly occurring
+        log lines will be tried before rules matching less commonly
+        occurring log lines, reducing the parser's execution time.  Rule
+        ordering for efficiency is discussed in \sectionref{rule ordering
+        for efficiency}.
 
     \item [hits\_total] The total number of hits for this rule over all
         runs of the parser.
@@ -255,11 +273,11 @@ The following attributes are defined for each rule:
         more specific rules to take precedence over more general rules
         (described in \sectionref{overlapping rules}).
 
-    \item [cluster\_group] A reference to the \texttt{cluster\_group}
-        table.  That table is used by the Decision Tree algorithm described
-        in a separate document.
+%    \item [cluster\_group] A reference to the \texttt{cluster\_group}
+%        table.  That table is used by the Decision Tree algorithm described
+%        in a separate document.
 
-\end{description}
+\end{eqlist}
 
 
 \subsubsection{Connections table}
@@ -270,7 +288,7 @@ Every accepted mail and every connection where there was a rejection will
 have a single entry in the connections table containing the following
 fields:
 
-\begin{description}
+\begin{eqlist}
 
     \item [id] This field uniquely identifies the row.
 
@@ -305,24 +323,18 @@ fields:
     \item [end] The timestamp of the last log line, in seconds since the
         epoch.
 
-\end{description}
+\end{eqlist}
 
 \subsubsection{Results table}
 
 \label{results table}
 
-XXX REWRITE THE SENTENCE AND FOOT NOTE\@.
+Every log line a row in the results table, unless the
+\texttt{postfix\_action} field of the rule which parsed it was INFO or
+IGNORE\@.  Each row in the results table is associated with a single
+connection, and there may be many results per connection.
 
-Every interesting\footnote{All log lines are interesting unless the
-postfix\_action of the rule that parses them is \texttt{INFO} or
-\texttt{IGNORE}, as described in \sectionref{actions-in-detail}.} log line
-will have an entry in the results table, e.g.\ rejecting an \SMTP{}
-command, delivering a mail, or bouncing a mail (see
-\sectionref{postfix_action} for typical values of
-\texttt{postfix\_action}).  Each row is associated with a single
-connection, though there may be many results per connection.
-
-\begin{description}
+\begin{eqlist}
 
     \item [connection\_id] The id of the row in the connections table this
         result is associated with.
@@ -334,19 +346,19 @@ connection, though there may be many results per connection.
 
     \item [warning] Postfix can be configured to log a warning instead of
         enforcing a restriction that would reject an \SMTP{} command --- a
-        facility that is quite useful for testing new restrictions.  This
+        mechanism that is quite useful for testing new restrictions.  This
         field will be 1 if the log line parsed was a warning rather than a
         real rejection, or 0 for a real rejection.  This field should be
         ignored if the result is not a rejection, i.e.\ the action field of
         the associated rule is not \texttt{REJECTION}.
 
     \item [smtp\_code] The \SMTP{} code associated with the log line.  In
-        general an \SMTP{} code is only present for a rejection or final
-        delivery; results initially missing an \SMTP{} code will duplicate
-        the \SMTP{} code of other results in the connection.  Some final
-        delivery log lines do not contain an \SMTP{} code: in those cases
-        the code is specified by the rule, based on the success or failure
-        represented by the log line.
+        general an \SMTP{} code is only present in a log line for a
+        rejection or final delivery; results initially missing an \SMTP{}
+        code will duplicate the \SMTP{} code of other results in that
+        connection.  Some final delivery log lines do not contain an
+        \SMTP{} code: in those cases the code is specified by the rule,
+        based on the success or failure represented by the log line.
 
     \item [sender] The sender's email address.  Because multiple mails may
         be delivered during one connection, there may be different sender
@@ -356,7 +368,7 @@ connection, though there may be many results per connection.
         queueid.
 
     \item [recipient] The recipient address; there may be multiple
-        recipient addresses per mail, but only one per result.
+        recipient addresses per mail or connection.
 
     \item [size] The size of the mail; it will only be present for
         delivered mails.
@@ -365,44 +377,37 @@ connection, though there may be many results per connection.
         \texttt{NULL} if no mail was accepted.
 
     \item [data] A field available for anything not covered by other
-        fields, e.g.\ the rejection message from an \DNSBL{}\@.
+        fields, e.g.\ the rejection message from a \DNSBL{}\@.
 
-    \item [timestamp] The time the log line was logged, in seconds since
-        the epoch.
+    \item [timestamp] The time at which the log line was logged, in seconds
+        since the epoch.
 
-\end{description}
+\end{eqlist}
 
-\subsubsection{Summary}
-
-XXX DO I NEED A SUMMARY HERE\@?
-
-The table containing the rules used by the parser and both tables
-containing the data extracted from the Postfix log files were described,
-with the purpose of each field discussed in detail.  A clear,
-comprehensible schema is essential when using the extracted data; it is
-more important when using the data than when storing it, because storing
-the data is a write-once operation, whereas utilising the data requires
-frequent searching, sorting and manipulation of the data to produce
-customised reports or statistics.
 
 
 \subsection{Rules}
 
 \label{rules}
 
+XXX NEED AN INTRODUCTION\@.
+
 \subsubsection{Example rule}
 
 \label{example rule}
 
 This example rule matches the message logged by Postfix when it rejects
-mail from a sender address because the appropriate \DNS{} entries are
-missing, i.e.\ mail could not be delivered to the sender's address (for
-full details see~\cite{reject-unknown-sender-domain}).
+mail from a sender address because the domain in the sender address does
+not have an A, AAAA, or MX \DNS{} entry, i.e.\ mail could not be delivered
+to the sender's address (for full details
+see~\cite{reject-unknown-sender-domain}).
 
-The example rule below matches the following log line:
+Example log line matched by this rule:
+
+% RFC 3330 says that 192.0.2.0/24 is reserved for example use.
 
 \begin{verbatim}
-NOQUEUE: reject: RCPT from example.com[10.1.1.1]: 550
+NOQUEUE: reject: RCPT from example.com[192.0.2.1]: 550
   <foo@example.com>: Sender address rejected: Domain not found;
   from=<foo@example.com> to=<info@example.net>
   proto=SMTP helo=<smtp.example.com>
@@ -417,67 +422,58 @@ description         & We do not accept mail from unknown domains        \\
 restriction\_name   & reject\_unknown\_sender\_domain                   \\
 postfix\_action     & REJECTED                                          \\
 program             & \daemon{smtpd}                                    \\
+XXX                 & UPDATE REGEX WHEN AUTOMATIC SAVING IS FINISHED    \\
 regex               & \verb!^__RESTRICTION_START__ <(__SENDER__)>: !    \\
                     & \verb!Sender address rejected: Domain not found;! \\
                     & \verb!from=<\5> to=<(__RECIPIENT__)> !            \\
                     & \verb!proto=E?SMTP helo=<(__HELO__)>$!            \\
-result\_cols        & recipient = 6; sender = 5                         \\
-connection\_cols    & helo = 7                                          \\
 result\_data        &                                                   \\
 connection\_data    &                                                   \\
-action              & REJECTION                                         \\
-queueid             & 1                                                 \\
+action              & DELIVERY\_REJECTED                                \\
 hits                & 0                                                 \\
 hits\_total         & 0                                                 \\
 priority            & 0                                                 \\
-cluster\_group      & 400                                               \\
+%cluster\_group      & 400                                               \\
 
 \end{tabular}
 
 \vspace{1em}
 
-Additional data will be captured automatically when the \regex{} contains 
-\_\_RESTRICTION\_START\_\_, hence the capture numbers in result\_cols and
-connection\_cols start at 5.  The various fields are used as follows;
+Fields matched by the regex will be automatically saved to the results and
+connections tables.
 
 \begin{description}
 
-    \item [name, description, restriction\_name and postfix\_action:] are
-        not \newline{} used by the algorithm, they serve to document the rule
+    \item [name, description, restriction\_name, and postfix\_action:] are
+        not \newline{} used by the parser, they serve to document the rule
         for the user's benefit.
 
     \item [program and regex:] If the program in the rule equals the
-        program that logged the log line, a match using the rule's
-        \regex{} will be attempted against the log line; if the match is
-        successful the action will be executed, if not the next rule will
-        be tried.  If the program-specific rules do not match the log line,
-        the parser will fall back to generic rules; if those rules are
-        unsuccessful a warning will be issued.
+        program in the log line, a match using the rule's \regex{} will be
+        attempted against the log line; if the match is successful the
+        action will be executed, if not the next rule will be tried.  If
+        the program-specific rules do not match the log line, the parser
+        will fall back to generic rules; if those rules are unsuccessful a
+        warning will be issued.
 
     \item [action:] The action to be executed if the \regex{} matches
-        successfully (see \sectionref{actions-in-detail} for full details).
+        successfully.  See \sectionref{actions-in-detail} for details of
+        the actions implemented by the parser, \sectionref{actions in
+        architecture} for the role of actions in the parser architecture.
 
-    \item [result\_cols, connection\_cols, result\_data and
-        connection\_data:] are \newline{} used by the action to extract and
-        save data matched by the \regex{}.
+    \item [result\_data and connection\_data:] are used to provide XXX
 
-    \item [queueid:] The index of the capture in the \regex{} that
-        supplies the queueid, or zero if the log line does not contain a
-        queueid.  This allows the correct mail to be found by queueid and
-        actions performed on it.
-
-    \item [hits, hits\_total and priority:] hits and priority are used in
+    \item [hits, hits\_total, and priority:] hits and priority are used in
         ordering the rules (see \sectionref{rule ordering for efficiency});
         hits is set to the number of successful matches at the end of the
         parsing run; hits\_total is the sum of hits over every parsing run,
-        but is otherwise unused by the algorithm.
+        but is otherwise unused by the parser.
 
-    \item [cluster\_group] The cluster\_group attribute is used by the
-        Decision Tree algorithm described in a separate document; the
-        parser does not use it in any way.
+%    \item [cluster\_group] The cluster\_group attribute is used by the
+%        Decision Tree algorithm described in a separate document; the
+%        parser does not use it in any way.
 
 \end{description}
-
 
 
 \subsubsection{Creating new rules}
@@ -489,20 +485,19 @@ because administrators have the freedom to choose the subset of available
 restrictions which suits their needs, including using different \DNSBL{}
 services, policy servers, or custom rejection messages.  To facilitate
 parsing new log lines, the parser's design separates parsing rules from
-parsing actions: adding new actions is difficult, but adding new rules to
-parse new rejection messages is trivial, and also occurs much more
-frequently.  The implementation provides a program to ease the process of
-creating new rules from unparsed log lines, based on the algorithm
-developed by Risto Vaarandi~\cite{risto-vaarandi} for his
-\SLCT{}~\cite{slct-paper}.  The differences between the two algorithms will
-be outlined as part of the general explanation below.
+parsing actions: adding new actions can be difficult, but adding new rules
+to parse new rejection messages is trivial, and occurs much more
+frequently.  A program is provided to ease the process of creating new
+rules from unparsed log lines, based on the algorithm developed by Risto
+Vaarandi for his \SLCT{}~\cite{slct-paper}.  The differences between the
+two algorithms will be outlined as part of the general explanation below.
 
-The core of the algorithm is quite simple: log lines are generally created
-by substituting variable words into a fixed pattern, and analysis of the
-frequency with which each word occurs can be used to determine whether the
-word is variable or part of the fixed pattern.  This classification can be
-used to group similar log lines and generate a \regex{} to match each group
-of log lines.
+The core of the \SLCT{} algorithm is quite simple: log lines are generally
+created by substituting variable words into a fixed pattern, and analysis
+of the frequency with which each word occurs can be used to determine
+whether the word is variable or part of the fixed pattern.  This
+classification can be used to group similar log lines and generate a
+\regex{} to match each group of log lines.
 
 There are 4 steps in the algorithm:
 
@@ -510,14 +505,16 @@ There are 4 steps in the algorithm:
 
     \item [Pre-process the file]  The new algorithm leverages the knowledge
         gained when writing rules and performs a large number of
-        substitutions on the log input lines, replacing commonly occurring
+        substitutions on the input log lines, replacing commonly occurring
         variable terms (e.g.\ email addresses, \IP{} addresses, the
         standard start of rejection messages, etc.) with \regex{} keywords
         that the parser will expand when it loads the rule (see the
         \regex{} entry in \sectionref{rule attributes}).  The purpose of
         this step is to utilise existing knowledge to create more accurate
-        \regexes{}.  The new log lines are written to a temporary file,
-        which all subsequent stages use instead of the original input file.
+        \regexes{}; it replaces a large number of variable words with fixed
+        words, improving the subsequent classification of words as fixed or
+        variable.  The new log lines are written to a temporary file, which
+        all subsequent stages use instead of the original input file.
 
         In the original algorithm the purpose of the preprocessing stage
         was to reduce the memory consumption of the program.  In the first
@@ -525,37 +522,38 @@ There are 4 steps in the algorithm:
         of each log line, incrementing a counter for each hash.  The
         counters will be used in the next pass to filter out words: if the
         word's hash does not have a high frequency, the word itself cannot
-        have a high frequency, and there is no need to maintain a counter
-        for it, reducing the number of counters and thus the program's
-        memory consumption.
+        have a high frequency, so there is no need to maintain a counter
+        for it, reducing the number of counters required and thus the
+        program's memory consumption.
 
     \item [Calculate word frequencies]  The position of words within a log
-        line is important: a common word does not indicate similarity
-        between log lines unless it occupies the same position within both
-        log lines.\footnote{If a variable term within a line contains
-        spaces, it will appear to the algorithm as two words rather than
+        line is important: a word occurring in two lines does not indicate
+        similarity unless it occupies the same position within both log
+        lines.\footnote{If a variable term within a line contains spaces,
+        it will appear to the algorithm as two or more words rather than
         one.  This will alter the position of subsequent words, so a word
         occurring in different positions in two log lines \textit{may\/}
         indicate similarity, but the algorithm does not attempt to deal
         with this possibility.}  The algorithm maintains a counter for each
-        \textit{(word, word's position within the log line)\/} tuple,
+        \texttt{(word, word's position within the log line)} tuple,
         incrementing it each time that word occurs in that position.
 
         The original algorithm only maintains counters for words whose hash
         result from the previous step has a high frequency; this reduces
         the number of counters maintained by the algorithm, reducing the
-        memory requirements of the algorithm.
+        memory requirements of the algorithm at a cost of increased CPU
+        usage.
         
         As time goes on the amount of memory typically available increases
         and the requirement to reduce memory requirements decreases, hence
         the modified algorithm omits the hashing step and maintains
-        counters for all tokens. In addition most uncommon or infrequently
+        counters for all tokens. In addition most of the infrequently
         occurring words will have been substituted with keywords during the
         first step, vastly reducing the number of tuples to maintain
         counters for.
 
     \item [Classify words based on their frequency]  The frequency of each
-        \textit{(word, word's position within the log line)\/} tuple is
+        \texttt{(word, word's position within the log line)} tuple is
         checked: if its frequency is greater than the threshold supplied by
         the user (1\% of all log lines is generally a good starting point)
         it is classified as a fixed word, otherwise it is classified as a
@@ -563,29 +561,30 @@ There are 4 steps in the algorithm:
         will be misclassified as a fixed term, but that should be noticed
         by the user when reviewing the new \regexes{}.  Variable terms are
         replaced by \texttt{.+}, which means to match zero or more of any
-        character.  
+        character.  XXX SHOULD I USE \verb![\S]+! INSTEAD\@?
 
     \item [Build regexes]  The words are reassembled to produce a \regex{}
-        matching the log line, and a counter maintained for each \regex{}.
-        Contiguous sequences of \texttt{.+} in the newly reassembled
-        \regexes{} are collapsed to a single \texttt{.+}; any resulting
-        duplicate \regexes{} are combined, and their counters added
-        together.  If the \regex{}'s counter is lower than the threshold
-        supplied by the user the \regex{} is discarded; this second
-        threshold is independent of the threshold used to differentiate
-        between fixed and variable words, but once again 1\% of input log
-        lines is a good starting point; obviously the threshold depends on
-        the number and content of input log lines.  The new \regexes{} are
+        matching the log line, and a counter is maintained for each
+        \regex{}.  Contiguous sequences of \texttt{.+} in the newly
+        reassembled \regexes{} are collapsed to a single \texttt{.+}; any
+        resulting duplicate \regexes{} are combined, and their counters
+        added together.  If a \regex{}'s counter is lower than the
+        threshold supplied by the user the \regex{} is discarded; this
+        second threshold is independent of the threshold used to
+        differentiate between fixed and variable words, but once again 1\%
+        of log lines is a good starting point.  The new \regexes{} are
         displayed for the user to add to the database, either as new rules
         or merged into the \regexes{} of existing rules; the counter for
         each \regex{} is also displayed, giving the user an indication of
-        how many of the input log lines that \regex{} should match.
-        Discarding \regexes{} will result in some of the input log lines
-        not being matched; the utility should be run again once the
-        unmatched log lines have been isolated by parsing the original log
-        files once the parser has been augmented with the new rules.
+        how many of the log lines that \regex{} should match.  Discarding
+        \regexes{} will result in some of the log lines not being matched;
+        when the rules have been augmented with the new \regexes{}, the
+        original log files should be parsed again, and any remaining
+        unparsed log lines used as input to this utility.
 
 \end{description}
+
+XXX MERGE logs2regexes WITH check-regexes.
 
 A second utility is also provided that reads a list of new \regexes{} and
 the input given to the first utility.  It tries to match each input log
@@ -603,58 +602,13 @@ required.
 These utilities are not intended to create perfect \regexes{}, but they
 greatly reduce the effort required to parse new or different log lines.
 
-\subsection{Parsing Algorithm}
+\subsection{Parser Flow Chart}
 
-\label{parsing-algorithm}
+\label{flow-chart}
 
-EMPHASISE THAT THE LOGS CAUSE THE INTERDEPENDENCIES, NOT THE
-ARCHITECTURE\@.
+XXX MIGHT NEED A SMALL INTRO\@.
 
-Whereas the rules are quite simple and each rule is completely independent
-of the other rules, the algorithm is significantly more complicated and
-highly internally interdependent.  The algorithm deals with all the
-complications of parsing, the eccentricities and oddities of Postfix log
-files, presenting the resulting data in a normalised, simple to use
-representation.  The algorithm's task is to follow the journey each mail
-takes through Postfix, combining the data extracted by rules into a
-coherent whole, saving it in a useful and consistent form, and performing
-housekeeping duties.
-
-Please refer to \sectionref{parser design} for a discussion of why the
-rules, actions and framework have been separated in the parser's design.
-In this section algorithm can be taken to mean the combination of framework
-and actions.
-
-\subsubsection{Introduction}
-
-XXX MERGE WITH PREVIOUS PARAGRAPHS\@.
-
-This section covers the following topics:
-
-\begin{itemize}
-
-    \item A high level overview of the algorithm.
-
-    \item The first set of complications encountered: initially obvious
-        difficulties that had to be overcome.
-
-    \item A flow chart showing common paths a mail can take through the
-        algorithm, a discussion of the emergent behaviour observed in the
-        parser, and an explanation of the paths shown in the flow chart.
-
-    \item A brief description of the framework.
-
-    \item The actions the parser makes available to rules are covered in
-        detail.
-
-    \item Additional complications that have arisen during the development
-        of this parser are documented, the solutions to those
-        complications, and where those solutions are implemented in the
-        algorithm
-
-\end{itemize}
-
-\subsubsection{A high level overview}
+XXX MOVE TO AFTER ACTIONS\@.
 
 From the viewpoint of an individual mail passing through the parser the
 experience could be summarised as:
@@ -670,31 +624,14 @@ experience could be summarised as:
 
 \end{enumerate}
 
-Unfortunately both high level views ignore the many complications
-encountered.
+\Figureref{flow chart image} shows the paths the data representing a mail
+can take through the parser algorithm.  The flow chart covers the most
+common paths only, the complications described in
+\sectionref{complications} are excluded for the sake of clarity.  XXX WHERE
+ARE THE PATHS DESCRIBED\@?
 
-
-\subsubsection{Flow chart}
-
-\label{flow-chart}
-
-XXX CONSIDER REMOVING PART TWO OF THE FLOW CHART\@: I DO NOT THINK THAT
-RE-INJECTION IS IMPORTANT ENOUGH TO WARRANT IT\@.  THE EXPLANATION OF
-TRACKING (\textsection{}5.4.3) COULD BE MOVED TO ADDITIONAL
-COMPLICATIONS\@.  POSSIBLY MERGE MAIL ENTRY AND DELIVERY IN HERE\@;
-TRACKING SHOULD BE IN COMPLICATIONS --- MERGE WITH RE-INJECTED MAILS\@.
-
-\Figureref{flow chart image part 1} and \figureref{flow chart image part 2}
-show the paths the data representing a mail can take through the parser
-algorithm.  The flow chart covers the most common paths only; there are
-additional, uncommon paths excluded for the sake of clarity; details of the
-deviations can be found in \sectionref{complications}.
-
-\showgraph{build/logparser-flow-chart-part-1}{Parser flow chart part
-1}{flow chart image part 1}
-
-\showgraph{build/logparser-flow-chart-part-2}{Parser flow chart part
-2}{flow chart image part 2}
+\showgraph{build/logparser-flow-chart-part-1}{Parser flow chart}{flow chart
+image}
 
 \clearpage
 
@@ -908,13 +845,12 @@ described in \sectionref{complications}).
 
 The actions introduce some of the complexity seen in the flow chart: all
 explicit branches and the transitions between some stages (19--20,
-21--22--23--24) in the second half of the flow chart
-(\figureref{flow chart image part 2}) are encoded within the
+21--22--23--24) in the second half of the flow chart are encoded within the
 actions; the transitions between the other stages (16--17, 24--25) in the
 second half arise from the interaction between actions
 
 However the transitions between stages in the first half of the flow chart
-(\figureref{flow chart image part 1}) are not encoded anywhere in
+(\figureref{flow chart image}) are not encoded anywhere in
 the parser; the transitions are determined by the ordering of log lines in
 the log file.  The complexity of the first 12 stages in the flow chart
 emerges from the interaction of simple rules and actions, easing the
@@ -1876,7 +1812,7 @@ always room for improvement.
         potentially leaving a mail in the state tables
         (\sectionref{timeouts-during-data-phase}).
 
-    \item The program will not detect parsing the same log file twice,
+    \item The parser will not detect parsing the same log file twice,
         resulting in the database containing duplicate entries.
 
     \item The parser does not distinguish between log files produced by

@@ -2,5 +2,6 @@ Warning: Citation .* on page .* undefined
 Warning: Reference .* on page .* undefined
 Warning: There were undefined references.
 Rerun to get cross-references right.
+Rerun to correct eqparbox widths.
 Package longtable Warning: Column widths have changed
 Package hyperref Warning: Rerun to get /PageLabels entry.
