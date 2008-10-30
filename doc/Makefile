@@ -432,11 +432,11 @@ todo:
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib || true
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | wc -l
 
-underfull:
-	grep -E -i 'logparser.*.tex|underfull' *.log
+underfull: all
+	grep -E -i './logparser.*.tex|underfull' *.log
 
-overfull:
-	grep -E -i 'logparser.*.tex|overfull' *.log
+overfull: all
+	grep -E -i './logparser.*.tex|overfull' *.log
 
 2up: logparser-2up.ps logparser-2up.pdf
 

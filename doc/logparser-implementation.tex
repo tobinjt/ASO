@@ -161,8 +161,8 @@ The following attributes are defined for each rule:
         values (IGNORED and INFO) have special meaning, as described below
         in the list of typical values.\label{postfix_action}
 
-        XXX SHOULD THIS LIST BE HERE\@?  MAYBE MOVE TO AFTER THE FIELD
-        LIST\@?  DO I NEED THIS LIST AT ALL\@?
+        XXX MAYBE MOVE THIS LIST TO AFTER THE FIELD LIST\@?  DO I NEED THIS
+        LIST AT ALL\@?
 
         \begin{description}
 
@@ -183,9 +183,9 @@ The following attributes are defined for each rule:
                 out or disconnected.
 
             \item [EXPIRED] The mail has been in the queue for five
-                days\footnotemark[\value{footnote}]XXX CHECK IF THIS
-                FOOTNOTE MAKES SENSE without successful delivery.  A bounce
-                mail will be generated and sent to the sender address.
+                days\footnotemark[\value{footnote}] XXX CHECK IF THIS
+                FOOTNOTE WORKS without successful delivery.  A bounce mail
+                will be generated and sent to the sender address.
 
             \item [INFO] Represents an unspecified intermediate action that
                 the parser is not interested in per se, but that does log
@@ -195,10 +195,9 @@ The following attributes are defined for each rule:
                 itself, but that also provides no useful data.
 
             \item [POSTFIX\_RELOAD] The administrator has instructed
-                Postfix to start or stop, and all existing \daemon{smtpd}
-                processes will be terminated.  This does not negatively
-                affect the log files or mail queued by Postfix for
-                delivery.
+                Postfix to start or stop, and all \daemon{smtpd} processes
+                will be terminated.  This does not negatively affect the
+                log files or mail queued by Postfix for delivery.
 
             \item [PROCESSING] \daemon{cleanup} is processing a mail
                 (see~\cite{postfix-cleanup} for details).
@@ -237,17 +236,18 @@ The following attributes are defined for each rule:
     \item [result\_data] Sometimes rules need to save a result that is not
         present in the log line: e.g.\ setting \texttt{smtp\_code} when
         mail is accepted.  The format is: \newline{} \tab{} \texttt{XXX
-        UPDATE EXAMPLE\@; smtp\_code = 550; recipient = 2, sender = 4;}
-        \newline{} i.e.\ semi-colon or comma separated assignment
-        statements, with the variable name on the left and the value on the
-        right hand side.\footnote{Commas and semi-colons cannot be escaped
-        and thus cannot be used.  This feature is intended for use with
-        small amounts of data rather than large amounts in any one rule, so
-        dealing with escape sequences was deemed unnecessary.}  Any field
-        in the results table can be set in this way; additionally
-        \texttt{child} and \texttt{pid} are accepted and used respectively
-        by the \texttt{TRACK}, \texttt{BOUNCE} and \texttt{SMTPD\_DIED}
-        actions, but do not cause data to be entered in the database.
+        UPDATE EXAMPLE\@; smtp\_code = 550; \newline{} recipient = 2,
+        sender = 4;} \newline{} i.e.\ semi-colon or comma separated
+        assignment statements, with the variable name on the left and the
+        value on the right hand side.\footnote{Commas and semi-colons
+        cannot be escaped and thus cannot be used.  This feature is
+        intended for use with small amounts of data rather than large
+        amounts in any one rule, so dealing with escape sequences was
+        deemed unnecessary.}  Any field in the results table can be set in
+        this way; additionally \texttt{child} and \texttt{pid} are accepted
+        and used respectively by the \texttt{TRACK}, \texttt{BOUNCE} and
+        \texttt{SMTPD\_DIED} actions, but do not cause data to be entered
+        in the database.
 
     \item [connection\_data] The connections table equivalent of
         \texttt{result\_data}.
@@ -424,7 +424,7 @@ description         & We do not accept mail from unknown domains        \\
 restriction\_name   & reject\_unknown\_sender\_domain                   \\
 postfix\_action     & REJECTED                                          \\
 program             & \daemon{smtpd}                                    \\
-XXX                 & UPDATE REGEX WHEN AUTOMATIC SAVING IS FINISHED    \\
+XXX                 & UPDATE REGEX FOR AUTOMATIC SAVING                 \\
 regex               & \verb!^__RESTRICTION_START__ <(__SENDER__)>: !    \\
                     & \verb!Sender address rejected: Domain not found;! \\
                     & \verb!from=<\5> to=<(__RECIPIENT__)> !            \\
@@ -554,8 +554,8 @@ There are 4 steps in the algorithm:
         first step, vastly reducing the number of tuples to maintain
         counters for.
 
-    \item [Classify words based on their frequency]  The frequency of each
-        \texttt{(word, word's position within the log line)} tuple is
+    \item [Classify words based on their frequency]  The frequency of every
+        tuple \texttt{(word, word's position within the log line)} is
         checked: if its frequency is greater than the threshold supplied by
         the user (1\% of all log lines is generally a good starting point)
         it is classified as a fixed word, otherwise it is classified as a
@@ -1348,11 +1348,12 @@ for the following:
 
 \begin{itemize}
 
-    \item XXX IS THIS CORRECT NOW\@?  Are there two or more \daemon{smtpd}
-        log lines?  Does the second result have a postfix\_action attribute
-        of ACCEPTED\@?  The first two \daemon{smtpd} log lines will be a
-        connection log line and a mail acceptance log line (Postfix logs
-        acceptance as soon as the first recipient has been accepted).
+    \item XXX IS THIS CORRECT NOW\@?\newline{}  Are there two or more
+        \daemon{smtpd} log lines?  Does the second result have a
+        postfix\_action attribute of ACCEPTED\@?  The first two
+        \daemon{smtpd} log lines will be a connection log line and a mail
+        acceptance log line (Postfix logs acceptance as soon as the first
+        recipient has been accepted).
 
     \item Is \daemon{smtpd} the only Postfix component that produced a log
         line for this mail?  Every mail which passes normally through
@@ -1630,7 +1631,7 @@ XXX WOULD IT BE BETTER TO BEGIN THE EXPLANATIONS ON THE FOLLOWING LINE\@?
         server, delivered locally on the server.
 
     \item [\daemon{local}, \daemon{pickup}, \daemon{smtp}:] Mail submitted
-        locally on the server, \newline{} both local and remote delivery.
+        locally \newline{} on the server, both local and remote delivery.
 
     \item [\daemon{local}, \daemon{smtp}, \daemon{smtpd}:] Mail accepted
         from a remote client, both local and remote delivery.
