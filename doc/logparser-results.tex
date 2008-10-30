@@ -9,6 +9,8 @@ XXX COMPARE PARSING + ACTIONS TO JUST PARSING\@.
 XXX USE THE DATA COLLECTED ABOUT NUMBER OF RULES TRIED\@.  MAYBE INCLUDE IN
 ORDERINGS SECTION\@?
 
+XXX REUSE THE CONTENT FROM THE PAPER FOR THIS SECTION\@.
+
 \subsection{Parser Efficiency}
 
 \label{parser efficiency}
@@ -109,6 +111,9 @@ in this instance the user noticed they had not received any mail in a while
 and opted to send a test mail to themselves, causing a loop not caught by
 Postfix:
 
+XXX REWRITE THIS SECTION SO THAT IT'S CORRECT\@: POINT 4 SAYS THAT THE
+ENVELOPE SENDER CHANGES, IS THAT CORRECT\@?
+
 \begin{enumerate}
 
     \item Postfix accepts a mail from username@domain, for username@domain.
@@ -129,13 +134,13 @@ Postfix:
         the local mailbox and to username@domain, as instructed by the
         user's forwarding instructions.  A
         \texttt{Delivered-To:~username@domain} header is added to the
-        forwarded bounce notification, which now has an envelope sender
-        address of username@domain.
+        forwarded bounce notification, XXX which now has an envelope sender
+        address of username@domain.   XXX IS THIS CORRECT\@?
 
-    \item Postfix accepts the forwarded bounce notification but during
-        deliver the mail it notices that the \texttt{Delivered-To}
-        header already contains the address currently being delivered to,
-        and sends a bounce notification to the sender: username@domain.
+    \item Postfix accepts the forwarded bounce notification but during mail
+        delivery it notices that the \texttt{Delivered-To} header already
+        contains the address currently being delivered to, and sends a
+        bounce notification to the sender: username@domain.
 
     \item Repeat from step two; this will continue indefinitely unless an
         administrator intervenes and deletes the appropriate mails from the
@@ -145,11 +150,11 @@ Postfix:
 
 The sequence described above occurs extremely rapidly because Postfix does
 not have to deliver the mail to an external system, so mails are delivered,
-bounced and generated as fast as the disks can keep up, resulting in a huge
+bounced, and generated as fast as the disks can keep up, resulting in a huge
 volume of log lines.
 
-The different distribution of log lines during a mail forwarding loop has
-unexpected effects on parsing time, described in detail in
+The different distribution of log lines caused by a mail forwarding loop
+has unexpected effects on parsing time, described in detail in
 \sectionref{rule ordering for efficiency}, \sectionref{scalability as the
 number of rules rises}, and \sectionref{Caching compiled regexes}.
 
@@ -166,7 +171,7 @@ frequently matching rules before those that match less frequently.  To
 test this hypothesis three full test runs were performed with different
 rule orderings:
 
-\begin{description}
+\begin{eqlist}
 
     \item [optimal]  The most optimal order, according to the hypothesis:
         rules that match most often will be tried first.
@@ -180,7 +185,7 @@ rule orderings:
     \item [reverse] Hypothetically the worst order: the most frequently
         matching rules will be tried last.
 
-\end{description}
+\end{eqlist}
 
 \Graphref{Parsing time relative to shuffled ordering graph} shows the
 parsing times of optimal and reverse orderings relative to shuffled
@@ -311,7 +316,8 @@ graphs expected to be useful are collected in the final section.
 
 \subsection{Coverage}
 
-I THINK THIS SECTION NEEDS SUBSTANTIAL WORK, IF NOT A RE-WRITE\@.
+XXX I THINK THIS SECTION NEEDS SUBSTANTIAL WORK, IF NOT A RE-WRITE\@; START
+WITH THE PAPER'S CONTENT\@.
 
 \label{parsing coverage}
 

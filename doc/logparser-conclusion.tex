@@ -2,6 +2,10 @@
 
 \label{conclusion}
 
+XXX THIS NEEDS TO BE EXTENDED\@.
+
+XXX THERE IS NO MENTION OF RESULTS/EFFICIENCY\@.
+
 Parsing Postfix log files appears at first sight to be an almost trivial
 task, especially if one has previous experience in parsing log files, but
 it turns out to be a much more taxing project than initially expected.  The
@@ -18,69 +22,72 @@ background}), enabling users to easily extend the parser to deal with new
 log lines is a design imperative (\sectionref{parser design}).  Despite the
 resulting initial increase in complexity the task is quite tractable,
 though it does raise efficiency and optimisation questions (answered in
-\sectionref{parser efficiency}).  Providing a tool (\sectionref{creating
-new rules}) to ease the generation of \regexes{} from unparsed log lines
-should greatly help users add rules to parse formerly unparsed log lines.
+\sectionref{parser efficiency}).  Providing a tool to ease the generation
+of \regexes{} from unparsed log lines should greatly help users add rules
+to parse previously unparsed log lines (\sectionref{creating new rules}).
 
 
-The implementation not only substantially eases the parsing of new log
+The architecture not only substantially eases the parsing of new log
 lines, it makes adding new actions (\sectionref{adding new actions}) a
 relatively simple task.  The simplicity of adding a new action frees the
-implementor from worrying about how their action might disrupt parsing of
-other log lines or the behaviour of other actions, allowing their
-concentration to focus on correctly implementing their new action.
+implementor from worrying about how their action might interfere with
+existing parsing, so they can focus on correctly implementing their new
+action.
 
 
-The division of the parser into rules, actions and framework is unusual
+The division of the parser into rules, actions, and framework is unusual
 because rules are separated so completely from the actions and framework;
-although parsers are often divided (parsers based on the combination of
-\texttt{lex} and \texttt{yacc}~\cite{lex-and-yacc} 
-being an obvious example), the parts are usually quite internally
-interdependent, and will be combined into a complete parser by the
-compilation process; in contrast \parsername{} keeps the rules and actions
-separate until the parser runs.  The actions and framework are not as
-completely separated, as the actions depend on services provided by the
-framework; however the actions and framework are not tightly integrated: it
-would be possible, with some work, to completely separate the two.
+although parsers are often divided (the combination of \texttt{lex} and
+\texttt{yacc}~\cite{lex-and-yacc} being an obvious example), the parts are
+usually quite internally interdependent, and will be combined into a
+complete parser by the compilation process; in contrast \parsername{} keeps
+the rules and actions separate until the parser runs.  The actions and
+framework are not as completely separated, as the actions depend on
+services provided by the framework; however the actions and framework are
+not tightly integrated: it would be possible, with some work, to completely
+separate the two.  XXX I SHOULD DO THAT\@.
 
 
-The emergent behaviour~\cite{Wikipedia-Emergence} (\sectionref{Emergent
-behaviour}) exhibited by the rules and actions is also interesting, and is
-discussed after the flow chart (\sectionref{flow-chart}) and explanation of
-the paths through the parser.  This emergent behaviour greatly eases the
-process of adding new actions (\sectionref{adding new actions}), as the
-actions do not have to be inserted into an explicit flow of control; new
-actions will naturally find their place in the paths through the parser.
+% XXX THIS SHOULD PROBABLY BE REMOVED\@.
+%The emergent behaviour~\cite{Wikipedia-Emergence} (\sectionref{Emergent
+%behaviour}) exhibited by the rules and actions is also interesting, and is
+%discussed after the flow chart (\sectionref{flow-chart}) and explanation of
+%the paths through the parser.  This emergent behaviour greatly eases the
+%process of adding new actions (\sectionref{adding new actions}), as the
+%actions do not have to be inserted into an explicit flow of control; new
+%actions will naturally find their place in the paths through the parser.
 
 The flow of control in this parser is quite different from that of most
 other parsers.  In most traditional parsers the parser has a current state,
 and each state has a fixed set of acceptable next states, with unacceptable
 states causing parsing to fail --- e.g.\ when a \textbf{C} parser sees the
 keyword \textbf{for} it expects to immediately see a left parenthesis, with
-any other input causing parsing to fail.\footnote{Comments will already
-have been removed by the preprocessor.}  This parser is different: the
-rule which matches the next log line for a mail dictates the action that
-will be invoked, which is equivalent to the next state in other parsers;
-thus the next log line for a mail dictates the next state for that mail.
+any other input causing parsing to fail (comments will already have been
+removed by the preprocessor).  This parser is different: the rule which
+matches the next log line for a mail dictates the action that will be
+invoked, which is equivalent to the next state in other parsers; thus the
+next log line for a mail dictates the next state for that mail.  XXX THINK
+ABOUT HOW TO MAKE THE PARSER MORE STATEFUL IF REQUIRED\@; ADD IT TO THE
+ARCHITECTURE SECTION\@.
 
 The real difficulties arise once the parser is successfully dealing with
-90\% of the log lines, as the irregularities and complications previously
-explained only begin to become apparent once the vast majority of log lines
-have been parsed successfully.  Adding new rules to deal with numerous,
-infrequently occurring log lines is a simple task, albeit tiresome (though
-alleviated by the tool described in \sectionref{adding new actions}),
-whereas dealing with mails where information appears to be missing is much
-more grueling.  Trawling through the log files, looking for something out
-of the ordinary, possibly hundreds or even thousands of lines away from the
-last mention of the queueid in question, is extremely time consuming and
-error prone.  Sometimes the task is not to spot the line that is unusual,
-but to spot that a line normally present is missing, i.e.\ to realise that
-one line amongst hundreds is absent.  In all cases the evidence must be
-used to construct a hypothesis to explain the irregularities, and that
-hypothesis must then be tested in the parser; if successful, the parser
-must be modified to deal with the irregularities, without adversely
-affecting the existing functionality.  The complications described in
-\sectionref{complications} were solved in the order they are
+90\% of the log lines, as the irregularities and complications explained in
+\sectionref{complications} only become apparent once the vast majority of
+log lines have been parsed successfully.  Adding new rules to deal with
+numerous, infrequently occurring log lines is a simple, albeit tiresome,
+task, (though alleviated by the tool described in \sectionref{adding new
+actions}), whereas dealing with mails where information appears to be
+missing is much more grueling.  Trawling through the log files, looking for
+something out of the ordinary, possibly hundreds or even thousands of lines
+away from the last mention of the queueid in question, is extremely time
+consuming and error prone.  Sometimes the task is not to spot the line that
+is unusual, but to spot that a line that is normally present is missing,
+i.e.\ to realise that one line amongst thousands is absent.  In all cases
+the evidence must be used to construct a hypothesis to explain the
+irregularities, and that hypothesis must then be tested in the parser; if
+successful, the parser must be modified to deal with the irregularities,
+without adversely affecting the existing functionality.  The complications
+described in \sectionref{complications} were solved in the order they are
 described in, and that order closely resembles the frequency with which
 they occur; the most frequently occurring complications dominate the
 warning messages produced, and so naturally they are the first

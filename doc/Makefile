@@ -89,7 +89,8 @@ run_makeindex:
 build:
 	make build_loop
 	make check-contractions
-	grep Overfull "${DEST}.out" || true
+	grep -i overfull "${DEST}.out" || true
+	grep -i underfull "${DEST}.out" || true
 	grep -A 1 "LaTeX Warning: " "${DEST}.out" || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' "${DEST}.out"
 	grep ^Warning *.blg || true;
