@@ -199,8 +199,8 @@ The following attributes are defined for each rule:
                 will be terminated.  This does not negatively affect the
                 log files or mail queued by Postfix for delivery.
 
-            \item [PROCESSING] \daemon{cleanup} is processing a mail
-                (see~\cite{postfix-cleanup} for details).
+            \item [PROCESSING] \daemon{cleanup} is processing a mail.
+                XXX ADD MORE DETAIL HERE
 
             \item [REJECTED] Postfix rejected a command from the remote
                 client, causing at least one recipient to be rejected.
@@ -220,17 +220,17 @@ The following attributes are defined for each rule:
         rules.
 
     \item [regex] XXX THIS NEEDS TO BE UPDATED ONCE AUTOMATIC DATA
-        EXTRACTION IS FINISHED\@.  The \regex{} to match the log line
-        against.  The \regex{} will first have several keywords expanded:
+        EXTRACTION IS FINISHED\@.  The regex to match the log line
+        against.  The regex will first have several keywords expanded:
         this simplifies reading and writing rules; avoids needless
-        repetition of complex \regex{} components; allows the components to
+        repetition of complex regex components; allows the components to
         be corrected and/or improved in one location; and makes each
-        \regex{} largely self-documenting.  For efficiency the keywords are
-        expanded and every rule's \regex{} is compiled before attempting to
-        parse the log file --- otherwise each \regex{} would be recompiled
+        regex largely self-documenting.  For efficiency the keywords are
+        expanded and every rule's regex is compiled before attempting to
+        parse the log file --- otherwise each regex would be recompiled
         each time it was used, resulting in a large, data dependent
         slowdown.  Efficiency concerns are discussed in \sectionref{parser
-        efficiency}, with caching compiled \regexes{} covered in
+        efficiency}, with caching compiled regexes covered in
         \sectionref{Caching compiled regexes}.
 
     \item [result\_data] Sometimes rules need to save a result that is not
@@ -300,14 +300,14 @@ fields:
 
     \item [server\_hostname] The hostname of the server, it will be
         \texttt{unknown} if the \IP{} address could not be resolved to a
-        hostname via \DNS{}\@.
+        hostname via DNS\@.
 
     \item [client\_ip] The client \IP{} address (IPv4 or IPv6): the remote
         address when receiving mail, the local address when sending mail.
 
     \item [client\_hostname] The hostname of the client, it will be
         \texttt{unknown} if the \IP{} address could not be resolved to a
-        hostname via \DNS{}\@.
+        hostname via DNS\@.
 
     \item [helo] The hostname used in the HELO command.  The HELO hostname
         occasionally changes during a connection, presumably because spam
@@ -400,7 +400,7 @@ XXX NEED AN INTRODUCTION\@.
 
 This example rule matches the message logged by Postfix when it rejects
 mail from a sender address because the domain in the sender address does
-not have an A, AAAA, or MX \DNS{} entry, i.e.\ mail could not be delivered
+not have an A, AAAA, or MX DNS entry, i.e.\ mail could not be delivered
 to the sender's address (for full details
 see~\cite{reject-unknown-sender-domain}).
 
@@ -451,14 +451,14 @@ connections tables.
         for the user's benefit.
 
     \item [program and regex:] If the program in the rule equals the
-        program in the log line, a match using the rule's \regex{} will be
+        program in the log line, a match using the rule's regex will be
         attempted against the log line; if the match is successful the
         action will be executed, if not the next rule will be tried.  If
         the program-specific rules do not match the log line, the parser
         will fall back to generic rules; if those rules are unsuccessful a
         warning will be issued.
 
-    \item [action:] The action to be executed if the \regex{} matches
+    \item [action:] The action to be executed if the regex matches
         successfully.  See \sectionref{actions-in-detail} for details of
         the actions implemented by the parser, \sectionref{actions in
         architecture} for the role of actions in the parser architecture.
@@ -499,7 +499,7 @@ created by substituting variable words into a fixed pattern, and analysis
 of the frequency with which each word occurs can be used to determine
 whether the word is variable or part of the fixed pattern.  This
 classification can be used to group similar log lines and generate a
-\regex{} to match each group of log lines.
+regex to match each group of log lines.
 
 There are 4 steps in the algorithm:
 
@@ -509,11 +509,11 @@ There are 4 steps in the algorithm:
         gained when writing rules and performs a large number of
         substitutions on the input log lines, replacing commonly occurring
         variable terms (e.g.\ email addresses, \IP{} addresses, the
-        standard start of rejection messages, etc.) with \regex{} keywords
+        standard start of rejection messages, etc.) with regex keywords
         that the parser will expand when it loads the rule (see the
-        \regex{} entry in \sectionref{rule attributes}).  The purpose of
+        regex entry in \sectionref{rule attributes}).  The purpose of
         this step is to utilise existing knowledge to create more accurate
-        \regexes{}; it replaces a large number of variable words with fixed
+        regexes; it replaces a large number of variable words with fixed
         words, improving the subsequent classification of words as fixed or
         variable.  The new log lines are written to a temporary file, which
         all subsequent stages use instead of the original input file.
@@ -561,26 +561,26 @@ There are 4 steps in the algorithm:
         it is classified as a fixed word, otherwise it is classified as a
         variable term.  If a variable term appears sufficiently often it
         will be misclassified as a fixed term, but that should be noticed
-        by the user when reviewing the new \regexes{}.  Variable terms are
+        by the user when reviewing the new regexes.  Variable terms are
         replaced by \texttt{.+}, which means to match zero or more of any
         character.  XXX SHOULD I USE \verb![\S]+! INSTEAD\@?
 
-    \item [Build regexes]  The words are reassembled to produce a \regex{}
+    \item [Build regexes]  The words are reassembled to produce a regex
         matching the log line, and a counter is maintained for each
-        \regex{}.  Contiguous sequences of \texttt{.+} in the newly
-        reassembled \regexes{} are collapsed to a single \texttt{.+}; any
-        resulting duplicate \regexes{} are combined, and their counters
-        added together.  If a \regex{}'s counter is lower than the
-        threshold supplied by the user the \regex{} is discarded; this
+        regex.  Contiguous sequences of \texttt{.+} in the newly
+        reassembled regexes are collapsed to a single \texttt{.+}; any
+        resulting duplicate regexes are combined, and their counters
+        added together.  If a regex's counter is lower than the
+        threshold supplied by the user the regex is discarded; this
         second threshold is independent of the threshold used to
         differentiate between fixed and variable words, but once again 1\%
-        of log lines is a good starting point.  The new \regexes{} are
+        of log lines is a good starting point.  The new regexes are
         displayed for the user to add to the database, either as new rules
-        or merged into the \regexes{} of existing rules; the counter for
-        each \regex{} is also displayed, giving the user an indication of
-        how many of the log lines that \regex{} should match.  Discarding
-        \regexes{} will result in some of the log lines not being matched;
-        when the rules have been augmented with the new \regexes{}, the
+        or merged into the regexes of existing rules; the counter for
+        each regex is also displayed, giving the user an indication of
+        how many of the log lines that regex should match.  Discarding
+        regexes will result in some of the log lines not being matched;
+        when the rules have been augmented with the new regexes, the
         original log files should be parsed again, and any remaining
         unparsed log lines used as input to this utility.
 
@@ -588,20 +588,20 @@ There are 4 steps in the algorithm:
 
 XXX MERGE logs2regexes WITH check-regexes.
 
-A second utility is also provided that reads a list of new \regexes{} and
+A second utility is also provided that reads a list of new regexes and
 the input given to the first utility.  It tries to match each input log
-line against each \regex{}, counting the number of log lines that match
-each \regex{}, warning the user if an input log line is matched by more
-than one \regex{}, and additionally warning if an input log line is not
-matched by any \regex{}.  It displays a summary of how many input log lines
-each \regex{} matched, comparing it to the expected number of matches; this
-provides the user with an easy method of checking if the \regexes{}
+line against each regex, counting the number of log lines that match
+each regex, warning the user if an input log line is matched by more
+than one regex, and additionally warning if an input log line is not
+matched by any regex.  It displays a summary of how many input log lines
+each regex matched, comparing it to the expected number of matches; this
+provides the user with an easy method of checking if the regexes
 produced by the first utility are correctly matching the input log lines
 they are based upon.  A future version of this utility will also group
-input log lines by \regex{}, so the user can tweak the \regexes{} if
+input log lines by regex, so the user can tweak the regexes if
 required.
 
-These utilities are not intended to create perfect \regexes{}, but they
+These utilities are not intended to create perfect regexes, but they
 greatly reduce the effort required to parse new or different log lines.
 
 \subsection{Parser Flow Chart}
@@ -726,10 +726,10 @@ mail}.
 XXX DUNNO IF I SHOULD INCLUDE THIS SECTION\@; AT BEST IT NEEDS TO BE
 UPDATED, AT WORST IT'S RUBBISH\@.
 
-The rules and actions exhibit emergent behaviour~\cite{Wikipedia-Emergence}
-that is far more complicated than the behaviour explicitly encoded in the
-algorithm.  The top-level parser could be written in pseudo-code like so
-(with indentation level indicating flow control):
+The rules and actions exhibit emergent behaviour that is far more
+complicated than the behaviour explicitly encoded in the algorithm.  The
+top-level parser could be written in pseudo-code like so (with indentation
+level indicating flow control):
 
 \begin{verbatim}
 for each line in the input files:
@@ -829,7 +829,7 @@ XXX IMPROVE HOW THIS LOOKS
 
     \item [rule] The matching rule.
 
-    \item [matches] The fields in the line captured by the rule's \regex{}.
+    \item [matches] The fields in the line captured by the rule's regex.
 
 \end{eqlist}
 
@@ -919,7 +919,7 @@ The actions:
         deleted from the state tables.
 
     \item [SAVE\_DATA] Find the correct mail based on the queueid in
-        the log line, and save the data extracted by the \regex{} to it.
+        the log line, and save the data extracted by the regex to it.
 
     \item [SMTPD\_DIED] Sometimes a \daemon{smtpd} dies or exits
         unsuccessfully; the active connection for that \daemon{smtpd} must
@@ -927,7 +927,7 @@ The actions:
         tables.
 
     \item [SMTPD\_KILLED] Sometimes an \daemon{smtpd} is killed by a
-        signal~\cite{Wikipedia-unix-signals}; the active connection for
+        signal; the active connection for
         that \daemon{smtpd} must be cleaned up, entered in the database,
         and deleted from the state tables.
 
@@ -935,7 +935,7 @@ The actions:
         to deal with unusual situations --- after five hours the timer will
         expire and the \daemon{smtpd} will exit.  This occurs very
         infrequently, as there are many other timeouts that should occur
-        in the intervening hours: \DNS{} timeouts, timeouts reading data
+        in the intervening hours: DNS timeouts, timeouts reading data
         from the client, etc\@.  The active connection for that
         \daemon{smtpd} must be cleaned up, entered in the database, and
         deleted from the state tables.
@@ -1886,7 +1886,7 @@ the parser's emergent behaviour --- the data from the log files creates the
 paths in the flow chart, they are not specified anywhere in the parser.
 The framework which holds the parser together was covered next, after which
 came a description of the current actions provided by the parser, and the
-algorithm for analysing unparsed log lines to create \regexes{} for new
+algorithm for analysing unparsed log lines to create regexes for new
 rules.  Detecting, diagnosing and defeating complications forms the largest
 single portion of this section, mirroring the development of the parser.
 The complications are described in the order they were overcome, with

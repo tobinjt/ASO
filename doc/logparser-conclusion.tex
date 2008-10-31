@@ -23,7 +23,7 @@ log lines is a design imperative (\sectionref{parser design}).  Despite the
 resulting initial increase in complexity the task is quite tractable,
 though it does raise efficiency and optimisation questions (answered in
 \sectionref{parser efficiency}).  Providing a tool to ease the generation
-of \regexes{} from unparsed log lines should greatly help users add rules
+of regexes from unparsed log lines should greatly help users add rules
 to parse previously unparsed log lines (\sectionref{creating new rules}).
 
 
@@ -38,18 +38,18 @@ action.
 The division of the parser into rules, actions, and framework is unusual
 because rules are separated so completely from the actions and framework;
 although parsers are often divided (the combination of \texttt{lex} and
-\texttt{yacc}~\cite{lex-and-yacc} being an obvious example), the parts are
-usually quite internally interdependent, and will be combined into a
-complete parser by the compilation process; in contrast \parsername{} keeps
-the rules and actions separate until the parser runs.  The actions and
-framework are not as completely separated, as the actions depend on
-services provided by the framework; however the actions and framework are
-not tightly integrated: it would be possible, with some work, to completely
-separate the two.  XXX I SHOULD DO THAT\@.
+\texttt{yacc} XXX BOOK REF FOR LEX AND YACC being a common example), the
+parts are usually quite internally interdependent, and will be combined
+into a complete parser by the compilation process; in contrast
+\parsername{} keeps the rules and actions separate until the parser runs.
+The actions and framework are not as completely separated, as the actions
+depend on services provided by the framework; however the actions and
+framework are not tightly integrated: it would be possible, with some work,
+to completely separate the two.  XXX I SHOULD DO THAT\@.
 
 
 % XXX THIS SHOULD PROBABLY BE REMOVED\@.
-%The emergent behaviour~\cite{Wikipedia-Emergence} (\sectionref{Emergent
+%The emergent behaviour (\sectionref{Emergent
 %behaviour}) exhibited by the rules and actions is also interesting, and is
 %discussed after the flow chart (\sectionref{flow-chart}) and explanation of
 %the paths through the parser.  This emergent behaviour greatly eases the

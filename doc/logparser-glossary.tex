@@ -84,10 +84,10 @@
 }}
 
 \glossary{name={postsuper},description={
-    Maintenance task such as deleting mails from the queue, putting mail on
-    hold (no further delivery attempts will be made until it is released
-    from hold, also by postsuper), and consistency checking of the mail
-    queue.  The definitive documentation is available at
+    Maintenance tasks such as deleting mails from the queue, putting mail
+    on hold and later releasing it (no further delivery attempts will be
+    made until it is released), and consistency checking of the mail queue.
+    The definitive documentation is available at
     \url{http://www.postfix.org/postsuper.1.html}.
 }}
 
@@ -104,8 +104,8 @@
 \glossary{name={sendmail},description={
     Postfix provides a command that is compatible with the Sendmail
     (\url{http://www.sendmail.org/}) mail submission program that all Unix
-    commands that send mail depend on; Postfix sendmail executes postdrop
-    to place a new mail in the queue.  The definitive documentation is
+    commands that send mail depend on; it executes \daemon{postdrop} to
+    place a new mail in the queue.  The definitive documentation is
     \url{http://www.postfix.org/sendmail.1.html}.
 }}
 
@@ -168,24 +168,24 @@
 \glossary{name={queueid},description={
     Each mail in Postfix's queue is assigned a queueid to uniquely identify
     it.  Queueids are assigned from a limited pool, so although they are
-    guaranteed to be unique for the lifetime of the mail, given sufficient
-    time they will be reused.
+    guaranteed to be unique for the lifetime of the mail, they may be
+    reused later.
 }}
 
 \glossary{name={IPv4},description={
-    Internet Protocol~\cite{Wikipedia-ipv4} version 4 is the fourth version
-    of the Internet Protocol used to interconnect computers on the
-    Internet.  It is the first widely deployed version of IP, and has been
-    in use for over 25 years.
+    Internet Protocol version 4 is the fourth version of the Internet
+    Protocol used to interconnect computers on the Internet.  It is the
+    first widely deployed version of IP, and has been in use for over 25
+    years.
 }}
 
 \glossary{name={IPv6},description={
-    Internet Protocol~\cite{Wikipedia-ipv6} version 6 is the latest version
-    of the Internet Protocol used to interconnect computers on the
-    Internet.  It is the successor to IPv4, bringing with it a greatly
-    expanded address space, allowing many more computers to use the
-    Internet simultaneously.  IPv4 and IPv6 will coexist for many years to
-    come as existing networks transition from the former to the latter.
+    Internet Protocol version 6 is the latest version of the Internet
+    Protocol used to interconnect computers on the Internet.  It is the
+    successor to IPv4, bringing with it a greatly expanded address space,
+    allowing many more computers to use the Internet simultaneously.  IPv4
+    and IPv6 will coexist for many years to come as existing networks
+    transition from the former to the latter.
 }}
 
 %\glossary{name={hash},description={
@@ -195,11 +195,6 @@
 %    manner.  A full description is beyond the scope of this paper, further
 %    information can be found at~\cite{hash-functions}.
 %}}
-
-\glossary{name={Solaris},description={
-    Solaris is a Unix-derived Operating System produced by Sun Microsystems
-    (\url{http://www.sun.com/software/solaris/}).
-}}
 
 \glossary{name={awk},description={
     AWK is a general purpose programming language that is designed for
@@ -224,11 +219,11 @@
 }}
 
 \glossary{name={mail loop},description={
-    Sometimes mail set to one address must be delivered to a different
+    Sometimes mail sent to one address must be forwarded to a different
     address instead, e.g.\ because a person has changed jobs.  A mail loop
-    occurs when the recipient addresses constitute a cyclic directed graph;
-    the simplest example is when mail for \texttt{foo\at{}example.net} is
-    delivered to \texttt{bar\at{}example.com}, and mail for
-    \texttt{bar\at{}example.com} is delivered to
-    \texttt{bar\at{}example.com}.
+    occurs when the chain of recipient addresses constitute a cyclic
+    directed graph; the simplest example is when mail for
+    \texttt{alice\at{}example.net} is delivered to
+    \texttt{bob\at{}example.com}, and mail for \texttt{bob\at{}example.com}
+    is delivered to \texttt{alice\at{}example.net}.
 }}

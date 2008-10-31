@@ -3,8 +3,8 @@
 % properly.
 
 \newacronym{PLP}{Postfix Log Parser}{description={
-    Postfix Log Parser is the implementation of the algorithm described in
-    this paper.
+    Postfix Log Parser is the parser implementing the algorithm described
+    in this thesis.
 }}
 
 \newacronym{DNSBL}{DNS Blacklist}{description={
@@ -47,7 +47,7 @@
 
 \newacronym{MTA}{Mail Transfer Agent}{description={
     A Mail Transfer Agent sends and receives mail via
-    SMTP\backslashat{}.
+    SMTP\backslashat{}.  XXX DO I NEED THIS\backslashat{}?
 }}
 
 \newacronym{RFC}{Request For Comments}{description={
@@ -65,19 +65,10 @@
     introduction can be found at \url{http://philip.greenspun.com/sql/}.
 }}
 
-\newacronym{SPF}{Sender Policy Framework}{description={
-    SPF is introduced in \sectionref{spf introduction} and explained fully
-    in~\cite{openspf,Wikipedia-spf}.
-}}
-
-\newacronym{ISP}{Internet Service Provider}{description={
-    An ISP is a company that sells Internet access to consumers.
-}}
-
 \newacronym{LMA}{Log Mail Analyzer}{description={
     One of the other Postfix log parsers reviewed and the only example of
-    published prior art~\cite{log-mail-analyser} found that specifically
-    deals with parsing Postfix logs.
+    prior published paper~\cite{log-mail-analyser} found that specifically
+    deals with parsing Postfix log files.
 }}
 
 \newacronym{CSV}{Comma-Separated Value}{description={
@@ -92,11 +83,6 @@
         example.com     is a domain name          \newline{}
         www             is a hostname             \newline{}
         www.example.com is a FQDN
-}}
-
-\newacronym{DNS}{Domain Name System}{description={
-    The DNS converts between hostnames (www.example.com) and IP addresses
-    (10.1.2.3).
 }}
 
 \newacronym{pid}{Process Identifier}{description={
@@ -114,15 +100,8 @@
     you get from friends.
 }}
 
-\newacronym{regex}{Regular Expression}{description={
-    Regular expressions are a concise and powerful method of matching
-    patterns against text that are explained in detail
-    in~\cite{Wikipedia-regex,perlre}.
-}}
-
 % I think this is better than having both regex and regexes in the acronym
 % list.  Likewise for pids.
-\newcommand{\regexes}{\regex{}es}
 \newcommand{\pids}{\pid{}s}
 
 \newacronym{ESMTP}{Extended SMTP}{description={
@@ -130,22 +109,10 @@
 }}
 
 \newacronym{IP}{Internet Protocol}{description={
-    The Internet Protocol~\cite{Wikipedia-ip} is the protocol used to
-    communicate between computers on the Internet.  An IP address is a
-    unique address assigned to a computer on the Internet, allowing it to
-    communicate with other computers on the Internet.  For more information
-    see~\cite{Wikipedia-ip-address}.
-}}
-
-\newacronym{PDF}{Portable Document Format}{description={
-    PDF is the file format created by Adobe Systems in 1993 for document
-    exchange.  It aims to be device independent, so documents should look
-    the same whether viewed on screen or printed.
-}}
-
-\newacronym{LCD}{Lowest Common Denominator}{description={
-    LCD is a mathematical term that is used figuratively to mean the least
-    useful member of a set of alternatives.
+    The Internet Protocol is the protocol used to communicate between
+    computers on the Internet.  An IP address is a unique address assigned
+    to a computer on the Internet, allowing it to communicate with other
+    computers on the Internet.
 }}
 
 \newacronym{SLCT}{Simple Logfile Clustering Tool}{description={

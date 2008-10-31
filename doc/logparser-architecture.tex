@@ -74,7 +74,7 @@ with the complications described in \sectionref{complications}.
 
 Separating the rules from the actions and framework makes it possible to
 parse new log lines without modifying the core parsing algorithm.  Adding a
-new rule with the action to invoke and a \regex{} to match the log lines is
+new rule with the action to invoke and a regex to match the log lines is
 trivial in comparison to understanding a program's entire parsing
 algorithm, identifying the correct location to change and making the
 appropriate changes.  Bear in mind that the changes must be made without
@@ -196,7 +196,7 @@ be helpful:
 
 \begin{itemize}
 
-    \item Sort by \regex{} and visually inspect the list, e.g.\ with \SQL{}
+    \item Sort by regex and visually inspect the list, e.g.\ with \SQL{}
         similar to: \textbf{select regex from rules order by regex;}
 
     \item Compare the results of parsing using sorted, shuffled and

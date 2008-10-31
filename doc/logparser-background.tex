@@ -322,7 +322,7 @@ restriction Postfix will evaluate that restriction, allowing restrictions
 to be chosen based on the client \IP{} address, client hostname, HELO
 hostname, sender address, or recipient address.\footnote{E.g.\ the
 administrator may require that all clients on the local network have valid
-\DNS{} entries, to prevent people sending mail from unknown machines.}  The
+DNS entries, to prevent people sending mail from unknown machines.}  The
 administrator can define new restrictions as a list of existing
 restrictions, allowing arbitrarily long and complex sequences of lookups,
 restrictions and exceptions.  Postfix tries to protect the administrator in
@@ -413,10 +413,10 @@ Some widely deployed policy servers:
 
 \begin{itemize}
 
-    \item Checking \SPF{} records~\cite{openspf,Wikipedia-spf}.
-        \SPF{}\label{spf introduction} records specify which mail servers
-        are allowed to send mail claiming to be from a particular domain.
-        The intention is to reduce spam from faked sender addresses,
+    \item Sender Policy Framework (SPF)~\cite{openspf}.  SPF\label{spf
+        introduction} records specify which mail servers are allowed to
+        send mail claiming to be from a particular domain.  The intention
+        is to reduce spam from faked sender addresses,
         backscatter~\cite{postfix-backscatter}, and
         joe~jobs~\cite{Wikipedia-joe-job}.  There has been considerable
         resistance to the proposal because it breaks or vastly complicates
@@ -433,10 +433,10 @@ Some widely deployed policy servers:
         for a spam sender, but a legitimate mail server must retry
         deliveries that temporarily failed.  Sadly spam senders are using
         increasingly complex and well written programs to distribute spam,
-        frequently using an \ISP{} provided \SMTP{} server from a
-        compromised machine on the \ISP{}'s network.  Greylisting will
-        slowly become less useful, but it does block a large percentage of
-        spam mail at the moment; the most effective restrictions from the
+        frequently using an ISP provided \SMTP{} server from a compromised
+        machine on the ISP's network.  Greylisting will slowly become less
+        useful, but it does block a large percentage of spam mail at the
+        moment; the most effective restrictions from the
         \numberOFlogFILES{} log files used in testing the parser are shown
         in \tableref{Summary of rejections}.  Greylisting is obviously
         worth using, at least at the moment, particularly when you consider

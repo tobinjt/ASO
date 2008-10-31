@@ -260,23 +260,23 @@ is an important optimisation contributing to this scalability.
 
 \label{Caching compiled regexes}
 
-Before the perl interpreter attempts to match a \regex{} against a piece of
-text, the \regex{} is compiled into an internal representation and
+Before the perl interpreter attempts to match a regex against a piece of
+text, the regex is compiled into an internal representation and
 optimised to improve the speed of matching.  This compilation and
 optimisation takes CPU time ---in many cases it takes far more CPU time
-than the actual matching.  If the interpreter is certain that a \regex{}
+than the actual matching.  If the interpreter is certain that a regex
 will not change it will automatically cache the compilation results for
-later use.   The results of compiling a dynamically generated \regex{} can
-be cached and used in preference to the original \regex{}, but it is the
+later use.   The results of compiling a dynamically generated regex can
+be cached and used in preference to the original regex, but it is the
 responsibility of the programmer to do this.  The Postfix parser loads the
-rules it uses from a database, and thus each rule's \regex{} is compiled
+rules it uses from a database, and thus each rule's regex is compiled
 and the result cached to reduce parsing time.
 
 \Graphref{Increase in parsing time when not caching compiled regexes graph}
-shows the impact that not caching compiled \regexes{} has on parser
+shows the impact that not caching compiled regexes has on parser
 performance: on typical log files the parsing time when not caching
-compiled \regexes{} is 400--600\% of the parsing time when caching.
-Caching compiled \regexes{} is probably the single most effective
+compiled regexes is 400--600\% of the parsing time when caching.
+Caching compiled regexes is probably the single most effective
 optimisation possible in the parser's implementation, and was quite simple
 to implement.
 
@@ -290,11 +290,11 @@ to the spikes in log file size in \graphref{parsing time vs file size vs
 number of lines graph}.  The distribution of log lines across rules when
 there is a mail loop is much different to the norm, and the average number
 of rules consulted per log line is much lower: this results in far fewer
-\regex{} compilations per line when there is a mail loop, and a
+regex compilations per line when there is a mail loop, and a
 corresponding decrease in the average parsing time for a single log line.
-The outcome is that caching compiled \regexes{} is proportionally less
+The outcome is that caching compiled regexes is proportionally less
 important when the log file contents were created by a mail loop.  The
-increases in parsing time when not caching compiled \regexes{} for
+increases in parsing time when not caching compiled regexes for
 different groups of log files are summarised in \tableref{Increase in
 parsing time when not caching compiled regexes table}.
 
@@ -308,7 +308,7 @@ when not caching compiled regexes table}
 This section began with parser scalability, showing the linear relationship
 between parsing time and input size.  Demonstrates the effect of rule
 ordering on parsing time, and the unexpected consequences of specific
-inputs.  The necessity of caching compiled \regexes{} is attested to by the
+inputs.  The necessity of caching compiled regexes is attested to by the
 third group of graphs, where the difference between caching and not caching
 is staggering.  The penultimate section contains a breakdown of the rule
 hits accumulated during a single test run of the parser.  Miscellaneous
@@ -383,9 +383,9 @@ change warning messages (usually adding more information), etc.,\ so over
 time the log lines drift and change.  \Graphref{rule hits graph} shows the
 number of hits for each rule over all \numberOFlogFILES{} log files.  The
 number of hits per rule is quite unevenly spread, resembling a Power Law
-distribution~\cite{powerlaw} --- it is obvious that a small number of rules
-match the vast majority of the lines, and more than half the rules match
-fewer than 100 times.
+distribution --- it is obvious that a small number of rules match the vast
+majority of the lines, and more than half the rules match fewer than 100
+times.
 
 \showgraph{build/graph-hits}{Hits per rule}{rule hits graph}
 
@@ -393,14 +393,14 @@ Warnings are issued for any log lines that are not parsed; no warnings are
 issued for unparsed log lines while testing with the \numberOFlogFILES{}
 test log files, so it can be safely concluded that there are zero false
 negatives.  False positives are harder to quantify: short of examining each
-of the 60,721,709 log lines and determining which \regex{} parsed it, there
-is no way to be sure that every line was parsed by the correct \regex{},
+of the 60,721,709 log lines and determining which regex parsed it, there
+is no way to be sure that every line was parsed by the correct regex,
 making it impossible to quantify the false positive rate; however a random
 sample of 6,039 log lines was parsed and the results checked manually to
-ensure that the correct \regex{} parsed each log line.\footnote{Each log
-line was examined and the correct \regex{} identified from the
-\numberOFrules{} rules in the database; the correct \regex{} was then
-compared to the \regex{} that was used by the parser.}  The sample was
+ensure that the correct regex parsed each log line.\footnote{Each log
+line was examined and the correct regex identified from the
+\numberOFrules{} rules in the database; the correct regex was then
+compared to the regex that was used by the parser.}  The sample was
 generated by running the following command:
 
 \verb!    perl -e 'print if (rand 1 < 0.0001)' -n LOG_FILES!

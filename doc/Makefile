@@ -108,7 +108,7 @@ build_run:
 	# I haven't investigated much further, I don't really care.
 	make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.glg" OUTPUT="${BASENAME}.gls" INPUT="${BASENAME}.glo"
 	make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.alg" OUTPUT="${BASENAME}.acn" INPUT="${BASENAME}.acr"
-	# The next time latex is run is will include the new glossary and acronyms 
+	# The next time latex is run it will include the new glossary and acronyms 
 	# if they've changed.
 
 build_loop:
@@ -434,10 +434,10 @@ todo:
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | wc -l
 
 underfull: all
-	grep -E -i './logparser.*.tex|underfull' *.log
+	grep -E -i '\./logparser|underfull' *.log
 
 overfull: all
-	grep -E -i './logparser.*.tex|overfull' *.log
+	grep -E -i '\./logparser|overfull' *.log
 
 2up: logparser-2up.ps logparser-2up.pdf
 

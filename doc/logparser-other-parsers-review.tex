@@ -135,10 +135,10 @@ application, thus it behoves the application to document this structure.
 
 \LMA{} requires major changes to the parser code to parse new log lines or
 extract additional data.  The code is structured as a long series of blocks
-that each handle all lines matching a single \regex{}, so parsing new log
-lines requires modifying an existing \regex{} or carefully inserting a new
+that each handle all lines matching a single regex, so parsing new log
+lines requires modifying an existing regex or carefully inserting a new
 block in the correct place; extracting extra data will require modifying
-multiple blocks, \regexes{}, or both.
+multiple blocks, regexes, or both.
 
 \LMA{} does not appear to deal with any of the complications discussed in
 \sectionref{complications}.  It does not differentiate between different
@@ -221,7 +221,7 @@ given to extensibility when writing it.
 % Hard-coded parsing, requiring code changes to add more.  Attempts to
 % correlate log lines, saves data to database for data mining purposes.
 % Hard to extend/expand/understand.  Appears to only save: date and hour,
-% \DNS{} name and \IP{} address host, mail server \IP{} address, sender,
+% DNS name and \IP{} address host, mail server \IP{} address, sender,
 % receiver and e-mail status (sent, rejected).  Undocumented schema.
 % Design decision to use \CSV{} as an intermediate format between the log
 % file and the database seems to have been restrictive.  Appears to require
@@ -784,7 +784,7 @@ XXX WHAT FIELDS ARE MISSING\@?
 It also counts the number of log lines parsed and skipped.  Log lines are
 correlated based on the queueid (referred to as sessionname [sic] within
 Logrep), but not by \pid{}.  The parsing is error prone: empty fields are
-saved when the log line does not match the \regex{}, though it appears that
+saved when the log line does not match the regex, though it appears that
 they will not overwrite existing data.  Most notably rejections are
 completely ignored, making it unsuitable for the purposes of this project.
 It does not try to address any of the complications in
