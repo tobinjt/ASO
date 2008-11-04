@@ -1,4 +1,3 @@
-# XXX REORDER THE NEXT PAGE OR SO.
 # Cause make to delete output files when a command fails.
 .DELETE_ON_ERROR:
 # NOTE: you need to run 'make clean' between running 'make foo.dvi' and 'make
@@ -35,8 +34,56 @@ sgai-2008.deps:									\
 			build/include-top-ten-hits.tex
 	touch "$@"
 
-%.dvi: %.tex
-	make build PROGRAM="latex"    SOURCE="$<" DEST="$@" BASENAME=$$( basename "$<" .tex )
+# 'make logparser.deps' correctly builds all dependencies, without running
+# latex, because latex is noisy and slow.
+logparser.deps: \
+		build/include-file-size-and-number-of-lines-vs-parsing-time.tex	\
+		build/include-optimal-and-reverse-vs-shuffle.tex 		\
+		build/include-cached-regexes-vs-discarded-regexes.tex		\
+		build/include-restriction-summary-table.tex			\
+		build/include-mails-received-table.tex				\
+		build/include-full-ruleset-vs-minimum-ruleset.tex		\
+		build/include-sample-sql-output.tex				\
+		build/include-sample-sql-query.tex				\
+		build/include-timing-run-duration.tex				\
+		build/include-timing-run-throughput.tex				\
+		build/include-median-throughput-log-lines.tex			\
+		build/include-median-throughput-MB.tex
+	touch "$@"
+
+# Additional dependencies are included from Makefile.deps-ps and
+# build/Makefile.graph-deps-pdf; which is generated from Makefile.deps-ps, to
+# avoid duplication.  Make will automatically rebuild
+# build/Makefile.graph-deps-pdf if it is missing or out of date.
+include build/Makefile.deps-pdf
+include Makefile.deps-ps
+build/Makefile.deps-pdf: Makefile.deps-ps
+	sed -e 's/\.ps/.pdf/g' "$<" > "$@"
+
+# Graph dependencies are generated to avoid having to manually update
+# them every time a graph changes.
+include build/Makefile.graph-deps
+include build/Makefile.graph-deps-ps
+include build/Makefile.graph-deps-pdf
+build/Makefile.graph-deps-pdf: build/Makefile.graph-deps-ps
+	sed -e 's/\.ps/.pdf/g' "$<" > "$@"
+
+build/Makefile.graph-deps-ps: graphs/*
+	set -e;											\
+	for file in $^; do									\
+		output=$$( sed -n -e 's!^set output "../\(.*\)"!\1!p' "$$file" );		\
+		if [ -n "$$output" ]; then							\
+			sed -n -e 's!^.*"../\([^"]\+\)" using.*$$!'"$$output"': \1!p' "$$file";	\
+		fi;										\
+	done > "$@"
+
+build/Makefile.graph-deps: graphs/*
+	set -e;												\
+	for file in $^; do										\
+		sed -n -e 's!^load "\(.*\)"$$!'"$$file"': graphs/\1\n\ttouch '"$$file"'!p' "$$file";	\
+		sed -n -e 's!^load "\(.*\)-ps.gpi"$$!'"$$file"': graphs/\1-pdf.gpi!p' "$$file";		\
+	done > "$@"
+
 
 # This isn't a wildcard rule because it screws up later postscript wildcard 
 # rules.
@@ -48,6 +95,9 @@ sgai-2008.ps: sgai-2008.dvi
 %.bbl: %-bibliography.bib
 	bibtex $$( basename "$@" .bbl )
 	touch build/ran_bibtex
+
+%.dvi: %.tex
+	make build PROGRAM="latex"    SOURCE="$<" DEST="$@" BASENAME=$$( basename "$<" .tex )
 
 run_latex:
 	("${PROGRAM}" -interaction=nonstopmode "${SOURCE}" || rm -f "${DEST}") | tee "${DEST}.out";
@@ -150,56 +200,6 @@ build_loop:
 			make build_run; \
 		fi; \
 	done
-
-# 'make logparser.deps' correctly builds all dependencies, without running
-# latex, because latex is noisy and slow.
-logparser.deps: \
-		build/include-file-size-and-number-of-lines-vs-parsing-time.tex	\
-		build/include-optimal-and-reverse-vs-shuffle.tex 		\
-		build/include-cached-regexes-vs-discarded-regexes.tex		\
-		build/include-restriction-summary-table.tex			\
-		build/include-mails-received-table.tex				\
-		build/include-full-ruleset-vs-minimum-ruleset.tex		\
-		build/include-sample-sql-output.tex				\
-		build/include-sample-sql-query.tex				\
-		build/include-timing-run-duration.tex				\
-		build/include-timing-run-throughput.tex				\
-		build/include-median-throughput-log-lines.tex			\
-		build/include-median-throughput-MB.tex
-	touch "$@"
-
-# Additional dependencies are included from Makefile.deps-ps and
-# build/Makefile.graph-deps-pdf; which is generated from Makefile.deps-ps, to
-# avoid duplication.  Make will automatically rebuild
-# build/Makefile.graph-deps-pdf if it is missing or out of date.
-include build/Makefile.deps-pdf
-include Makefile.deps-ps
-build/Makefile.deps-pdf: Makefile.deps-ps
-	sed -e 's/\.ps/.pdf/g' "$<" > "$@"
-
-# Graph dependencies are generated to avoid having to manually update
-# them every time a graph changes.
-include build/Makefile.graph-deps
-include build/Makefile.graph-deps-ps
-include build/Makefile.graph-deps-pdf
-build/Makefile.graph-deps-pdf: build/Makefile.graph-deps-ps
-	sed -e 's/\.ps/.pdf/g' "$<" > "$@"
-
-build/Makefile.graph-deps-ps: graphs/*
-	set -e;											\
-	for file in $^; do									\
-		output=$$( sed -n -e 's!^set output "../\(.*\)"!\1!p' "$$file" );		\
-		if [ -n "$$output" ]; then							\
-			sed -n -e 's!^.*"../\([^"]\+\)" using.*$$!'"$$output"': \1!p' "$$file";	\
-		fi;										\
-	done > "$@"
-
-build/Makefile.graph-deps: graphs/*
-	set -e;												\
-	for file in $^; do										\
-		sed -n -e 's!^load "\(.*\)"$$!'"$$file"': graphs/\1\n\ttouch '"$$file"'!p' "$$file";	\
-		sed -n -e 's!^load "\(.*\)-ps.gpi"$$!'"$$file"': graphs/\1-pdf.gpi!p' "$$file";		\
-	done > "$@"
 
 # Flowchart
 build/logparser-flow-chart-%.pdf: logparser-flow-chart-%.dot
@@ -431,6 +431,7 @@ check-contractions:
 
 todo:
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib || true
+	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | awk -F : '{print $$1}' | uniq -c
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | wc -l
 
 underfull: all
