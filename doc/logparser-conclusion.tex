@@ -38,14 +38,14 @@ action.
 The division of the parser into rules, actions, and framework is unusual
 because rules are separated so completely from the actions and framework;
 although parsers are often divided (the combination of \texttt{lex} and
-\texttt{yacc} XXX BOOK REF FOR LEX AND YACC being a common example), the
-parts are usually quite internally interdependent, and will be combined
-into a complete parser by the compilation process; in contrast
-\parsername{} keeps the rules and actions separate until the parser runs.
-The actions and framework are not as completely separated, as the actions
-depend on services provided by the framework; however the actions and
-framework are not tightly integrated: it would be possible, with some work,
-to completely separate the two.  XXX I SHOULD DO THAT\@.
+\texttt{yacc}~\cite{lex-and-yacc-book} being a common example), the parts
+are usually quite internally interdependent, and will be combined into a
+complete parser by the compilation process; in contrast \parsername{} keeps
+the rules and actions separate until the parser runs.  The actions and
+framework are not as completely separated, as the actions depend on
+services provided by the framework; however the actions and framework are
+not tightly integrated: it would be possible, with some work, to completely
+separate the two.  XXX I SHOULD DO THAT\@.
 
 
 % XXX THIS SHOULD PROBABLY BE REMOVED\@.

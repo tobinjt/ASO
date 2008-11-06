@@ -1,4 +1,5 @@
 \section{Postfix Parser Implementation}
+\label{Postfix Parser Implementation}
 
 XXX WRITE AN INTRODUCTION\@.
 
@@ -129,8 +130,6 @@ produce customised reports or statistics.
 
 \label{rule attributes}
 
-XXX SHOULD I USE TEXTTT OR SIMILAR ON FIELD NAMES\@?
-
 Rules are discussed in detail in \sectionref{rules}, but the structure of
 the rules table is covered here.  Rules are created by the user, not the
 parser, and will not be modified by the parser (except for the hits and
@@ -156,61 +155,9 @@ The following attributes are defined for each rule:
         rejected.  Only applicable to rules that have an action of
         \texttt{REJECTION}, other rules should have an empty string.
 
-    \item [postfix\_action] This is the action Postfix must have taken to
-        generate this log line.  This field is mostly ignored, but two
-        values (IGNORED and INFO) have special meaning, as described below
-        in the list of typical values.\label{postfix_action}
-
-        XXX MAYBE MOVE THIS LIST TO AFTER THE FIELD LIST\@?  DO I NEED THIS
-        LIST AT ALL\@?
-
-        \begin{description}
-
-            \item [ACCEPTED] Postfix has accepted a mail, and will
-                subsequently attempt to deliver it.
-
-            \item [BOUNCED] The mail has bounced, because of a mail loop,
-                delivery failure, or five day timeout.\footnote{As with
-                much of Postfix's behaviour, five days is the default value
-                but can be changed by the administrator if they choose.}
-
-            \item [DELETED] The mail was deleted from the queue by an
-                administrator.
-
-            \item [DISCARDED] Postfix discarded the mail it was in the
-                process of accepting, because it was either larger than the
-                size limit set by the administrator, or the client timed
-                out or disconnected.
-
-            \item [EXPIRED] The mail has been in the queue for five
-                days\footnotemark[\value{footnote}] XXX CHECK IF THIS
-                FOOTNOTE WORKS without successful delivery.  A bounce mail
-                will be generated and sent to the sender address.
-
-            \item [INFO] Represents an unspecified intermediate action that
-                the parser is not interested in per se, but that does log
-                useful information, supplementing other log lines.
-
-            \item [IGNORED] An action that is not only uninteresting in
-                itself, but that also provides no useful data.
-
-            \item [POSTFIX\_RELOAD] The administrator has instructed
-                Postfix to start or stop, and all \daemon{smtpd} processes
-                will be terminated.  This does not negatively affect the
-                log files or mail queued by Postfix for delivery.
-
-            \item [PROCESSING] \daemon{cleanup} is processing a mail.
-                XXX ADD MORE DETAIL HERE
-
-            \item [REJECTED] Postfix rejected a command from the remote
-                client, causing at least one recipient to be rejected.
-
-            \item [SENT] Postfix has successfully sent a mail.
-
-        \end{description}
-
-        Uninteresting log lines are parsed so that any lines the parser
-        is not capable of handling become immediately obvious errors.
+    \item [postfix\_action] The action Postfix must have taken to generate
+        this log line; the possible actions are described later in
+        \sectionref{list of postfix actions}.
 
     \item [program] The program (\daemon{smtpd}, \daemon{qmgr}, etc.) whose
         log lines the rule applies to.  This avoids needlessly trying rules
@@ -281,6 +228,52 @@ The following attributes are defined for each rule:
 
 \end{eqlist}
 
+\label{list of postfix actions}
+
+\begin{description}
+
+    \item [ACCEPTED] Postfix has accepted a mail, and will
+        subsequently attempt to deliver it.
+
+    \item [BOUNCED] The mail has bounced, because of a mail loop,
+        delivery failure, or five day timeout.\footnote{As with
+        much of Postfix's behaviour, five days is the default value
+        but can be changed by the administrator if they choose.}
+
+    \item [DELETED] The mail was deleted from the queue by an
+        administrator.
+
+    \item [DISCARDED] Postfix discarded the mail it was in the
+        process of accepting, because it was either larger than the
+        size limit set by the administrator, or the client timed
+        out or disconnected.
+
+    \item [EXPIRED] The mail has been in the queue for five
+        days\footnotemark[\value{footnote}] XXX CHECK IF THIS
+        FOOTNOTE WORKS without successful delivery.  A bounce mail
+        will be generated and sent to the sender address.
+
+    \item [INFO] Represents an unspecified intermediate action that
+        the parser is not interested in per se, but that does log
+        useful information, supplementing other log lines.
+
+    \item [IGNORED] An action that is not only uninteresting in
+        itself, but that also provides no useful data.
+
+    \item [POSTFIX\_RELOAD] The administrator has instructed
+        Postfix to start or stop, and all \daemon{smtpd} processes
+        will be terminated.  This does not negatively affect the
+        log files or mail queued by Postfix for delivery.
+
+    \item [PROCESSING] \daemon{cleanup} is processing a mail.
+        XXX ADD MORE DETAIL HERE
+
+    \item [REJECTED] Postfix rejected a command from the remote
+        client, causing at least one recipient to be rejected.
+
+    \item [SENT] Postfix has successfully sent a mail.
+
+\end{description}
 
 \subsubsection{Connections table}
 
@@ -707,8 +700,8 @@ The actions:
     \item [MAIL\_QUEUED] This action represents Postfix picking a mail from
         the queue to deliver. This action is used for both \daemon{qmgr}
         and \daemon{cleanup} as it needs to deal with out of order log
-        lines; see \sectionref{discarding cleanup lines} for details.  XXX
-        EXPLAIN THIS BETTER\@.
+        lines; see \sectionref{discarding cleanup lines} for details.
+        XXXXXX EXPLAIN THIS BETTER\@.
 
     \item [MAIL\_TOO\_LARGE] When a client tries to send a mail larger than
         the local server accepts it will be discarded and the client

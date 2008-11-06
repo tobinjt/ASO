@@ -87,16 +87,15 @@ form suitable for a systems administrator to search using the myriad of
 standard Unix text processing utilities already available, producing both a
 \CSV{} file and either a MySQL (\url{http://www.mysql.com/}) or Berkeley DB
 (\url{http://www.oracle.com/database/berkeley-db/index.html}) database.
-XXX SHOULD THOSE URLS BE REFERENCES INSTEAD\@?  The decision to support
-both \CSV{} and Berkeley DB appears to have been a serious limitation:
-\CSV{} is a very simple format where a record is stored in a single line,
-with fields separated by a comma or other punctuation symbol.  Problems
-with \CSV{} files include the need to escape separators in the data stored,
-providing multiple values for a field (e.g.\ multiple recipients), and
-adding new fields.  There is no mechanism to document the fields or the
-separator, unlike \SQL{} databases where every database includes a schema
-naming the fields and the type of data they store (integer, text,
-timestamp, etc.).
+The decision to support both \CSV{} and Berkeley DB appears to have been a
+serious limitation: \CSV{} is a very simple format where a record is stored
+in a single line, with fields separated by a comma or other punctuation
+symbol.  Problems with \CSV{} files include the need to escape separators
+in the data stored, providing multiple values for a field (e.g.\ multiple
+recipients), and adding new fields.  There is no mechanism to document the
+fields or the separator, unlike \SQL{} databases where every database
+includes a schema naming the fields and the type of data they store
+(integer, text, timestamp, etc.).
 
 Berkeley DB only supports storing simple \textbf{(key, value)} pairs,
 unlike \SQL{} databases that store arbitrary tuples.  In \LMA{}'s main
@@ -497,25 +496,24 @@ find Postfix reports, or additional reports for any other log file types.
 \noindent{}\url{http://www.enderunix.org/isoqlog/} \newline{}
 (Last checked 2007/08/13.)
 
-Isoqlog's report lists daily, monthly, and annual totals of mails sent by
-each unique sender and bytes transferred (XXX EXPLAIN BYTES TRANSFERRED\@:
-TO/FROM, PER-SENDER\@?).  It only produces these reports for the domains
-listed in its configuration file, making it impossible to produce reports
-for every sender domain.  It ignores all log lines except those for today,
-so it is impossible to analyse historical logs, and testing with the
-\numberOFlogFILES{} test log files is pointless.  It does maintain a record
-of data previously extracted, which the newly extracted data is merged into
-(no information is provided on the format of the data store).  The data
-extracted is limited to the number of mails sent by each sender, unlike the
-copious amounts of data extracted by \parsername{}.  It does not utilise
-rejection log lines in any way, so is unsuitable for the purposes of this
-project.  Its parsing is completely inextensible, indeed is almost
-incomprehensible, relying on \texttt{scanf(3)}, unexplained fixed offsets,
-and low level string manipulation; it is the opposite end of the spectrum
-to \parsernames{} parsing.  It does not handle any of the complications
-discussed in \sectionref{complications}, does not gather the breadth of
-data required for this project, and ignores the majority of log lines
-produced by Postfix.
+Isoqlog's report misses most of the information gathered by \parsername{},
+and it only reports on the domains listed in its configuration file, making
+it impossible to produce reports for every sender domain.  It ignores all
+log lines except those for today, so it is impossible to analyse historical
+logs, and testing with the \numberOFlogFILES{} test log files is pointless.
+It does maintain a record of data previously extracted, which the newly
+extracted data is merged into (no information is provided on the format of
+the data store).  The data extracted is limited to the number of mails sent
+by each sender, unlike the copious amounts of data extracted by
+\parsername{}.  It does not utilise rejection log lines in any way, so is
+unsuitable for the purposes of this project.  Its parsing is completely
+inextensible, indeed is almost incomprehensible, relying on
+\texttt{scanf(3)}, unexplained fixed offsets, and low level string
+manipulation; it is the opposite end of the spectrum to \parsernames{}
+parsing.  It does not handle any of the complications discussed in
+\sectionref{complications}, does not gather the breadth of data required
+for this project, and ignores the majority of log lines produced by
+Postfix.
 
 XXX FINISH THIS\@.
 

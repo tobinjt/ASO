@@ -331,10 +331,10 @@ as far as is reasonable, e.g.\ the restriction
 because the parameter it checks (the hostname given in the HELO command) is
 under the control of the remote client.  Despite this, it is possible for
 the administrator to make catastrophic mistakes, e.g.\ rejecting all mail
---- the administrator must be cognisant of the effects of their
-configuration changes.  This is similar to one of UNIX's design
-philosophies: \textit{``UNIX was not designed to stop its users from doing
-stupid things, as that would also stop them from doing clever
+--- the administrator must be cognisant of the effects their configuration
+changes will have.  This is similar to one of UNIX's design philosophies:
+\textit{``UNIX was not designed to stop its users from doing stupid things,
+as that would also stop them from doing clever
 things''\/}~\cite{unix-philosophy}.
 
 Postfix uses simple lookup tables to make decisions when evaluating some
@@ -353,17 +353,17 @@ restrictions, e.g.\newline{}
 \end{eqlist}
 
 The restriction \texttt{check\_client\_access} checks if the \IP{} address
-of the connected client is found in the specified file and returns the
+of the connected client is found in the specified table and returns the
 associated action if found; the method of searching the file is dependant
 on the type of the file (\texttt{cidr} in the example) --- see
 \cite{postfix-lookup-tables} for more details.  Other restrictions
 determine their result by consulting external sources, e.g.\newline{}
 \tab{}\texttt{reject\_rbl\_client dnsbl.example.com}\newline{} checks the
-\DNSBL{} \texttt{dnsbl.example.com}, rejecting the command if the client's
-\IP{} address is listed.  XXX DO I NEED THIS SENTENCE\@?  This description
-is necessarily brief, for further details see~\cite{smtpd_access_readme,
-smtpd_per_user_control, policy-servers}.
+\DNSBL{} \texttt{dnsbl.example.com} and rejects the command if the client's
+\IP{} address is listed.
 
+For further information about Postfix restrictions
+see~\cite{smtpd_access_readme,smtpd_per_user_control,policy-servers}.
 
 \subsubsection{Policy servers}
 
@@ -388,7 +388,7 @@ mail with your name, address, and bank account details.}
     \caption{Example attributes sent to policy servers}
     \empty{}\label{Example attributes sent to policy servers}
 
-    XXX HOW CAN I CENTRE THE TABLE\@?\hfill{}
+    \centering{}
 
     \begin{tabular}[]{ll}
 
