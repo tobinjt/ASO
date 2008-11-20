@@ -1913,7 +1913,7 @@ sub load_rules {
             rule             => $rule,
         };
 
-        if ($rule_hash->{action} eq q{DELIVERY_REJECTED}) {
+        if ($rule_hash->{regex_orig} =~ m/__RESTRICTION_START__/) {
             foreach my $cols (qw(connection_cols result_cols)) {
                 # Add the extra captures, but allow them to be overridden.
                 $rule_hash->{$cols} = {
@@ -2507,6 +2507,7 @@ sub filter_regex {
     $regex =~ s/__IPv4__                /(?:::ffff:)?$RE{net}{IPv4}/gmx;
     $regex =~ s/__IPv6__                /$ipv6_re/gmx;
     $regex =~ s/__SMTP_CODE__           /\\d{3}/gmx;
+    $regex =~ s/__CHILD__               /__QUEUEID__/gmx;
     # 3-9 is a guess.  Turns out that we need at least 10, might as well go to
     # 12 to be sure.
     $regex =~ s/__QUEUEID__             /(?:NOQUEUE|[\\dA-F]{3,12})/gmx;
@@ -2518,6 +2519,7 @@ sub filter_regex {
     $regex =~ s/__DELAY__               /delay=\\d+(?:\\.\\d+)?, /gmx;
     $regex =~ s/__DSN__                 /\\d\\.\\d\\.\\d/gmx;
     $regex =~ s/__CONN_USE__            /conn_use=\\d+, /gmx;
+    $regex =~ s/__SIZE__                /\\d+/gmx;
 #   $regex =~ s/____/$RE{}{}/gx;
 
     return $regex;
