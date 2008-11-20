@@ -161,7 +161,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Debugging information', 'Debugging information generated when a client matches debug_peer_list',
         'postfix/smtpd',
-        '^(?:(?:after|before) input_transp_cleanup: cleanup flags = .*|auto_clnt_close: disconnect private/anvil stream|auto_clnt_open: connected to __CLIENT_IP__:\d+|auto_clnt_open: connected to (?:public|private)/.*|before input_transp_cleanup: cleanup flags = enable_header_body_filter enable_automatic_bcc enable_address_mapping enable_milters|check_access: __EMAIL__|check_addr_access: __CLIENT_IP__|check_domain_access: __CLIENT_HOSTNAME__|>>> CHECKING RECIPIENT MAPS <<<|check_mail_access: __EMAIL__|check_namadr_access: name __CLIENT_HOSTNAME__ addr __CLIENT_IP__|check_server_access: MX __EMAIL__|check_table_result: .*|connect to subsystem .+|ctable_locate: install entry key .*|ctable_locate: leave existing entry key .+|ctable_locate: move existing entry key .*|ctable_locate: purge entry key .+|dict_cidr_lookup: .* (?:__CLIENT_HOSTNAME__|__CLIENT_IP__)|dict_pcre_lookup: .*|dns_get_answer: type MX for .*|dns_query: .*|>>> END Client host RESTRICTIONS <<<|>>> END Data command RESTRICTIONS <<<|>>> END Recipient address RESTRICTIONS <<<|event_cancel_timer: .*|event_disable_readwrite: fd \d+|event_enable_read: fd \d+|event_extend: fd \d+|event_request_timer: .*|extract_addr: in: <__EMAIL__>, result: __EMAIL__|extract_addr: input: <__EMAIL__>|fsspace: .: block size \d+, blocks free .+|generic_checks: .*|[<>] __CLIENT_HOSTNAME__\[__CLIENT_IP__\]: .*|input attribute (?:name|value): .*|__CLIENT_IP__:\d+:? wanted attribute: .*|lookup __CLIENT_HOSTNAME__ type MX flags 0|mail_addr_find: __EMAIL__ -> .*|maps_find: (?:canonical_maps|local_recipient_maps|recipient_canonical_maps|virtual_alias_maps): .*|match_hostaddr: __CLIENT_IP__ ~\? \[__CLIENT_IP__\](?:/\d+)?|match_hostaddr: __CLIENT_IP__ ~\? __CLIENT_IP__(?:/\d+)?|match_hostname: __CLIENT_HOSTNAME__ ~\? __CLIENT_IP__(?:/\d+)?|match_hostname: __CLIENT_HOSTNAME__ ~\? \[__CLIENT_IP__\](?:/\d+)?|match_list_match: .+ no match|match_string: .* ~\? .*|name_mask: .*|permit_auth_destination: __EMAIL__|permit_inet_interfaces: __CLIENT_HOSTNAME__ __CLIENT_IP__|permit_mynetworks: __CLIENT_HOSTNAME__ __CLIENT_IP__|private/anvil: wanted attribute: .*|(?:private|public)/.* socket: wanted attribute: .*|rec_put: type .* len \d+ data.*|reject_invalid_hostname: __CLIENT_HOSTNAME__|reject_non_fqdn_address: .+|reject_non_fqdn_hostname: __CLIENT_HOSTNAME__|reject_rbl: Client host __CLIENT_IP__|reject_unauth_destination: __EMAIL__|reject_unauth_pipelining: DATA|reject_unknown_address: __EMAIL__|reject_unknown_client: __CLIENT_HOSTNAME__ __CLIENT_IP__|reject_unknown_mailhost: __CLIENT_HOSTNAME__|resolve_clnt: .*flags= .+|rewrite_clnt: local: __EMAIL__ -> __EMAIL__|send attr .* =.*|smtpd_check_addr: .+|smtpd_check_queue: .*|smtpd_check_rewrite: trying: permit_inet_interfaces|>>> START Client host RESTRICTIONS <<<|>>> START Data command RESTRICTIONS <<<|>>> START Recipient address RESTRICTIONS <<<|trying... \[(__CLIENT_IP__)\]|vstream_buf_get_ready: fd \d* got \d*|vstream_fflush_some: fd \d* flush \d*|watchdog_pat: .*)$',
+        '^(?:(?:after|before) input_transp_cleanup: cleanup flags = .*|auto_clnt_close: disconnect private/anvil stream|auto_clnt_open: connected to __CLIENT_IP__:\d+|auto_clnt_open: connected to (?:public|private)/.*|before input_transp_cleanup: cleanup flags = enable_header_body_filter enable_automatic_bcc enable_address_mapping enable_milters|check_access: __EMAIL__|check_addr_access: __CLIENT_IP__|check_domain_access: __CLIENT_HOSTNAME__|>>> CHECKING RECIPIENT MAPS <<<|check_mail_access: __EMAIL__|check_namadr_access: name __CLIENT_HOSTNAME__ addr __CLIENT_IP__|check_server_access: MX __EMAIL__|check_table_result: .*|connect to subsystem .+|ctable_locate: install entry key .*|ctable_locate: leave existing entry key .+|ctable_locate: move existing entry key .*|ctable_locate: purge entry key .+|dict_cidr_lookup: .* (?:__CLIENT_HOSTNAME__|__CLIENT_IP__)|dict_pcre_lookup: .*|dns_get_answer: type MX for .*|dns_query: .*|>>> END Client host RESTRICTIONS <<<|>>> END Data command RESTRICTIONS <<<|>>> END Recipient address RESTRICTIONS <<<|event_cancel_timer: .*|event_disable_readwrite: fd \d+|event_enable_read: fd \d+|event_extend: fd \d+|event_request_timer: .*|extract_addr: in: <__EMAIL__>, result: __EMAIL__|extract_addr: input: <__EMAIL__>|fsspace: .: block size \d+, blocks free .+|generic_checks: .*|[<>] __CLIENT_HOSTNAME__\[__CLIENT_IP__\]: .*|input attribute (?:name|value): .*|__CLIENT_IP__:\d+:? wanted attribute: .*|lookup __CLIENT_HOSTNAME__ type MX flags 0|mail_addr_find: __EMAIL__ -> .*|maps_find: (?:canonical_maps|local_recipient_maps|recipient_canonical_maps|virtual_alias_maps): .*|match_hostaddr: __CLIENT_IP__ ~\? \[__CLIENT_IP__\](?:/\d+)?|match_hostaddr: __CLIENT_IP__ ~\? __CLIENT_IP__(?:/\d+)?|match_hostname: __CLIENT_HOSTNAME__ ~\? __CLIENT_IP__(?:/\d+)?|match_hostname: __CLIENT_HOSTNAME__ ~\? \[__CLIENT_IP__\](?:/\d+)?|match_list_match: .+ no match|match_string: .* ~\? .*|name_mask: .*|permit_auth_destination: __EMAIL__|permit_inet_interfaces: __CLIENT_HOSTNAME__ __CLIENT_IP__|permit_mynetworks: __CLIENT_HOSTNAME__ __CLIENT_IP__|private/anvil: wanted attribute: .*|(?:private|public)/.* socket: wanted attribute: .*|rec_put: type .* len \d+ data.*|reject_invalid_hostname: __CLIENT_HOSTNAME__|reject_non_fqdn_address: .+|reject_non_fqdn_hostname: __CLIENT_HOSTNAME__|reject_rbl: Client host __CLIENT_IP__|reject_unauth_destination: __EMAIL__|reject_unauth_pipelining: DATA|reject_unknown_address: __EMAIL__|reject_unknown_client: __CLIENT_HOSTNAME__ __CLIENT_IP__|reject_unknown_mailhost: __CLIENT_HOSTNAME__|resolve_clnt: .*flags= .+|rewrite_clnt: local: __EMAIL__ -> __EMAIL__|send attr .* =.*|smtpd_check_addr: .+|smtpd_check_queue: .*|smtpd_check_rewrite: trying: permit_inet_interfaces|>>> START Client host RESTRICTIONS <<<|>>> START Data command RESTRICTIONS <<<|>>> START Recipient address RESTRICTIONS <<<|trying... \[__CLIENT_IP__\]|vstream_buf_get_ready: fd \d* got \d*|vstream_fflush_some: fd \d* flush \d*|watchdog_pat: .*)$',
         '',
         '',
         'UNINTERESTING',
@@ -810,7 +810,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('Unwanted mail to root 2', 'People keep sending us mail for root at their machine (2)',
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__SENDER__)>: Recipient address rejected: alias root to some other user, damnit.; from=<(__RECIPIENT__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
-        'recipient = 5, sender = 6',
+        'recipient = 6, sender = 5',
         'helo = 7',
         'DELIVERY_REJECTED',
         1,
@@ -1118,8 +1118,8 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('Recipient addresses triggers HOLD action', 'The recipient addresses causes the mail to be moved to the hold queue',
         'postfix/smtpd',
         '^(__QUEUEID__): hold: DATA from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: <(__RECIPIENT__)>: Recipient address triggers HOLD action; from=<(__SENDER__)> to=<(\4)> proto=E?SMTP helo=<(__HELO__)>$',
-        'recipient = 4, sender = 3',
-        'client_hostname = 2, client_ip = 3, helo = 5',
+        'recipient = 4, sender = 5',
+        'client_hostname = 2, client_ip = 3, helo = 6',
         'SAVE_DATA',
         1,
         'INFO'
@@ -1145,7 +1145,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('qmgr processing mail', 'qmgr is going to deliver this mail',
         'postfix/qmgr',
-        '^(__QUEUEID__): from=<(__SENDER__)>, size=(\d+), nrcpt=(\d+) \(queue active\)$',
+        '^(__QUEUEID__): from=<(__SENDER__)>, size=(__SIZE__), nrcpt=(\d+) \(queue active\)$',
         'sender = 2, size = 3',
         '',
         'MAIL_QUEUED',
@@ -1159,7 +1159,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
     VALUES('mail has been queued for too long', 'mail has been sitting in the queue for too long, postifx is giving up on it',
         'postfix/qmgr',
         '^(__QUEUEID__): from=<(__SENDER__)>, (?:__DELAYS__)?(?:dsn=__DSN__, )?status=expired, returned to sender$',
-        'sender = 1',
+        'sender = 2',
         '',
         'smtp_code = 554',
         'EXPIRY',
@@ -1234,8 +1234,8 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('QMGR bounced a mail due to bad address syntax', 'QMGR bounced a mail due to bad address syntax',
         'postfix/qmgr',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=bounced \(bad address syntax\)$',
-        'recipient = 5',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=bounced \(bad address syntax\)$',
+        'recipient = 2',
         '',
         'SAVE_DATA',
         1,
@@ -1272,7 +1272,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Delivery deferred because of a problem with the delivery agent', 'Delivery deferred because of a problem with the delivery agent',
         'postfix/qmgr',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=deferred \(unknown mail transport error\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=deferred \(unknown mail transport error\)$',
         'recipient = 2',
         '',
         'SAVE_DATA',
@@ -1519,7 +1519,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, connection_data, action, queueid, postfix_action)
     VALUES('smtp client lost connection', 'smtp client lost connection for who knows what reason',
         'postfix/smtp',
-        '^(__QUEUEID__): lost connection with (__SERVER_HOSTNAME__)\[(__SERVER_IP__)\] while sending (__COMMAND__)(?: command)?$',
+        '^(__QUEUEID__): lost connection with (__SERVER_HOSTNAME__)\[(__SERVER_IP__)\] while sending __COMMAND__(?: command)?$',
         'data = 3',
         'server_hostname = 2, server_ip = 3',
         'client_hostname = localhost, client_ip = 127.0.0.1',
@@ -1601,7 +1601,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Mail loop detected', 'This host is the MX for the addresses domain, but is not final destination for that domain',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced \(mail for (__SERVER_HOSTNAME__) loops back to myself\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced \(mail for __SERVER_HOSTNAME__ loops back to myself\)$',
         'recipient = 2, data = 3',
         '',
         'smtp_code = 554',
@@ -1787,11 +1787,11 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Network unreachable', 'The remote network is unreachable',
         'postfix/smtp',
-        '^connect to (__SERVER_HOSTNAME__)\[(__SERVER_IP__)\]: Network is unreachable(?: \(port \d+\))?$',
+        '^connect to __SERVER_HOSTNAME__\[__SERVER_IP__\]: Network is unreachable(?: \(port \d+\))?$',
         '',
         '',
         'UNINTERESTING',
-        1,
+        0,
         'IGNORED'
 );
 
@@ -1805,7 +1805,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, connection_data, action, queueid, postfix_action)
     VALUES('Mail reinjected for forwarding', 'The mail was sent to a local address, but is aliased to an external address',
         'postfix/local',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=sent \(forwarded as (__QUEUEID__)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=sent \(forwarded as (__CHILD__)\)$',
         'recipient = 2, child = 3',
         '',
         'smtp_code = 250',
@@ -2239,7 +2239,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('Postfix created a bounce or delivery status message', 'Postfix created a bounce or delivery status message',
         'postfix/bounce',
-        '^(__QUEUEID__): sender (?:delivery status|non-delivery) notification: (__QUEUEID__)$',
+        '^(__QUEUEID__): sender (?:delivery status|non-delivery) notification: (__CHILD__)$',
         'child = 2',
         '',
         'BOUNCE',
