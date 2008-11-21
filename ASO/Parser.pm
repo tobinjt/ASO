@@ -2460,20 +2460,39 @@ sub filter_regex {
     }
     # I'm deliberately allowing a trailing . in $hostname_re.
     my $hostname_re = qr/(?:unknown|(?:[-.\w]+))/mx;
-    my $ipv6_chunk  = qr/(?:[0-9A-Fa-f]{1,4})/mx;
-    # XXX THIS ALLOWS IPv6 ADDRESSES WITH 12 CHUNKS.
-    my $ipv6_re = qr/(?:
- (?>(?:${ipv6_chunk}:){7}${ipv6_chunk})             # Full address
-|(?>(?:${ipv6_chunk}:){1,6}(?::${ipv6_chunk}){1,6}) # Elided address, missing
-                                                    # the middle but having both
-                                                    # ends (e.g. 2001::1)
-|(?>:(?::${ipv6_chunk}){1,7})                       # Elided address missing the
-                                                    # start of the address (e.g.
-                                                    # ::1)
-|(?:${ipv6_chunk}:){1,7}:                           # Elided address missing the
-                                                    # end of the address (e.g.
-                                                    # 2001::)
-)/mx;
+    # Build up a regex for IPv6 addresses.
+    # One segment of an IPv6 address.
+    my $ipv6_segment        = q/(?:[0-9A-Fa-f]{1,4})/;
+    my $ipv6_full_address   = qq/(?:$ipv6_segment:){7}$ipv6_segment/;
+    my $ipv6_elided_start   = qq/:(?::$ipv6_segment){1,7}/;
+    my $ipv6_elided_end     = qq/(?:$ipv6_segment:){1,7}:/;
+    # Elided addresses, e.g. 2001::1, ::1.
+    # (N colon separated segents)::(7 - N colon separated segents)
+    # 1 >= N <= 6
+    my (@ipv6_elided_pieces);
+    # This is the most segments we can have on one side; the other side will
+    # have 7 - $ipv6_elided_segment_count segments.
+    my $ipv6_elided_segment_count = 6;
+    while ($ipv6_elided_segment_count > 0) {
+        # Start with the smallest number of segments on the left and largest on
+        # the right to ensure we get maximal matching.
+        my $end_count   = $ipv6_elided_segment_count;
+        my $start_count = 7 - $end_count;
+        my $piece =   qq/(?:(?:$ipv6_segment:){1,$start_count}/
+                    . qq/(?::$ipv6_segment){1,$end_count})/;
+        $ipv6_elided_segment_count--;
+        push @ipv6_elided_pieces, $piece;
+    }
+    my $ipv6_elided_address = join qq{\n|}, @ipv6_elided_pieces;
+    # NOTE: $ipv6_elided_end must come after $ipv6_elided_address, otherwise
+    # $ipv6_elided_end will match instead of $ipv6_elided_address; the remainder
+    # of the regex that $ipv6_regex is embedded in will fail, but because
+    # $ipv6_regex is wrapped in (?>) the regex engine will not backtrack into
+    # it.
+    my $ipv6_regex          = qr/(?>(?:$ipv6_full_address)
+                                    |(?:$ipv6_elided_start)
+                                    |(?:$ipv6_elided_address)
+                                    |(?:$ipv6_elided_end))/mx;
 
     $regex =~ s/__SENDER__              /__EMAIL__/gmx;
     $regex =~ s/__RECIPIENT__           /__EMAIL__/gmx;
@@ -2483,9 +2502,9 @@ sub filter_regex {
     #       <45BA63320008E5FC@mail06.sc2.he.tucows.com> (added by postmaster@globo.com)
     #       <848511243547.G96470@flatland.vjopu.com (HELO chignon.gb-media.com [96.168.158.213])>
     $regex =~ s/__MESSAGE_ID__          /.*?/gmx;
-    # We see some pretty screwed hostnames in HELO commands; in fact just match
-    # any damn thing, the hostnames are particularly weird when Postfix rejects
-    # them.
+    # We see some pretty screwed up hostnames in HELO commands; in fact just
+    # match any damn thing, because the hostnames are particularly weird when
+    # Postfix rejects them.
     $regex =~ s/__HELO__                /.*?/gmx;
 #   This doesn't work, as it matches valid addresses, not real world addresses.
 #   $regex =~ s/__EMAIL__               /$RE{Email}{Address}/gx;
@@ -2505,10 +2524,10 @@ sub filter_regex {
     # Believe it or not, sometimes the IP address is unknown.
     $regex =~ s/__IP__                  /(?:__IPv4__|__IPv6__|unknown)/gmx;
     $regex =~ s/__IPv4__                /(?:::ffff:)?$RE{net}{IPv4}/gmx;
-    $regex =~ s/__IPv6__                /$ipv6_re/gmx;
+    $regex =~ s/__IPv6__                /$ipv6_regex/gmx;
     $regex =~ s/__SMTP_CODE__           /\\d{3}/gmx;
     $regex =~ s/__CHILD__               /__QUEUEID__/gmx;
-    # 3-9 is a guess.  Turns out that we need at least 10, might as well go to
+    # 3-9 was a guess.  Turns out that we need at least 10, might as well go to
     # 12 to be sure.
     $regex =~ s/__QUEUEID__             /(?:NOQUEUE|[\\dA-F]{3,12})/gmx;
     $regex =~ s/__COMMAND__             /(?:MAIL FROM|RCPT TO|DATA(?: command)?|message body|end of DATA)/gmx;
