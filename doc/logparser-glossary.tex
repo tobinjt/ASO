@@ -1,33 +1,33 @@
 % vim: set filetype=tex :
 % The contents of the glossary.
-\glossary{name={SQLite3},description={
+\newglossaryentry{SQLite}{name={SQLite},description={
     \textit{SQLite is a small C library that implements a self-contained,
-    embeddable, zero-configuration SQL database engine.\/} SQLite3 is an
-    \SQL{} implementation focusing on correctness, simplicity and speed.
-    Unlike other \SQL{} implementations it does not require a separate
+    embeddable, zero-configuration SQL database engine.\/} SQLite is an
+    \gls{SQL} implementation focusing on correctness, simplicity and speed.
+    Unlike other \gls{SQL} implementations it does not require a separate
     server process, greatly simplifying deployment of an application
     utilising it.  More details can be found
     at~\url{http://www.sqlite.org/}.
 }}
 
-\glossary{name={Phishing},description={
+\newglossaryentry{Phishing}{name={Phishing},description={
     Phishing~\cite{Wikipedia-phishing} is an attempt to acquire information
     by masquerading as an entity trusted by the user, e.g.\ a bank.
 }}
 
-\glossary{name={Backscatter},description={
+\newglossaryentry{Backscatter}{name={Backscatter},description={
     When a spam sender or worm sends mail with forged sender addresses,
     innocent sites are flooded with undeliverable mail notifications; this
     is called backscatter mail.
 }}
 
-\glossary{name={Joe~job},description={
-    A joe~job is when spam mail is sent with a faked sender address with
-    the intention of sullying the good name of the owner of the address.
-    joe~jobs are a cause of backscatter, though by no means the only cause.
+\newglossaryentry{Joe job}{name={Joe job},description={
+    A joe~job describes spam mail sent using a faked sender address with
+    the intention of sullying the good name of the user of that address.
+    Joe~jobs are one cause of backscatter.
 }}
 
-\glossary{name={Epoch},description={
+\newglossaryentry{Epoch}{name={Epoch},description={
     Most operating systems store the current time and timestamps of files
     etc.\ as seconds elapsed since the epoch, the beginning of time as far
     as the operating system is concerned.  On Unix and Unix-derived systems
@@ -35,160 +35,25 @@
     different.
 }}
 
-\glossary{name={NULL},description={
-    NULL is a special term used in \SQL{} databases indicating the absence
-    of data for the field.
-}}
 
-% Postfix components
-\glossary{name={bounce},description={
-    The bounce daemon is responsible for sending bounce notifications in
-    Postfix versions later than 2.2.  The definitive documentation is
-    \url{http://www.postfix.org/bounce.8.html}.
-}}
-
-\glossary{name={cleanup},description={
-    Cleanup processes all incoming mail after it has been accepted and
-    before it is delivered.  It removes duplicate recipient addresses,
-    inserts missing headers, and optionally rewrites addresses if
-    configured to do so.  The definitive documentation is
-    \url{http://www.postfix.org/cleanup.8.html}.
-}}
-
-\glossary{name={lmtp},description={
-    Delivery of mail over \LMTP{} is performed by the lmtp component.  The
-    definitive documentation is \url{http://www.postfix.org/lmtp.8.html}.
-}}
-
-\glossary{name={local},description={
-    Local is the Postfix component responsible for local delivery of mail
-    (i.e.\ delivered on the server Postfix is running on), whether it be to
-    a user's mailbox or a program such as a mailing list manager or
-    procmail (\url{http://www.procmail.org/}).  It also handles aliases and
-    processing of a user's \texttt{.forward} file.  The definitive
-    documentation is \url{http://www.postfix.org/local.8.html}.
-}}
-
-\glossary{name={pickup},description={
-    Pickup is the service that deals with mail submitted locally via
-    postdrop and sendmail; it passes all submitted mail to cleanup.  The
-    definitive documentation is \url{http://www.postfix.org/pickup.8.html}.
-}}
-
-\glossary{name={postdrop},description={
-    Postdrop is used when submitting mail locally on the server: it creates
-    a new mail in the queue and copies its input into the mail.  Subsequent
-    delivery of the mail is the responsibility of other Postfix components.
-    The definitive documentation is
-    \url{http://www.postfix.org/postdrop.1.html}.
-}}
-
-\glossary{name={postsuper},description={
-    Maintenance tasks such as deleting mails from the queue, putting mail
-    on hold and later releasing it (no further delivery attempts will be
-    made until it is released), and consistency checking of the mail queue.
-    The definitive documentation is available at
-    \url{http://www.postfix.org/postsuper.1.html}.
-}}
-
-\glossary{name={qmgr},description={
-    Qmgr is the Postfix daemon that manages the mail queue, determining
-    which mails will be delivered next.  Qmgr orders the mails based on the
-    recipient for local mails and the destination server for remote
-    addresses, ensuring that it balances the aims of achieving maximum
-    concurrency while avoiding overwhelming destinations or wasting time
-    and resources on non-responsive destinations.  The definitive
-    documentation is \url{http://www.postfix.org/qmgr.8.html}.
-}}
-
-\glossary{name={sendmail},description={
-    Postfix provides a command that is compatible with the Sendmail
-    (\url{http://www.sendmail.org/}) mail submission program that all Unix
-    commands that send mail depend on; it executes \daemon{postdrop} to
-    place a new mail in the queue.  The definitive documentation is
-    \url{http://www.postfix.org/sendmail.1.html}.
-}}
-
-\glossary{name={smtp},description={
-    Delivery of mail over \SMTP{} is performed by the smtp component.  The
-    definitive documentation is \url{http://www.postfix.org/smtp.8.html}.
-}}
-
-\glossary{name={smtpd},description={
-    Smtpd is the Postfix program that accepts mail via \SMTP{}, and
-    implements all the anti-spam restrictions Postfix provides.  The
-    definitive documentation is \url{http://www.postfix.org/smtpd.8.html}.
-}}
-
-\glossary{name={virtual},description={
-    Virtual is the Postfix component responsible for delivery of mails to
-    virtual domains.  With \daemon{local} delivery the destination is
-    determined only by the portion of the email address on the left side of
-    the \at{}, whereas with \daemon{virtual} delivery the destination is
-    determined by the entire email address, e.g.\ if the server considers
-    itself responsible for both \textbf{example.org} and
-    \textbf{example.net} domains: \daemon{local} considers
-    \textbf{john\at{}example.org} and \textbf{john\at{}example.net} to have
-    the same mailbox, whereas \daemon{virtual} considers them to have
-    different mailboxes.  Virtual delivery is used when a server hosts
-    multiple domains where a username may be present in more than one
-    domain but represent different users in each.  The definitive
-    documentation is
-    \url{http://www.postfix.org/virtual.8.html}.
-}}
-
-\glossary{name={Bayesian spam filtering},description={
-    Bayesian spam filtering is a method of classifying mail based on the
-    frequency that the words in the mail have previously appeared in a spam
-    corpus and a ham (non-spam) corpus.  A full description is beyond the
-    scope of this thesis, see~\cite{bayesian-filtering,a-plan-for-spam}
-    for a detailed explanation.
-}}
-
-\glossary{name={Bayesian poisoning},description={
-    Bayesian poisoning is the addition of innocuous or unrelated words to a
-    spam mail in the hope of defeating Bayesian spam filtering.  E.g.\ the
-    word Viagra would be firmly in the spam corpus for most people, but by
-    adding the words \textit{schedule}, \textit{meeting}, \textit{moving
-    forward\/} and \textit{best business practices\/} to a mail received by
-    a manager, the Bayesian spam filter might tip the balance from bad to
-    good, if the non-spam words outweigh the spam words.
-}}
-
-\glossary{name={$<>$},sort={<>},description={
-    $<>$ is the sender address used for mail that should not be replied
-    to, e.g.\ bounce notifications.  In \SMTP{} all addresses are enclosed
+\newglossaryentry{<>}{name={$<>$},sort={<>},description={
+    $<>$ is the sender address used for mail that should not be replied to,
+    e.g.\ bounce notifications.  In \gls{SMTP} all addresses are enclosed
     in $<>$, so \textit{username\at{}domain\/} becomes
     \textit{$<$username\at{}domain$>$\/}; thus $<>$ is actually an empty
     address, but is always written as $<>$ for clarity.  All mail servers
     must accept mail sent from $<>$, or they are in violation of
-    \RFC{}~2821~\cite{RFC2821}.
+    \gls{RFC}~2821~\cite{RFC2821}.
 }}
 
-\glossary{name={queueid},description={
+\newglossaryentry{queueid}{name={queueid},description={
     Each mail in Postfix's queue is assigned a queueid to uniquely identify
     it.  Queueids are assigned from a limited pool, so although they are
     guaranteed to be unique for the lifetime of the mail, they may be
     reused later.
 }}
 
-\glossary{name={IPv4},description={
-    Internet Protocol version 4 is the fourth version of the Internet
-    Protocol used to interconnect computers on the Internet.  It is the
-    first widely deployed version of IP, and has been in use for over 25
-    years.
-}}
-
-\glossary{name={IPv6},description={
-    Internet Protocol version 6 is the latest version of the Internet
-    Protocol used to interconnect computers on the Internet.  It is the
-    successor to IPv4, bringing with it a greatly expanded address space,
-    allowing many more computers to use the Internet simultaneously.  IPv4
-    and IPv6 will coexist for many years to come as existing networks
-    transition from the former to the latter.
-}}
-
-%\glossary{name={hash},description={
+%\newglossaryentry{hash}{name={hash},description={
 %    A hashing function transforms a string of characters to a number.
 %    There are many possible uses for the resulting number: a common usage
 %    is to maintain a data structure indexed by strings in an efficient
@@ -196,19 +61,19 @@
 %    information can be found at~\cite{hash-functions}.
 %}}
 
-\glossary{name={awk},description={
+\newglossaryentry{awk}{name={awk},description={
     AWK is a general purpose programming language that is designed for
     processing text-based data, and is available as a standard utility on
     all Unix systems.
 }}
 
-\glossary{name={syslog},description={
+\newglossaryentry{syslog}{name={syslog},description={
     Syslog is the standard logging mechanism on Unix systems: the program
     sends log messages to syslog, then syslog filters and stores the
     messages according to the configuration the administrator has chosen.
 }}
 
-\glossary{name={mail bomb},description={
+\newglossaryentry{mail bomb}{name={mail bomb},description={
     A mail bomb occurs when an attacker inflicts a huge volume of mail on
     the victim.  At best a mail bomb is irritating to the victim; at worst
     the deluge of mail can be severe enough to: interrupt service for the
@@ -218,7 +83,7 @@
     to cope with the mail bomb.
 }}
 
-\glossary{name={mail loop},description={
+\newglossaryentry{mail loop}{name={mail loop},description={
     Sometimes mail sent to one address must be forwarded to a different
     address instead, e.g.\ because a person has changed jobs.  A mail loop
     occurs when the chain of recipient addresses constitute a cyclic

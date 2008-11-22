@@ -94,9 +94,9 @@ algorithm; only in the rare event that the new actions require support from
 other sections of the code will more extensive changes be required.
 
 There is some similarity between the parser's design and William Wood's
-\ATN{}~\cite{atns,nlpip}, a tool used in Computational Linguistics for
+\gls{ATN}~\cite{atns,nlpip}, a tool used in Computational Linguistics for
 creating grammars to parse or generate sentences.  The resemblance between
-\ATN{} and the parser is accidental, but it is obvious that the two
+\gls{ATN} and the parser is accidental, but it is obvious that the two
 different approaches share an underlying separation of concerns; this
 appears to be a natural division of responsibility and functionality.
 \Tableref{Similarities between ATN and this architecture} shows the
@@ -109,7 +109,7 @@ similarities.
     \empty{}\label{Similarities between ATN and this architecture}
     \begin{tabular}[]{lll}
         \tableline{}
-        \ATN{}          & Architecture  & Similarity                \\
+        \gls{ATN}          & Architecture  & Similarity                \\
         \tableline{}
         Networks        & Algorithm     & Determines the sequence 
                                         of transitions              \\
@@ -185,18 +185,18 @@ inconsistent parsing and data extraction because the order in which rules
 are tried against each line may change between log files, and the first
 matching rule wins.  Overlapping rules are frequently a requirement,
 allowing a more specific rule to match some log lines and a more general
-rule to match the majority, e.g.\ separating \SMTP{} delivery to specific
-sites from \SMTP{} delivery to the rest of the world.  The algorithm
-provides a mechanism for ordering overlapping rules: the priority field in
-each rule (defaults to zero).  Negative priorities may be useful for
-catchall rules.
+rule to match the majority, e.g.\ separating \gls{SMTP} delivery to
+specific sites from \gls{SMTP} delivery to the rest of the world.  The
+algorithm provides a mechanism for ordering overlapping rules: the priority
+field in each rule (defaults to zero).  Negative priorities may be useful
+for catchall rules.
 
 Detecting overlapping rules is difficult, but the following approaches may
 be helpful:
 
 \begin{itemize}
 
-    \item Sort by regex and visually inspect the list, e.g.\ with \SQL{}
+    \item Sort by regex and visually inspect the list, e.g.\ with \gls{SQL}
         similar to: \textbf{select regex from rules order by regex;}
 
     \item Compare the results of parsing using sorted, shuffled and

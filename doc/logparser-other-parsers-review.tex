@@ -11,7 +11,7 @@ the \numberOFlogFILES{} test log files described in \sectionref{parser
 efficiency}.  None of the parsers reviewed perform the kind of advanced
 parsing and correlation required for this project; all except one (XXX IS
 THIS ACCURATE\@?) are intended to perform a specific parsing and reporting
-task, whereas \PLP{} is designed to be a generic parser, extracting data
+task, whereas \gls{PLP} is designed to be a generic parser, extracting data
 and leaving generation of reports from the data to other programs.  Some
 parsers save the data extracted to a data store, but the majority discard
 all data once they have finished running, making historical analysis
@@ -19,15 +19,15 @@ impossible.  The parsers reviewed all produce a report of varying
 complexity and detail, whereas this project's parser does not produce a
 report at all; that responsibility is deferred to a separate program, to be
 developed later.  The parser developed for this project is designed to
-enable much more detailed log analysis by providing a stable platform for
-subsequent programs to develop upon.
+enable much more detailed log file analysis by providing a stable platform
+for subsequent programs to develop upon.
 
 It is important to compare and contrast newly developed programs,
 algorithms, and parsers against those already available, to accurately
 judge what improvements, if any, are delivered by the newcomers.  There are
-not that many previously developed Postfix log parsers --- indeed it was
-quite difficult to find ten parsers to review for this project --- and the
-functionality offered ranges from quite basic to much more mature,
+not that many previously developed Postfix log file parsers --- indeed it
+was quite difficult to find ten parsers to review for this project --- and
+the functionality offered ranges from quite basic to much more mature,
 depending on the needs of the creator.  The programs are not reviewed from
 an independent viewpoint; the objective is to compare and contrast each
 program with \parsername{}.  There are some important differences between
@@ -43,7 +43,7 @@ program with \parsername{}.  There are some important differences between
     \item \parsername{} does not provide any reports based on the data it
         gathers.  This is by design: the parser is responsible for parsing
         log files and extracting data; further processing of that data is a
-        separate concern, deferred to another program.  Using an \SQL{}
+        separate concern, deferred to another program.  Using an \gls{SQL}
         database simplifies the process of generating such reports
         (discussed in \sectionref{database as API}); some simple examples
         are given in \sectionref{motivation}.
@@ -71,7 +71,7 @@ XXX EXTEND THIS\@.
 
 XXX IS THE BDB STRUCTURE DOCUMENTED\@?
 
-XXX DESCRIBE THE \CSV{} FORMAT\@.
+XXX DESCRIBE THE \gls{CSV} FORMAT\@.
 
 XXX DESCRIBE THE MYSQL SCHEMA\@.
 
@@ -81,90 +81,94 @@ IS THE SAME DATA STORED FOR ALL FORMATS\@?
 
 There only appears to be one prior published paper about parsing Postfix
 log files: \textit{Log Mail Analyzer: Architecture and Practical
-Utilizations\/}~\cite{log-mail-analyser}.  The aim of \LMA{} is quite
-different from this parser: it attempts to present correlated log data in a
-form suitable for a systems administrator to search using the myriad of
-standard Unix text processing utilities already available, producing both a
-\CSV{} file and either a MySQL (\url{http://www.mysql.com/}) or Berkeley DB
+Utilizations\/}~\cite{log-mail-analyser}.  The aim of \gls{LMA} is quite
+different from this parser: it attempts to present correlated data from log
+files in a form suitable for a systems administrator to search using the
+myriad of standard Unix text processing utilities already available,
+producing both a \gls{CSV} file and either a MySQL
+(\url{http://www.mysql.com/}) or Berkeley DB
 (\url{http://www.oracle.com/database/berkeley-db/index.html}) database.
-The decision to support both \CSV{} and Berkeley DB appears to have been a
-serious limitation: \CSV{} is a very simple format where a record is stored
-in a single line, with fields separated by a comma or other punctuation
-symbol.  Problems with \CSV{} files include the need to escape separators
-in the data stored, providing multiple values for a field (e.g.\ multiple
-recipients), and adding new fields.  There is no mechanism to document the
-fields or the separator, unlike \SQL{} databases where every database
-includes a schema naming the fields and the type of data they store
-(integer, text, timestamp, etc.).
+The decision to support both \gls{CSV} and Berkeley DB appears to have been
+a serious limitation: \gls{CSV} is a very simple format where a record is
+stored in a single line, with fields separated by a comma or other
+punctuation symbol.  Problems with \gls{CSV} files include the need to
+escape separators in the data stored, providing multiple values for a field
+(e.g.\ multiple recipients), and adding new fields.  There is no mechanism
+to document the fields or the separator, unlike \gls{SQL} databases where
+every database includes a schema naming the fields and the type of data
+they store (integer, text, timestamp, etc.).
 
 Berkeley DB only supports storing simple \textbf{(key, value)} pairs,
-unlike \SQL{} databases that store arbitrary tuples.  In \LMA{}'s main
-table the key is an integer referred to by secondary tables, and the value
-is a \CSV{} line containing all of the data for that row.  The
-secondary by-sender, by-recipient, by-date, and by-\IP{} tables use the
-sender/recipient/date/\IP{} as the key, and the value is a \CSV{} list of integers
-referring to the main table.  This effectively re-implements
-\SQL{} foreign keys, but without the functionality offered by even the most
-basic of \SQL{} databases (joins, ordering, searches, etc.).  It also
-requires custom code to search on some combination of the above, though the
-authors of \LMA{} did provide some queries: IP-STORY, FROM-STORY,
-DAILY-EMAIL and DAILY-REJECT\@.  Berkeley DB appears to be the least useful
-of the three output formats: it does not provide the functionality of a
-basic \SQL{} database, not can it be used with standard Unix text
-processing tools.
+unlike \gls{SQL} databases that store arbitrary tuples.  In \gls{LMA}'s
+main table the key is an integer referred to by secondary tables, and the
+value is a \gls{CSV} line containing all of the data for that row.  The
+secondary by-sender, by-recipient, by-date, and by-\gls{IP} tables use the
+sender/recipient/date/\gls{IP} as the key, and the value is a \gls{CSV}
+list of integers referring to the main table.  This effectively
+re-implements \gls{SQL} foreign keys, but without the functionality offered
+by even the most basic of \gls{SQL} databases (joins, ordering, searches,
+etc.).  It also requires custom code to search on some combination of the
+above, though the authors of \gls{LMA} did provide some queries: IP-STORY,
+FROM-STORY, DAILY-EMAIL and DAILY-REJECT\@.  Berkeley DB appears to be the
+least useful of the three output formats: it does not provide the
+functionality of a basic \gls{SQL} database, not can it be used with
+standard Unix text processing tools.
 
-\LMA{} stores the following date: time and date, client hostname and \IP{}
-address, server \IP{} address, sender and recipient addresses, \SMTP{}
-code, and size (for accepted mails only).  It omits XXX XXX\@.  Handling of
-multiple recipients, \SMTP{} codes or remote servers\footnote{A single mail
-may be sent to multiple remote servers if it was addressed to recipients in
-different domains, or Postfix needs to try multiple servers for one or more
-recipients.} is not explained in the paper; experimental observation shows
-that multiple records are added when there are multiple recipients (sadly
-the records are not associated or linked in any way), and presumably the
-same approach is taken when there are multiple destination servers.
+\gls{LMA} stores the following date: time and date, client hostname and
+\gls{IP} address, server \gls{IP} address, sender and recipient addresses,
+\gls{SMTP} code, and size (for accepted mails only).  It omits XXX XXX\@.
+Handling of multiple recipients, \gls{SMTP} codes or remote
+servers\footnote{A single mail may be sent to multiple remote servers if it
+was addressed to recipients in different domains, or Postfix needs to try
+multiple servers for one or more recipients.} is not explained in the
+paper; experimental observation shows that multiple records are added when
+there are multiple recipients (sadly the records are not associated or
+linked in any way), and presumably the same approach is taken when there
+are multiple destination servers.
 
 The schema used with the MySQL database is undocumented, but at least it is
-possible to discover the schema with an \SQL{} database, unlike with
-Berkeley DB\@; all \SQL{} databases embed the schema into the database and
-provide commands for displaying it.  Berkeley DB does not embed a schema,
-as there is neither requirement nor benefit; it only provides \textbf{(key,
-value)} pairs, so any additional structuring of the data is imposed by the
-application, thus it behoves the application to document this structure.
+possible to discover the schema with an \gls{SQL} database, unlike with
+Berkeley DB\@; all \gls{SQL} databases embed the schema into the database
+and provide commands for displaying it.  Berkeley DB does not embed a
+schema, as there is neither requirement nor benefit; it only provides
+\textbf{(key, value)} pairs, so any additional structuring of the data is
+imposed by the application, thus it behoves the application to document
+this structure.
 
-\LMA{} requires major changes to the parser code to parse new log lines or
-extract additional data.  The code is structured as a long series of blocks
-that each handle all lines matching a single regex, so parsing new log
-lines requires modifying an existing regex or carefully inserting a new
+\gls{LMA} requires major changes to the parser code to parse new log lines
+or extract additional data.  The code is structured as a long series of
+blocks that each handle all lines matching a single regex, so parsing new
+log lines requires modifying an existing regex or carefully inserting a new
 block in the correct place; extracting extra data will require modifying
 multiple blocks, regexes, or both.
 
-\LMA{} does not appear to deal with any of the complications discussed in
-\sectionref{complications}.  It does not differentiate between different
+\gls{LMA} does not appear to deal with any of the complications discussed
+in \sectionref{complications}.  It does not differentiate between different
 types of rejections, so it is not suitable for the purposes of this
 project; the data about which restriction caused the rejection is
 discarded, whereas the main goal of this project is to retain that data to
-aid optimisation and evaluation of Postfix restrictions.  \LMA{} fails to
-parse Postfix log files generated on Solaris hosts because the fields
+aid optimisation and evaluation of Postfix restrictions.  \gls{LMA} fails
+to parse Postfix log files generated on Solaris hosts because the fields
 automatically prepended to each log line differ from those added on Linux
 hosts; log files from Solaris hosts (and possibly other operating systems)
-thus require preprocessing before parsing by \LMA{}.  Once the
+thus require preprocessing before parsing by \gls{LMA}.  Once the
 preprocessing has been performed on the \numberOFlogFILES{} test log files
-\LMA{} parses the log files without complaint, although it produced 32
+\gls{LMA} parses the log files without complaint, although it produced 32
 entries in its output file for every rejection in the input log file; it
 also missed some 40\% of delivered mail.  Once these glaring deficiencies
 were discovered the author did not waste any more time checking the
 results.
 
-\LMA{} does provide some simple reports: IP-STORY, FROM-STORY, DAILY-EMAIL
-and DAILY-REJECT\@.  The first three extract \CSV{} lines for the specified
-client \IP{} address, sender address, or date respectively.  DAILY-REJECT
-initially failed with an error message (XXX ADD THE ERROR MESSAGE) from the
-Perl interpreter; after making some corrections to the code it worked, and
-extracted the \CSV{} lines for the specified day where the \SMTP{} code
-signifies a rejection.  All of these reports are trivially simple to
-produce from the \CSV{} file using the standard Unix tool \texttt{awk}; the
-most complicated, DAILY-REJECT, is merely:
+\gls{LMA} does provide some simple reports: IP-STORY, FROM-STORY,
+DAILY-EMAIL and DAILY-REJECT\@.  The first three extract \gls{CSV} lines
+for the specified client \gls{IP} address, sender address, or date
+respectively.  DAILY-REJECT initially failed with an error message (XXX ADD
+THE ERROR MESSAGE) from the Perl interpreter; after making some corrections
+to the code it worked, and extracted the \gls{CSV} lines for the specified
+day where the \gls{SMTP} code signifies a rejection.  All of these reports
+are trivially simple to produce from the \gls{CSV} file using the standard
+Unix tool \texttt{awk}\glsadd{awk}; the most complicated, DAILY-REJECT, is
+merely:
 
 \begin{verbatim}
 awk -F\| '$1 ~ /2007-01-26/ && $7 ~ /^[450]|deferred/
@@ -179,14 +183,15 @@ Notes about the command above:
         after each matching line, to accurately replicate the output of
         DAILY-REJECT\@.
 
-    \item Some records have an \SMTP{} code of \textit{0}, though this is
-        not a valid \SMTP{} code; presumably this is because \LMA{} did not
-        parse a log line properly.  DAILY-REJECT considers this code to be
-        a rejection, so the command above must too.
+    \item Some records have an \gls{SMTP} code of \textit{0}, though this
+        is not a valid \gls{SMTP} code; presumably this is because
+        \gls{LMA} did not parse a log line properly.  DAILY-REJECT
+        considers this code to be a rejection, so the command above must
+        too.
 
-    \item In a small fraction of records the \SMTP{} code is
-        \textit{deferred\/} (again, not a valid \SMTP{} code, and most
-        likely because of mis-parsing by \LMA{}); it is treated as a
+    \item In a small fraction of records the \gls{SMTP} code is
+        \textit{deferred\/} (again, not a valid \gls{SMTP} code, and most
+        likely because of mis-parsing by \gls{LMA}); it is treated as a
         rejection by DAILY-REJECT, so the equivalent \texttt{awk} command
         must do so, too.
 
@@ -197,38 +202,38 @@ There are two differences between the output from DAILY-REJECT and the
 
 \begin{itemize}
 
-    \item \LMA{} does not escape or replace the separators used in the
-        \CSV{} records when they are present in sender or recipient
+    \item \gls{LMA} does not escape or replace the separators used in the
+        \gls{CSV} records when they are present in sender or recipient
         addresses, leading to some mangled records; these records are not
         present in the output from \texttt{awk}.  XXX WHY\@?  GIVE AN
         EXAMPLE RECORD\@.
 
-    \item Where there are multiple records in the \CSV{} file, DAILY-REJECT
-        extracts only one record, whereas the \texttt{awk} command above
-        extracts all matching records.
+    \item Where there are multiple records in the \gls{CSV} file,
+        DAILY-REJECT extracts only one record, whereas the \texttt{awk}
+        command above extracts all matching records.
 
 \end{itemize}
 
-In summary, \LMA{} appears to be a proof of concept, written to demonstrate
-the point of their paper (that having this information in an accessible
-fashion is useful to systems administrators), rather than a program
-designed to be useful in a production environment; no consideration was
-given to extensibility when writing it.
+In summary, \gls{LMA} appears to be a proof of concept, written to
+demonstrate the point of their paper (that having this information in an
+accessible fashion is useful to systems administrators), rather than a
+program designed to be useful in a production environment; no consideration
+was given to extensibility when writing it.
 
 % Literature review notes:
 %
 % Hard-coded parsing, requiring code changes to add more.  Attempts to
 % correlate log lines, saves data to database for data mining purposes.
 % Hard to extend/expand/understand.  Appears to only save: date and hour,
-% DNS name and \IP{} address host, mail server \IP{} address, sender,
+% DNS name and \gls{IP} address host, mail server \gls{IP} address, sender,
 % receiver and e-mail status (sent, rejected).  Undocumented schema.
-% Design decision to use \CSV{} as an intermediate format between the log
-% file and the database seems to have been restrictive.  Appears to require
-% a queueid but majority of log entries (e.g.\ rejections) lack a queueid.
-% Supports whitelisting \IP{} addresses when parsing logs, but whitelisting
-% when generating reports/data mining would be preferable.  Supporting
-% Berkeley DB is probably limiting the software - an example is the
-% difficulty in searching a pipe-delimited string, so they have
+% Design decision to use \gls{CSV} as an intermediate format between the
+% log file and the database seems to have been restrictive.  Appears to
+% require a queueid but majority of log lines (e.g.\ rejections) lack a
+% queueid.  Supports whitelisting \gls{IP} addresses when parsing logs, but
+% whitelisting when generating reports/data mining would be preferable.
+% Supporting Berkeley DB is probably limiting the software - an example is
+% the difficulty in searching a pipe-delimited string, so they have
 % re-implemented foreign keys with tables keyed by ip address etc.\
 % pointing at the main table - this also will not scale well.  There does
 % not appear to be any attempt to deal with the complications I have
@@ -253,7 +258,7 @@ in-depth analysis.  It does not support saving any data or extracting more
 data than is required for producing the report.  Both the parsing and
 reporting are difficult to extend as it is a specialised tool, unlike the
 easily extensible design of \parsername{}.  It does not correlate log lines
-by queueid or \pid{}, and does not need to deal with the complications
+by queueid or \gls{pid}, and does not need to deal with the complications
 encountered during this project.  Pflogsumm produces a useful report, and
 successfully parsed the \numberOFlogFILES{} log files tested
 with,\footnote{The results it reported were not verified in detail, but it
@@ -300,10 +305,10 @@ report.
 
 \end{quotation}
 
-\noindent{}\url{http://www.thesawmill.co.uk/formats/postfix.html} \newline{}
-\url{http://www.thesawmill.co.uk/formats/postfix_ii.html} \newline{}
-\url{http://www.thesawmill.co.uk/formats/beta_postfix.html} \newline{}
-(Last checked 2007/12/04.)
+\noindent{}\url{http://www.thesawmill.co.uk/formats/postfix.html}
+\newline{} \url{http://www.thesawmill.co.uk/formats/postfix_ii.html}
+\newline{} \url{http://www.thesawmill.co.uk/formats/beta_postfix.html}
+\newline{} (Last checked 2007/12/04.)
 
 XXX CHECK ALL THIS AGAIN\@; GIVE EXAMPLE PRICES\@.
 
@@ -311,7 +316,7 @@ Sawmill is a general purpose commercial product that parses 687 log file
 formats (correct as of 2007/12/04) and produces reports.  Its data
 extraction facilities are too limited to save sufficient data for the
 purposes of this project,\footnote{The data extracted by Sawmill is
-described later in this review, and the data extracted by \PLP{} is
+described later in this review, and the data extracted by \gls{PLP} is
 described in \sectionref{connections table} and \sectionref{results
 table}.} though it does extract three different sets of data for Postfix
 (one is beta as of 2007/12/04), but they do not appear to be interlinked.
@@ -327,12 +332,12 @@ the company charges per report the user wishes to generate, the data store
 (if there is one) is deliberately inaccessible and undocumented to prevent
 the user bypassing the program and generating their own reports.
 
-XXX THE BLURB MENTIONS \SQL{} DB\@; CAN THAT BE ACCESSED SEPARATELY, IS THE
-FORMAT DOCUMENTED, ETC\@?
+XXX THE BLURB MENTIONS \gls{SQL} DB\@; CAN THAT BE ACCESSED SEPARATELY, IS
+THE FORMAT DOCUMENTED, ETC\@?
 
 \url{http://www.thesawmill.co.uk/formats/postfix.html} \newline{} Fields
 extracted: from, to, server, UID, relay, status, number of recipients,
-origin hostname, origin \IP{} and virus.  The fields \texttt{server},
+origin hostname, origin \gls{IP} and virus.  The fields \texttt{server},
 \texttt{uid} and \texttt{virus} are not explained in the documentation:
 \texttt{server} is probably the server the mail is delivered to, and
 \texttt{uid} might be the uid of the user submitting mail locally.  Postfix
@@ -341,15 +346,15 @@ cooperating with an external virus scanner), so the \texttt{virus} field is
 a mystery.
 
 \url{http://www.thesawmill.co.uk/formats/postfix_ii.html} \newline{} Fields
-extracted: from, to, RBL, client hostname and client \IP{}\@.
+extracted: from, to, RBL, client hostname and client \gls{IP}\@.
 
-\url{http://www.thesawmill.co.uk/formats/beta_postfix.html} \newline{} Fields
-extracted: from, to, client hostname, client \IP{}, relay hostname, relay
-\IP{}, status, response code, RBL and message id.
+\url{http://www.thesawmill.co.uk/formats/beta_postfix.html} \newline{}
+Fields extracted: from, to, client hostname, client \gls{IP}, relay
+hostname, relay \gls{IP}, status, response code, RBL and message id.
 
 Even if the three data sets were linked together Sawmill would extract less
 data than \parsername{}, and it does not appear to extract data about
-rejections except when the rejection is caused by a \DNSBL{} check.
+rejections except when the rejection is caused by a \gls{DNSBL} check.
 
 When tested with the \numberOFlogFILES{} test log files it performed
 adequately, though the rate it processed log files at did slow down
@@ -421,7 +426,7 @@ that the log file was copied into a spool directory, doubling the disk
 space usage.  The most suitable test would be to index all the log files in
 a particular directory, but after three hours, numerous futile attempts,
 and reading all the available documentation the author admitted defeat.
-Using the \CLI{} was more successful: invoking the command \newline{}
+Using the \gls{CLI} was more successful: invoking the command \newline{}
 \tab{} \texttt{splunk find logs }\textit{log-directory\/}\newline{} added
 40 of the \numberOFlogFILES{} log files to the queue for indexing.
 Repeated attempts enqueued the same 40 log files, without explaining why
@@ -432,9 +437,9 @@ or may not be a useful feature for \parsername{}.} There did not appear to
 be an option to order the log files to ensure they would be processed in
 the order they were created, though this may not be necessary or beneficial
 with Splunk.  Subsequently the author was successful in adding a single
-file at a time using the \CLI{}; a simple loop to add all desired log files
-was sufficient to index all files.  Splunk will periodically check all
-those files for updates unless they are manually removed from its list;
+file at a time using the \gls{CLI}; a simple loop to add all desired log
+files was sufficient to index all files.  Splunk will periodically check
+all those files for updates unless they are manually removed from its list;
 this may or may not be useful behaviour.  Splunk did not appear to have any
 difficulty in parsing the log files, once instructed to do so.
 \parsername{} parses the logs it is instructed to parse, in the order
@@ -461,19 +466,20 @@ Typical log file sizes for a small scale mail server are given in
 
 When parsing Postfix log files Splunk extracts some standard fields: to and
 from addresses, HELO hostname, time and date, the host the log files were
-generated on, and protocol (\SMTP{} or \ESMTP{}).  It parses the standard
-syslog fields at the beginning of the log line, and extracts any
-\texttt{key=<value>} pairs occurring after the standard syslog prologue;
-these pairs are the fields listed above.  Searches can be based on the
-extracted fields or the full text of the log line.  \parsername{} extracts
-noticeably more data, though it does not make the full text of the line
-available, and the full power of \SQL{} is available when searching,
-allowing the user to search on arbitrarily complicated conditions.
+generated on, and protocol (\gls{SMTP} or \gls{ESMTP}).  It parses the
+standard syslog\glsadd{syslog} fields at the beginning of the log line, and
+extracts any \texttt{key=<value>} pairs occurring after the standard syslog
+prologue; these pairs are the fields listed above.  Searches can be based
+on the extracted fields or the full text of the log line.  \parsername{}
+extracts noticeably more data, though it does not make the full text of the
+line available, and the full power of \gls{SQL} is available when
+searching, allowing the user to search on arbitrarily complicated
+conditions.
 
 Splunk is a generic tool, so it lacks any Postfix specific support over and
 above extracting the \texttt{key=<value>} fields from a log line; most
 importantly it makes no attempt to correlate log lines by queueid or
-\pid{}, or to handle any of the myriad complications discussed in
+\gls{pid}, or to handle any of the myriad complications discussed in
 \sectionref{complications}.  Some additional Postfix reports are supposedly
 available at \url{http://www.splunkbase.com/}, but the author was unable to
 find Postfix reports, or additional reports for any other log file types.
@@ -540,20 +546,20 @@ XXX FINISH THIS\@.
 
 AWStats will produce simple graphs for many different services, but
 supporting many different services without special purpose code limits its
-functionality.  The data it will extract from an \MTA{} log file is limited
-in comparison to \parsername{}: \newline{} \tab{} time2, email, email\_r,
-host, host\_r, method, url, code, and bytesd.\newline{} XXX WHAT FIELDS ARE
-MISSING\@?  There does not seem to be an explanation of any of those fields
-in the documentation (\parsername{} provides copious documentation).
-AWStats coerces Postfix log files into Apache\footnote{The Apache web
-server is the most popular HTTP server in use over the past 10 years; more
-information is available at \url{http://httpd.apache.org/}.} format log
-files, for analysis by AWStats' HTTP log file parser.  The converting
-parser only deals with a small portion of the log lines generated by
-Postfix, silently skipping those it cannot deal with, and does not
-distinguish between different types of rejection; it would be a lot of work
-to extend it to handle new log lines.  Although it does correlate log lines
-by queueid (not by pid), it does not deal with any of the other
+functionality.  The data it will extract from an \gls{MTA} log file is
+limited in comparison to \parsername{}: \newline{} \tab{} time2, email,
+email\_r, host, host\_r, method, url, code, and bytesd.\newline{} XXX WHAT
+FIELDS ARE MISSING\@?  There does not seem to be an explanation of any of
+those fields in the documentation (\parsername{} provides copious
+documentation).  AWStats coerces Postfix log files into Apache\footnote{The
+Apache web server is the most popular HTTP server in use over the past 10
+years; more information is available at \url{http://httpd.apache.org/}.}
+format log files, for analysis by AWStats' HTTP log file parser.  The
+converting parser only deals with a small portion of the log lines
+generated by Postfix, silently skipping those it cannot deal with, and does
+not distinguish between different types of rejection; it would be a lot of
+work to extend it to handle new log lines.  Although it does correlate log
+lines by queueid (not by pid), it does not deal with any of the other
 complications described in \sectionref{complications}.  AWStats supports
 saving data but the format of the saved data is not documented, as far as
 the author could tell.  It also supports reading compressed log files, but
@@ -577,7 +583,7 @@ calendar month, showing:
     \item The average number of mails accepted by the server per-day and
         per-hour.
 
-    \item A summary of the \SMTP{} codes used when rejecting delivery
+    \item A summary of the \gls{SMTP} codes used when rejecting delivery
         attempts.
 
 \end{itemize}
@@ -659,8 +665,8 @@ optimisation, testing or understanding of restrictions.  YAALA's Postfix
 parser does not deal with the complications explained in
 \sectionref{complications}, though it does correlate log lines by queueid.
 
-YAALA provides a mini-language based on \SQL{} that is used when generating
-reports; sample reports can be seen
+YAALA provides a mini-language based on \gls{SQL} that is used when
+generating reports; sample reports can be seen
 at~\url{http://www.yaala.org/samples.html}.  Example query for HTTP proxy
 servers: \newline{} \tab{} \texttt{requests BY file WHERE host =\~{}
 Google} \newline{} The mini-language is quite limited and cannot be used to
@@ -704,9 +710,9 @@ extract data for use in other tools.
 \noindent{}\url{http://logreport.org/lire.html} \newline{}
 (Last checked 2008/04/29.)
 
-Lire is a general purpose log parser supporting many different types of log
-file.  The data extracted by its Postfix parser is shown in the quote
-above; notably rejections are not mentioned or dealt with, and unlike
+Lire is a general purpose log file parser supporting many different types
+of log file.  The data extracted by its Postfix parser is shown in the
+quote above; notably rejections are not mentioned or dealt with, and unlike
 \parsername{} there is no facility to extend the parser.  It supports
 multiple output formats for generated reports (text, HTML, PDF, and Excel
 95) but the reports do not appear to be customisable; \parsername{} does
@@ -715,13 +721,13 @@ Pflogsumm, and is considerable harder to configure.  Lire supports saving
 extracted data for later report generation, but accessing this data from
 another application is undocumented; given the source code it should be
 possible, with enough time and effort, to understand the format.
-\parsername{} uses an \SQL{} database to make accessing the extracted data
-as easy as possible.  
+\parsername{} uses an \gls{SQL} database to make accessing the extracted
+data as easy as possible.  
 
 Like AWStats and Logrep, Lire attempts to correlate log lines by queueid,
-but not by \pid{}, so the complete list of recipients for a mail should be
-available; however its parser extracts only part of the available data and
-makes no attempt to deal with the other complications described in
+but not by \gls{pid}, so the complete list of recipients for a mail should
+be available; however its parser extracts only part of the available data
+and makes no attempt to deal with the other complications described in
 \sectionref{complications}.  When testing Lire on the \numberOFlogFILES{}
 test log files it performed reasonably well, producing summaries of: 
 
@@ -773,7 +779,7 @@ XXX WHAT FIELDS ARE MISSING\@?
     \item For mail sent and received: from address, size, and time and
         date.
 
-    \item For mail sent: to addresses, \SMTP{} code, and delay.
+    \item For mail sent: to addresses, \gls{SMTP} code, and delay.
 
     \item For mail received: the hostname of the sender.
 
@@ -781,9 +787,9 @@ XXX WHAT FIELDS ARE MISSING\@?
 
 It also counts the number of log lines parsed and skipped.  Log lines are
 correlated based on the queueid (referred to as sessionname [sic] within
-Logrep), but not by \pid{}.  The parsing is error prone: empty fields are
-saved when the log line does not match the regex, though it appears that
-they will not overwrite existing data.  Most notably rejections are
+Logrep), but not by \gls{pid}.  The parsing is error prone: empty fields
+are saved when the log line does not match the regex, though it appears
+that they will not overwrite existing data.  Most notably rejections are
 completely ignored, making it unsuitable for the purposes of this project.
 It does not try to address any of the complications in
 \sectionref{complications} except for correlating by queueid.
@@ -791,11 +797,11 @@ It does not try to address any of the complications in
 Logrep does not come with any documentation, though some scant
 documentation is available on its website (\parsername{} provides copious
 documentation).  It requires a web browser to interact with it, so
-automated log processing will be difficult, whereas automated processing is
-a key part of \parsernames{} design.  Sadly all the author's attempts to
-use Logrep failed, as it was unable to access the log files selected; this
-appears to be a bug rather than operator error.  If it was caused by
-operator error, the interface needs improvement as the (minimal)
+automated log file processing will be difficult, whereas enabling automated
+processing is a key part of \parsernames{} design.  Sadly all the author's
+attempts to use Logrep failed, as it was unable to access the log files
+selected; this appears to be a bug rather than operator error.  If it was
+caused by operator error, the interface needs improvement as the (minimal)
 instructions were followed as closely as possible, and multiple attempts
 were made.  As parsing failed it was not possible to review the reports
 Logrep can generate (available in HTML only), or to examine the
@@ -809,9 +815,9 @@ writing does not work properly.
 
 \subsection{Summary}
 
-There are other programs available which perform basic Postfix log parsing
-(some to a greater level of detail than others), but few attempt to
-correlate log lines by queueid (none correlate by \pid{}) to produce an
+There are other programs available which perform basic Postfix log file
+parsing (some to a greater level of detail than others), but few attempt to
+correlate log lines by queueid (none correlate by \gls{pid}) to produce an
 overall record of the journey of each mail through Postfix.  None of the
 reviewed parsers collect the breadth of information gathered by
 \parsername{}, or make it as easy to extend the parser to handle new log
@@ -840,7 +846,7 @@ understanding of Postfix log files achieved by \parsername{}.
         Parser          & Parsed test   & Data              & Custom            & Documentation  & Source \\
                         & log files?    & store?            & reports?          & quality?       & code?  \\
         \tableline{}%
-        \LMA{}          & No            & Yes               & No                & Poor           & Yes    \\ 
+        \gls{LMA}          & No            & Yes               & No                & Poor           & Yes    \\ 
         Pflogsumm       & Yes           & No                & Partial \dag{}    & Good           & Yes    \\
         Sawmill         & Yes           & Yes               & Searches          & Reasonable     & No     \\
         Splunk          & Yes           & Yes               & Searches          & Abundant       & No     \\

@@ -28,12 +28,6 @@
 % it does reduce the space between numbers.
 \usepackage{cite}
 
-% Acronyms and glossary entries.
-% global=true prevents acronyms being expanded twice
-\usepackage[global=true,acronym=true,style=altlist,number=none,toc=true]{glossary}
-\makeglossary{}
-\makeacronym{}
-
 % Embed SVN Id etc.
 \usepackage{svn}
 
@@ -107,6 +101,11 @@
     final       = true,
     pdfborder   = {0 0 0},
 }
+
+% Acronyms and glossary entries.
+\usepackage[acronym,toc,numberedsection]{glossaries}
+\newglossary[plg]{postfix}{pin}{pout}{Postfix Daemons}
+\makeglossaries{}
 
 %\setlength{\floatsep}{0pt}
 %\setlength{\intextsep}{0pt}
@@ -200,20 +199,14 @@
 }
 
 % The name of the program, so I only have to change it in one place.
-\newcommand{\parsername}{\PLP{}}
-\newcommand{\parsernames}{\PLP{}'s}
+\newcommand{\parsername}{\gls{PLP}}
+\newcommand{\parsernames}{\gls{PLP}'s}
 
 % This keeps hyperref fairly happy about the Abstract entry in the table of
 % contents.
 \newcounter{dummy}
 
 \begin{document}
-
-% Pull in the acronyms early, so they can be used throughout the text.
-\input{logparser-acronyms.tex}
-
-% WSUIPA fonts.
-\input{ipamacs}
 
 \title{Parsing Postfix log files}
 \author{John Tobin \\ School of Computer Science and Statistics \\
@@ -252,20 +245,13 @@ XXX CHECK ALL ``UNINTERESTING'' RULES TO SEE IF THEY COULD BE USED\@.
 
 XXX WOULD TABLES LOOK BETTER IF CAPTIONS WERE LEFT-ALIGNED\@?
 
-XXX SWITCH TO NEW GLOSSARY PACKAGE\@.
-
-XXX IS IT POSSIBLE TO HAVE ACRONYMS THAT ARE NOT INCLUDED IN THE ACRONYM
-LIST\@?
-
 XXX REDUCE THE LIST OF ACRONYMS\@.
-
-XXX CHECK THAT I SAY log line AND log file EVERYWHERE\@.
 
 XXX CHECK YEARS FOR BIBLIOGRAPHY ENTRIES\@.
 
-XXX IMPROVE BIBLIOGRAPHY APPEARANCE\@: NAMES LOOK UGLY (E.G.\ P.\ \empty{}.\
-Porters), URL SPACING IS MESSED UP --- URLS \\SHOULD PROBABLY BE LAST, ON THEIR
-OWN LINE\@.
+XXX IMPROVE BIBLIOGRAPHY APPEARANCE\@: NAMES LOOK UGLY (E.G.\ P.\
+\empty{}.\ Porters), URL SPACING IS MESSED UP --- URLS \\SHOULD PROBABLY BE
+LAST, ON THEIR OWN LINE\@.
 
 \newpage
 \tableofcontents
@@ -273,16 +259,25 @@ OWN LINE\@.
 \listoftables
 
 \newpage
-\input{logparser-introduction.tex}
-\input{logparser-background.tex}
-\input{logparser-other-parsers-review.tex}
-\input{logparser-architecture.tex}
-\input{logparser-implementation.tex}
-\input{logparser-results.tex}
-\input{logparser-conclusion.tex}
+
+% Pull in the acronyms early, so they can be used throughout the text.
+\input{logparser-acronyms}
+\input{logparser-glossary}
+\input{logparser-postfix-daemons}
+\glsaddall[types={postfix}]
+
+% WSUIPA fonts.
+\input{ipamacs}
+
+\input{logparser-introduction}
+\input{logparser-background}
+\input{logparser-other-parsers-review}
+\input{logparser-architecture}
+\input{logparser-implementation}
+\input{logparser-results}
+\input{logparser-conclusion}
 
 \appendix
-
 
 %\bibliographystyle{logparser-bibliography-style}
 \bibliographystyle{sgai-2008-elsevier}
@@ -292,16 +287,12 @@ OWN LINE\@.
 % Redefine the command used to produce the glossary title, because the
 % default command produces an unnumbered section whereas I want a numbered
 % section.
-XXX MOVE POSTFIX DAEMONS INTO A SEPARATE SECTION\@; NEED TO SWITCH TO NEW
-GLOSSARY PACKAGE FIRST\@.
-\renewcommand{\glossarytitle}{\section{Glossary}\label{Glossary}}
-\printglossary{}
+%\renewcommand{\glossarytitle}{\section{Glossary}\label{Glossary}}
+\label{Glossary}
+\printglossaries{}
 % Redefine the command a second time to produce acronyms instead of a
 % glossary.
-\renewcommand{\glossarytitle}{\section{Acronyms}\label{Acronyms}}
-\printacronym{}
+%\renewcommand{\glossarytitle}{\section{Acronyms}\label{Acronyms}}
+%\printacronym{}
 
-\input{logparser-glossary.tex}
-% logparser-acronyms.tex has been included in the preamble so that the
-% commands are available throughout the text.
 \end{document}

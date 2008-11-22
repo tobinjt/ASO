@@ -1,143 +1,297 @@
 % % vim: set textwidth=75 spell :
+% Note: every acronym is listed twice: once so it can be expanded, and once
+% so it will appear with a long description in the glossary.
 % Warning: do not use acronyms within definitions, they do not work
 % properly.
 
-\newacronym{PLP}{Postfix Log Parser}{description={
-    Postfix Log Parser is the parser implementing the algorithm described
-    in this thesis.
-}}
+\newglossaryentry{PLP}{
+    type=\acronymtype,
+    name={PLP},
+    description={Postfix Log Parser\glsadd{PLP glossary}}
+}
+\newglossaryentry{PLP glossary}{
+    name={Postfix Log Parser},
+    description={
+        Postfix Log Parser is the parser implementing the algorithm
+        described in this thesis.
+    }
+}
 
-\newacronym{DNSBL}{DNS Blacklist}{description={
-    A DNS Blacklist~\cite{Wikipedia-DNSBL} is a simple collaborative
-    anti-spam technique used to reject or penalise email sent from mail
-    servers reported to have sent large volumes of spam.  To use a DNSBL
-    the mail server makes a DNS request incorporating the IP address of the
-    client; if the requested hostname exists the client is on the DNSBL,
-    and the mail server can decide what course of action to take.
-}}
+\newglossaryentry{DNSBL}{
+    type=\acronymtype,
+    name={DNSBL},
+    description={DNS Blacklist\glsadd{DNSBL glossary}}
+}
+\newglossaryentry{DNSBL glossary}{
+    name={DNS Blacklist},
+    description={
+        A DNS Blacklist~\cite{Wikipedia-DNSBL} is a simple collaborative
+        anti-spam technique used to reject or penalise email sent from mail
+        servers reported to have sent large volumes of spam.  To use a
+        DNSBL the mail server makes a DNS request incorporating the IP
+        address of the client; if the requested hostname exists the client
+        is on the DNSBL, and the mail server can decide what course of
+        action to take.
+    }
+}
 
-\newacronym{API}{Application Programming Interface}{description={
-    One of the fundamental concepts when writing programs is the reuse of
-    existing code, so that each program does not reinvent the wheel.  When
-    a body of code is intended to be reused repeatedly, the user of this
-    code needs to be informed of the functionality provided by the code.
-    An API defines the interface provided to the user, and acts as a
-    contract between the user and the provider: if the user adheres to the
-    API the provider guarantees it will work, but is free to change the
-    implementation provided the API is preserved.
-}}
+\newglossaryentry{API}{
+    type=\acronymtype,
+    name={API},
+    description={Application Programming Interface\glsadd{API glossary}}
+}
+\newglossaryentry{API glossary}{
+    name={Application Programming Interface},
+    description={
+        One of the fundamental concepts when writing programs is the reuse
+        of existing code, so that each program does not reinvent the wheel.
+        When a body of code is intended to be reused repeatedly, the user
+        of this code needs to be informed of the functionality provided by
+        the code.  An API defines the interface provided to the user, and
+        acts as a contract between the user and the provider: if the user
+        adheres to the API the provider guarantees it will work, but is
+        free to change the implementation provided the API is preserved.
+    }
+}
 
-\newacronym{SMTP}{Simple Mail Transfer Protocol}{description={
-    SMTP is the protocol that transfers mail from the sender to the
-    recipient across the Internet.  It is a simple, human readable, plain
-    text protocol, making it quite simple to test and debug problems with
-    it.  A detailed description of \SMTP{} is beyond the scope of this
-    document: the original protocol definition is \RFC{}~821~\cite{RFC821},
-    updated in \RFC{}~2821~\cite{RFC2821}; introductory guides can be found
-    at~\cite{smtp-intro-01,smtp-intro-02}.
-}}
+\newglossaryentry{SMTP}{
+    type=\acronymtype,
+    name={SMTP},
+    description={Simple Mail Transfer Protocol\glsadd{SMTP glossary}}
+}
+\newglossaryentry{SMTP glossary}{
+    name={Simple Mail Transfer Protocol},
+    description={
+        SMTP is the protocol that transfers mail from the sender to the
+        recipient across the Internet.  It is a simple, human readable,
+        plain text protocol, making it quite simple to test and debug
+        problems with it.  A detailed description of SMTP is beyond the
+        scope of this document: the original protocol definition is
+        RFC~821~\cite{RFC821}, updated in RFC~2821~\cite{RFC2821};
+        introductory guides can be found
+        at~\cite{smtp-intro-01,smtp-intro-02}.
+    }
+}
 
-\newacronym{LMTP}{Local Mail Transfer Protocol}{description={
-    LMTP is a protocol derived from SMTP that removes the need for the
-    server to maintain a mail delivery queue, instead relying on the client
-    to maintain it.  Typically the client is an MTA, and the server a
-    delivery agent or a mail store.  Full details are available
-    in~\cite{lmtp-rfc}.
-}}
+\newglossaryentry{LMTP}{
+    type=\acronymtype,
+    name={LMTP},
+    description={Local Mail Transfer Protocol\glsadd{LMTP glossary}}
+}
+\newglossaryentry{LMTP glossary}{
+    name={Local Mail Transfer Protocol},
+    description={
+        LMTP is a protocol derived from SMTP that removes the need for the
+        server to maintain a mail delivery queue, instead relying on the
+        client to maintain it.  Typically the client is an MTA, and the
+        server a delivery agent or a mail store.  Full details are
+        available in~\cite{lmtp-rfc}.
+    }
+}
 
-\newacronym{MTA}{Mail Transfer Agent}{description={
-    A Mail Transfer Agent sends and receives mail via SMTP\backslashat{}.
-    Users submit mail to an MTA via their mail client (e.g.\ Microsoft
-    Outlook, Thunderbird, webmail services); the sending MTA transfers the
-    mail to the receiving MTA (which may in turn forward it to another
-    MTA).
-}}
+\newglossaryentry{MTA}{
+    type=\acronymtype,
+    name={MTA},
+    description={Mail Transfer Agent\glsadd{MTA glossary}}
+}
+\newglossaryentry{MTA glossary}{
+    name={Mail Transfer Agent},
+    description={
+        A Mail Transfer Agent sends and receives mail via
+        SMTP\backslashat{}.  Users submit mail to an MTA via their mail
+        client (e.g.\ Microsoft Outlook, Thunderbird, webmail services);
+        the sending MTA transfers the mail to the receiving MTA (which may
+        in turn forward it to another MTA).
+    }
+}
 
-\newacronym{RFC}{Request For Comments}{description={
-    The Request For Comments series is a series of proposals defining
-    various protocols and file formats, e.g.\ SMTP\backslashat{}.  The name
-    is somewhat misleading: initially the authors were asking for peer
-    review, but these documents are now the de facto standards the Internet
-    runs on.
-}}
+\newglossaryentry{RFC}{
+    type=\acronymtype,
+    name={RFC},
+    description={Request For Comments\glsadd{RFC glossary}}
+}
+\newglossaryentry{RFC glossary}{
+    name={Request For Comments},
+    description={
+        The Request For Comments series is a series of proposals defining
+        various protocols and file formats, e.g.\ SMTP\backslashat{}.  The
+        name is somewhat misleading: initially the authors were asking for
+        peer review, but these documents are now the de facto standards the
+        Internet runs on.
+    }
+}
 
-\newacronym{SQL}{Structured Query Language}{description={
-    SQL is the standard language used for database querying, modification
-    and maintenance.  Some information about SQL, including its history,
-    can be found at \url{http://en.wikipedia.org/wiki/SQL}; a good
-    introduction can be found at \url{http://philip.greenspun.com/sql/}.
-}}
+\newglossaryentry{SQL}{
+    type=\acronymtype,
+    name={SQL},
+    description={Structured Query Language\glsadd{SQL glossary}}
+}
+\newglossaryentry{SQL glossary}{
+    name={Structured Query Language},
+    description={
+        SQL is the standard language used for database querying,
+        modification and maintenance.  Some information about SQL,
+        including its history, can be found at
+        \url{http://en.wikipedia.org/wiki/SQL}; a good introduction can be
+        found at \url{http://philip.greenspun.com/sql/}.
+    }
+}
 
-\newacronym{LMA}{Log Mail Analyzer}{description={
-    One of the other Postfix log parsers reviewed and the only example of
-    prior published paper~\cite{log-mail-analyser} found that specifically
-    deals with parsing Postfix log files.
-}}
+\newglossaryentry{LMA}{
+    type=\acronymtype,
+    name={LMA},
+    description={Log Mail Analyzer\glsadd{LMA glossary}}
+}
+\newglossaryentry{LMA glossary}{
+    name={Log Mail Analyzer},
+    description={
+        One of the other Postfix log file parsers reviewed and the only
+        example of prior published paper~\cite{log-mail-analyser} found
+        that specifically deals with parsing Postfix log files.
+    }
+}
 
-\newacronym{CSV}{Comma-Separated Value}{description={
-    The most basic form of database available, each record is a single line
-    in the file and the fields are separated by a special character,
-    typically a comma or colon.
-}}
+\newglossaryentry{CSV}{
+    type=\acronymtype,
+    name={CSV},
+    description={Comma-Separated Value\glsadd{CSV glossary}}
+}
+\newglossaryentry{CSV glossary}{
+    name={Comma-Separated Value},
+    description={
+        The most basic form of database available, each record is a single
+        line in the file and the fields are separated by a special
+        character, typically a comma or colon.
+    }
+}
 
 
-\newacronym{FQDN}{Fully Qualified Domain Name}{description={
-    An FQDN is a hostname plus domain name, e.g.\ \newline{}
-        example.com     is a domain name          \newline{}
-        www             is a hostname             \newline{}
-        www.example.com is a FQDN
-}}
+\newglossaryentry{FQDN}{
+    type=\acronymtype,
+    name={FQDN},
+    description={Fully Qualified Domain Name\glsadd{FQDN glossary}}
+}
+\newglossaryentry{FQDN glossary}{
+    name={Fully Qualified Domain Name},
+    description={
+        An FQDN is a hostname plus domain name, e.g.\ \newline{}
+            example.com     is a domain name          \newline{}
+            www             is a hostname             \newline{}
+            www.example.com is a FQDN
+    }
+}
 
-\newacronym{pid}{Process Identifier}{description={
-    There may be multiple copies of any program executing at any one time,
-    so the program's name is not suitable as a distinguishing identifier;
-    instead each process executing is given a pid that is guaranteed to be
-    unique for the lifetime of the process.  Once the process has
-    completed, the pid may be reused, as they are drawn from a finite pool.
-}}
+\newglossaryentry{pid}{
+    type=\acronymtype,
+    name={pid},
+    description={Process Identifier\glsadd{pid glossary}}
+}
+\newglossaryentry{pid glossary}{
+    name={Process Identifier},
+    description={
+        There may be multiple copies of any program executing at any one
+        time, so the program's name is not suitable as a distinguishing
+        identifier; instead each process executing is given a pid that is
+        guaranteed to be unique for the lifetime of the process.  Once the
+        process has completed, the pid may be reused, as they are drawn
+        from a finite pool.
+    }
+}
 
-\newacronym{UCE}{Unsolicited Commercial Email}{description={
-    UCE is a more restrictive definition of spam than most people use: it
-    only covers mail that is explicitly commercial, thus excluding viruses,
-    Bayesian poisoning mails, backscatter, and those annoying chain letters
-    you get from friends.
-}}
+\newglossaryentry{UCE}{
+    type=\acronymtype,
+    name={UCE},
+    description={Unsolicited Commercial Email\glsadd{UCE glossary}}
+}
+\newglossaryentry{UCE glossary}{
+    name={Unsolicited Commercial Email},
+    description={
+        UCE is a more restrictive definition of spam than most people use:
+        it only covers mail that is explicitly commercial, thus excluding
+        viruses, Bayesian poisoning mails, backscatter, and those annoying
+        chain letters you get from friends.
+    }
+}
 
-% I think this is better than having both regex and regexes in the acronym
-% list.  Likewise for pids.
-\newcommand{\pids}{\pid{}s}
+\newglossaryentry{ESMTP}{
+    type=\acronymtype,
+    name={ESMTP},
+    description={Extended SMTP\glsadd{ESMTP glossary}}
+}
+\newglossaryentry{ESMTP glossary}{
+    name={Extended SMTP},
+    description={
+        ESMTP is Extended SMTP, defined in RFC~1869~\cite{RFC1869}.
+    }
+}
 
-\newacronym{ESMTP}{Extended SMTP}{description={
-    ESMTP is Extended SMTP, defined in RFC~1869~\cite{RFC1869}.
-}}
+\newglossaryentry{IP}{
+    type=\acronymtype,
+    name={IP},
+    description={Internet Protocol\glsadd{IP glossary}}
+}
+\newglossaryentry{IP glossary}{
+    name={Internet Protocol},
+    description={
+        The Internet Protocol is the protocol used to communicate between
+        computers on the Internet.  An IP address is a unique address
+        assigned to a computer on the Internet, allowing it to communicate
+        with other computers on the Internet.
+    }
+}
 
-\newacronym{IP}{Internet Protocol}{description={
-    The Internet Protocol is the protocol used to communicate between
-    computers on the Internet.  An IP address is a unique address assigned
-    to a computer on the Internet, allowing it to communicate with other
-    computers on the Internet.
-}}
+\newglossaryentry{SLCT}{
+    type=\acronymtype,
+    name={SLCT},
+    description={Simple Logfile Clustering Tool\glsadd{SLCT glossary}}
+}
+\newglossaryentry{SLCT glossary}{
+    name={Simple Logfile Clustering Tool},
+    description={
+        SLCT~\cite{slct-paper} is a tool implementing an algorithm designed
+        by Risto Vaarandi for identifying, grouping and producing a regex
+        to match similar log lines.
+    }
+}
 
-\newacronym{SLCT}{Simple Logfile Clustering Tool}{description={
-    SLCT~\cite{slct-paper} is a tool implementing an algorithm designed by
-    Risto Vaarandi for identifying, grouping and producing a regex to match
-    similar log lines.
-}}
+\newglossaryentry{ATN}{
+    type=\acronymtype,
+    name={ATN},
+    description={Augmented Transition Networks\glsadd{ATN glossary}}
+}
+\newglossaryentry{ATN glossary}{
+    name={Augmented Transition Networks},
+    description={
+        Originally described in~\cite{atns} and further in~\cite{nlpip},
+        Augmented Transition Networks are a tool used in Computational
+        Linguistics for creating grammars to parse or generate sentences,
+    }
+}
 
-\newacronym{ATN}{Augmented Transition Networks}{description={
-    Augmented Transition Networks, originally described in~\cite{atns} and
-    further in~\cite{nlpip}, are a tool used in Computational Linguistics
-    for creating grammars to parse or generate sentences,
-}}
+\newglossaryentry{CLI}{
+    type=\acronymtype,
+    name={CLI},
+    description={Command Line Interface\glsadd{CLI glossary}}
+}
+\newglossaryentry{CLI glossary}{
+    name={Command Line Interface},
+    description={
+        An computer interface based on typing commands, rather than using a
+        mouse.
+    }
+}
 
-\newacronym{CLI}{Command Line Interface}{description={
-    An computer interface based on typing commands, rather than using a
-    mouse.
-}}
-
-\newacronym{NLP}{Natural Language Processing}{description={
-    Natural Language Processing~\cite{Wikipedia-nlp} attempts to increase
-    our understanding of the languages normally used by humans (e.g.\
-    English, Spanish, Japanese), with the goal of writing programs that
-    can understand human languages.
-}}
+\newglossaryentry{NLP}{
+    type=\acronymtype,
+    name={NLP},
+    description={Natural Language Processing\glsadd{NLP glossary}}
+}
+\newglossaryentry{NLP glossary}{
+    name={Natural Language Processing},
+    description={
+        Natural Language Processing~\cite{Wikipedia-nlp} attempts to
+        increase our understanding of the languages normally used by humans
+        (e.g.\ English, Spanish, Japanese), with the goal of writing
+        programs that can understand human languages.
+    }
+}

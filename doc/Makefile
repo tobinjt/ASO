@@ -156,8 +156,10 @@ build_run:
 	# The source files change between different runs; it seems that including
 	# the output files causes the source files to change on the next latex run.
 	# I haven't investigated much further, I don't really care.
-	make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.glg" OUTPUT="${BASENAME}.gls" INPUT="${BASENAME}.glo"
-	make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.alg" OUTPUT="${BASENAME}.acn" INPUT="${BASENAME}.acr"
+	#make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.glg" OUTPUT="${BASENAME}.gls" INPUT="${BASENAME}.glo"
+	#make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.alg" OUTPUT="${BASENAME}.acn" INPUT="${BASENAME}.acr"
+	# XXX FIX THIS SO IT DOESN'T RUN UNNECESSARILY
+	makeglossaries `basename "${SOURCE}" .tex`
 	# The next time latex is run it will include the new glossary and acronyms 
 	# if they've changed.
 

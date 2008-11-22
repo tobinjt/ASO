@@ -36,9 +36,9 @@ assumptions:
 \begin{itemize}
 
     \item The log files are whole and complete: nothing has been removed,
-        either deliberately or accidentally (e.g.\ log rotation gone awry,
-        file system filling up, logging system unable to cope with the
-        volume of log messages).  On a well run system it is extremely
+        either deliberately or accidentally (e.g.\ log file rotation gone
+        awry, file system filling up, logging system unable to cope with
+        the volume of log messages).  On a well run system it is extremely
         unlikely that any of these problems will arise, though it is of
         course possible, particularly when suffering a deluge of spam or a
         mail loop.
@@ -58,8 +58,8 @@ assumptions:
 \end{itemize}
 
 In some ways this task is similar to reverse engineering or replicating a
-black box program based solely on its inputs and outputs.  There are advantages to
-treating Postfix as a black box during parser development:
+black box program based solely on its inputs and outputs.  There are
+advantages to treating Postfix as a black box during parser development:
 
 \begin{itemize}
 
@@ -223,8 +223,8 @@ The following attributes are defined for each rule:
         (described in \sectionref{overlapping rules}).
 
 %    \item [cluster\_group] A reference to the \texttt{cluster\_group}
-%        table.  That table is used by the Decision Tree algorithm described
-%        in a separate document.
+%        table.  That table is used by the Decision Tree algorithm
+%        described in a separate document.
 
 \end{eqlist}
 
@@ -287,33 +287,34 @@ fields:
 
     \item [id] This field uniquely identifies the row.
 
-    \item [server\_ip] The \IP{} address (IPv4 or IPv6) of the server: the
-        local address when receiving mail, the remote address when sending
-        mail.
+    \item [server\_ip] The \gls{IP} address (IPv4 or IPv6) of the server:
+        the local address when receiving mail, the remote address when
+        sending mail.
 
     \item [server\_hostname] The hostname of the server, it will be
-        \texttt{unknown} if the \IP{} address could not be resolved to a
+        \texttt{unknown} if the \gls{IP} address could not be resolved to a
         hostname via DNS\@.
 
-    \item [client\_ip] The client \IP{} address (IPv4 or IPv6): the remote
-        address when receiving mail, the local address when sending mail.
+    \item [client\_ip] The client \gls{IP} address (IPv4 or IPv6): the
+        remote address when receiving mail, the local address when sending
+        mail.
 
     \item [client\_hostname] The hostname of the client, it will be
-        \texttt{unknown} if the \IP{} address could not be resolved to a
+        \texttt{unknown} if the \gls{IP} address could not be resolved to a
         hostname via DNS\@.
 
     \item [helo] The hostname used in the HELO command.  The HELO hostname
         occasionally changes during a connection, presumably because spam
         or virus senders think it is a good idea.  By default Postfix only
-        logs the HELO hostname when it rejects an \SMTP{} command, but it
-        is quite simple to rectify this, as described in
+        logs the HELO hostname when it rejects an \gls{SMTP} command, but
+        it is quite simple to rectify this, as described in
         \sectionref{logging helo}.
 
     \item [queueid] The queueid of the mail if the connection represents an
         accepted mail, or \texttt{NOQUEUE} otherwise.
 
     \item [start] The timestamp of the first log line, in seconds since the
-        epoch (explained in the glossary, \sectionref{Glossary}).
+        epoch.\glsadd{Epoch}
 
     \item [end] The timestamp of the last log line, in seconds since the
         epoch.
@@ -340,20 +341,20 @@ connection, and there may be many results per connection.
     \item [id] A unique identifier for this result.
 
     \item [warning] Postfix can be configured to log a warning instead of
-        enforcing a restriction that would reject an \SMTP{} command --- a
-        mechanism that is quite useful for testing new restrictions.  This
-        field will be 1 if the log line parsed was a warning rather than a
-        real rejection, or 0 for a real rejection.  This field should be
-        ignored if the result is not a rejection, i.e.\ the action field of
-        the associated rule is not \texttt{REJECTION}.
+        enforcing a restriction that would reject an \gls{SMTP} command ---
+        a mechanism that is quite useful for testing new restrictions.
+        This field will be 1 if the log line parsed was a warning rather
+        than a real rejection, or 0 for a real rejection.  This field
+        should be ignored if the result is not a rejection, i.e.\ the
+        action field of the associated rule is not \texttt{REJECTION}.
 
-    \item [smtp\_code] The \SMTP{} code associated with the log line.  In
-        general an \SMTP{} code is only present in a log line for a
-        rejection or final delivery; results initially missing an \SMTP{}
-        code will duplicate the \SMTP{} code of other results in that
-        connection.  Some final delivery log lines do not contain an
-        \SMTP{} code: in those cases the code is specified by the rule,
-        based on the success or failure represented by the log line.
+    \item [smtp\_code] The \gls{SMTP} code associated with the log line.
+        In general an \gls{SMTP} code is only present in a log line for a
+        rejection or final delivery; results initially missing an
+        \gls{SMTP} code will duplicate the \gls{SMTP} code of other results
+        in that connection.  Some final delivery log lines do not contain
+        an \gls{SMTP} code: in those cases the code is specified by the
+        rule, based on the success or failure represented by the log line.
 
     \item [sender] The sender's email address.  Because multiple mails may
         be delivered during one connection, there may be different sender
@@ -372,10 +373,10 @@ connection, and there may be many results per connection.
         \texttt{NULL} if no mail was accepted.
 
     \item [data] A field available for anything not covered by other
-        fields, e.g.\ the rejection message from a \DNSBL{}\@.
+        fields, e.g.\ the rejection message from a \gls{DNSBL}\@.
 
     \item [timestamp] The time at which the log line was logged, in seconds
-        since the epoch.
+        since the epoch.\glsadd{Epoch}
 
 \end{eqlist}
 
@@ -477,22 +478,22 @@ connections tables.
 
 The log files produced by Postfix differ from installation to installation,
 because administrators have the freedom to choose the subset of available
-restrictions which suits their needs, including using different \DNSBL{}
+restrictions which suits their needs, including using different \gls{DNSBL}
 services, policy servers, or custom rejection messages.  To facilitate
 parsing new log lines, the parser's design separates parsing rules from
 parsing actions: adding new actions can be difficult, but adding new rules
 to parse new rejection messages is trivial, and occurs much more
 frequently.  A program is provided to ease the process of creating new
 rules from unparsed log lines, based on the algorithm developed by Risto
-Vaarandi for his \SLCT{}~\cite{slct-paper}.  The differences between the
+Vaarandi for his \gls{SLCT}~\cite{slct-paper}.  The differences between the
 two algorithms will be outlined as part of the general explanation below.
 
-The core of the \SLCT{} algorithm is quite simple: log lines are generally
-created by substituting variable words into a fixed pattern, and analysis
-of the frequency with which each word occurs can be used to determine
-whether the word is variable or part of the fixed pattern.  This
-classification can be used to group similar log lines and generate a
-regex to match each group of log lines.
+The core of the \gls{SLCT} algorithm is quite simple: log lines are
+generally created by substituting variable words into a fixed pattern, and
+analysis of the frequency with which each word occurs can be used to
+determine whether the word is variable or part of the fixed pattern.  This
+classification can be used to group similar log lines and generate a regex
+to match each group of log lines.
 
 There are 4 steps in the algorithm:
 
@@ -501,7 +502,7 @@ There are 4 steps in the algorithm:
     \item [Pre-process the file]  The new algorithm leverages the knowledge
         gained when writing rules and performs a large number of
         substitutions on the input log lines, replacing commonly occurring
-        variable terms (e.g.\ email addresses, \IP{} addresses, the
+        variable terms (e.g.\ email addresses, \gls{IP} addresses, the
         standard start of rejection messages, etc.) with regex keywords
         that the parser will expand when it loads the rule (see the
         regex entry in \sectionref{rule attributes}).  The purpose of
@@ -513,13 +514,13 @@ There are 4 steps in the algorithm:
 
         In the original algorithm the purpose of the preprocessing stage
         was to reduce the memory consumption of the program.  In the first
-        pass it generated a hash~\cite{hash-functions} from a small range of values for each word
-        of each log line, incrementing a counter for each hash.  The
-        counters will be used in the next pass to filter out words: if the
-        word's hash does not have a high frequency, the word itself cannot
-        have a high frequency, so there is no need to maintain a counter
-        for it, reducing the number of counters required and thus the
-        program's memory consumption.
+        pass it generated a hash~\cite{hash-functions} from a small range
+        of values for each word of each log line, incrementing a counter
+        for each hash.  The counters will be used in the next pass to
+        filter out words: if the word's hash does not have a high
+        frequency, the word itself cannot have a high frequency, so there
+        is no need to maintain a counter for it, reducing the number of
+        counters required and thus the program's memory consumption.
 
     \item [Calculate word frequencies]  The position of words within a log
         line is important: a word occurring in two lines does not indicate
@@ -625,7 +626,7 @@ XXX IMPROVE HOW THIS LOOKS
 
             \item [program] The name of the program that logged the line.
 
-            \item [pid] The \pid{} of the program that logged the line.
+            \item [pid] The \gls{pid} of the program that logged the line.
 
             \item [text] The remainder of the line.
 
@@ -668,8 +669,8 @@ The actions:
         mail (\sectionref{Re-injected mails}).
 
     \item [CONNECT] Handle a remote client connecting: create a new state
-        table entry (indexed by \daemon{smtpd} \pid{}) and save both the
-        client hostname and \IP{} address.
+        table entry (indexed by \daemon{smtpd} \gls{pid}) and save both the
+        client hostname and \gls{IP} address.
 
     \item [DELETE] Deals with mail deleted using Postfix's administrative
         command \daemon{postsuper}.  This action adds a dummy recipient
@@ -678,7 +679,7 @@ The actions:
         deals with is described fully in \sectionref{Mail deleted before
         delivery is attempted}.  
 
-    \item [DELIVERY\_REJECTED] Deals with Postfix rejecting an \SMTP{}
+    \item [DELIVERY\_REJECTED] Deals with Postfix rejecting an \gls{SMTP}
         command from the remote client: log the rejection with a mail if
         there is a queueid in the log line, or with the connection if not.
 
@@ -758,8 +759,8 @@ The actions:
         or by another parent, and issues appropriate warnings in either
         case.
 
-    \item [UNINTERESTING] This rule just returns successfully; it is used when a
-        line needs to be parsed for completeness but does not either
+    \item [UNINTERESTING] This rule just returns successfully; it is used
+        when a line needs to be parsed for completeness but does not either
         provide any useful data or require anything to be done.
 
 \end{description}
@@ -839,7 +840,7 @@ experience could be summarised as:
 
 \begin{enumerate}
 
-    \item Mail enters the system via \SMTP{} or local submission.
+    \item Mail enters the system via \gls{SMTP} or local submission.
 
     \item If the mail is rejected, save all data and finish.
 
@@ -866,12 +867,12 @@ image}
 XXX SHOULD THESE BE SEPARATE SUBSUBSECTIONS\@?
 
 Everything starts off with a mail entering the system, whether by local
-submission via \daemon{postdrop}, by \SMTP{}, by re-injection due to
+submission via \daemon{postdrop}, by \gls{SMTP}, by re-injection due to
 forwarding, or internally generated by Postfix.  Local submission is the
 simplest case: a queueid is assigned immediately and the sender address is
 logged (action: PICKUP\@; flowchart:~2).
 
-\SMTP{} is more complicated:
+\gls{SMTP} is more complicated:
 
 \begin{enumerate}
 
@@ -879,18 +880,18 @@ logged (action: PICKUP\@; flowchart:~2).
         CONNECT\@; flowchart:~1).
 
     \item This is followed by rejection of sender address, recipient
-        addresses, client \IP{} address or hostname, HELO hostname, etc.\
-        (action: REJECTION\@; flowchart:~4); acceptance of one or more
-        mails (action: CLONE\@; flowchart:~5); or some interleaving of
+        addresses, client \gls{IP} address or hostname, HELO hostname,
+        etc.\ (action: REJECTION\@; flowchart:~4); acceptance of one or
+        more mails (action: CLONE\@; flowchart:~5); or some interleaving of
         both.
 
     \item The client disconnects (action: DISCONNECT\@; flowchart:~6).  If
-        Postfix has rejected any \SMTP{} commands the data will be saved to
-        the database; if not there will not be any data to save (any mails
-        accepted will already have been cloned so their data is in another
-        data structure).
+        Postfix has rejected any \gls{SMTP} commands the data will be saved
+        to the database; if not there will not be any data to save (any
+        mails accepted will already have been cloned so their data is in
+        another data structure).
 
-    \item If one or more mails were accepted there will be more log entries
+    \item If one or more mails were accepted there will be more log lines
         for those mails later, see \sectionref{mail-delivery}.
 
 \end{enumerate}
@@ -1040,8 +1041,9 @@ parser's implementation and guided its design and development.
 \subsubsection{Queueid vs pid}
 
 The mail lacks a queueid until it has been accepted, so log lines must
-first be correlated by the \daemon{smtpd} \pid{}, then transition to being
-correlated by the queueid.  This is relatively minor, but does require:
+first be correlated by the \daemon{smtpd} \gls{pid}, then transition to
+being correlated by the queueid.  This is relatively minor, but does
+require:
 
 \begin{itemize}
 
@@ -1052,7 +1054,7 @@ correlated by the queueid.  This is relatively minor, but does require:
         and mail.
 
     \item Most importantly: every section of code must know whether it
-        needs to lookup the data structures by \pid{} or queueid.
+        needs to lookup the data structures by \gls{pid} or queueid.
 
 \end{itemize}
 
@@ -1065,11 +1067,11 @@ requires the algorithm to clone the current data as soon as a mail is
 accepted, so that subsequent mails will not trample over each other's data.
 This must be done every time a mail is accepted, as it is impossible to
 tell in advance which connections will accept multiple mails.  Once the
-mail has been accepted its log entries will not be correlated by \pid{} any
-more, its queueid will be used instead (except when timeouts occur during
-the data phase \sectionref{timeouts-during-data-phase}).  If the original
-connection has any useful data (e.g.\ rejections) it will be saved to the
-database when the client disconnects.  One unsolved difficulty is
+mail has been accepted its log lines will not be correlated by \gls{pid}
+any more, its queueid will be used instead (except when timeouts occur
+during the data phase \sectionref{timeouts-during-data-phase}).  If the
+original connection has any useful data (e.g.\ rejections) it will be saved
+to the database when the client disconnects.  One unsolved difficulty is
 distinguishing between different groups of rejections, e.g.\ when dealing
 with the following sequence:
 
@@ -1077,7 +1079,8 @@ with the following sequence:
 
     \item The client attempts to deliver a mail, but it is rejected.
 
-    \item The client issues the RSET command to reset the \SMTP{} session.
+    \item The client issues the RSET command to reset the \gls{SMTP}
+        session.
 
     \item The client attempts to deliver another mail, likewise rejected.
 
@@ -1116,7 +1119,7 @@ Different delivery methods result in different log lines:
 
     \item [Re-injected for forwarding:] forwarded as 56F5B43FD
 
-    \item [Delivered to a remote \SMTP{} server:] 250 Ok: queued as
+    \item [Delivered to a remote \gls{SMTP} server:] 250 Ok: queued as
         BD07D3C49
 
     \item [Local delivery:] delivered to command: /usr/bin/procmail
@@ -1171,16 +1174,16 @@ indications:
     \item Local delivery re-injects the mail and logs a relayed delivery
         rather than delivering directly to a mailbox or program as it
         usually would (action: TRACK\@; flowchart:~10).\footnote{Relayed
-        delivery is performed by the \SMTP{} client; local delivery means
-        local to the server, i.e.\ an address the server is final
+        delivery is performed by the \gls{SMTP} client; local delivery
+        means local to the server, i.e.\ an address the server is final
         destination for.} In this case the mail may already have been
         created (described above) and the unknown origin flag will be
         cleared; if not a new data structure will be created.  In both
         cases the re-injected mail is marked as a child of the original
         mail.  The log line in question is:
 
-        \texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline{}
-        delay=0, status=sent (forwarded as 56F5B43FD)}
+        \texttt{3FF7C4317: to=<username@example.com>, relay=local,
+        \newline{} delay=0, status=sent (forwarded as 56F5B43FD)}
 
         This second indicator always occurs for re-injected mail but
         typically occurs after the first indicator explained above.  This
@@ -1198,7 +1201,7 @@ finally be described:
         whose parent has not yet been identified (action: COMMIT\@;
         flowchart:~15).  Mark the mail as ready for entry in the database
         (flowchart:~16), and wait for the parent to deal with it
-        (flowchart:~17).  The mail should not have subsequent log entries;
+        (flowchart:~17).  The mail should not have subsequent log lines;
         only its parent should refer to it.
 
     \item If the mail is a child mail then it has already been tracked
@@ -1243,11 +1246,11 @@ notifications, and those heuristics are:
 
 \begin{enumerate}
 
-    \item The sender address is \verb!<>!.
+    \item The sender address is \verb!<>!.\glsadd{<>}
 
     \item Neither \daemon{smtpd} nor \daemon{pickup} have logged any
         messages associated with the mail, indicating it was generated
-        internally by Postfix, not accepted via \SMTP{} or submitted
+        internally by Postfix, not accepted via \gls{SMTP} or submitted
         locally by \daemon{postdrop}.
 
     \item The message-id has a specific format: \newline{}
@@ -1276,7 +1279,7 @@ occur the following conditions would have to be met:
 
     \item The mail must have been generated internally by Postfix.
 
-    \item The sender address must be \verb!<>!.
+    \item The sender address must be \verb!<>!.\glsadd{<>}
 
     \item The message-id must have the correct format and match the queueid
         of the mail.  While a mail sent from elsewhere could easily have
@@ -1297,7 +1300,7 @@ This check is performed during the COMMIT action.
 
 \label{aborted-delivery-attempts}
 
-Some mail clients behave unexpectedly during the \SMTP{} dialogue: the
+Some mail clients behave unexpectedly during the \gls{SMTP} dialogue: the
 client aborts the first delivery attempt after the first recipient is
 accepted, then makes a second delivery attempt for the same recipient which
 it continues with until delivery is complete.  Microsoft Outlook is one
@@ -1371,15 +1374,16 @@ aborted delivery attempt and is discarded.  There will be no further
 entries logged for such mails, so without identifying and discarding them
 they accumulate in the state table and will cause clashes if the queueid is
 reused.  The mail cannot be entered in the database as the only data
-available is the client hostname and \IP{} address, but the database schema
-requires many more fields be populated (see \sectionref{connections table}
-and \sectionref{results table}).  This heuristic is quite restrictive, and
-it appears there is little scope for false positives; if there are any
-false positives there will be warnings when the next log line for that mail
-is parsed.  False negatives are less likely to be detected: there may be
-queueid clashes (and warnings) if mails remain in the state tables after
-they should have been removed, otherwise the only way to detect false
-negatives is to examine the state tables after each parsing run.
+available is the client hostname and \gls{IP} address, but the database
+schema requires many more fields be populated (see \sectionref{connections
+table} and \sectionref{results table}).  This heuristic is quite
+restrictive, and it appears there is little scope for false positives; if
+there are any false positives there will be warnings when the next log line
+for that mail is parsed.  False negatives are less likely to be detected:
+there may be queueid clashes (and warnings) if mails remain in the state
+tables after they should have been removed, otherwise the only way to
+detect false negatives is to examine the state tables after each parsing
+run.
 
 This check is performed in the DISCONNECT action; it requires support in
 the CLONE action where a list of cloned connections is maintained.
@@ -1396,7 +1400,7 @@ The checks to identify this happening are:
 
 \begin{itemize}
 
-    \item Is the mail missing its \daemon{cleanup} log message?  Every mail
+    \item Is the mail missing its \daemon{cleanup} log line?  Every mail
         which passes through Postfix will have a \daemon{cleanup} line;
         lack of a \daemon{cleanup} line is a sure sign the mail did not
         make it too far.
@@ -1421,10 +1425,10 @@ These checks are made during the DISCONNECT action.
 
 \label{timeouts-during-data-phase}
 
-The DATA phase of the \SMTP{} conversation is where the headers and body of
-the mail are transferred.  Sometimes there is a timeout or the connection
-is lost\footnote{For brevity's sake \textit{timeout\/} will be used
-throughout this section, but everything applies equally to lost
+The DATA phase of the \gls{SMTP} conversation is where the headers and body
+of the mail are transferred.  Sometimes there is a timeout or the
+connection is lost\footnote{For brevity's sake \textit{timeout\/} will be
+used throughout this section, but everything applies equally to lost
 connections.} during the DATA phase; when this occurs Postfix will discard
 the mail and the parser needs to discard the data associated with that
 mail.  It seems more intuitive to save the mail's data to the database, but
@@ -1612,8 +1616,8 @@ reach a valid combination then entry in the database will proceed,
 otherwise it must be postponed once more.
 
 The list of valid combinations is explained below.  Every mail will
-additionally have log entries from \daemon{cleanup} and \daemon{qmgr}; any
-mail may also have log entries from \daemon{bounce}, \daemon{postsuper}, or
+additionally have log line from \daemon{cleanup} and \daemon{qmgr}; any
+mail may also have log line from \daemon{bounce}, \daemon{postsuper}, or
 both.
 
 XXX WOULD IT BE BETTER TO BEGIN THE EXPLANATIONS ON THE FOLLOWING LINE\@?
@@ -1667,7 +1671,7 @@ delivery attempts described in this section only occur four times in the
 \numberOFlogFILES{} log files used for testing.  The symptoms are the same
 as in \sectionref{aborted-delivery-attempts}, except that there
 \textit{is\/} a \daemon{cleanup} log line; there does not appear to be
-anything in the log file to explain why there are no further log messages.
+anything in the log file to explain why there are no further log lines.
 The only way to detect these mails is to periodically scan all mails in the
 state tables, deleting any mails displaying the following characteristics:
 
@@ -1679,7 +1683,7 @@ state tables, deleting any mails displaying the following characteristics:
 
     \item IS THIS CORRECT NOW\@?  CAN THERE BE MORE smtpd LINES\@?  There
         must be exactly two \daemon{smtpd} and one \daemon{cleanup} log
-        entries for the mail, with no additional log entries.
+        lines for the mail, with no additional log lines.
 
 \end{itemize}
 
@@ -1697,10 +1701,11 @@ Postfix logs the recipient address when delivery of a mail is attempted, so
 if delivery has yet to be attempted the parser cannot determine the
 recipient address or addresses.  This is a problem when mail is arriving
 faster than Postfix can attempt delivery, and the administrator deletes
-some of the mail (because it is the result of a mail loop, mail bomb, or
-joe~job) before Postfix has had a chance to try to deliver it.  In this
-case the recipient address will not have been logged, so a dummy recipient
-address needs to be added, as every mail is required by the database schema
+some of the mail (because it is the result of a mail loop\glsadd{mail
+loop}, mail bomb\glsadd{mail bomb}, or joe~job\glsadd{Joe job}) before
+Postfix has had a chance to try to deliver it.  In this case the recipient
+address will not have been logged, so a dummy recipient address needs to be
+added, as every mail is required by the database schema
 (\sectionref{results table}) to have at least one recipient.  This
 complication has been observed in XXX/\numberOFlogFILES{} log files, but
 typically when it does occur there will be many instances of it, closely
@@ -1785,7 +1790,7 @@ improvements that have been identified in the parser.
 
     \item Each new Postfix release requires new rules to be written or
         existing rules modified to cope with the new or changed log lines.
-        Similarly using a new \DNSBL{}, a new policy server, or new
+        Similarly using a new \gls{DNSBL}, a new policy server, or new
         administrator-defined rejection messages require new rules.
 
     \item The hostname used in the HELO command is not logged if the mail
@@ -1797,7 +1802,8 @@ improvements that have been identified in the parser.
         \begin{enumerate}
 
             \item Create \texttt{/etc/postfix/log\_helo.pcre}
-                containing:\newline{} \tab{}\texttt{/\^/~~~~WARN~Logging~HELO}
+                containing:\newline{}
+                \tab{}\texttt{/\^/~~~~WARN~Logging~HELO}
 
             \item Modify \texttt{smtpd\_data\_restrictions} in
                 \texttt{/etc/postfix/main.cf} to contain:\newline{}
