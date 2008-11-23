@@ -234,9 +234,9 @@ files, to improve its parsing and ensure it correctly parses logs generated
 by later Postfix versions.  A second set of statistics was generated using
 the minimum ruleset and compared to the statistics generated using the full
 ruleset: the percentage parsing time increase when using the full ruleset
-instead of the minimal ruleset for optimal, shuffled and reversed orderings
-is shown in \graphref{Percentage parsing time increase of maximum ruleset
-over minimum ruleset}.
+instead of the minimal ruleset for optimal, shuffled, and reversed
+orderings is shown in \graphref{Percentage parsing time increase of maximum
+ruleset over minimum ruleset}.
 
 \showgraph{build/graph-full-ruleset-vs-minimum-ruleset}{Percentage parsing
 time increase of maximum ruleset over minimum ruleset}{Percentage parsing
@@ -496,7 +496,7 @@ evidence that the false positive rate is quite low:
         comply with to be acceptable.
 
     \item Every effort has been made while developing to make the parser as
-        precise, demanding and particular as possible.
+        precise, demanding, and particular as possible.
 
 \end{itemize}
 
@@ -548,7 +548,7 @@ subsequently the latter takes precedence because reproducing the path a
 mail takes through Postfix is the aim of the parser.  Increasing the
 percentage of log lines parsed is relatively simple and non-intrusive:
 adding new rules or modifying existing rules is simplified by the
-separation of rules, actions and framework.  Improving the logical coverage
+separation of rules, actions, and framework.  Improving the logical coverage
 is harder, as the actions taken by Postfix must be reconstructed by the
 author, and the new sequence of actions integrated into the existing model
 without breaking the existing parsing.  Detecting a deficiency in the

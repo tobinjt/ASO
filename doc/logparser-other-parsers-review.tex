@@ -38,7 +38,7 @@ program with \parsername{}.  There are some important differences between
     \item Only \parsername{} makes it possible to parse new log lines
         without extensive and intrusive modifications to the parser;
         \parsername{}'s architecture is described in \sectionref{why
-        separate rules, actions and framework?}.
+        separate rules, actions, and framework?}.
 
     \item \parsername{} does not provide any reports based on the data it
         gathers.  This is by design: the parser is responsible for parsing
@@ -109,7 +109,7 @@ re-implements \gls{SQL} foreign keys, but without the functionality offered
 by even the most basic of \gls{SQL} databases (joins, ordering, searches,
 etc.).  It also requires custom code to search on some combination of the
 above, though the authors of \gls{LMA} did provide some queries: IP-STORY,
-FROM-STORY, DAILY-EMAIL and DAILY-REJECT\@.  Berkeley DB appears to be the
+FROM-STORY, DAILY-EMAIL, and DAILY-REJECT\@.  Berkeley DB appears to be the
 least useful of the three output formats: it does not provide the
 functionality of a basic \gls{SQL} database, not can it be used with
 standard Unix text processing tools.
@@ -337,7 +337,7 @@ THE FORMAT DOCUMENTED, ETC\@?
 
 \url{http://www.thesawmill.co.uk/formats/postfix.html} \newline{} Fields
 extracted: from, to, server, UID, relay, status, number of recipients,
-origin hostname, origin \gls{IP} and virus.  The fields \texttt{server},
+origin hostname, origin \gls{IP}, and virus.  The fields \texttt{server},
 \texttt{uid} and \texttt{virus} are not explained in the documentation:
 \texttt{server} is probably the server the mail is delivered to, and
 \texttt{uid} might be the uid of the user submitting mail locally.  Postfix
@@ -346,11 +346,11 @@ cooperating with an external virus scanner), so the \texttt{virus} field is
 a mystery.
 
 \url{http://www.thesawmill.co.uk/formats/postfix_ii.html} \newline{} Fields
-extracted: from, to, RBL, client hostname and client \gls{IP}\@.
+extracted: from, to, RBL, client hostname, and client \gls{IP}\@.
 
 \url{http://www.thesawmill.co.uk/formats/beta_postfix.html} \newline{}
 Fields extracted: from, to, client hostname, client \gls{IP}, relay
-hostname, relay \gls{IP}, status, response code, RBL and message id.
+hostname, relay \gls{IP}, status, response code, RBL, and message id.
 
 Even if the three data sets were linked together Sawmill would extract less
 data than \parsername{}, and it does not appear to extract data about
@@ -636,14 +636,14 @@ log lines.
 YAALA uses a plugin based system to analyse log files and produce HTML
 output reports, with all the parsing and report generation handled by
 modules.  Using YAALA as a base would be only slightly less work than
-starting from scratch, as both input and output modules would need to be
-written specially; it may even be more work to implement the parser within
-the constraints of YAALA\@.  YAALA supports storing previously gathered
-data using Perl's Storable module~\cite{perl-storable}, so other Perl
-programs can use Storable to load, examine, and optionally modify the data;
-\parsername{} uses a well documented database which is accessible from the
-majority of programming languages.  This information was gleaned from the
-source code, as the documentation is sadly lacking.
+starting from scratch, as both the input and output modules would need to
+be written specially; it may even be more work to implement the parser
+within the constraints of YAALA\@.  YAALA supports storing previously
+gathered data using Perl's Storable module~\cite{perl-storable}, so other
+Perl programs can use Storable to load, examine, and optionally modify the
+data; \parsername{} uses a well documented database which is accessible
+from the majority of programming languages.  This information was gleaned
+from the source code, as the documentation is sadly lacking.
 
 YAALA provides a Postfix parser that extracts the following two types of
 fields from specific log lines:

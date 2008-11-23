@@ -305,7 +305,7 @@ for each stage of the \gls{SMTP} conversation: client connection, HELO
 command, MAIL FROM command, RCPT TO commands, DATA command, and end of
 data.  The appropriate restriction list is evaluated for each stage
 (evaluation will be explained shortly), though by default the restriction
-lists for client connection, HELO and MAIL FROM commands will not be
+lists for client connection, HELO, and MAIL FROM commands will not be
 evaluated until the first RCPT TO command is received, because some clients
 do not deal properly with rejections before the first RCPT TO command; a
 benefit of this delay is that Postfix has more information available when

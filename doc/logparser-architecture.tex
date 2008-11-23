@@ -49,7 +49,7 @@ It may help to think of the rules and actions as components that plug into
 the framework.  The framework tries each rule in turn until is finds one
 which matches the log line, then invokes the action specified by the rule.
 
-\label{why separate rules, actions and framework?}
+\label{why separate rules, actions, and framework?}
 
 XXX MERGE THE NEXT TWO PARAGRAPHS\@.  PULL CONTENT FROM THE PAPER\@.
 
@@ -57,7 +57,7 @@ Decoupling the parsing rules from the associated actions and framework
 allows new rules to be written and tested without requiring modifications
 to the parser source code (significantly lowering the barrier to entry for
 new or casual users who need to parse new log lines), and greatly
-simplifies framework, actions and rules.  Decoupling also creates a clear
+simplifies framework, actions, and rules.  Decoupling also creates a clear
 separation of functionality: rules handle low level details of identifying
 log lines and extracting data from a log line; actions handle the higher
 level details of following the path a mail takes through Postfix,
@@ -199,20 +199,21 @@ be helpful:
     \item Sort by regex and visually inspect the list, e.g.\ with \gls{SQL}
         similar to: \textbf{select regex from rules order by regex;}
 
-    \item Compare the results of parsing using sorted, shuffled and
+    \item Compare the results of parsing using sorted, shuffled, and
         reversed rules (described in \sectionref{rule ordering for
         efficiency}).  Parse several log files using optimal ordering, then
-        dump a textual representation of the rules, connections and results
-        tables.  Repeat with shuffled and reversed ordering, starting with
-        a fresh database.  If there are no overlapping rules the tables
-        from each run will be identical; differences indicate overlapping
-        rules.  The rules that overlap can be determined by examining the
-        differences in the tables: each result contains a reference to the
-        rule which created it, if the references differ between runs the
-        two rules referenced in the differing results overlap.
-        Unfortunately this method cannot prove the absence of overlapping
-        rules; it can detect overlapping rules, but only if there are log
-        lines in the input files that match more than one rule.
+        dump a textual representation of the rules, connections, and
+        results tables.  Repeat with shuffled and reversed ordering,
+        starting with a fresh database.  If there are no overlapping rules
+        the tables from each run will be identical; differences indicate
+        overlapping rules.  The rules that overlap can be determined by
+        examining the differences in the tables: each result contains a
+        reference to the rule which created it, if the references differ
+        between runs the two rules referenced in the differing results
+        overlap.  Unfortunately this method cannot prove the absence of
+        overlapping rules; it can detect overlapping rules, but only if
+        there are log lines in the input files that match more than one
+        rule.
 
 \end{itemize}
 

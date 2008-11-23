@@ -23,7 +23,7 @@ coherent whole, saving it in a useful and consistent form, and performing
 housekeeping duties.
 
 Please refer to \sectionref{parser design} for a discussion of why the
-rules, actions and framework have been separated in the parser's design.
+rules, actions, and framework have been separated in the parser's design.
 In this section algorithm can be taken to mean the combination of framework
 and actions.
 
@@ -123,7 +123,7 @@ eliminating one potential source of confusion.
 A clear, comprehensible schema is essential when using the extracted data;
 it is more important when using the data than when storing it, because
 storing the data is a write-once operation, whereas utilising the data
-requires frequent searching, sorting and manipulation of the data to
+requires frequent searching, sorting, and manipulation of the data to
 produce customised reports or statistics.
 
 \subsubsection{Rules table}
@@ -192,7 +192,7 @@ The following attributes are defined for each rule:
         amounts in any one rule, so dealing with escape sequences was
         deemed unnecessary.}  Any field in the results table can be set in
         this way; additionally \texttt{child} and \texttt{pid} are accepted
-        and used respectively by the \texttt{TRACK}, \texttt{BOUNCE} and
+        and used respectively by the \texttt{TRACK}, \texttt{BOUNCE}, and
         \texttt{SMTPD\_DIED} actions, but do not cause data to be entered
         in the database.
 
@@ -1144,7 +1144,7 @@ such checks helped to identify the complications described in
 cleanup}.
 
 Process scheduling can have a still more confusing effect: quite often the
-child mail will be created, delivered and entirely finished with
+child mail will be created, delivered, and entirely finished with
 \textbf{before} the parent logs the creation log line!  Thus, mails flagged
 as coming from an unknown origin cannot be entered into the database when
 their final log line is parsed; instead they must be marked as ready for
@@ -1631,16 +1631,17 @@ XXX WOULD IT BE BETTER TO BEGIN THE EXPLANATIONS ON THE FOLLOWING LINE\@?
         server, delivered locally on the server.
 
     \item [\daemon{local}, \daemon{pickup}, \daemon{smtp}:] Mail submitted
-        locally \newline{} on the server, both local and remote delivery.
+        locally \newline{} on the server, for both local and remote
+        delivery.
 
     \item [\daemon{local}, \daemon{smtp}, \daemon{smtpd}:] Mail accepted
-        from a remote client, both local and remote delivery.
+        from a remote client, for both local and remote delivery.
 
     \item [\daemon{local}, \daemon{smtpd}:] Mail accepted from a remote
-        client, local delivery only.
+        client, for local delivery only.
 
     \item [\daemon{pickup}, \daemon{smtp}:] Mail submitted locally on the
-        server, remote delivery only.
+        server, for remote delivery only.
 
     \item [\daemon{smtp}:] Remote delivery of either a re-injected mail or
         a bounce notification.
@@ -1794,7 +1795,7 @@ improvements that have been identified in the parser.
         administrator-defined rejection messages require new rules.
 
     \item The hostname used in the HELO command is not logged if the mail
-        is accepted.\footnote{Tested with Postfix 2.2.10, 2.3.11 and 2.4.7;
+        is accepted.\footnote{Tested with Postfix 2.2.10, 2.3.11, and 2.4.7;
         this may possibly have changed in Postfix 2.5. XXX TEST THIS
         AGAIN.}  Rectifying this is relatively simple: create a restriction
         that is guaranteed to warn for every accepted mail, as follows:
@@ -1889,7 +1890,7 @@ paths in the flow chart, they are not specified anywhere in the parser.
 The framework which holds the parser together was covered next, after which
 came a description of the current actions provided by the parser, and the
 algorithm for analysing unparsed log lines to create regexes for new
-rules.  Detecting, diagnosing and defeating complications forms the largest
+rules.  Detecting, diagnosing, and defeating complications forms the largest
 single portion of this section, mirroring the development of the parser.
 The complications are described in the order they were overcome, with
 subsequent problems affecting fewer mails (often by an order or magnitude),

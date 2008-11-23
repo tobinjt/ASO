@@ -86,14 +86,13 @@
     virtual domains.  With \daemon{local} delivery the destination is
     determined only by the portion of the email address on the left side of
     the \at{}, whereas with \daemon{virtual} delivery the destination is
-    determined by the entire email address, e.g.\ if the server considers
-    itself responsible for both \textbf{example.org} and
-    \textbf{example.net} domains: \daemon{local} considers
-    \textbf{john\at{}example.org} and \textbf{john\at{}example.net} to have
-    the same mailbox, whereas \daemon{virtual} considers them to have
-    different mailboxes.  Virtual delivery is used when a server hosts
-    multiple domains where a username may be present in more than one
-    domain but represent different users in each.  The definitive
-    documentation is
+    determined by the entire email address.  E.g.\ if the server is
+    responsible for both the \textbf{example.org} and \textbf{example.net}
+    domains: \daemon{local} considers \textbf{john\at{}example.org} and
+    \textbf{john\at{}example.net} to have the same mailbox, whereas
+    \daemon{virtual} considers them to have different mailboxes.  Virtual
+    delivery is used when a server hosts multiple domains where a username
+    may be present in more than one domain but represent different users in
+    each.  The definitive documentation is
     \url{http://www.postfix.org/virtual.8.html}.
 }}
