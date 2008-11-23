@@ -251,7 +251,7 @@ was given to extensibility when writing it.
 \end{quotation}
 
 \noindent{}\url{http://jimsun.linxnet.com/postfix_contrib.html} \newline{}
-(Last checked 2008/04/09.)
+(Last checked 2008/11/23.)
 
 Pflogsumm produces a report designed for troubleshooting rather than for
 in-depth analysis.  It does not support saving any data or extracting more
@@ -294,12 +294,12 @@ report.
 
 \begin{quotation}
 
-    Sawmill is a Postfix log analyzer (it also support [sic] 686 other log
-    formats).  It can process log files in Postfix format, and generate
-    dynamic statistics from them, analyzing and reporting events.  Sawmill
+    Sawmill is a Postfix log analyzer (it also support 818 other log
+    formats). It can process log files in Postfix format, and generate
+    dynamic statistics from them, analyzing and reporting events. Sawmill
     can parse Postfix logs, import them into a SQL database (or its own
     built-in database), aggregate them, and generate dynamically filtered
-    reports, all through a web interface.  Sawmill can perform Postfix
+    reports, all through a web interface. Sawmill can perform Postfix
     analysis on any platform, including Window, Linux, FreeBSD, OpenBSD,
     Mac OS, Solaris, other UNIX, and more.
 
@@ -308,53 +308,50 @@ report.
 \noindent{}\url{http://www.thesawmill.co.uk/formats/postfix.html}
 \newline{} \url{http://www.thesawmill.co.uk/formats/postfix_ii.html}
 \newline{} \url{http://www.thesawmill.co.uk/formats/beta_postfix.html}
-\newline{} (Last checked 2007/12/04.)
+\newline{} (Last checked 2008/11/23.)
 
-XXX CHECK ALL THIS AGAIN\@; GIVE EXAMPLE PRICES\@.
+Sawmill is a general purpose commercial product that parses 818 log file
+formats (as of 2008/11/23) and produces reports from the extracted data.
+Its data extraction facilities (described later) are too limited to save
+sufficient data for the purposes of this project; it extracts three
+different sets of data from Postfix log files, but they are not interlinked
+in any way.  The documentation does not suggest that any attempt is made to
+correlate log lines or deal with the difficulties documented in
+\sectionref{complications}.
 
-Sawmill is a general purpose commercial product that parses 687 log file
-formats (correct as of 2007/12/04) and produces reports.  Its data
-extraction facilities are too limited to save sufficient data for the
-purposes of this project,\footnote{The data extracted by Sawmill is
-described later in this review, and the data extracted by \gls{PLP} is
-described in \sectionref{connections table} and \sectionref{results
-table}.} though it does extract three different sets of data for Postfix
-(one is beta as of 2007/12/04), but they do not appear to be interlinked.
-The documentation does not suggest that any attempt is made to correlate
-log lines or deal with the difficulties documented in
-\sectionref{complications}.  The source code is available in an obfuscated
-form only (presumably for a fee), and the product is quite expensive,
-requiring a license per report to be generated; in contrast \parsername{}
-is free and the code is freely available.  The web interface allows
-creation of dynamic reports based on any field, but because of the
-associated cost the author has not experimented with it.  Presumably, as
-the company charges per report the user wishes to generate, the data store
-(if there is one) is deliberately inaccessible and undocumented to prevent
-the user bypassing the program and generating their own reports.
+Sawmill has three different Postfix log file parsers:
 
-XXX THE BLURB MENTIONS \gls{SQL} DB\@; CAN THAT BE ACCESSED SEPARATELY, IS
-THE FORMAT DOCUMENTED, ETC\@?
+\begin{enumerate}
 
-\url{http://www.thesawmill.co.uk/formats/postfix.html} \newline{} Fields
-extracted: from, to, server, UID, relay, status, number of recipients,
-origin hostname, origin \gls{IP}, and virus.  The fields \texttt{server},
-\texttt{uid} and \texttt{virus} are not explained in the documentation:
-\texttt{server} is probably the server the mail is delivered to, and
-\texttt{uid} might be the uid of the user submitting mail locally.  Postfix
-does not perform any form of virus checking (though it has many options for
-cooperating with an external virus scanner), so the \texttt{virus} field is
-a mystery.
+    \item \url{http://www.thesawmill.co.uk/formats/postfix.html} \newline{}
+        Fields extracted: from, to, server, UID, relay, status, number of
+        recipients, origin hostname, origin \gls{IP}, and virus.  It also
+        counts the number of and total size of all mails delivered.  The
+        fields \texttt{server}, \texttt{uid}, \texttt{relay}, and
+        \texttt{virus} are not explained in the documentation:
+        \texttt{server} is probably the server the mail is delivered to,
+        and \texttt{uid} might be the uid of the user submitting mail
+        locally.  Postfix does not perform any form of virus checking
+        (though it has many options for cooperating with an external virus
+        scanner), so the \texttt{virus} field is a mystery.
 
-\url{http://www.thesawmill.co.uk/formats/postfix_ii.html} \newline{} Fields
-extracted: from, to, RBL, client hostname, and client \gls{IP}\@.
+    \item \url{http://www.thesawmill.co.uk/formats/postfix_ii.html}
+        \newline{} Fields extracted: from, to, RBL list, client hostname,
+        and client \gls{IP}\@.  It also counts the number of and total size
+        of all mails delivered.  
 
-\url{http://www.thesawmill.co.uk/formats/beta_postfix.html} \newline{}
-Fields extracted: from, to, client hostname, client \gls{IP}, relay
-hostname, relay \gls{IP}, status, response code, RBL, and message id.
+    \item \url{http://www.thesawmill.co.uk/formats/beta_postfix.html}
+        \newline{} Fields extracted: from, to, client hostname, client
+        \gls{IP}, relay hostname, relay \gls{IP}, status, response code,
+        RBL list, and message id.  It also counts the number and size of
+        all mails delivered, processed, blocked, expired, and bounced.
+
+\end{enumerate}
 
 Even if the three data sets were linked together Sawmill would extract less
 data than \parsername{}, and it does not appear to extract data about
-rejections except when the rejection is caused by a \gls{DNSBL} check.
+rejections except when the rejection is caused by a \gls{DNSBL} check
+(\textit{RBL list\/} in the list of fields).
 
 When tested with the \numberOFlogFILES{} test log files it performed
 adequately, though the rate it processed log files at did slow down
@@ -364,6 +361,22 @@ parse the first half of the log files, and twelve hours to parse the next
 third; after twenty four hours parsing the remaining sixth it crashed due
 to lack of disk space.  On the second parsing attempt the log files were
 uncompressed beforehand and parsing took eight hours.
+
+XXX THE BLURB MENTIONS \gls{SQL} DB\@; CAN THAT BE ACCESSED SEPARATELY, IS
+THE FORMAT DOCUMENTED, ETC\@?  XXX EXPERIMENT WITH THE REPORTS IN THE DEMO
+VERSION\@.  XXX EVERYTHING FROM HERE DOWN NEEDS TO BE CHECKED AND/OR
+REWRITTEN\@.
+
+The web interface allows creation of dynamic reports based on any field,
+but because of the associated cost the author has not experimented with it.
+As the company charges per report the user wishes to generate, the data
+store (if there is one) is deliberately inaccessible and undocumented to
+prevent the user bypassing the program and generating their own reports.
+
+The source code is available only in an obfuscated form (presumably for a
+fee), and the product is quite expensive, requiring a \euros{100} + VAT
+license per report to be generated; in contrast \parsername{} is free and
+the code is freely available.
 
 Sawmill's web interface supports searching on any combination of the fields
 it extracts, but the interface is neither as simple to use nor as
@@ -377,19 +390,18 @@ XXX ADD A SUMMARY\@.
 
 \begin{quotation}
 
-    Splunk is an IT Search engine. It is software that indexes any format
-    of IT data from any source in real time, including logs,
-    configurations, scripts, code, messages, traps, alerts, activity
-    reports, stack traces and metrics from all of your applications,
-    servers and devices. Splunk lets you search, navigate, alert and report
-    on all your IT data in real time using an AJAX web interface. You can
-    also share knowledge and Splunk solutions with other members of the
-    Splunk community via SplunkBase.
+    Splunk is IT Search.
+
+    Search and navigate IT data from applications, servers and network
+    devices in real-time. Logs, configurations, messages, traps and alerts,
+    scripts, code, metrics and more. If a machine can generate it ---
+    Splunk can eat it. It's easy to download and use and it's very
+    powerful.
 
 \end{quotation}
 
 \noindent{}\url{http://www.splunk.com/} \newline{}
-(Last checked 2008/04/29.)
+(Last checked 2008/11/23.)
 
 XXX THE FIRST PARAGRAPH NEEDS TO BE REWRITTEN\@; PICK POINTS, THEN COMPARE
 AND CONTRAST\@.
@@ -483,8 +495,6 @@ importantly it makes no attempt to correlate log lines by queueid or
 \sectionref{complications}.  Some additional Postfix reports are supposedly
 available at \url{http://www.splunkbase.com/}, but the author was unable to
 find Postfix reports, or additional reports for any other log file types.
-
-\newpage{}
 
 \subsection{Isoqlog}
 
