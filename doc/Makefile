@@ -118,7 +118,7 @@ run_latex:
 	[ -f "${DEST}" ]
 	touch "${BASENAME}.aux.old";
 	if [ -s "${BASENAME}.aux.old" ]; then \
-		diff -u "${BASENAME}.aux.old" "${BASENAME}.aux" || true; \
+		echo diff -u "${BASENAME}.aux.old" "${BASENAME}.aux" || true; \
 	fi;
 	cp "${BASENAME}.aux" "${BASENAME}.aux.old"
 
@@ -155,10 +155,12 @@ build_run:
 	# The source files change between different runs; it seems that including
 	# the output files causes the source files to change on the next latex run.
 	# I haven't investigated much further, I don't really care.
-	#make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.glg" OUTPUT="${BASENAME}.gls" INPUT="${BASENAME}.glo"
-	#make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.alg" OUTPUT="${BASENAME}.acn" INPUT="${BASENAME}.acr"
-	# XXX FIX THIS SO IT DOESN'T RUN UNNECESSARILY
-	makeglossaries `basename "${SOURCE}" .tex`
+	#makeglossaries `basename "${SOURCE}" .tex`
+	set -e; \
+	for line in `grep newglossary "${BASENAME}.aux"`; do \
+		set -- `echo "$$line" | sed -e 's/\\\\@newglossary{.\+}{\(.\+\)}{\(.\+\)}{\(.\+\)}/\1 \2 \3/'`; \
+		make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.$$1" OUTPUT="${BASENAME}.$$2" INPUT="${BASENAME}.$$3"; \
+	done
 	# The next time latex is run it will include the new glossary and acronyms 
 	# if they've changed.
 
@@ -409,7 +411,7 @@ build/include-sample-sql-query.tex: generate-sample-sql-output.sql
 clean:
 	rm -f	*.acn *.acr *.alg *.aux *.bbl *.blg *.cbk *.cit *.deps *.dvi \
 		*.glg *.glo *.gls *.idx *.ist *.lof *.log *.lot *.old *.out \
-		*.pdf *.ps *.toc *.cite
+		*.pdf *.ps *.toc *.cite *.pin *.plg *.pout *.nav *.snm
 
 realclean: veryclean
 veryclean: clean
@@ -459,3 +461,10 @@ diction:
 	for file in *.tex; do \
 		untex -a -e "$$file" | diction --suggest --file diction-rules --no-default-file | less -M -w "-PM$$file %lt/%L"; \
 	done
+
+slides: sgai-2008-slides.pdf
+
+sgai-2008-slides.pdf: sgai-2008-slides.tex
+	pdflatex "$<"
+	pdflatex "$<"
+	chktex -q "$<"
