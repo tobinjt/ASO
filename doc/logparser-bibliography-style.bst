@@ -1,14 +1,14 @@
 %%
-%% This is file `log2.bst',
+%% This is file `els.bst',
 %% generated with the docstrip utility.
 %%
 %% The original source files were:
 %%
-%% merlin.mbs  (with options: `ed-au,atit-u,num-xser,isbn,issn,doi,xedn,url,url-nl,nfss,')
+%% merlin.mbs  (with options: `nm-init,ed-au,yr-par,atit-u,jwdpg,num-xser,isbn,issn,doi,fin-bare,pp,xedn,url,url-blk,nfss,')
 %% ----------------------------------------
-%% ***  ***
+%% *** Bibliography style for publishing SGAI AICS 2008 paper in Elesvier journal Knowledge-Based Systems. ***
 %% 
-%% Copyright 1994-2004 Patrick W Daly
+%% Copyright 1994-2005 Patrick W Daly
  % ===============================================================
  % IMPORTANT NOTICE:
  % This bibliographic style (bst) file has been generated from one or
@@ -20,7 +20,7 @@
  % version 1 of the License, or any later version.
  % ===============================================================
  % Name and version information of the main mbs file:
- % \ProvidesFile{merlin.mbs}[2004/02/09 4.13 (PWD, AO, DPC)]
+ % \ProvidesFile{merlin.mbs}[2005/10/17 4.14 (PWD, AO, DPC)]
  %   For use with BibTeX version 0.99a or later
  %-------------------------------------------------------------------
  % This bibliography style file is intended for texts in ENGLISH
@@ -108,8 +108,10 @@ FUNCTION {output.check}
   if$
 }
 FUNCTION {fin.entry}
-{ add.period$
-  write$
+{ duplicate$ empty$
+    'pop$
+    'write$
+  if$
   newline$
 }
 
@@ -243,10 +245,10 @@ FUNCTION {bbl.in}
 { "in" }
 
 FUNCTION {bbl.pages}
-{ "pages" }
+{ "pp." }
 
 FUNCTION {bbl.page}
-{ "page" }
+{ "p." }
 
 FUNCTION {bbl.chapter}
 { "chapter" }
@@ -360,10 +362,10 @@ FUNCTION {bibinfo.warn}
     }
   if$
 }
-FUNCTION {write.url}
+FUNCTION {format.url}
 { url empty$
-    { skip$ }
-    { "\newline\url{" url * "}" * write$ newline$ }
+    { "" }
+    { "\urlprefix\url{" url * "}" * }
   if$
 }
 
@@ -380,7 +382,7 @@ FUNCTION {format.names}
   numnames 'namesleft :=
     { namesleft #0 > }
     { s nameptr
-      "{ff~}{vv~}{ll}{, jj}"
+      "{f.~}{vv~}{ll}{, jj}"
       format.name$
       bibinfo bibinfo.check
       't :=
@@ -389,13 +391,13 @@ FUNCTION {format.names}
           namesleft #1 >
             { ", " * t * }
             {
-              numnames #2 >
-                { "," * }
-                'skip$
-              if$
               s nameptr "{ll}" format.name$ duplicate$ "others" =
                 { 't := }
                 { pop$ }
+              if$
+              numnames #2 >
+                { "," * }
+                'skip$
               if$
               t "others" =
                 {
@@ -548,6 +550,13 @@ FUNCTION {format.date}
       *
     }
   if$
+  duplicate$ empty$
+    'skip$
+    {
+      before.all 'output.state :=
+    " (" swap$ * ")" *
+    }
+  if$
 }
 FUNCTION {format.btitle}
 { title "title" bibinfo.check
@@ -656,7 +665,13 @@ FUNCTION {format.journal.pages}
           ":" *
           swap$
           n.dashify
+          pages multi.page.check
+            'bbl.pages
+            'bbl.page
+          if$
+          swap$ tie.or.space.prefix
           "pages" bibinfo.check
+          * *
           *
         }
       if$
@@ -909,9 +924,10 @@ FUNCTION {article}
   format.issn output
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note output
   fin.entry
-  write.url
 }
 FUNCTION {book}
 { output.bibitem
@@ -944,9 +960,10 @@ FUNCTION {book}
   format.isbn output
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note output
   fin.entry
-  write.url
 }
 FUNCTION {booklet}
 { output.bibitem
@@ -960,9 +977,10 @@ FUNCTION {booklet}
   format.isbn output
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note output
   fin.entry
-  write.url
 }
 
 FUNCTION {inbook}
@@ -1002,9 +1020,10 @@ FUNCTION {inbook}
   if$
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note output
   fin.entry
-  write.url
 }
 
 FUNCTION {incollection}
@@ -1030,9 +1049,10 @@ FUNCTION {incollection}
   if$
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note output
   fin.entry
-  write.url
 }
 FUNCTION {inproceedings}
 { output.bibitem
@@ -1062,9 +1082,10 @@ FUNCTION {inproceedings}
   if$
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note output
   fin.entry
-  write.url
 }
 FUNCTION {conference} { inproceedings }
 FUNCTION {manual}
@@ -1100,9 +1121,10 @@ FUNCTION {manual}
   format.date output
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note output
   fin.entry
-  write.url
 }
 
 FUNCTION {mastersthesis}
@@ -1118,9 +1140,10 @@ FUNCTION {mastersthesis}
   format.date "year" output.check
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note output
   fin.entry
-  write.url
 }
 
 FUNCTION {misc}
@@ -1133,9 +1156,10 @@ FUNCTION {misc}
   format.date output
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note output
   fin.entry
-  write.url
   empty.misc.check
 }
 FUNCTION {phdthesis}
@@ -1151,9 +1175,10 @@ FUNCTION {phdthesis}
   format.date "year" output.check
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note output
   fin.entry
-  write.url
 }
 
 FUNCTION {proceedings}
@@ -1193,9 +1218,10 @@ FUNCTION {proceedings}
   format.issn output
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note output
   fin.entry
-  write.url
 }
 
 FUNCTION {techreport}
@@ -1211,9 +1237,10 @@ FUNCTION {techreport}
   format.date "year" output.check
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note output
   fin.entry
-  write.url
 }
 
 FUNCTION {unpublished}
@@ -1224,9 +1251,10 @@ FUNCTION {unpublished}
   format.date output
   format.doi output
   new.block
+  format.url output
+  new.block
   format.note "note" output.check
   fin.entry
-  write.url
 }
 
 FUNCTION {default.type} { misc }
@@ -1252,7 +1280,7 @@ FUNCTION {sort.format.names}
   numnames 'namesleft :=
     { namesleft #0 > }
     { s nameptr
-      "{vv{ } }{ll{ }}{  ff{ }}{  jj{ }}"
+      "{vv{ } }{ll{ }}{  f{ }}{  jj{ }}"
       format.name$ 't :=
       nameptr #1 >
         {
@@ -1395,10 +1423,9 @@ FUNCTION {begin.bib}
   if$
   "\begin{thebibliography}{"  longest.label  * "}" *
   write$ newline$
-%  Don't override \url{} provided by the url package.
-%  "\providecommand{\url}[1]{\texttt{#1}}"
-%  write$ newline$
-  "\providecommand{\urlprefix}{}"
+  "\providecommand{\url}[1]{\texttt{#1}}"
+  write$ newline$
+  "\providecommand{\urlprefix}{URL }"
   write$ newline$
   "\expandafter\ifx\csname urlstyle\endcsname\relax"
   write$ newline$
@@ -1406,10 +1433,8 @@ FUNCTION {begin.bib}
   write$ newline$
   "  \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup \urlstyle{rm}\Url}\fi"
   write$ newline$
-%  "  \section{Bibliography}"
-%  write$ newline$
-%  "  \label{bibliography}"
-%  write$ newline$
+  "\label{bibliography}"
+  write$ newline$
 }
 EXECUTE {begin.bib}
 EXECUTE {init.state.consts}
@@ -1421,4 +1446,4 @@ FUNCTION {end.bib}
 EXECUTE {end.bib}
 %% End of customized bst file
 %%
-%% End of file `log2.bst'.
+%% End of file `els.bst'.
