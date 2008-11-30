@@ -924,9 +924,8 @@ FUNCTION {article}
   format.issn output
   format.doi output
   new.block
-  format.url output
-  new.block
   format.note output
+  format.url output
   fin.entry
 }
 FUNCTION {book}

@@ -121,8 +121,8 @@
 %\usepackage{citeref}
 %\usepackage{backref}
 \renewcommand{\refname}{Bibliography}
-% Add space before urls to quell underfull hbox warnings.
-\newcommand{\urlprefix}[0]{\hfill{}}
+% Put each URL in the bibliography on a new line.
+\newcommand{\urlprefix}[0]{\newline{}}
 % New formatting commands.
 
 % \showgraph{filename}{caption}{label}
@@ -156,7 +156,6 @@
 \newcommand{\at}[0]{%
     @%
 }
-% This is ridiculous, but I cannot put @ in glossary entries, so . . .
 \newcommand{\backslashat}[0]{%
     \@%
 }
@@ -248,8 +247,7 @@ XXX CHECK ALL ``UNINTERESTING'' RULES TO SEE IF THEY COULD BE USED\@.
 XXX CHECK YEARS FOR BIBLIOGRAPHY ENTRIES\@.
 
 XXX IMPROVE BIBLIOGRAPHY APPEARANCE\@: NAMES LOOK UGLY (E.G.\ P.\
-\empty{}.\ Porters), URL SPACING IS MESSED UP --- URLS \\SHOULD PROBABLY BE
-LAST, ON THEIR OWN LINE\@.
+\empty{}.\ Porters)\@.
 
 \newpage
 \tableofcontents
@@ -277,8 +275,7 @@ LAST, ON THEIR OWN LINE\@.
 
 \appendix
 
-%\bibliographystyle{logparser-bibliography-style}
-\bibliographystyle{sgai-2008-elsevier}
+\bibliographystyle{logparser-bibliography-style}
 \bibliography{logparser-bibliography}
 
 
