@@ -1,52 +1,46 @@
+\newpage{} %XXX
+
 \section{State of the Art Review}
 
 \label{state of the art review}
 
 XXX UPDATE THE BLURBS\@.
 
-Ten other parsers, starting with the only previously published research in
-this area that the author is aware of, have been reviewed as part of the
-background research for this project.  Each of the parsers was tested with
-the \numberOFlogFILES{} test log files described in \sectionref{parser
-efficiency}.  None of the parsers reviewed perform the kind of advanced
-parsing and correlation required for this project; all except one (XXX IS
-THIS ACCURATE\@?) are intended to perform a specific parsing and reporting
-task, whereas \gls{PLP} is designed to be a generic parser, extracting data
-and leaving generation of reports from the data to other programs.  Some
-parsers save the data extracted to a data store, but the majority discard
-all data once they have finished running, making historical analysis
-impossible.  The parsers reviewed all produce a report of varying
-complexity and detail, whereas this project's parser does not produce a
-report at all; that responsibility is deferred to a separate program, to be
-developed later.  The parser developed for this project is designed to
-enable much more detailed log file analysis by providing a stable platform
-for subsequent programs to develop upon.
-
 It is important to compare and contrast newly developed programs,
 algorithms, and parsers against those already available, to accurately
-judge what improvements, if any, are delivered by the newcomers.  There are
-not that many previously developed Postfix log file parsers --- indeed it
-was quite difficult to find ten parsers to review for this project --- and
-the functionality offered ranges from quite basic to much more mature,
-depending on the needs of the creator.  The programs are not reviewed from
-an independent viewpoint; the objective is to compare and contrast each
-program with \parsername{}.  There are some important differences between
-\parsername{} and the parsers reviewed here:
+judge what improvements, if any, are delivered by the newcomers.  Ten other
+parsers have been reviewed as part of the background research for this
+project, starting with the only previously published research in this area
+that the author is aware of.  There are not that many previously developed
+Postfix log file parsers --- indeed it was quite difficult to find ten
+parsers to review for this project --- and the functionality offered ranges
+from quite basic to much more mature, depending on the needs of the author
+of the parser.  The programs are not reviewed from an independent
+viewpoint; the objective is to compare and contrast each program with
+\parsername{}.  There are some important differences between \parsername{}
+and the parsers reviewed here:
 
 \begin{enumerate}
+
+    \item None of the parsers reviewed perform the kind of advanced parsing
+        and correlation required for this project (described in
+        \sectionref{complications})
 
     \item Only \parsername{} makes it possible to parse new log lines
         without extensive and intrusive modifications to the parser;
         \parsername{}'s architecture is described in \sectionref{why
         separate rules, actions, and framework?}.
 
-    \item \parsername{} does not provide any reports based on the data it
-        gathers.  This is by design: the parser is responsible for parsing
-        log files and extracting data; further processing of that data is a
-        separate concern, deferred to another program.  Using an \gls{SQL}
-        database simplifies the process of generating such reports
-        (discussed in \sectionref{database as API}); some simple examples
-        are given in \sectionref{motivation}.
+    \item The parsers reviewed all produce a report of varying complexity
+        and detail, whereas \gls{PLP} is designed to be a generic parser,
+        extracting data and leaving generation of reports from the data to
+        other programs.  Using an \gls{SQL} database simplifies the process
+        of generating such reports (discussed in \sectionref{database as
+        API}); some simple examples are given in \sectionref{motivation}.
+
+        The parser developed for this project is designed to enable much
+        more detailed log file analysis by providing a stable platform for
+        subsequent programs to develop upon.
 
     \item Most of the parsers silently ignore log lines they cannot handle,
         whereas \parsername{} complains loudly about every single log line
@@ -57,25 +51,28 @@ program with \parsername{}.  There are some important differences between
     \item A minor difference is that most parsers do not handle compressed
         files; both \parsername{} and Splunk handle them transparently,
         without user intervention; Sawmill and Lire can be configured to
-        support compressed files, but Sawmill exhibits a dramatic slow down
-        when thus configured.  Although this is a minor difference, support
-        for reading compressed log files is quite helpful, as it
-        dramatically reduces the disk space required to store old log
-        files.
+        support compressed files, but Sawmill exhibits a dramatic increase
+        in parsing time when doing so.  Although this is a minor
+        difference, support for reading compressed log files is quite
+        helpful, as it dramatically reduces the disk space required to
+        store old log files.
+
+    \item Some of the parsers reviewed save the data extracted to a data
+        store, but the majority discard all data once they have finished
+        generating the report, making historical analysis impossible.
 
 \end{enumerate}
 
 XXX EXTEND THIS\@.
 
+Each of the parsers was tested with the \numberOFlogFILES{} test log files
+described in \sectionref{parser efficiency}.  The data extracted by
+\parsername{} is documented in \sectionref{connections table} and
+\sectionref{results table}.
+
+XXX LIST THE DATA NOT EXTRACTED BY EACH PARSER\@.
+
 \subsection{Log Mail Analyser}
-
-XXX IS THE BDB STRUCTURE DOCUMENTED\@?
-
-XXX DESCRIBE THE \gls{CSV} FORMAT\@.
-
-XXX DESCRIBE THE MYSQL SCHEMA\@.
-
-IS THE SAME DATA STORED FOR ALL FORMATS\@?
 
 \label{prior art}
 
@@ -98,6 +95,11 @@ to document the fields or the separator, unlike \gls{SQL} databases where
 every database includes a schema naming the fields and the type of data
 they store (integer, text, timestamp, etc.).
 
+Very little documentation is provided with \gls{LMA}, though some
+documentation is available in~\cite{log-mail-analyser}.  Studying the
+source code is informative, though this author had difficulty as the
+authors of \gls{LMA} wrote in Italian.
+
 Berkeley DB only supports storing simple \textbf{(key, value)} pairs,
 unlike \gls{SQL} databases that store arbitrary tuples.  In \gls{LMA}'s
 main table the key is an integer referred to by secondary tables, and the
@@ -114,6 +116,21 @@ least useful of the three output formats: it does not provide the
 functionality of a basic \gls{SQL} database, not can it be used with
 standard Unix text processing tools.
 
+The schema used with the MySQL database is undocumented, but at least it is
+possible to discover the schema with an \gls{SQL} database, unlike with
+Berkeley DB\@; all \gls{SQL} databases embed the schema into the database
+and provide commands for displaying it.  Berkeley DB does not embed a
+schema, as there is neither requirement nor benefit; it only provides
+\textbf{(key, value)} pairs, so any additional structuring of the data is
+imposed by the application, thus it behoves the application to document
+this structure.
+
+The \gls{CSV} record format is not documented, but the output file contains
+a comment giving the format:\newline{} \texttt{\# Timestamp|Nome Client|IP
+Client|IP Server|From|To|Status|Size} \newline{}\gls{LMA} treats lines
+starting with \texttt{\#} as comments, but not all \gls{CSV} parsers will,
+as there is no standard for comments in \gls{CSV} files.
+
 \gls{LMA} stores the following date: time and date, client hostname and
 \gls{IP} address, server \gls{IP} address, sender and recipient addresses,
 \gls{SMTP} code, and size (for accepted mails only).  It omits XXX XXX\@.
@@ -126,15 +143,6 @@ there are multiple recipients (sadly the records are not associated or
 linked in any way), and presumably the same approach is taken when there
 are multiple destination servers.
 
-The schema used with the MySQL database is undocumented, but at least it is
-possible to discover the schema with an \gls{SQL} database, unlike with
-Berkeley DB\@; all \gls{SQL} databases embed the schema into the database
-and provide commands for displaying it.  Berkeley DB does not embed a
-schema, as there is neither requirement nor benefit; it only provides
-\textbf{(key, value)} pairs, so any additional structuring of the data is
-imposed by the application, thus it behoves the application to document
-this structure.
-
 \gls{LMA} requires major changes to the parser code to parse new log lines
 or extract additional data.  The code is structured as a long series of
 blocks that each handle all lines matching a single regex, so parsing new
@@ -142,8 +150,8 @@ log lines requires modifying an existing regex or carefully inserting a new
 block in the correct place; extracting extra data will require modifying
 multiple blocks, regexes, or both.
 
-\gls{LMA} does not appear to deal with any of the complications discussed
-in \sectionref{complications}.  It does not differentiate between different
+\gls{LMA} does not deal with any of the complications discussed in
+\sectionref{complications}.  It does not differentiate between different
 types of rejections, so it is not suitable for the purposes of this
 project; the data about which restriction caused the rejection is
 discarded, whereas the main goal of this project is to retain that data to
@@ -162,13 +170,14 @@ results.
 \gls{LMA} does provide some simple reports: IP-STORY, FROM-STORY,
 DAILY-EMAIL and DAILY-REJECT\@.  The first three extract \gls{CSV} lines
 for the specified client \gls{IP} address, sender address, or date
-respectively.  DAILY-REJECT initially failed with an error message (XXX ADD
-THE ERROR MESSAGE) from the Perl interpreter; after making some corrections
-to the code it worked, and extracted the \gls{CSV} lines for the specified
-day where the \gls{SMTP} code signifies a rejection.  All of these reports
-are trivially simple to produce from the \gls{CSV} file using the standard
-Unix tool \texttt{awk}\glsadd{awk}; the most complicated, DAILY-REJECT, is
-merely:
+respectively.  DAILY-REJECT initially failed with an error message from the
+Perl interpreter;\footnote{The error message was:
+\newline{}\texttt{Undefined subroutine \&main::LIST called at queryDB.pl
+line 372.}} after making some corrections to the code it worked, and
+extracted the \gls{CSV} lines for the specified day where the \gls{SMTP}
+code signifies a rejection.  All of these reports are trivially simple to
+produce from the \gls{CSV} file using the standard Unix tool
+\texttt{awk}\glsadd{awk}; the most complicated, DAILY-REJECT, is merely:
 
 \begin{verbatim}
 awk -F\| '$1 ~ /2007-01-26/ && $7 ~ /^[450]|deferred/
@@ -353,6 +362,24 @@ data than \parsername{}, and it does not appear to extract data about
 rejections except when the rejection is caused by a \gls{DNSBL} check
 (\textit{RBL list\/} in the list of fields).
 
+The source code is available in an obfuscated form, and the product is
+quite expensive, requiring a \euros{100} + VAT licence per report
+(discounts are available when buying multiple licences); in contrast
+\parsername{} is free and the code is freely available.  Sawmill is
+supplied with thorough and well written documentation; everything the
+author searched for was documented, except the MySQL database schema.  A
+commercial version of MySQL is required due to MySQL licensing
+restrictions, but Sawmill's documentation explains why and includes
+instructions on how to compile Sawmill so that it can use a non-commercial
+version of MySQL\@.
+
+Sawmill's web interface supports searching on any combination of the fields
+it extracts, but the interface is neither as simple to use nor as
+informative as the interface provided by Splunk.  The administrative
+interface is much easier to use than Splunk's: it took only five minutes to
+start parsing a directory of log files.  Searches performed using the web
+interface produced reasonable results, which were not verified in detail.
+
 When tested with the \numberOFlogFILES{} test log files it performed
 adequately, though the rate it processed log files at did slow down
 noticeably as it progressed.  Sawmill supports reading compressed log files
@@ -361,28 +388,6 @@ parse the first half of the log files, and twelve hours to parse the next
 third; after twenty four hours parsing the remaining sixth it crashed due
 to lack of disk space.  On the second parsing attempt the log files were
 uncompressed beforehand and parsing took eight hours.
-
-XXX THE BLURB MENTIONS \gls{SQL} DB\@; CAN THAT BE ACCESSED SEPARATELY, IS
-THE FORMAT DOCUMENTED, ETC\@?  XXX EXPERIMENT WITH THE REPORTS IN THE DEMO
-VERSION\@.  XXX EVERYTHING FROM HERE DOWN NEEDS TO BE CHECKED AND/OR
-REWRITTEN\@.
-
-The web interface allows creation of dynamic reports based on any field,
-but because of the associated cost the author has not experimented with it.
-As the company charges per report the user wishes to generate, the data
-store (if there is one) is deliberately inaccessible and undocumented to
-prevent the user bypassing the program and generating their own reports.
-
-The source code is available only in an obfuscated form (presumably for a
-fee), and the product is quite expensive, requiring a \euros{100} + VAT
-license per report to be generated; in contrast \parsername{} is free and
-the code is freely available.
-
-Sawmill's web interface supports searching on any combination of the fields
-it extracts, but the interface is neither as simple to use nor as
-informative as the interface provided by Splunk.  The administrative
-interface is easy to use --- it took only five minutes to start parsing a
-directory of log files.
 
 XXX ADD A SUMMARY\@.
 
@@ -469,7 +474,7 @@ how a newcomer would approach tasks or the questions they would ask.
 Splunk supports reading compressed log files without any configuration by
 the user.  The free version of Splunk limits the volume of data indexed per
 day to 500MB, though a trial Enterprise licence is available that allows
-indexing of up to 5GB of data per day.  In 2007 the cheapest licensed
+indexing of up to 5GB of data per day.  In 2007 the cheapest licenced
 version cost \$5000 plus \$1000 support, and limited the volume of data
 indexed per day to 500MB\@.  Prices were removed from the Splunk website
 during 2008; now Splunk's sales team must be contacted for a quote.
@@ -853,21 +858,21 @@ understanding of Postfix log files achieved by \parsername{}.
     \caption{Summary of parsers' features}
     \empty{}\label{Summary of parsers' features}
     \begin{tabular}{llllll}
-        Parser          & Parsed test   & Data              & Custom            & Documentation  & Source \\
-                        & log files?    & store?            & reports?          & quality?       & code?  \\
+        Parser          & Parsed test   & Data              & Custom            & Documentation  & Source       \\
+                        & log files?    & store?            & reports?          & quality?       & code?        \\
         \tableline{}%
-        \gls{LMA}          & No            & Yes               & No                & Poor           & Yes    \\ 
-        Pflogsumm       & Yes           & No                & Partial \dag{}    & Good           & Yes    \\
-        Sawmill         & Yes           & Yes               & Searches          & Reasonable     & No     \\
-        Splunk          & Yes           & Yes               & Searches          & Abundant       & No     \\
-                        &               &                   & \& reports        & but poor       &        \\
-        Isoqlog         & No            & Yes               & No                & Poor           & Yes    \\
-        AWStats         & Partially     & Yes               & Partial \dag{}    & Good           & Yes    \\
-        Anteater        & No            & No                & No                & Poor           & Yes    \\
-        YAALA           & No            & Yes \ddag{}       & Searches          & Poor           & Yes    \\
-        Lire            & Yes           & Yes               & Yes               & Reasonable     & Yes    \\
-        Logrep          & No            & Yes               & No                & Poor           & Yes    \\
-        \parsername{}   & Yes           & Yes \nialpha{}    & No \nibeta{}      & XXX            & Yes    \\
+        \gls{LMA}       & No            & Yes               & No                & Poor           & Yes          \\ 
+        Pflogsumm       & Yes           & No                & Partial \dag{}    & Good           & Yes          \\
+        Sawmill         & Yes           & Yes               & Searches          & Very good      & \nialpha{}   \\
+        Splunk          & Yes           & Yes               & Searches          & Abundant       & No           \\
+                        &               &                   & \& reports        & but poor       &              \\
+        Isoqlog         & No            & Yes               & No                & Poor           & Yes          \\
+        AWStats         & Partially     & Yes               & Partial \dag{}    & Good           & Yes          \\
+        Anteater        & No            & No                & No                & Poor           & Yes          \\
+        YAALA           & No            & Yes \ddag{}       & Searches          & Poor           & Yes          \\
+        Lire            & Yes           & Yes               & Yes               & Reasonable     & Yes          \\
+        Logrep          & No            & Yes               & No                & Poor           & Yes          \\
+        \parsername{}   & Yes           & Yes \nibeta{}     & No \nichi{}       & XXX            & Yes          \\
         \tableline{}
     \end{tabular}
 
@@ -879,10 +884,14 @@ understanding of Postfix log files achieved by \parsername{}.
         \item [\ddag{}] YAALA only stores the data required to produce the
             latest report; other data will be discarded.
 
-        \item [\nialpha{}] \parsername{} is the only parser with
+        \item [\nialpha{}] Sawmill's source code is available in an
+            obfuscated form, so that customers can compile it on platforms
+            that pre-compiled binaries are not available for.
+
+        \item [\nibeta{}] \parsername{} is the only parser with
             documentation for its data store.
 
-        \item [\nibeta{}] \parsername{} defers report generation to
+        \item [\nichi{}] \parsername{} defers report generation to
             subsequent programs, but all the necessary data and
             documentation to produce reports is provided.
 
@@ -890,3 +899,4 @@ understanding of Postfix log files achieved by \parsername{}.
 
 \end{table}
 
+\clearpage{}
