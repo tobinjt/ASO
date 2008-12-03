@@ -8,6 +8,7 @@
 %  % or whatever (possibly just delete it)
 %}
 \useoutertheme{infolines}
+\defbeamertemplate*{headline}{JT theme}{}
 
 \usepackage[english]{babel}
 % or whatever
@@ -19,6 +20,10 @@
 \usepackage[T1]{fontenc}
 % Or whatever. Note that the encoding and the font should match. If T1
 % does not look nice, try deleting the line with the fontenc.
+
+\newcommand{\timingnote}[1]{%
+    \textbf{#1}%
+}
 
 \title{A User-Extensible and Adaptable Parser Architecture}
 
@@ -45,33 +50,16 @@
 % \logo{\pgfuseimage{university-logo}}
 
 
-
-%% Delete this, if you do not want the table of contents to pop up at
-%% the beginning of each subsection:
-%\AtBeginSubsection[]
-%{
-%  \begin{frame}<beamer>{Outline}
-%    \tableofcontents[currentsection,currentsubsection]
-%  \end{frame}
-%}
-
-
-% If you wish to uncover everything in a step-wise fashion, uncomment
-% the following command: 
-
-%\beamerdefaultoverlayspecification{<+->}
-
-
 \begin{document}
 
 \begin{frame}
+    \timingnote{30 seconds}
     \titlepage{}
 \end{frame}
 
-% XXX MAYBE REMOVE THIS
-\begin{frame}{Outline}
+\begin{frame}{Outline of this talk}
+    \timingnote{30 seconds --- 1 minute}
     \tableofcontents{}
-    % You might wish to add the option [pausesections]
 \end{frame}
 
 
@@ -96,36 +84,52 @@
 
 \begin{frame}{Background}
 
+    \timingnote{1--2 minutes}
+
+    This parser architecture was developed as part of a larger project to
+    improve anti-spam techniques.
+
     \begin{description}
 
-        \item [Aim] To improve SMTP-time anti-spam restriction / measures /
-            techniques.
+        \item [Currently] Most anti-spam techniques are content-based, and
+            require each mail to be accepted before determining its spam
+            status.
+
+        \item [However] Rejecting mail at SMTP-time is more efficient, and
+            senders of non-spam mails that are incorrectly rejected will be
+            informed immediately.
+
+        \item [Project Aim] To improve SMTP-time anti-spam techniques, by
+            providing a platform for reasoning about anti-spam techniques.
 
         \item [Method] Parse Postfix log files and analyse the data
             extracted.
 
-    \end{description}
+        \item [XXX] This requires a parser for Postfix log files.
 
-    This requires a parser for Postfix log files.
+    \end{description}
 
 \end{frame}
 
-\section{XXX}
+\section{Input characteristics}
 
-\begin{frame}{XXX}
+\begin{frame}{Input characteristics}
+
+    \timingnote{1 minute}
 
     \begin{itemize}
 
         \item Postfix log lines change over time and from site to site, so
-            it must be easy for the end user to parse new lines.
+            it must be easy for the end user to parse new log lines.
 
-        \item The processing required for a type of line (e.g.\ remote
-            server connecting to send mail) rarely changes, but it can be
-            quite complex.
+        \item The processing required for a type of log line (e.g.\ a
+            remote server connecting to send mail) rarely changes, but it
+            can be quite complex.
 
-        \item By separating parsing of lines from processing of lines, we
-            can make parsing new lines as easy as possible, while still
-            allowing for complicated processing when necessary.
+        \item By separating parsing of log lines from processing of log
+            lines, we can make parsing new or changed log lines as easy as
+            possible, while still allowing for complicated processing when
+            necessary.
 
     \end{itemize}
 
@@ -136,12 +140,17 @@
 
 \begin{frame}{Architecture}
 
+    \timingnote{2 minutes}
+
+    The architecture is divided into three parts:
+
     \begin{description}
 
         \item [Framework] The framework handles loading rules and providing
-            services to actions, e.g.\ data storage.  The framework tries
-            each rule in turn until one matches, then it invokes the action
-            specified by the rule.
+            services (XXX BETTER WORD\@?) to actions, e.g.\ data storage,
+            inter-action communication, XXX ANOTHER EXAMPLE\@.  For each
+            input log line, the framework tries each rule in turn until one
+            matches, then it invokes the action specified by the rule.
 
         \item [Actions] Each action performs the processing required, e.g.\
             XXX GIVE SOME EXAMPLES\@.
@@ -154,21 +163,31 @@
 
 \end{frame}
 
-\section{Features}
+\section{Features of the Architecture}
 
-\begin{frame}{Features}
+\begin{frame}{Features of the Architecture}
+
+    \timingnote{2 minutes}
 
     \begin{itemize}
 
-        \item Cascaded parsing.
+        \item Cascaded Parsing.  XXX SHOULD I HAVE A REFERENCE\@?
 
         \item The parser does not need to be recompiled when rules are
-            changed.
+            changed, allowing: quicker testing of modified rules; different
+            rulesets can easily be used; combining two or more rulesets.
 
-        \item Different rulesets can easily be used.
+        \item Rules can be changed or added by actions while the parser is
+            running, allowing dynamically changing parsing, e.g.\ macros.
+            This feature must be used with care.
 
-        \item Rules can be added by actions while the parser is running,
-            allowing dynamically changing parsing, e.g.\ macros.
+        \item The architecture is capable of parsing inputs that are not
+            completely understood, e.g.\ when developing a parser: the
+            framework will warn about unparsed inputs but will continue on
+            parsing as best it can.
+
+        \item Parsing can optionally be stateful, e.g.\ parsing a
+            programming language.
 
         \item XXX MORE FEATURES\@?
 
@@ -181,14 +200,26 @@
 
 \begin{frame}{Efficiency}
 
+    \timingnote{2 minutes}
+
     \begin{itemize}
 
-        \item Rules are sorted by how frequently they match.
+        \item Median throughput when parsing 93 log files is 80.85~MB
+            (480,569 log lines) parsed per minute.
 
-        \item Architecture scales linearly as the number of rules
-            increases.
+        \item Rules are tagged with the name of a Postfix daemon, and will
+            only be used to parse log lines produced by that daemon.
 
-        \item Performance is \ldots{} XXX 
+        \item Rules are sorted by how frequently they match, resulting in a
+            mean reduction of 14.78\% in parsing time compared to using
+            unsorted rules.
+
+        \item The architecture scales extremely well as the number of rules
+            increases: a 46.05\% increase in Postfix ruleset resulted in a
+            mean increase of 0.63\% in parsing time.
+
+        \item Parsing time scales linearly with input size, but is affected
+            by input content.
 
         \item XXX MORE\@?
 
@@ -198,7 +229,9 @@
 
 \section{Results}
 
-\begin{frame}{Results.}
+\begin{frame}{Results}
+
+    \timingnote{1--2 minutes}
 
     \begin{itemize}
 
@@ -206,7 +239,8 @@
 
         \item 100\% coverage of all mails accepted, delivered, or rejected.
 
-        \item XXX rules.
+        \item 169 rules: the top 10\% match 85.03\% of log lines, the
+            remainder tailing off similar to a Power Law distribution.
 
         \item XXX MORE\@?
 
@@ -214,19 +248,54 @@
 
 \end{frame}
 
+\section{Future Directions}
+
+\begin{frame}{Future Directions}
+
+    \timingnote{1--2 minutes}
+
+    \begin{itemize}
+
+        \item Use Machine Learning instead of writing rules; Instance Based
+            Learning techniques a requirement due to the size of the data
+            set.
+
+        \item Detection of overlapping rules.
+
+        \item XXX REFERENCE IMPLEMENTATION\@?
+
+    \end{itemize}
+
+\end{frame}
 
 
 \section*{Summary}
 
 \begin{frame}{Summary}
 
+    \timingnote{1 minute}
+
     \begin{itemize}
 
-        \item The \alert{first main message} of your talk in one or two lines.
+        \item East to develop a flexible yet strict parser.
 
-        \item The \alert{second main message} of your talk in one or two lines.
+        \item Easy for users to parse new or changed inputs.
 
-        \item Perhaps a \alert{third message}, but not more than that.
+        \item Parser can still be efficient and fast.
+
+    \end{itemize}
+
+    \timingnote{remainder}
+
+    \begin{itemize}
+
+        \item XXX MAYBE ON A SEPARATE SLIDE\@?
+
+        \item Questions?
+
+        \item Comments?
+
+        \item Suggestions?
 
     \end{itemize}
 
