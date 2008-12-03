@@ -462,6 +462,9 @@ diction:
 		untex -a -e "$$file" | diction --suggest --file diction-rules --no-default-file | less -M -w "-PM$$file %lt/%L"; \
 	done
 
+slides-xpdf: sgai-2008-slides.pdf
+	xpdf "$<" &
+
 slides: sgai-2008-slides.pdf
 
 sgai-2008-slides.pdf: sgai-2008-slides.tex

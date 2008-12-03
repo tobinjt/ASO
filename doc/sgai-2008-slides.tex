@@ -55,6 +55,7 @@
 \begin{frame}
     \timingnote{30 seconds}
     \titlepage{}
+    XXX EMAIL ADDRESSES\@.
 \end{frame}
 
 \begin{frame}{Outline of this talk}
@@ -105,7 +106,7 @@
         \item [Method] Parse Postfix log files and analyse the data
             extracted.
 
-        \item [XXX] This requires a parser for Postfix log files.
+        \item [Conclusion] This requires a parser for Postfix log files.
 
     \end{description}
 
@@ -133,6 +134,8 @@
 
     \end{itemize}
 
+    XXX SAMPLE LOG LINE\@; MAYBE HOW IT IS PARSED\@?
+
 \end{frame}
 
 
@@ -147,10 +150,10 @@
     \begin{description}
 
         \item [Framework] The framework handles loading rules and providing
-            services (XXX BETTER WORD\@?) to actions, e.g.\ data storage,
-            inter-action communication, XXX ANOTHER EXAMPLE\@.  For each
-            input log line, the framework tries each rule in turn until one
-            matches, then it invokes the action specified by the rule.
+            support functions to actions, e.g.\ data storage, inter-action
+            communication, and utility functions.  For each input log line,
+            the framework tries each rule in turn until one matches, then
+            it invokes the action specified by the rule.
 
         \item [Actions] Each action performs the processing required, e.g.\
             XXX GIVE SOME EXAMPLES\@.
@@ -171,30 +174,58 @@
 
     \begin{itemize}
 
-        \item Cascaded Parsing.  XXX SHOULD I HAVE A REFERENCE\@?
-
-        \item The parser does not need to be recompiled when rules are
-            changed, allowing: quicker testing of modified rules; different
-            rulesets can easily be used; combining two or more rulesets.
-
-        \item Rules can be changed or added by actions while the parser is
-            running, allowing dynamically changing parsing, e.g.\ macros.
-            This feature must be used with care.
-
         \item The architecture is capable of parsing inputs that are not
             completely understood, e.g.\ when developing a parser: the
             framework will warn about unparsed inputs but will continue on
-            parsing as best it can.
+            parsing as best it can.  \timingnote{Emphasise this.}
 
-        \item Parsing can optionally be stateful, e.g.\ parsing a
-            programming language.
+        \item Rules can be tagged with conditions which must hold before
+            the rule will be used to match an input.  XXX MAYBE EXTEND THIS
+            A LITTLE WITH AN EXAMPLE\@?  DO I NEED AN EXAMPLE, WHEN THERE'S
+            ONE IN A COUPLE OF SLIDE'S TIME\@?
 
-        \item XXX MORE FEATURES\@?
+        \item The parser does not need to be recompiled when rules are
+            changed, allowing: quicker testing of modified rules; easing
+            interchange of rulesets; combining two or more rulesets.
+
+        \item Cascaded Parsing.
+
+        \item Rules can be changed or added by actions while the parser is
+            running, allowing dynamically changing parsing, e.g.\ macros.
+            This feature must be used with care.  \timingnote{Currying
+            functions in a calculator might be a good example.}
 
     \end{itemize}
 
 \end{frame}
 
+
+\section{Results}
+
+\begin{frame}{Results}
+
+    \timingnote{1--2 minutes}
+
+    \begin{itemize}
+
+        \item 100\% coverage of log lines.
+
+        \item 100\% coverage of all mails accepted, delivered, or rejected.
+
+        \item 169 rules parsing 522 contiguous log files: the top 10\% of
+            the rules match 85.03\% of the log lines, the remainder tailing
+            off similar to a Power Law distribution.
+
+        \item Most actions are triggered by one or two rules, because they
+            deal with special cases.  Three actions are triggered by more
+            than 40 rules.  \timingnote{build/stats-action-distribution}
+            XXX EXPAND ON THIS\@?
+
+        \item XXX MORE\@?
+
+    \end{itemize}
+
+\end{frame}
 
 \section{Efficiency}
 
@@ -215,32 +246,12 @@
             unsorted rules.
 
         \item The architecture scales extremely well as the number of rules
-            increases: a 46.05\% increase in Postfix ruleset resulted in a
-            mean increase of 0.63\% in parsing time.
+            increases: a 46.05\% increase in the Postfix ruleset ($115
+            \rightarrow{} 169$ rules) resulted in a mean increase of 0.63\%
+            in parsing time.
 
-        \item Parsing time scales linearly with input size, but is affected
-            by input content.
-
-        \item XXX MORE\@?
-
-    \end{itemize}
-
-\end{frame}
-
-\section{Results}
-
-\begin{frame}{Results}
-
-    \timingnote{1--2 minutes}
-
-    \begin{itemize}
-
-        \item 100\% coverage of log lines.
-
-        \item 100\% coverage of all mails accepted, delivered, or rejected.
-
-        \item 169 rules: the top 10\% match 85.03\% of log lines, the
-            remainder tailing off similar to a Power Law distribution.
+        \item Parsing time scales linearly with input size, but
+            \textit{is\/} affected by input content.
 
         \item XXX MORE\@?
 
@@ -256,11 +267,18 @@
 
     \begin{itemize}
 
+        \item Data mining to determine how well each anti-spam technique
+            works.
+
+        \item Data mining to search for combinations of features which can
+            be used to detect spam, and development of new anti-spam
+            techniques to defeat such spam.
+
         \item Use Machine Learning instead of writing rules; Instance Based
             Learning techniques a requirement due to the size of the data
-            set.
+            set.  \timingnote{Compare to SLCT-based tool.}
 
-        \item Detection of overlapping rules.
+        \item Detection of overlapping rules.  XXX MORE DETAILS\@.
 
         \item XXX REFERENCE IMPLEMENTATION\@?
 
@@ -269,7 +287,7 @@
 \end{frame}
 
 
-\section*{Summary}
+\section{Summary}
 
 \begin{frame}{Summary}
 
@@ -289,13 +307,9 @@
 
     \begin{itemize}
 
-        \item XXX MAYBE ON A SEPARATE SLIDE\@?
-
         \item Questions?
 
         \item Comments?
-
-        \item Suggestions?
 
     \end{itemize}
 
