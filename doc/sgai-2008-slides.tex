@@ -27,15 +27,16 @@
 
 \title{A User-Extensible and Adaptable Parser Architecture}
 
-\author{John Tobin \and Carl Vogel}
+\author[John Tobin \and Carl Vogel]{John Tobin \and Carl Vogel\\
+    tobinjt@cs.tcd.ie vogel@cs.tcd.ie}
 % - Give the names in the same order as the appear in the paper.
 % - Use the \inst{?} command only if the authors have different
 %   affiliation.
 
 \institute[Trinity College]
 {
-  School of Computer Science and Statistics\\
-  Trinity College, University of Dublin
+    School of Computer Science and Statistics,\\
+    Trinity College, University of Dublin
 }
 
 \date[SGAI 2008]{Twenty-eighth SGAI International Conference on Artificial Intelligence}
@@ -55,10 +56,9 @@
 \begin{frame}
     \timingnote{30 seconds}
     \titlepage{}
-    XXX EMAIL ADDRESSES\@.
 \end{frame}
 
-\begin{frame}{Outline of this talk}
+\begin{frame}{Outline Of This Talk}
     \timingnote{30 seconds --- 1 minute}
     \tableofcontents{}
 \end{frame}
@@ -92,29 +92,30 @@
 
     \begin{description}
 
-        \item [Currently] Most anti-spam techniques are content-based, and
-            require each mail to be accepted before determining its spam
-            status.
+        \item [Currently] Most commonly used anti-spam techniques are
+            content-based, and require each mail to be accepted before
+            determining its spam status.
 
         \item [However] Rejecting mail at SMTP-time is more efficient, and
-            senders of non-spam mails that are incorrectly rejected will be
-            informed immediately.
+            senders of non-spam mails that are incorrectly rejected will
+            receive a bounce notification immediately.
 
         \item [Project Aim] To improve SMTP-time anti-spam techniques, by
             providing a platform for reasoning about anti-spam techniques.
 
-        \item [Method] Parse Postfix log files and analyse the data
-            extracted.
+        \item [Method] Parse Postfix log files and analyse the
+            extracted data.
 
-        \item [Conclusion] This requires a parser for Postfix log files.
+        \item [Conclusion] This method requires a parser for Postfix log
+            files.
 
     \end{description}
 
 \end{frame}
 
-\section{Input characteristics}
+\section{Input Characteristics}
 
-\begin{frame}{Input characteristics}
+\begin{frame}{Input Characteristics}
 
     \timingnote{1 minute}
 
@@ -123,9 +124,9 @@
         \item Postfix log lines change over time and from site to site, so
             it must be easy for the end user to parse new log lines.
 
-        \item The processing required for a type of log line (e.g.\ a
-            remote server connecting to send mail) rarely changes, but it
-            can be quite complex.
+        \item The processing required for a type of log line (e.g.\
+            rejecting a mail delivery attempt) rarely changes, but it can
+            be quite complex.
 
         \item By separating parsing of log lines from processing of log
             lines, we can make parsing new or changed log lines as easy as
@@ -134,7 +135,10 @@
 
     \end{itemize}
 
-    XXX SAMPLE LOG LINE\@; MAYBE HOW IT IS PARSED\@?
+    Sample log line: \texttt{NOQUEUE\@: reject: RCPT from
+    client.example.net[192.0.2.1]: 554 5.7.1 <alice@example.net>: Relay
+    access denied; from=<eve@example.com> to=<alice@example.net> proto=SMTP
+    helo=<client.example.com>}
 
 \end{frame}
 
@@ -149,14 +153,16 @@
 
     \begin{description}
 
-        \item [Framework] The framework handles loading rules and providing
-            support functions to actions, e.g.\ data storage, inter-action
+        \item [Framework] The framework manages rules and provides support
+            functions to actions, e.g.\ data storage, inter-action
             communication, and utility functions.  For each input log line,
             the framework tries each rule in turn until one matches, then
             it invokes the action specified by the rule.
 
         \item [Actions] Each action performs the processing required, e.g.\
-            XXX GIVE SOME EXAMPLES\@.
+            create a new data structure when a client connects; record than
+            an anti-spam measure was successful; commit the data structure
+            when all processing is complete.
 
         \item [Rules] Each rule matches one type of log line, e.g.\ the log
             line resulting from client connecting, a mail successfully
@@ -180,9 +186,7 @@
             parsing as best it can.  \timingnote{Emphasise this.}
 
         \item Rules can be tagged with conditions which must hold before
-            the rule will be used to match an input.  XXX MAYBE EXTEND THIS
-            A LITTLE WITH AN EXAMPLE\@?  DO I NEED AN EXAMPLE, WHEN THERE'S
-            ONE IN A COUPLE OF SLIDE'S TIME\@?
+            the rule will be used to match an input.
 
         \item The parser does not need to be recompiled when rules are
             changed, allowing: quicker testing of modified rules; easing
@@ -216,10 +220,11 @@
             the rules match 85.03\% of the log lines, the remainder tailing
             off similar to a Power Law distribution.
 
-        \item Most actions are triggered by one or two rules, because they
-            deal with special cases.  Three actions are triggered by more
-            than 40 rules.  \timingnote{build/stats-action-distribution}
-            XXX EXPAND ON THIS\@?
+        \item Most actions are triggered by only one or two rules.
+
+        \item The top three actions are triggered by 41, 49, and 59 rules.
+            \timingnote{build/stats-action-distribution}
+            \timingnote{uninteresting, save\_data, delivery\_rejected}
 
         \item XXX MORE\@?
 
@@ -235,11 +240,12 @@
 
     \begin{itemize}
 
-        \item Median throughput when parsing 93 log files is 80.85~MB
-            (480,569 log lines) parsed per minute.
+        \item Median throughput is 80.85~MB (480,569 log lines) parsed per
+            minute.
 
-        \item Rules are tagged with the name of a Postfix daemon, and will
-            only be used to parse log lines produced by that daemon.
+        \item Rules are tagged with the name of a Postfix component, and
+            will only be used to parse log lines produced by that
+            component.
 
         \item Rules are sorted by how frequently they match, resulting in a
             mean reduction of 14.78\% in parsing time compared to using
@@ -252,8 +258,6 @@
 
         \item Parsing time scales linearly with input size, but
             \textit{is\/} affected by input content.
-
-        \item XXX MORE\@?
 
     \end{itemize}
 
@@ -274,13 +278,14 @@
             be used to detect spam, and development of new anti-spam
             techniques to defeat such spam.
 
-        \item Use Machine Learning instead of writing rules; Instance Based
-            Learning techniques a requirement due to the size of the data
-            set.  \timingnote{Compare to SLCT-based tool.}
+        \item Use Machine Learning techniques instead of writing rules;
+            Instance Based Learning techniques must be used due to the size
+            of the data set.  \timingnote{Compare to SLCT-based tool.}
 
-        \item Detection of overlapping rules.  XXX MORE DETAILS\@.
+        \item Detection of overlapping rules: intersection of Finite
+            Automata or Push-Down Automata.
 
-        \item XXX REFERENCE IMPLEMENTATION\@?
+        \item Provide a reference implementation.
 
     \end{itemize}
 
@@ -295,7 +300,7 @@
 
     \begin{itemize}
 
-        \item East to develop a flexible yet strict parser.
+        \item Easy to develop a flexible yet strict parser.
 
         \item Easy for users to parse new or changed inputs.
 
