@@ -92,8 +92,8 @@
 
     \begin{description}
 
-        \item [Currently] Most commonly used anti-spam techniques are
-            content-based, and require each mail to be accepted before
+        \item [Currently] Most of the commonly used anti-spam techniques
+            are content-based, and require each mail to be accepted before
             determining its spam status.
 
         \item [However] Rejecting mail at SMTP-time is more efficient, and
@@ -106,16 +106,16 @@
         \item [Method] Parse Postfix log files and analyse the
             extracted data.
 
-        \item [Conclusion] This method requires a parser for Postfix log
+        \item [Therefore] This method requires a parser for Postfix log
             files.
 
     \end{description}
 
 \end{frame}
 
-\section{Input Characteristics}
+\section{Characteristics Of The Input: Postfix Log Files}
 
-\begin{frame}{Input Characteristics}
+\begin{frame}{Characteristics Of The Input: Postfix Log Files}
 
     \timingnote{1 minute}
 
@@ -135,21 +135,17 @@
 
     \end{itemize}
 
-    Sample log line: \texttt{NOQUEUE\@: reject: RCPT from
-    client.example.net[192.0.2.1]: 554 5.7.1 <alice@example.net>: Relay
-    access denied; from=<eve@example.com> to=<alice@example.net> proto=SMTP
-    helo=<client.example.com>}
-
 \end{frame}
 
 
-\section{Architecture}
+\section{Parser Architecture}
 
-\begin{frame}{Architecture}
+\begin{frame}{Parser Architecture}
 
     \timingnote{2 minutes}
 
-    The architecture is divided into three parts:
+    The parser architecture is divided into three parts: Framework,
+    Actions, and Rules.
 
     \begin{description}
 
@@ -159,12 +155,12 @@
             the framework tries each rule in turn until one matches, then
             it invokes the action specified by the rule.
 
-        \item [Actions] Each action performs the processing required, e.g.\
-            create a new data structure when a client connects; record than
-            an anti-spam measure was successful; commit the data structure
-            when all processing is complete.
+        \item [Actions] Each action performs the processing required by one
+            type of log line.  Actions correspond to events: events within
+            Postfix create log lines, and actions perform the processing
+            required by those events.
 
-        \item [Rules] Each rule matches one type of log line, e.g.\ the log
+        \item [Rules] Each rule matches one log line variant, e.g.\ the log
             line resulting from client connecting, a mail successfully
             delivered, or a mail rejected by an anti-spam measure.
 
@@ -172,21 +168,20 @@
 
 \end{frame}
 
-\section{Features of the Architecture}
+\section{Features Of The Architecture}
 
-\begin{frame}{Features of the Architecture}
+\begin{frame}{Features Of The Architecture}
 
     \timingnote{2 minutes}
 
     \begin{itemize}
 
-        \item The architecture is capable of parsing inputs that are not
-            completely understood, e.g.\ when developing a parser: the
-            framework will warn about unparsed inputs but will continue on
-            parsing as best it can.  \timingnote{Emphasise this.}
+        \item The architecture can be used when parsing input files that
+            are not completely understood or that do not have 100\% parsing
+            coverage.  \timingnote{Emphasise this.}
 
         \item Rules can be tagged with conditions which must hold before
-            the rule will be used to match an input.
+            the rule will be used when attempting to match an input.
 
         \item The parser does not need to be recompiled when rules are
             changed, allowing: quicker testing of modified rules; easing
@@ -194,19 +189,20 @@
 
         \item Cascaded Parsing.
 
-        \item Rules can be changed or added by actions while the parser is
-            running, allowing dynamically changing parsing, e.g.\ macros.
-            This feature must be used with care.  \timingnote{Currying
-            functions in a calculator might be a good example.}
+        \item Rules can be added, changed, or removed by actions while the
+            parser is running, allowing dynamically changing parsing, e.g.\
+            macros.  This feature must be used with care.
+            \timingnote{Currying functions in a calculator might be a good
+            example.}
 
     \end{itemize}
 
 \end{frame}
 
 
-\section{Results}
+\section{Results Of Writing A Parser Using This Architecture}
 
-\begin{frame}{Results}
+\begin{frame}{Results Of Writing A Parser Using This Architecture}
 
     \timingnote{1--2 minutes}
 
@@ -216,32 +212,34 @@
 
         \item 100\% coverage of all mails accepted, delivered, or rejected.
 
-        \item 169 rules parsing 522 contiguous log files: the top 10\% of
-            the rules match 85.03\% of the log lines, the remainder tailing
-            off similar to a Power Law distribution.
+        \item Zero false positives or false negatives.
 
-        \item Most actions are triggered by only one or two rules.
+        \item 169 rules parsing 522 contiguous log files: the top 10 rules
+            match 85.03\% of the log lines, the remainder tail off similar
+            to a Power Law distribution.
+
+        \item 18 actions; most are triggered by only one or two rules.
+            \timingnote{client connecting, postfix reloading}
 
         \item The top three actions are triggered by 41, 49, and 59 rules.
-            \timingnote{build/stats-action-distribution}
+            \timingnote{build/stats-action-distribution:}
             \timingnote{uninteresting, save\_data, delivery\_rejected}
-
-        \item XXX MORE\@?
 
     \end{itemize}
 
 \end{frame}
 
-\section{Efficiency}
+\section{Parser Efficiency}
 
-\begin{frame}{Efficiency}
+\begin{frame}{Parser Efficiency}
 
     \timingnote{2 minutes}
 
     \begin{itemize}
 
         \item Median throughput is 80.85~MB (480,569 log lines) parsed per
-            minute.
+            minute; median log file size is 50 MB, containing 285,000 log
+            lines.
 
         \item Rules are tagged with the name of a Postfix component, and
             will only be used to parse log lines produced by that
@@ -249,7 +247,8 @@
 
         \item Rules are sorted by how frequently they match, resulting in a
             mean reduction of 14.78\% in parsing time compared to using
-            unsorted rules.
+            unsorted rules.  Priority attribute can be used to override
+            this.
 
         \item The architecture scales extremely well as the number of rules
             increases: a 46.05\% increase in the Postfix ruleset ($115
@@ -257,7 +256,9 @@
             in parsing time.
 
         \item Parsing time scales linearly with input size, but
-            \textit{is\/} affected by input content.
+            \textit{is\/} affected by input content: the content determines
+            the actions that will run, and some actions take longer to run
+            than others.
 
     \end{itemize}
 
@@ -300,9 +301,11 @@
 
     \begin{itemize}
 
-        \item Easy to develop a flexible yet strict parser.
+        \item Parser Architecture makes it easy to develop a flexible yet
+            strict parser.
 
-        \item Easy for users to parse new or changed inputs.
+        \item Parser Architecture makes it easy for users to parse new or
+            changed inputs.
 
         \item Parser can still be efficient and fast.
 
