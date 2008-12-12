@@ -22,7 +22,7 @@
 % does not look nice, try deleting the line with the fontenc.
 
 \newcommand{\timingnote}[1]{%
-    \textbf{#1}%
+    %\textbf{#1}%
 }
 
 \title{A User-Extensible and Adaptable Parser Architecture}
@@ -124,7 +124,8 @@
     \begin{itemize}
 
         \item Postfix log lines change over time and from site to site, so
-            it must be easy for the end user to parse new log lines.
+            it must be easy for the end user to parse new or changed log
+            lines.
 
         \item The processing required for a type of log line (e.g.\
             rejecting a mail delivery attempt) rarely changes, but it can
@@ -132,7 +133,7 @@
 
         \item By separating parsing of log lines from processing of log
             lines, we can make parsing new or changed log lines as easy as
-            possible, while still allowing for complicated processing when
+            possible, while still allowing for complex processing when
             necessary.
 
     \end{itemize}
@@ -146,16 +147,16 @@
 
     \timingnote{2 minutes}
 
-    The parser architecture is divided into three parts: Framework,
-    Actions, and Rules.
+    The parser architecture is divided into three parts: \newline{}
+    Framework, Actions, and Rules.
 
     \begin{description}
 
         \item [Framework] The framework manages rules, manages the parsing
-            process, and provides support functions to actions.  For each
-            input log line, the framework tries each rule in turn until one
-            matches, then it invokes the action specified by the matching
-            rule.
+            process, and provides support functions to actions.  \newline{}
+            For each input log line, the framework tries each rule in turn
+            until one matches, then it invokes the action specified by the
+            matching rule.
 
         \item [Actions] Each action performs the processing required by one
             \alert{type} of log line.  Actions correspond to events: events
@@ -180,7 +181,7 @@
     \begin{itemize}
 
         \item The architecture can be used when parsing input files that
-            are not completely understood or that do not have 100\% parsing
+            are not completely understood or do not have 100\% parsing
             coverage.  \timingnote{Emphasise this.}
 
         \item Rules can be tagged with conditions which must hold before
@@ -192,9 +193,9 @@
         \item Cascaded Parsing.
 
         \item Rules can be added, changed, or removed by actions while the
-            parser is running, allowing dynamically changing parsing, e.g.\
-            macros.  \timingnote{Currying functions in a calculator might
-            be a good example.}
+            parser is running, allowing dynamically changing parsing.
+            \timingnote{Currying functions in a calculator might be a good
+            example.}
 
     \end{itemize}
 
@@ -217,15 +218,15 @@
 
         \item 115 (now 169) rules parsing 93 (now 522) contiguous log
             files: the 10 most frequently matching rules match 85.03\% of
-            the log lines, the remainder tail off similar to a Power Law
-            distribution.
+            the log lines, the remaining rules tail off similar to a Power
+            Law distribution.
 
-        \item 18 actions; 15 are triggered by only one or two rules.
-            \timingnote{client connecting, postfix reloading}
+        \item 18 actions, of which 15 are triggered by only one or two
+            rules.  \timingnote{client connecting, postfix reloading}
 
-        \item 3 actions are triggered by an average of 50 rules:
-            uninteresting (41), save\_data (49), and delivery\_rejected
-            (59).
+        \item 3 actions are triggered by a high number of rules:
+            uninteresting~(41), save\_data~(49), and
+            delivery\_rejected~(59).
             %\timingnote{build/stats-action-distribution:}
 
     \end{itemize}
@@ -249,9 +250,9 @@
             component.
 
         \item Rules are sorted by how frequently they match, resulting in a
-            mean reduction of 14.78\% in parsing time.  Priority attribute
-            can be used to override this.  \timingnote{change in ordering
-            is informative.  Described in paper}
+            mean reduction of 14.78\% in parsing time.  A priority
+            attribute can be used to override this.  \timingnote{change in
+            ordering is informative.  Described in paper}
 
         \item The architecture scales extremely well as the number of rules
             increases: a 46.05\% increase in the Postfix ruleset ($115
@@ -261,8 +262,8 @@
 
         \item Parsing time scales linearly with input size, but
             \textit{is\/} affected by input log lines: the log lines
-            determine the number of rules used and the actions that will
-            run, and some actions take longer to run than others.
+            determine the number of rules used and the actions that run,
+            and some actions take longer to run than others.
 
     \end{itemize}
 
@@ -278,12 +279,12 @@
 
     \begin{itemize}
 
-        \item Data mining to determine how well each anti-spam technique
-            works.
+        \item Data mining to determine how effective each of the anti-spam
+            techniques we currently use is.
 
         \item Data mining to search for combinations of features which can
             be used to detect spam, and development of new anti-spam
-            techniques to defeat such spam.
+            techniques to reject such spam.
 
     \end{itemize}
 
@@ -291,11 +292,11 @@
 
     \begin{itemize}
 
-        \item Use Machine Learning techniques instead of writing rules;
-            Instance Based Learning techniques must be used due to the size
-            of the data set.  This is one use of the ability to add or
-            change rules at run-time.  \timingnote{Compare to SLCT-based
-            tool.}
+        \item Use Machine Learning techniques instead of writing rules by
+            hand; Instance Based Learning techniques must be used due to
+            the size of the data set.  This is one potential use of the
+            ability to add or change rules at run-time.
+            \timingnote{Compare to SLCT-based tool.}
 
         \item Detection of overlapping rules: intersection of Finite
             Automata or Push-Down Automata; how do rule conditions overlap?
