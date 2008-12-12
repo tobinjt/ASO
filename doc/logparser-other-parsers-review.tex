@@ -858,9 +858,10 @@ understanding of Postfix log files achieved by \parsername{}.
     \caption{Summary of parsers' features}
     \empty{}\label{Summary of parsers' features}
     \begin{tabular}{llllll}
+        \tabletopline{}%
         Parser          & Parsed test   & Data              & Custom            & Documentation  & Source       \\
                         & log files?    & store?            & reports?          & quality?       & code?        \\
-        \tableline{}%
+        \tablemiddleline{}%
         \gls{LMA}       & No            & Yes               & No                & Poor           & Yes          \\ 
         Pflogsumm       & Yes           & No                & Partial \dag{}    & Good           & Yes          \\
         Sawmill         & Yes           & Yes               & Searches          & Very good      & \nialpha{}   \\
@@ -873,7 +874,7 @@ understanding of Postfix log files achieved by \parsername{}.
         Lire            & Yes           & Yes               & Yes               & Reasonable     & Yes          \\
         Logrep          & No            & Yes               & No                & Poor           & Yes          \\
         \parsername{}   & Yes           & Yes \nibeta{}     & No \nichi{}       & XXX            & Yes          \\
-        \tableline{}
+        \tablebottomline{}%
     \end{tabular}
 
     \begin{eqlist}

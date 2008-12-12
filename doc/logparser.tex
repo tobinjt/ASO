@@ -5,33 +5,40 @@
 \usepackage{amstext}
 % Include images
 \usepackage[final]{graphicx}
+\usepackage{url}
 % Add the bibliography into the table of contents.
 \usepackage[section,numbib]{tocbibind}
 % Create a label for the last page.  Might be useful for "page 23/79" or
 % something.
 \usepackage{lastpage}
 
-% Extra packages recommended by Springer: they change the fonts from
-% Computer Modern to something else and tells Latex to use scalable fonts.
-\usepackage{type1cm}
-%\usepackage{mathptmx}
-%\usepackage{helvet}
-%\usepackage{courier}
 % Extra footnote functionality, including references to earlier footnotes.
-\usepackage{footmisc}
+\usepackage[bottom]{footmisc}
 % The Euro symbol
 \usepackage{eurofont}
 
 % Aligned list environments.
 \usepackage{eqlist}
 
+% Tell Latex to use scalable fonts
+\usepackage{type1cm}
+
+% Extra packages recommended by Springer.
+%\usepackage{mathptmx}
+%\usepackage{helvet}
+%\usepackage{courier}
+%\usepackage{makeidx}
+%\usepackage{multicol}
+
+% Embed SVN Id etc.
+\usepackage{svn}
+
 % Sort numbers where there are multiple citations.  Does not appear to have
 % the expected effect (probably clashes with varioref or hyperref), though
 % it does reduce the space between numbers.
 \usepackage{cite}
-
-% Embed SVN Id etc.
-\usepackage{svn}
+% Check for unused references.
+% \usepackage{refcheck}
 
 % Produce nicer references like "section 4.3 on the next page"
 % Must be loaded before hyperref.
@@ -134,14 +141,24 @@
 }
 
 %\showtable{filename}{caption}{label}
-\newcommand{\showtable}[3]{%
+\newcommand{\showtable}[3]{
     \begin{table}[ht]
         \caption{#2}\label{#3}
         \input{#1}
     \end{table}
 }
 
-\newcommand{\tableline}[0]{%
+\newcommand{\tabletopline}[0]{%
+    \hline%
+    \noalign{\smallskip}%
+}
+
+\newcommand{\tablebottomline}[0]{%
+    \noalign{\smallskip}%
+    \hline%
+}
+
+\newcommand{\tablemiddleline}[0]{%
     \noalign{\smallskip}%
     \hline%
     \noalign{\smallskip}%
