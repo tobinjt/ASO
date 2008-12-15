@@ -1,10 +1,6 @@
-\newpage{} %XXX
-
 \section{State of the Art Review}
 
 \label{state of the art review}
-
-XXX UPDATE THE BLURBS\@.
 
 It is important to compare and contrast newly developed programs,
 algorithms, and parsers against those already available, to accurately
@@ -28,7 +24,7 @@ and the parsers reviewed here:
 
     \item Only \parsername{} makes it possible to parse new log lines
         without extensive and intrusive modifications to the parser;
-        \parsername{}'s architecture is described in \sectionref{why
+        \parsernames{} architecture is described in \sectionref{why
         separate rules, actions, and framework?}.
 
     \item The parsers reviewed all produce a report of varying complexity
@@ -63,18 +59,19 @@ and the parsers reviewed here:
 
 \end{enumerate}
 
-XXX EXTEND THIS\@.
-
-Each of the parsers was tested with the \numberOFlogFILES{} test log files
+Each of the reviewed parsers was tested with the \numberOFlogFILES{} test log files
 described in \sectionref{parser efficiency}.  The data extracted by
 \parsername{} is documented in \sectionref{connections table} and
-\sectionref{results table}.
-
-XXX LIST THE DATA NOT EXTRACTED BY EACH PARSER\@.
+\sectionref{results table}; that list is repeated here, without the
+explanations:  server\_ip, server\_hostname, client\_ip, client\_hostname,
+helo, queueid, start, end, warning, smtp\_code, sender, recipient, size,
+message\_id, data, timestamp.
 
 \subsection{Log Mail Analyser}
 
 \label{prior art}
+
+XXX LIST THE DATA NOT EXTRACTED BY EACH PARSER FROM HERE ON\@.
 
 There only appears to be one prior published paper about parsing Postfix
 log files: \textit{Log Mail Analyzer: Architecture and Practical
@@ -502,6 +499,8 @@ available at \url{http://www.splunkbase.com/}, but the author was unable to
 find Postfix reports, or additional reports for any other log file types.
 
 \subsection{Isoqlog}
+
+XXX UPDATE THE BLURBS FROM HERE ON\@.
 
 \begin{quotation}
 

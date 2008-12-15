@@ -111,8 +111,11 @@
     pdfborder   = {0 0 0},
 }
 
-% Acronyms and glossary entries.
-\usepackage[acronym,toc,numberedsection]{glossaries}
+% Acronyms and glossary entries.  Useful options:
+% * nonumberlist disables the list of page numbers after each entry.
+\usepackage[acronym,toc,numberedsection=autolabel,style=list,nonumberlist]{glossaries}
+\renewcommand{\glspostdescription}[0]{}
+\renewcommand{\glsautoprefix}[1]{glossary:#1}
 \newglossary[plg]{postfix}{pin}{pout}{Postfix Daemons}
 \makeglossaries{}
 
@@ -122,7 +125,7 @@
 
 % Show the citation key (e.g. slct-paper) in the margin beside the
 % reference.
-\usepackage[nomsgs]{refcheck}
+%\usepackage[nomsgs]{refcheck}
 % Show where references are used.
 % Neither work.
 %\usepackage{citeref}
@@ -218,7 +221,8 @@
 
 % The name of the program, so I only have to change it in one place.
 \newcommand{\parsername}{\gls{PLP}}
-\newcommand{\parsernames}{\gls{PLP}'s}
+% XXX SHOULD THIS BE \glspl{PLP} or \gls{PLP}'s ??
+\newcommand{\parsernames}{\glspl{PLP}}
 
 % This keeps hyperref fairly happy about the Abstract entry in the table of
 % contents.
@@ -297,16 +301,11 @@ XXX INVESTIGATE Doug Lenat.
 \bibliographystyle{logparser-bibliography-style}
 \bibliography{logparser-bibliography}
 
-
-% Redefine the command used to produce the glossary title, because the
-% default command produces an unnumbered section whereas I want a numbered
-% section.
-%\renewcommand{\glossarytitle}{\section{Glossary}\label{Glossary}}
 \label{Glossary}
-\printglossaries{}
-% Redefine the command a second time to produce acronyms instead of a
-% glossary.
-%\renewcommand{\glossarytitle}{\section{Acronyms}\label{Acronyms}}
-%\printacronym{}
+\printglossary{}
+\label{Acronyms}
+\printglossary[type=\acronymtype]{}
+\label{Postfix Daemons}
+\printglossary[type=postfix]{}
 
 \end{document}
