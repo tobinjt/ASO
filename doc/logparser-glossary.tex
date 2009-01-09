@@ -39,8 +39,8 @@
 \newglossaryentry{<>}{name={$<>$},sort={<>},description={
     $<>$ is the sender address used for mail that should not be replied to,
     e.g.\ bounce notifications.  In \gls{SMTP} all addresses are enclosed
-    in $<>$, so \textit{username\at{}domain\/} becomes
-    \textit{$<$username\at{}domain$>$\/}; thus $<>$ is actually an empty
+    in $<>$, so \textit{username@domain\/} becomes
+    \textit{$<$username@domain$>$\/}; thus $<>$ is actually an empty
     address, but is always written as $<>$ for clarity.  All mail servers
     must accept mail sent from $<>$, or they are in violation of
     \gls{RFC}~2821~\cite{RFC2821}.
@@ -88,7 +88,7 @@
     address instead, e.g.\ because a person has changed jobs.  A mail loop
     occurs when the chain of recipient addresses constitute a cyclic
     directed graph; the simplest example is when mail for
-    \texttt{alice\at{}example.net} is delivered to
-    \texttt{bob\at{}example.com}, and mail for \texttt{bob\at{}example.com}
-    is delivered to \texttt{alice\at{}example.net}.
+    \texttt{alice@example.net} is delivered to \texttt{bob@example.com},
+    and mail for \texttt{bob@example.com} is delivered to
+    \texttt{alice@example.net}.
 }}

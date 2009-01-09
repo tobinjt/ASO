@@ -1,5 +1,5 @@
 % $Id$
-\documentclass[a4paper,12pt,draft]{article}
+\documentclass[a4paper,12pt,draft]{report}
 
 % Useful stuff for math mode.
 \usepackage{amstext}
@@ -7,7 +7,7 @@
 \usepackage[final]{graphicx}
 \usepackage{url}
 % Add the bibliography into the table of contents.
-\usepackage[section,numbib]{tocbibind}
+\usepackage[chapter,numbib]{tocbibind}
 % Create a label for the last page.  Might be useful for "page 23/79" or
 % something.
 \usepackage{lastpage}
@@ -89,6 +89,14 @@
 }
 
 
+% Acronyms and glossary entries.  Useful options:
+% * nonumberlist disables the list of page numbers after each entry.
+\usepackage[acronym,toc,numberedsection=autolabel,style=list,nonumberlist]{glossaries}
+\renewcommand{\glspostdescription}[0]{}
+\renewcommand{\glsautoprefix}[1]{glossary:#1}
+\newglossary[plg]{postfix}{pin}{pout}{Postfix Daemons}
+\makeglossaries{}
+
 % Provides commands to distinguish between pdf and dvi output.
 \usepackage{ifpdf}
 % When creating a \PDF{} make the table of contents into links to the pages
@@ -97,9 +105,9 @@
 % hyperfootnotes need to be disabled to avoid breaking footmisc, but they
 % still seem to work, somehow.
 \ifpdf{}
-    \usepackage[pdftex,hyperfootnotes=false]{hyperref}
+    \usepackage[pdftex,hyperfootnotes=false,plainpages=false,pdfpagelabels]{hyperref}
 \else{}
-    \usepackage[dvips,hyperfootnotes=false]{hyperref}
+    \usepackage[dvips,hyperfootnotes=false,plainpages=false,pdfpagelabels]{hyperref}
     % This is necessary for wrapping URLs in the bibliography when
     % producing a dvi, but causes problems when generating \PDF{} output.
     \usepackage{breakurl}
@@ -110,14 +118,6 @@
     final       = true,
     pdfborder   = {0 0 0},
 }
-
-% Acronyms and glossary entries.  Useful options:
-% * nonumberlist disables the list of page numbers after each entry.
-\usepackage[acronym,toc,numberedsection=autolabel,style=list,nonumberlist]{glossaries}
-\renewcommand{\glspostdescription}[0]{}
-\renewcommand{\glsautoprefix}[1]{glossary:#1}
-\newglossary[plg]{postfix}{pin}{pout}{Postfix Daemons}
-\makeglossaries{}
 
 %\setlength{\floatsep}{0pt}
 %\setlength{\intextsep}{0pt}
@@ -130,7 +130,7 @@
 % Neither work.
 %\usepackage{citeref}
 %\usepackage{backref}
-\renewcommand{\refname}{Bibliography}
+%\renewcommand{\refname}{Bibliography}
 % Put each URL in the bibliography on a new line.
 \newcommand{\urlprefix}[0]{\newline{}}
 % New formatting commands.
@@ -170,14 +170,6 @@
 % A command to format a Postfix daemon's name
 \newcommand{\daemon}[1]{%
     \texttt{postfix/#1}%
-}
-
-% This is ridiculous, but I cannot put @ in glossary entries, so . . .
-\newcommand{\at}[0]{%
-    @%
-}
-\newcommand{\backslashat}[0]{%
-    \@%
 }
 
 \newcommand{\tab}[0]{%
@@ -224,22 +216,17 @@
 % XXX SHOULD THIS BE \glspl{PLP} or \gls{PLP}'s ??
 \newcommand{\parsernames}{\glspl{PLP}}
 
-% This keeps hyperref fairly happy about the Abstract entry in the table of
-% contents.
-\newcounter{dummy}
-
 \begin{document}
 
 \title{Parsing Postfix log files}
 \author{John Tobin \\ School of Computer Science and Statistics \\
 Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 \maketitle
-\SVN$Id$
-\begin{center}\SVNId{}\end{center}
 
-\refstepcounter{dummy}
-\addcontentsline{toc}{section}{Abstract}
 \begin{abstract}
+
+    \phantomsection{}
+    \addcontentsline{toc}{chapter}{Abstract}
 
     Parsing Postfix log files is much more difficult than it first appears,
     but it \textit{is\/} possible to achieve a high degree of accuracy in
@@ -255,6 +242,13 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
     effective those measures are.
 
 \end{abstract}
+
+\SVN$Id$
+\begin{center}
+    \SVNId{}
+\end{center}
+
+XXX WHY DOES \\ref{} NOT WORK PROPERLY FOR CHAPTERS IN THE APPENDIX\@?
 
 XXX WEKA FOR DECISION TREE DISPLAY\@.
 

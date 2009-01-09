@@ -1,5 +1,5 @@
 \newpage{} %XXX
-\section{Results}
+\chapter{Results}
 
 XXX NEED AN INTRODUCTION\@.
 
@@ -12,7 +12,7 @@ ORDERINGS SECTION\@?
 
 XXX REUSE THE CONTENT FROM THE PAPER FOR THIS SECTION\@.
 
-\subsection{Parser Efficiency}
+\section{Parser Efficiency}
 
 \label{parser efficiency}
 
@@ -60,7 +60,7 @@ running the tests were disabled.
 
 \clearpage{}
 
-\subsubsection{Architecture Scalability: Input Size}
+\subsection{Architecture Scalability: Input Size}
 
 An important property of a parser is how parsing time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
@@ -91,7 +91,7 @@ and number of lines}{parsing time vs file size vs number of lines graph}
 and number of lines to parsing time}{parsing time vs file size vs number
 lines factor}
 
-\subsubsection{Explaining the peaks in log file size}
+\subsection{Explaining the peaks in log file size}
 
 \label{Explaining the peaks in log file size}
 
@@ -161,7 +161,7 @@ has unexpected effects on parsing time, described in detail in
 \sectionref{rule ordering for efficiency}, \sectionref{scalability as the
 number of rules rises}, and \sectionref{Caching compiled regexes}.
 
-\subsubsection{Rule ordering for efficiency}
+\subsection{Rule ordering for efficiency}
 
 \label{rule ordering for efficiency}
 
@@ -221,7 +221,7 @@ means more log lines parsed per unit of time; similarly \graphref{Parsing
 time relative to shuffled ordering graph} shows a much smaller difference
 between the orderings at log files 22 and 62--68.
 
-\subsubsection{Scalability as the number of rules rises}
+\subsection{Scalability as the number of rules rises}
 
 \label{scalability as the number of rules rises}
 
@@ -260,7 +260,7 @@ number of rules used.  These results show that the architecture scales very
 well as the number of rules increases, and that optimally sorting the rules
 is an important optimisation contributing to this scalability.
 
-\subsubsection{Caching compiled regexs}
+\subsection{Caching compiled regexs}
 
 \label{Caching compiled regexes}
 
@@ -307,7 +307,7 @@ parsing time when not caching compiled regexes} {Increase in parsing time
 when not caching compiled regexes table}
 
 
-\subsubsection{Summary}
+\subsection{Summary}
 
 This section began with parser scalability, showing the linear relationship
 between parsing time and input size.  Demonstrates the effect of rule
@@ -318,7 +318,7 @@ is staggering.  The penultimate section contains a breakdown of the rule
 hits accumulated during a single test run of the parser.  Miscellaneous
 graphs expected to be useful are collected in the final section.  
 
-\subsection{Coverage}
+\section{Coverage}
 
 XXX I THINK THIS SECTION NEEDS SUBSTANTIAL WORK, IF NOT A RE-WRITE\@; START
 WITH THE PAPER'S CONTENT\@.
@@ -334,7 +334,7 @@ less intrusive, as it just requires new rules to be written; improving the
 latter is much more intrusive as it requires changes to the parser
 algorithm, and it can also be much harder to notice a deficiency.
 
-\subsubsection{Log lines covered}
+\subsection{Log lines covered}
 
 \label{log-lines-covered}
 
@@ -418,7 +418,7 @@ even when parsing all \numberOFlogFILES{} log files not all the rules are
 exercised (some of the rules are for parsing log lines that only appear in
 other log files).
 
-\subsubsection{Mails covered}
+\subsection{Mails covered}
 
 \label{mails-covered}
 
@@ -538,7 +538,7 @@ Given the circumstantial and experimental evidence detailed above, the
 author is confident that the false positive rate when reconstructing a mail
 is exceedingly low, if not approaching zero.
 
-\subsection{Summary}
+\section{Summary}
 
 XXX EXTEND TO SUMMARISE PARSER EFFICIENCY TOO\@.
 

@@ -1,6 +1,6 @@
 \newpage{}% XXX
 
-\section{Postfix Parser Implementation}
+\chapter{Postfix Parser Implementation}
 \label{Postfix Parser Implementation}
 
 XXX WRITE AN INTRODUCTION\@.
@@ -30,7 +30,7 @@ In this section algorithm can be taken to mean the combination of framework
 and actions.
 
 
-\subsection{Assumptions}
+\section{Assumptions}
 
 \parsername{} makes a small number of (hopefully safe and reasonable)
 assumptions:
@@ -88,7 +88,7 @@ advantages to treating Postfix as a black box during parser development:
 
 
 
-\subsection{Database Schema}
+\section{Database Schema}
 \label{database schema}
 
 XXX ADD A DIAGRAM OF THE DATABASE SCHEMA\@.
@@ -128,7 +128,7 @@ storing the data is a write-once operation, whereas utilising the data
 requires frequent searching, sorting, and manipulation of the data to
 produce customised reports or statistics.
 
-\subsubsection{Rules table}
+\subsection{Rules table}
 
 \label{rule attributes}
 
@@ -277,7 +277,7 @@ The following attributes are defined for each rule:
 
 \end{description}
 
-\subsubsection{Connections table}
+\subsection{Connections table}
 
 \label{connections table}
 
@@ -323,7 +323,7 @@ fields:
 
 \end{eqlist}
 
-\subsubsection{Results table}
+\subsection{Results table}
 
 \label{results table}
 
@@ -384,13 +384,13 @@ connection, and there may be many results per connection.
 
 
 
-\subsection{Rules}
+\section{Rules}
 
 \label{rules}
 
 XXX NEED AN INTRODUCTION\@.
 
-\subsubsection{Example rule}
+\subsection{Example rule}
 
 \label{example rule}
 
@@ -474,7 +474,7 @@ connections tables.
 \end{description}
 
 
-\subsubsection{Creating new rules}
+\subsection{Creating new rules}
 
 \label{creating new rules}
 
@@ -600,13 +600,13 @@ required.
 These utilities are not intended to create perfect regexes, but they
 greatly reduce the effort required to parse new or different log lines.
 
-\subsection{Actions}
+\section{Actions}
 
 \label{actions in implementation}
 
 XXX INTRODUCTION\@.
 
-\subsubsection{Actions in detail}
+\subsection{Actions in detail}
 
 \label{actions-in-detail}
 
@@ -773,7 +773,7 @@ rules per action}.
 \showgraph{build/graph-action-distribution}{Distribution of rules per
 action}{Distribution of rules per action}
 
-\subsubsection{Adding new actions}
+\subsection{Adding new actions}
 
 \label{adding new actions}
 
@@ -826,12 +826,12 @@ altering the configuration just to log messages from a different Postfix
 component is not an option.}
 
 
-\subsection{Framework}
+\section{Framework}
 
 XXX TO BE WRITTEN\@.
 
 
-\subsection{Parser Flow Chart}
+\section{Parser Flow Chart}
 
 \label{flow-chart}
 
@@ -862,7 +862,7 @@ image}
 
 \clearpage
 
-\subsubsection{Mail enters the system}
+\subsection{Mail enters the system}
 
 \label{mail-enters-the-system}
 
@@ -908,7 +908,7 @@ the primary example of internally generated mails, though there may be
 other types.  Postfix may generate mails to the administrator when it
 encounters configuration errors, but such mails are presumably rare.
 
-\subsubsection{Mail delivery}
+\subsection{Mail delivery}
 
 \label{mail-delivery}
 
@@ -944,7 +944,7 @@ deleted by the administrator, \textit{unless\/} the mail is either parent
 or child of re-injection, as explained in \sectionref{tracking re-injected
 mail}.
 
-\subsubsection{Emergent behaviour}
+\subsection{Emergent behaviour}
 
 \label{Emergent behaviour}
 
@@ -1018,7 +1018,7 @@ for this flow of data to be specified.}
 
 
 
-\subsection{Complications encountered}
+\section{Complications encountered}
 
 \label{complications}
 
@@ -1040,7 +1040,7 @@ state tables and error messages, and make the remaining problems more
 apparent.  The first three complications were encountered early in the
 parser's implementation and guided its design and development.
 
-\subsubsection{Queueid vs pid}
+\subsection{Queueid vs pid}
 
 The mail lacks a queueid until it has been accepted, so log lines must
 first be correlated by the \daemon{smtpd} \gls{pid}, then transition to
@@ -1060,7 +1060,7 @@ require:
 
 \end{itemize}
 
-\subsubsection{Connection reuse}
+\subsection{Connection reuse}
 
 \label{connection reuse}
 
@@ -1093,7 +1093,7 @@ the above sequence, but currently there will only be one.
 
 
 
-\subsubsection{Re-injected mails}
+\subsection{Re-injected mails}
 
 \label{Re-injected mails}
 
@@ -1233,7 +1233,7 @@ A parent mail can have multiple children, which may be delivered before or
 after the parent mail.
 
 
-\subsubsection{Identifying bounce notifications}
+\subsection{Identifying bounce notifications}
 
 \label{identifying-bounce-notifications}
 
@@ -1298,7 +1298,7 @@ hopefully subsequent versions) log the creation of a bounce message.
 
 This check is performed during the COMMIT action.
 
-\subsubsection{Aborted delivery attempts}
+\subsection{Aborted delivery attempts}
 
 \label{aborted-delivery-attempts}
 
@@ -1390,7 +1390,7 @@ run.
 This check is performed in the DISCONNECT action; it requires support in
 the CLONE action where a list of cloned connections is maintained.
 
-\subsubsection{Further aborted delivery attempts}
+\subsection{Further aborted delivery attempts}
 
 XXX MAYBE FIND OUT WHAT CLIENTS DISCONNECT\@?  Some mail clients disconnect
 abruptly if a second or subsequent recipient is rejected; they may also
@@ -1423,7 +1423,7 @@ clashes if the queueid is reused.
 
 These checks are made during the DISCONNECT action.
 
-\subsubsection{Timeouts during DATA phase}
+\subsection{Timeouts during DATA phase}
 
 \label{timeouts-during-data-phase}
 
@@ -1473,7 +1473,7 @@ see \sectionref{discarding cleanup lines} for details.
 
 This complication is dealt with in the TIMEOUT action.
 
-\subsubsection{Discarding cleanup lines}
+\subsection{Discarding cleanup lines}
 
 \label{discarding cleanup lines}
 
@@ -1520,7 +1520,7 @@ regardless of whether it meets the criteria above.
 
 This complication is handled by the TIMEOUT and MAIL\_QUEUED actions.
 
-\subsubsection{Pickup logging after cleanup}
+\subsection{Pickup logging after cleanup}
 
 \label{pickup logging after cleanup}
 
@@ -1549,7 +1549,7 @@ is most likely caused by process scheduling vagaries.
 
 This complication is dealt with during the PICKUP action.
 
-\subsubsection{Smtpd stops logging}
+\subsection{Smtpd stops logging}
 
 \label{smtpd stops logging}
 
@@ -1590,7 +1590,7 @@ is untouched.
 These occurrences are handled by the three actions POSTFIX\_RELOAD,
 SMTPD\_DIED, and SMTPD\_WATCHDOG\@.
 
-\subsubsection{Out of order log lines}
+\subsection{Out of order log lines}
 
 \label{out of order log lines}
 
@@ -1664,7 +1664,7 @@ XXX WOULD IT BE BETTER TO BEGIN THE EXPLANATIONS ON THE FOLLOWING LINE\@?
 This check applies to accepted mails only, not to rejected mails.  This
 check is performed during the COMMIT action.
 
-\subsubsection{Yet more aborted delivery attempts}
+\subsection{Yet more aborted delivery attempts}
 
 \label{yet-more-aborted-delivery-attempts}
 
@@ -1696,7 +1696,7 @@ running for an extended period of time).  The state tables are scanned for
 mails matching the characteristics above each time the end of a log file is
 reached, and matching mails are deleted.
 
-\subsubsection{Mail deleted before delivery is attempted}
+\subsection{Mail deleted before delivery is attempted}
 
 \label{Mail deleted before delivery is attempted}
 
@@ -1716,7 +1716,7 @@ grouped.
 
 The DELETE action is responsible for handling this complication.
 
-\subsubsection{Bounce notification mails delivered before their creation is
+\subsection{Bounce notification mails delivered before their creation is
 logged}
 
 \label{Bounce notification mails delivered before their creation is logged}
@@ -1747,7 +1747,7 @@ mails will be pruned whenever the parser's state is saved, though if the
 size of the cache ever becomes a problem it could be pruned periodically to
 keep the size in check.  XXX EXPLAIN PRUNING\@.
 
-\subsubsection{Mails deleted during delivery}
+\subsection{Mails deleted during delivery}
 
 \label{Mails deleted during delivery}
 
@@ -1777,7 +1777,7 @@ in the \numberOFlogFILES{} log files used for testing; if this complication
 occurred more frequently it might be desirable to find the mail in the
 database and add the log line to it.
 
-\subsection{Limitations and possible improvements}
+\section{Limitations and possible improvements}
 
 \label{limitations-improvements}
 
@@ -1785,7 +1785,7 @@ Every piece of software suffers from some limitations and there is almost
 always room for improvement.  Below are the limitations and possible
 improvements that have been identified in the parser.
 
-\subsubsection{Limitations}
+\subsection{Limitations}
 
 \label{logging helo}
 
@@ -1862,7 +1862,7 @@ improvements that have been identified in the parser.
 
 \end{enumerate}
 
-\subsubsection{Possible improvements}
+\subsection{Possible improvements}
 
 \begin{itemize}
 
@@ -1879,7 +1879,7 @@ improvements that have been identified in the parser.
 \end{itemize}
 
 
-\subsection{Summary}
+\section{Summary}
 
 XXX TO BE WRITTEN\@.  START WITH THE OLD CONTENT BELOW\@.
 

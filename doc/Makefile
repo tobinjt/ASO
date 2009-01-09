@@ -434,7 +434,7 @@ check-contractions:
 
 todo:
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib || true
-	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | awk -F : '{print $$1}' | uniq -c
+	grep -c -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | grep -v ':0$$'
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | wc -l
 
 underfull: all

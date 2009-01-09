@@ -1,4 +1,4 @@
-\section{Background}
+\chapter{Background}
 
 \label{background}
 
@@ -9,7 +9,7 @@ a database as an \gls{API}\@; a brief introduction to \gls{SMTP}\@.  It
 finishes with a longer introduction to Postfix, concentrating on anti-spam
 restrictions and policy servers.
 
-\subsection{Motivation}
+\section{Motivation}
 
 \label{motivation}
 
@@ -80,7 +80,7 @@ anti-spam techniques.  These statistics are far less feasible to assess
 directly from log files without prior pre-processing into a database in the
 fashion proposed, implemented, and tested herein.
 
-\subsection{Database as Application Programming Interface}
+\section{Database as Application Programming Interface}
 
 \label{database as API}
 
@@ -173,7 +173,7 @@ with no access to the original log files.
 
 
 
-\subsection{Simple Mail Transfer Protocol}
+\section{Simple Mail Transfer Protocol}
 
 \label{SMTP background}
 
@@ -250,7 +250,7 @@ A detailed description of \gls{SMTP} is beyond the scope of this thesis:
 introductory guides can be found at~\cite{smtp-intro-01,smtp-intro-02},
 and the definitive references are~\cite{RFC821,RFC2821}.
 
-\subsection{Postfix}
+\section{Postfix}
 
 \label{postfix background}
 
@@ -291,7 +291,7 @@ components that are privileged do not interact with other hosts, making it
 much more difficult for an attacker to exploit any bugs that may exist in
 those components.
 
-\subsubsection{Mixing and matching Postfix restrictions}
+\subsection{Mixing and matching Postfix restrictions}
 
 \label{Mixing and matching Postfix restrictions}
 
@@ -365,7 +365,7 @@ client's \gls{IP} address is listed.
 For further information about Postfix restrictions
 see~\cite{smtpd_access_readme,smtpd_per_user_control,policy-servers}.
 
-\subsubsection{Policy servers}
+\subsection{Policy servers}
 
 \label{policy servers}
 
@@ -473,7 +473,7 @@ Some widely deployed policy servers:
 
 
 
-\subsection{Summary}
+\section{Summary}
 
 This section has provided background information on several topics,
 starting with the motivation behind the project, continuing with an
