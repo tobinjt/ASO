@@ -621,10 +621,6 @@ files to use as input to AWStats from the data extracted by \parsername{}.
 
 \section{Anteater}
 
-XXX LIST THE DATA NOT EXTRACTED BY EACH PARSER FROM HERE ON\@.
-
-XXX UPDATE THE BLURBS FROM HERE ON\@.
-
 \begin{quotation}
 
     The Anteater project is a Mail Traffic Analyser. Anteater supports
@@ -637,13 +633,13 @@ XXX UPDATE THE BLURBS FROM HERE ON\@.
 \end{quotation}
 
 \noindent{}\url{http://anteater.drzoom.ch/} \newline{}
-(Last checked 2007/08/13.)
+(Last checked 2009/01/11.)
 
 Anteater does not have any English documentation so it is impossible for
 this author to accurately comment on the analysis it performs.  It did not
 run successfully when tested, and its parsing would certainly be out of
 date as Postfix has evolved considerably since this tool was last updated
-(November 2003).  As it neither ran successfully nor has documentation the
+(2003/11/06).  As it neither ran successfully nor has documentation the
 author can read a detailed review cannot be provided.
 
 The Debian project (\url{http://www.debian.org/}) provides a manual page
@@ -664,9 +660,9 @@ log lines.
 \end{quotation}
 
 \noindent{}\url{http://yaala.org/} \newline{}
-(Last checked 2007/10/09.)
+(Last checked 2009/01/11.)
 
-YAALA uses a plugin based system to analyse log files and produce HTML
+YAALA uses a plugin-based system to analyse log files and produce HTML
 output reports, with all the parsing and report generation handled by
 modules.  Using YAALA as a base would be only slightly less work than
 starting from scratch, as both the input and output modules would need to
@@ -691,12 +687,19 @@ fields from specific log lines:
 
 \end{eqlist}
 
-YAALA extracts most of the fields \parsername{} does, but unlike
-\parsername{} it does not maintain separate counters for each restriction;
-this rules out the possibility of using the collected data for
-optimisation, testing or understanding of restrictions.  YAALA's Postfix
-parser does not deal with the complications explained in
-\sectionref{complications}, though it does correlate log lines by queueid.
+\noindent{}YAALA's Postfix parser extracts some of the fields \parsername{}
+does: it stores either the \gls{IP} or the hostname for client and server,
+not both; it omits the helo hostname, queueid, \gls{SMTP} code, size of
+each accepted mail, and message ID\@.  It extracts some data that
+\parsername{} does not: the delay in delivering each mail, and how many
+times delivery was deferred for each mail; these could easily be extracted
+by \parsername{} if desired.  XXX EXTRACT DELAY AND DEFER ONCE AUTOMATIC
+EXTRACTION HAS BEEN FINISHED\@.  Unlike \parsername{}, YAALA does not
+maintain separate counters for each restriction; this rules out the
+possibility of using the collected data for optimisation, testing or
+understanding of restrictions.  YAALA's Postfix parser does not deal with
+the complications explained in \sectionref{complications}, though it does
+correlate log lines by queueid.
 
 YAALA provides a mini-language based on \gls{SQL} that is used when
 generating reports; sample reports can be seen
@@ -734,35 +737,51 @@ extract data for use in other tools.
     have pioneered many new services and features. Lire is a total solution
     for your log analysis needs.
 
+\end{quotation}
+
+\noindent{}\url{http://logreport.org/lire.html} \newline{}
+(Last checked 2009/01/11.)
+
+Lire is a general purpose log file parser supporting many different types
+of log file.  It takes a similar approach to YAALA, using plugins to parse
+different log file types.  The data extracted by its Postfix parser is not
+clearly documented; the manual says only:
+
+\begin{quotation}
+
     The email servers' reports will show you the number of deliveries and
     the volume of email delivered by day, the domains from which you
     receive or send the most emails, the relays most used, etc.
 
 \end{quotation}
 
-\noindent{}\url{http://logreport.org/lire.html} \newline{}
-(Last checked 2008/04/29.)
+\noindent{}Examining the source code reveals that the parser looks for
+\texttt{<key>=<value>} pairs in each log line, extracts them, and
+correlates the data by queueid.  This approach will find the following
+fields: helo hostname, queueid, \gls{SMTP} code, sender and recipient
+addresses, and size of accepted mails.  It is unclear if the parser will
+extract any further data.  Lire misses the following fields extracted by
+\parsername{}: client and server \gls{IP} and hostname, start and end
+times, and message ID\@. 
 
-Lire is a general purpose log file parser supporting many different types
-of log file.  The data extracted by its Postfix parser is shown in the
-quote above; notably rejections are not mentioned or dealt with, and unlike
-\parsername{} there is no facility to extend the parser.  It supports
-multiple output formats for generated reports (text, HTML, PDF, and Excel
-95) but the reports do not appear to be customisable; \parsername{} does
-not produce any reports.  Lire produces a report with less detail than
-Pflogsumm, and is considerable harder to configure.  Lire supports saving
-extracted data for later report generation, but accessing this data from
-another application is undocumented; given the source code it should be
-possible, with enough time and effort, to understand the format.
-\parsername{} uses an \gls{SQL} database to make accessing the extracted
-data as easy as possible.  
+Lire supports multiple output formats for generated reports (text, HTML,
+PDF, and Excel 95) but the reports do not appear to be customisable;
+\parsername{} does not produce any reports.  Lire's report contains less
+detail than Pflogsumm, and is considerable harder to configure.  Lire
+supports saving extracted data for later report generation, but accessing
+this data from another application is undocumented; given the source code
+it should be possible, with enough time and effort, to understand the
+format.  \parsername{} uses an \gls{SQL} database to make accessing the
+extracted data as easy as possible.  
 
 Like AWStats and Logrep, Lire attempts to correlate log lines by queueid,
 but not by \gls{pid}, so the complete list of recipients for a mail should
 be available; however its parser extracts only part of the available data
 and makes no attempt to deal with the other complications described in
 \sectionref{complications}.  When testing Lire on the \numberOFlogFILES{}
-test log files it performed reasonably well, producing summaries of: 
+test log files it performed reasonably well: the numbers it reports appear
+reasonable, and the subset verified by the author were correct.  Its report
+provided summaries of: 
 
 \begin{itemize}
 
@@ -783,8 +802,11 @@ test log files it performed reasonably well, producing summaries of:
 
 \end{itemize}
 
-The numbers it reports appear reasonable, and the subset verified by the
-author were correct.  
+Lire would not be a suitable base for this project: it does not extract
+enough data; does not deal with rejections in any way; does not make the
+extracted data easily available to other programs.  Its parser is
+in-extensible but could easily be replaced, however that would require
+writing a parser from scratch, so would not be any easier.
 
 \section{Logrep}
 
@@ -800,12 +822,10 @@ author were correct.
 
 \end{quotation}
 
-\noindent{}\url{http://www.itefix.no/phpws/index.php} \newline{}
-(Last checked 2007/11/18.)
+\noindent{}\url{http://www.itefix.no/i2/index.php} \newline{}
+(Last checked 2009/01/11.)
 
-Logrep extracts roughly half the fields \parsername{} does:
-
-XXX WHAT FIELDS ARE MISSING\@?
+Logrep extracts less than half the fields \parsername{} does:
 
 \begin{itemize}
 
@@ -818,14 +838,17 @@ XXX WHAT FIELDS ARE MISSING\@?
 
 \end{itemize}
 
-It also counts the number of log lines parsed and skipped.  Log lines are
-correlated based on the queueid (referred to as sessionname [sic] within
-Logrep), but not by \gls{pid}.  The parsing is error prone: empty fields
-are saved when the log line does not match the regex, though it appears
-that they will not overwrite existing data.  Most notably rejections are
-completely ignored, making it unsuitable for the purposes of this project.
-It does not try to address any of the complications in
-\sectionref{complications} except for correlating by queueid.
+It also counts the number of log lines parsed and skipped.  It omits client
+\gls{IP} and hostname, server \gls{IP}, helo hostname, queueid, and message
+ID\@.  It extracts the delay for delivered mails, which \parsername{} does
+not.  Log lines are correlated based on the queueid (referred to as
+sessionname [sic] within Logrep), but not by \gls{pid}.  The parsing is
+error prone: empty fields are saved when the log line does not match the
+regex, though it appears that they will not overwrite existing data.  Most
+notably rejections are completely ignored, making it unsuitable for the
+purposes of this project.  It does not try to address any of the
+complications in \sectionref{complications} except for correlating by
+queueid.
 
 Logrep does not come with any documentation, though some scant
 documentation is available on its website (\parsername{} provides copious
