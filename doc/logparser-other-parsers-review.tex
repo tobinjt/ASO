@@ -74,7 +74,7 @@ Each of the reviewed parsers was tested with the \numberOFlogFILES{} test
 log files described in \sectionref{parser efficiency}.  The data extracted
 by \parsername{} is documented in \sectionref{connections table} and
 \sectionref{results table}; for convenience that list is repeated here:
-server \gls{IP}, server hostname, client \gls{IP}, client hostname, helo
+server \gls{IP}, server hostname, client \gls{IP}, client hostname, HELO
 hostname, queueid, start time, end time, \gls{SMTP} code, sender,
 recipient, size, message ID\@.
 
@@ -143,7 +143,7 @@ client hostname and \gls{IP} address, server \gls{IP} address, sender and
 recipient addresses, \gls{SMTP} code, and size (for accepted mails only).
 It is unclear which time and date is stored: start time, end time, or
 delivery time?  Unlike \parsername{} it does not store the server hostname,
-helo hostname, queueid, start and end times, timestamps for each log line,
+HELO hostname, queueid, start and end times, timestamps for each log line,
 or message id (for accepted mails only).  Handling of multiple recipients,
 \gls{SMTP} codes, or remote servers\footnote{A single mail may be sent to
 multiple remote servers if it was addressed to recipients in different
@@ -278,19 +278,18 @@ program designed to be useful in a production environment.
 
 Pflogsumm produces a report designed for troubleshooting rather than
 in-depth analysis.  It does not support saving any data, and it does not
-extract any data than is not required for producing its report.  Both the
-parsing and reporting are difficult to extend as it is a specialised tool,
-unlike the easily extensible design of \parsername{}.  It does not
-correlate log lines by queueid or \gls{pid}, and does not need to deal with
-the complications encountered during this project.  Pflogsumm produces a
-useful report, and successfully parsed the \numberOFlogFILES{} log files
-tested with,\footnote{The results it reported were not verified in detail,
-but it did not report any errors, and has a very good reputation amongst
-Postfix users.} but it is not a suitable base for this project.  It does
-not extract the helo hostname, queueid, start and end times, timestamps for
-each log line, or message id.
-
-Pflogsumm has many options are available to include or exclude certain
+extract any data that it does not require to produce its report, e.g.\ it
+does not extract the HELO hostname, queueid, start and end times,
+timestamps for each log line, or message id.  Both the parsing and
+reporting are difficult to extend because it is a specialised tool, unlike
+the easily extensible design of \parsername{}.  It does not correlate log
+lines by queueid or \gls{pid}, and does not need to deal with the
+complications encountered during this project (\sectionref{complications}).
+Pflogsumm produces a useful report, and successfully parsed the
+\numberOFlogFILES{} log files it was tested with.\footnote{The results it reported
+were not verified in detail, but it did not report any errors, and has a
+very good reputation amongst Postfix users.}
+Pflogsumm has many options to include or exclude certain
 sections of the report; by default it includes the following:
 
 \begin{itemize}
@@ -339,8 +338,8 @@ Its data extraction facilities (described later) are too limited to save
 sufficient data for the purposes of this project: although it can extract
 three different sets of data from Postfix log files, they are not
 interlinked in any way.  The documentation does not suggest that any
-attempt is made to correlate log lines or deal with the difficulties
-documented in \sectionref{complications}.
+attempt is made to correlate log lines by either queueid or pid or to deal
+with the difficulties documented in \sectionref{complications}.
 
 Sawmill has three different Postfix log file parsers, extracting three
 different sets to data:
@@ -353,16 +352,18 @@ different sets to data:
         counts the number of and total size of all mails delivered.  The
         fields \texttt{server}, \texttt{uid}, \texttt{relay}, and
         \texttt{virus} are not explained in the documentation:
-        \texttt{server} is probably the server the mail is delivered to,
-        and \texttt{uid} might be the uid of the user submitting mail
-        locally.  Postfix does not perform any form of virus checking
-        (though it has many options for cooperating with an external virus
-        scanner), so the \texttt{virus} field is a mystery.
+        \texttt{server} is probably the hostname or \gls{IP} of the server
+        the mail is delivered to; \texttt{relay} might be the delivery
+        method: \gls{SMTP}, local delivery, or \gls{LMTP}; \texttt{uid}
+        might be the uid of the user submitting mail locally.  Postfix does
+        not perform any form of virus checking (though it has many options
+        for cooperating with an external virus scanner), so the
+        \texttt{virus} field is a mystery.
 
     \item \url{http://www.thesawmill.co.uk/formats/postfix_ii.html}
         \newline{} Fields extracted: from, to, RBL list, client hostname,
-        and client \gls{IP}\@.  It also counts the number of and total size
-        of all mails delivered.  
+        and client \gls{IP}\@.  It also counts the number and total size of
+        all mails delivered.  
 
     \item \url{http://www.thesawmill.co.uk/formats/beta_postfix.html}
         \newline{} Fields extracted: from, to, client hostname, client
@@ -373,7 +374,7 @@ different sets to data:
 \end{enumerate}
 
 Even if the three data sets were combined Sawmill would extract less data
-than \parsername{}: it omits the helo hostname, queueid, and start and end
+than \parsername{}: it omits the HELO hostname, queueid, and start and end
 times.  Sawmill does not extract any data about rejections except when the
 rejection is caused by a \gls{DNSBL} check (\texttt{RBL list} in the list
 of fields).
@@ -390,12 +391,11 @@ instructions on how to compile Sawmill so that it can use a non-commercial
 version of MySQL (this was not attempted during the review process).
 
 Sawmill's web interface supports searching on any combination of the fields
-it extracts, and the results obtained from searches were accurate.  The
-interface for searching is neither as simple to use nor as informative as
-the interface provided by Splunk.  The administrative interface is much
-easier to use than Splunk's: it took only five minutes to start parsing a
-whole directory of log files.  Searches performed using the web interface
-produced reasonable results, which were not verified in detail.
+it extracts, and searches performed using the web interface produced
+accurate results.  The interface for searching is neither as simple to use
+nor as informative as the interface provided by Splunk.  The administrative
+interface is much easier to use than Splunk's: it took only five minutes to
+start parsing a whole directory of log files.  
 
 When tested with the \numberOFlogFILES{} test log files it performed
 adequately, though the rate it processed log files at did slow down
@@ -408,11 +408,11 @@ uncompressed beforehand and parsing took eight hours.
 
 In summary Sawmill suffers from being a general purpose product; it is
 probably much more useful when parsing log files where each log line is
-self-contained, rather than linked to other log lines (e.g.\ web server log
-files).  It is not suitable as a base for this parser, as the source code
-made available is obfuscated and not intended for modification; in addition
-the architecture would probably need to be overhauled to deal with
-correlating log lines.
+self-contained (e.g.\ web server log files), rather than log files
+containing interlinked log lines.  It is not suitable as a base for this
+parser, as the source code made available is obfuscated and not intended
+for modification; in addition the architecture would probably need to be
+overhauled or replaced to deal with correlating log lines.
 
 \section{Splunk}
 
@@ -438,36 +438,40 @@ Splunk aims to index all of an organisation's log files, providing a
 centralised view capable of searching and correlating diverse log sources.
 The web interface supports complicated searches, providing statistics and
 graphs in real time, a facility not provided by \parsername{} (report
-generation has been deferred to a subsequent program).  Saved searches can
-be run periodically and the results emailed to a recipient or sent to an
-external program for further processing (though maybe without the graphs
-and detailed statistics); the author was unable to save searches, though
-that may have been due to limitations in the free version.  The database is
-not available for use by external programs, whereas \parsername{} provides
-the database and leaves it to the user to utilise it without limit or
-restriction.  The interface is optimised for interactive use rather than
-automated queries and it does not appear to be possible to write
-independent tools to utilise the Splunk database; there are additional
-reports available on \url{http://www.splunkbase.com/}, but the author was
-unable to find any: every category was empty, even those that the interface
-claimed had reports available.  Many types of reports are bundled with the
-software, though most are variations of a bar or pie chart, except bubble
-and heatmap graphs.  It is easy to drill down through the graphs to extract
-a portion of the data (e.g.\ select the hour with the largest number of
-events, then select a particular host, and finally a specific address),
-though it is not possible to search on partial words.  All searches
-performed using the indexed data returned reasonable results.  The web
-interface is quite attractive and simple to use when searching, but as an
-administrator it seems unnecessarily difficult to perform simple tasks.
+generation has been deferred to a subsequent program).  Searches can be
+based on the fields extracted by Splunk or the full text of the log line.
+Splunk allows quite complicated searches, but does not make the raw data
+available in an accessible form.  Saved searches can be run periodically
+and the results emailed to a recipient or sent to an external program for
+further processing (though maybe without the graphs and detailed
+statistics); the author was unable to save searches, though that may have
+been due to limitations in the free version.  The database is not available
+for use by external programs, whereas \parsername{} provides the database
+and leaves it to the user to utilise it without limit or restriction.  The
+interface is optimised for interactive use rather than automated queries
+and it does not appear to be possible to write independent tools to utilise
+the Splunk database;.  Some additional Postfix reports are supposedly
+available at \url{http://www.splunkbase.com/}, but the author was unable to
+find any Postfix reports, or indeed for any other log file types: every
+category was empty, even those that the web site claimed had many reports
+available.  Many types of graphs can be generated, though most are
+variations of a bar or pie chart, except bubble and heatmap graphs.  It is
+easy to drill down through the graphs to extract a portion of the data
+(e.g.\ select the hour with the largest number of events, then select a
+particular host, and finally a specific address), though it is not possible
+to search on partial words.  All searches performed using the indexed data
+returned reasonable results.
 
-When testing Splunk it took roughly 30 minutes to figure out how to add a
-single log file to be indexed so that it could be searched, with the
+The web interface is quite attractive and simple to use when searching, but
+as an administrator it seems unnecessarily difficult to perform simple
+tasks.  When testing Splunk it took roughly 30 minutes to figure out how to
+add a single log file to be indexed so that it could be searched, with the
 downside that the log file was copied into a spool directory before
 indexing, doubling the disk space usage.  The next test was to index all
 the log files in a particular directory, but after three hours, numerous
 futile attempts, and reading all the available documentation, the author
 admitted defeat.  Using the \gls{CLI} rather than the web interface was
-more successful: invoking the command \newline{} \tab{} \texttt{splunk find
+partially successful: the command \newline{} \tab{} \texttt{splunk find
 logs }\textit{log-directory\/}\newline{} added 40 of the
 \numberOFlogFILES{} log files to the queue for indexing.  Further attempts
 enqueued the same 40 log files, without explaining why the others were
@@ -478,8 +482,9 @@ feature for \parsername{}.} There did not appear to be an option to ensure
 the log files would be processed in the order they were created, though
 this may be neither necessary nor beneficial with Splunk.  Subsequently the
 author was successful in adding a single file at a time using the
-\gls{CLI}; a simple loop to add all desired log files was sufficient to
-index all files.  Splunk will periodically check all those files for
+\gls{CLI}:\newline{} \tab{} \texttt{splunk add tail
+}\textit{filename\/}\newline{} A simple loop was then enough to add all the
+desired log files.  Splunk will periodically check all indexed files for
 updates unless they are manually removed from its list; this may or may not
 be useful behaviour.  Splunk did not appear to have any difficulty in
 indexing the log files, once they had been successfully added to its queue.
@@ -489,11 +494,11 @@ achieve with \texttt{cron(8)} and \texttt{logrotate(8)}.
 
 Copious documentation is made available on \url{http://www.splunk.com/},
 but poor organisation and sheer abundance makes it extremely hard to find
-useful information.  Searching using the website's interface confusingly
-tends to return results from old documentation rather than new.  In general
-the documentation appears to have been written by someone intimately
-acquainted with the software who has difficulty understanding how a
-newcomer would approach tasks or the questions they would ask.
+useful information.  Searches confusingly tended to return results from old
+documentation rather than new.  In general the documentation appears to
+have been written by someone intimately acquainted with the software, who
+has difficulty understanding how a newcomer would approach tasks or the
+questions they would ask.
 
 Splunk supports reading compressed log files without any configuration by
 the user.  The free version of Splunk limits the volume of data indexed per
@@ -505,28 +510,26 @@ during 2008; now Splunk's sales team must be contacted for a quote.
 Typical log file sizes for a small scale mail server are given in
 \sectionref{parser efficiency}.
 
-When parsing Postfix log files Splunk extracts some standard fields: to and
-from addresses, HELO hostname, time and date, the host the log files were
-generated on, and protocol (\gls{SMTP} or \gls{ESMTP}).  It parses the
-standard syslog\glsadd{syslog} fields at the beginning of the log line, and
-extracts any \texttt{key=<value>} pairs occurring after the standard syslog
-prologue; these pairs are the fields listed above.  Searches can be based
-on the extracted fields or the full text of the log line.  \parsername{}
-extracts noticeably more data (client and server \gls{IP} and hostname,
-queueid, start and end times, timestamps for each log line, \gls{SMTP}
-code, and message ID), though it does not make the full text of the line
-available (this could be trivially added if desired, but would greatly
-increase the size of the resulting database).  The full power of \gls{SQL}
-is available when searching the data extracted by \parsername{}, allowing
-the user to search on arbitrarily complicated conditions.
+When parsing Postfix log files Splunk parses the standard
+syslog\glsadd{syslog} fields at the beginning of the log line, and extracts
+any \texttt{key=value} pairs occurring after the standard syslog prologue:
+to and from addresses, HELO hostname, and protocol (\gls{SMTP} or
+\gls{ESMTP}).  \parsername{} extracts noticeably more data (client and
+server \gls{IP} and hostname, queueid, start and end times, timestamps for
+each log line, \gls{SMTP} code, and message ID), though it does not make
+the full text of the line available (this could be trivially added if
+desired, but would greatly increase the size of the resulting database).
+The full power of \gls{SQL} is available when searching the data extracted
+by \parsername{}, allowing the user to search on arbitrarily complicated
+conditions.
 
 Splunk is a generic tool, so it lacks any Postfix specific support over and
-above extracting the \texttt{key=<value>} fields from a log line; most
+above extracting the \texttt{key=value} fields from a log line; most
 importantly it makes no attempt to correlate log lines by queueid or
-\gls{pid}, or to handle any of the myriad complications discussed in
-\sectionref{complications}.  Some additional Postfix reports are supposedly
-available at \url{http://www.splunkbase.com/}, but the author was unable to
-find Postfix reports, or additional reports for any other log file types.
+\gls{pid}, or to handle any of the other myriad complications discussed in
+\sectionref{complications}.  Its source code is unavailable, so it could
+not be used as a base for this project, even if it fulfilled all other
+requirements.
 
 \section{Isoqlog}
 
@@ -544,18 +547,17 @@ find Postfix reports, or additional reports for any other log file types.
 \noindent{}\url{http://www.enderunix.org/isoqlog/} \newline{}
 (Last checked 2009/01/11.)
 
-Isoqlog's report misses most of the information gathered by \parsername{},
-and it only reports on the domains listed in its configuration file, making
-it impossible to produce reports for every sender domain.  It ignores all
-log lines except those for today, so it is impossible to analyse historical
-logs, and testing with the \numberOFlogFILES{} test log files is pointless.
-It does maintain a record of data previously extracted, which the newly
-extracted data is merged into (no information is provided on the format of
-the data store).  The data extracted is limited to the number of mails sent
-by each sender, unlike the copious amounts of data extracted by
-\parsername{}.  It does not utilise rejection log lines in any way, so is
-unsuitable for the purposes of this project.  Its parsing is completely
-inextensible, indeed is almost incomprehensible, relying on
+Isoqlog's report misses most of the information gathered by \parsername{}:
+the data extracted is limited to the number of mails sent by each sender,
+and it only reports on senders from the domains listed in its configuration
+file, making it impossible to produce complete reports.  It ignores all log
+lines except those with today's date, so it is impossible to analyse
+historical log files, and testing with the \numberOFlogFILES{} test log
+files was pointless.  It does maintain a record of data previously
+extracted, which the newly extracted data is merged into; the format of the
+data store is undocumented.  It does not utilise rejection log lines in any
+way, so is unsuitable for the purposes of this project.  Its parsing is
+completely inextensible, indeed is almost incomprehensible, relying on
 \texttt{scanf(3)}, unexplained fixed offsets, and low level string
 manipulation; it is the opposite end of the spectrum to \parsernames{}
 parsing.  It does not handle any of the complications discussed in
@@ -709,7 +711,7 @@ fields from specific log lines:
 
 \noindent{}YAALA's Postfix parser extracts some of the fields \parsername{}
 does: it stores either the \gls{IP} or the hostname for client and server,
-not both; it omits the helo hostname, queueid, \gls{SMTP} code, size of
+not both; it omits the HELO hostname, queueid, \gls{SMTP} code, size of
 each accepted mail, start and end times, timestamps for each log line, and
 message ID\@.  It extracts some data that \parsername{} does not: the delay
 in delivering each mail, and how many times delivery was deferred for each
@@ -778,7 +780,7 @@ clearly documented; the manual says only:
 \noindent{}Examining the source code reveals that the parser looks for
 \texttt{<key>=<value>} pairs in each log line, extracts them, and
 correlates the data by queueid.  This approach will find the following
-fields: helo hostname, queueid, \gls{SMTP} code, sender and recipient
+fields: HELO hostname, queueid, \gls{SMTP} code, sender and recipient
 addresses, and size of accepted mails.  It is unclear if the parser will
 extract any further data.  Lire misses the following fields extracted by
 \parsername{}: client and server \gls{IP} and hostname, start and end
@@ -860,7 +862,7 @@ Logrep extracts less than half the fields \parsername{} does:
 \end{itemize}
 
 It also counts the number of log lines parsed and skipped.  It omits client
-\gls{IP} and hostname, server \gls{IP}, helo hostname, queueid, and message
+\gls{IP} and hostname, server \gls{IP}, HELO hostname, queueid, and message
 ID\@.  It extracts the delay for delivered mails, which \parsername{} does
 not.  Log lines are correlated based on the queueid (referred to as
 sessionname [sic] within Logrep), but not by \gls{pid}.  The parsing is
