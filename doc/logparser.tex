@@ -1,6 +1,7 @@
 % $Id$
 % XXX WOULD A SMALLER FONT BE BETTER?
 \documentclass[a4paper,12pt,draft]{report}
+\pagestyle{headings}
 
 % Useful stuff for math mode.
 \usepackage{amstext}
@@ -40,6 +41,15 @@
 \usepackage{cite}
 % Check for unused references.
 % \usepackage{refcheck}
+
+\newcommand{\parserblurb}[3]{%
+    \begin{quotation}
+        \noindent{}\textit{#1\/}
+
+        \noindent{}\url{#2}\newline
+        Last checked #3.
+    \end{quotation}
+}
 
 % Produce nicer references like "section 4.3 on the next page"
 % Must be loaded before hyperref.
@@ -266,10 +276,10 @@ XXX IMPROVE BIBLIOGRAPHY APPEARANCE\@: NAMES LOOK UGLY (E.G.\ P.\
 
 XXX INVESTIGATE Doug Lenat.
 
-XXX SHOULD I SAY ``IP'' or ``IP address''?
-
 XXX EXTRACT DELAY AND DEFER ONCE AUTOMATIC EXTRACTION HAS BEEN FINISHED,
 THEN UPDATE REVIEW OF OTHER PARSERS\@.
+
+XXX POSSIBLY PUBLISH THE STATE OF THE ART REVIEW IN A JOURNAL\@?
 
 \newpage
 \tableofcontents
