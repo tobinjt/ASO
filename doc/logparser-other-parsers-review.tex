@@ -2,9 +2,6 @@
 
 \label{state of the art review}
 
-XXX DO ANY OF THE PARSERS DISTINGUISH BETWEEN DIFFERENT TYPES OF
-REJECTIONS\@?
-
 At the start of this project ten Postfix log file parsers were tested, with
 the hope of finding a suitable parser to build upon, rather than starting
 from scratch.  There are not many Postfix log file parsers available ---
@@ -25,7 +22,7 @@ contrast newly developed algorithms and parsers against those already
 available, to accurately judge what improvements, if any, are delivered by
 the newcomers.
 
-XXX SHOULD THIS BE IN THE CONCLUSION INSTEAD\@?
+XXX SHOULD THIS LIST BE IN THE CONCLUSION INSTEAD\@?
 
 There are some important differences between \parsername{} and the parsers
 reviewed here:
@@ -61,15 +58,15 @@ reviewed here:
         files; both \parsername{} and Splunk handle them transparently,
         without user intervention; Sawmill and Lire can be configured to
         support compressed files, but Sawmill exhibits a dramatic increase
-        in parsing time when doing so.  Although this is a minor
-        disparity, support for reading compressed log files is quite
-        helpful, as it dramatically reduces the disk space required to
-        store historical log files.
+        in parsing time when doing so.  Support for reading compressed log
+        files is quite helpful, as it dramatically reduces the disk space
+        required to store historical log files.
 
-    \item Some of the parsers reviewed save the extracted data to a data
-        store, but the majority discard all data once they have finished
-        generating their report, making historical analysis impossible
-        without parsing all log files every time.
+    \item Most of the reviewed parsers do not distinguish between different
+        delivery attempt rejections, so they can not be used to determine
+        the success rate of different anti-spam techniques.  The exception
+        is Pflogsumm, which provides a summary of why delivery attempts
+        were rejected.
 
 \end{enumerate}
 
@@ -77,9 +74,9 @@ Each of the reviewed parsers was tested with the \numberOFlogFILES{} test
 log files described in \sectionref{parser efficiency}.  The data extracted
 by \parsername{} is documented in \sectionref{connections table} and
 \sectionref{results table}; for convenience that list is repeated here:
-server \gls{IP}, server hostname, client \gls{IP}, client hostname, HELO
-hostname, queueid, start time, end time, \gls{SMTP} code, sender,
-recipient, size, message ID\@.
+client and server \gls{IP} address and hostname, HELO hostname, queueid,
+start time, end time, \gls{SMTP} code, sender, recipient, size, message
+ID\@.
 
 \section{Log Mail Analyser}
 
@@ -95,9 +92,9 @@ It produces a \gls{CSV} file and either a MySQL
 (\url{http://www.mysql.com/}) or Berkeley DB
 (\url{http://www.oracle.com/database/berkeley-db/index.html}) database.
 The decision to support both \gls{CSV} and Berkeley DB appears to have been
-a serious limitation: XXX EXTEND\@: LIMITATIONS WILL BE EXPLAINED LATER OR
-SOMETHING\@.  Very little documentation is provided with \gls{LMA}, though
-some documentation is available in~\cite{log-mail-analyser}.  Studying the
+a serious limitation: both formats have limitations that will be explained
+later.  Very little documentation is provided with \gls{LMA}, though some
+documentation is available in~\cite{log-mail-analyser}.  Studying the
 source code is informative, though this author had difficulty as the
 authors of \gls{LMA} wrote in Italian.
 
@@ -289,11 +286,11 @@ the easily extensible design of \parsername{}.  It does not correlate log
 lines by queueid or \gls{pid}, and does not need to deal with the
 complications encountered during this project (\sectionref{complications}).
 Pflogsumm produces a useful report, and successfully parsed the
-\numberOFlogFILES{} log files it was tested with.\footnote{The results it reported
-were not verified in detail, but it did not report any errors, and has a
-very good reputation amongst Postfix users.}
-Pflogsumm has many options to include or exclude certain
-sections of the report; by default it includes the following:
+\numberOFlogFILES{} log files it was tested with.\footnote{The results it
+reported were not verified in detail, but it did not report any errors, and
+has a very good reputation amongst Postfix users.}  Pflogsumm has many
+options to include or exclude certain sections of the report, all clearly
+documented; by default it includes the following:
 
 \begin{itemize}
 
@@ -314,6 +311,9 @@ sections of the report; by default it includes the following:
         were bounced, why mails were rejected, and warning messages.
 
 \end{itemize}
+
+Pflogsumm is the only reviewed parser which distinguishes between different
+rejections.
 
 \section{Sawmill Universal Log File Analysis and Reporting}
 
@@ -351,9 +351,9 @@ different sets to data:
 
     \item \url{http://www.thesawmill.co.uk/formats/postfix.html} \newline{}
         Fields extracted: from, to, server, UID, relay, status, number of
-        recipients, origin hostname, origin \gls{IP}, and virus.  It also
-        counts the number of and total size of all mails delivered.  The
-        fields \texttt{server}, \texttt{uid}, \texttt{relay}, and
+        recipients, origin hostname, origin \gls{IP} address, and virus.
+        It also counts the number of and total size of all mails delivered.
+        The fields \texttt{server}, \texttt{uid}, \texttt{relay}, and
         \texttt{virus} are not explained in the documentation:
         \texttt{server} is probably the hostname or \gls{IP} address of the
         server the mail is delivered to; \texttt{relay} might be the
@@ -365,14 +365,15 @@ different sets to data:
 
     \item \url{http://www.thesawmill.co.uk/formats/postfix_ii.html}
         \newline{} Fields extracted: from, to, RBL list, client hostname,
-        and client \gls{IP}\@.  It also counts the number and total size of
-        all mails delivered.  
+        and client \gls{IP} address.  It also counts the number and total
+        size of all mails delivered.  
 
     \item \url{http://www.thesawmill.co.uk/formats/beta_postfix.html}
         \newline{} Fields extracted: from, to, client hostname, client
-        \gls{IP}, relay hostname, relay \gls{IP}, status, response code,
-        RBL list, and message id.  It also counts the number and size of
-        all mails delivered, processed, blocked, expired, and bounced.
+        \gls{IP} address, relay hostname, relay \gls{IP} address, status,
+        response code, RBL list, and message id.  It also counts the number
+        and size of all mails delivered, processed, blocked, expired, and
+        bounced.
 
 \end{enumerate}
 
@@ -387,11 +388,12 @@ quite expensive, requiring a \euros{100} + VAT licence per report
 (discounts are available when buying multiple licences); in contrast
 \parsername{} is free to use and the code is freely available.  Sawmill is
 supplied with thorough and well written documentation; everything the
-author searched for was documented, except the MySQL database schema.  A
-commercial version of MySQL is required due to MySQL licensing
-restrictions, but Sawmill's documentation explains why and includes
-instructions on how to compile Sawmill so that it can use a non-commercial
-version of MySQL (this was not attempted during the review process).
+author searched for was documented, except the MySQL database schema and
+some details of the data extracted by the parser.  A commercial version of
+MySQL is required due to MySQL licensing restrictions, but Sawmill's
+documentation explains why and includes instructions on how to compile
+Sawmill so that it can use a non-commercial version of MySQL (this was not
+attempted during the review process).
 
 Sawmill's web interface supports searching on any combination of the fields
 it extracts, and searches performed using the web interface produced
@@ -558,17 +560,16 @@ lines except those with today's date, so it is impossible to analyse
 historical log files, and testing with the \numberOFlogFILES{} test log
 files was pointless.  It does maintain a record of data previously
 extracted, which the newly extracted data is merged into; the format of the
-data store is undocumented.  It does not utilise rejection log lines in any
-way, so is unsuitable for the purposes of this project.  Its parsing is
-completely inextensible, indeed is almost incomprehensible, relying on
-\texttt{scanf(3)}, unexplained fixed offsets, and low level string
-manipulation; it is the opposite end of the spectrum to \parsernames{}
-parsing.  It does not handle any of the complications discussed in
-\sectionref{complications}, does not gather the breadth of data required
-for this project, and ignores the majority of log lines produced by
-Postfix.
-
-XXX DOCUMENTATION\@?
+data store is undocumented.  Very little documentation is provided with
+Isoqlog, little more than installation instructions.  It does not utilise
+rejection log lines in any way, so is unsuitable for the purposes of this
+project.  Its parsing is completely inextensible, indeed is almost
+incomprehensible, relying on \texttt{scanf(3)}, unexplained fixed offsets,
+and low level string manipulation; it is the opposite end of the spectrum
+to \parsernames{} parsing.  It does not handle any of the complications
+discussed in \sectionref{complications}, does not gather the breadth of
+data required for this project, and ignores the majority of log lines
+produced by Postfix.
 
 \section{AWStats}
 
@@ -723,12 +724,11 @@ size of each accepted mail, start and end times, timestamps for each log
 line, and message ID\@.  It extracts some data that \parsername{} does not:
 the delay in delivering each mail, and how many times delivery was deferred
 for each mail; these could easily be extracted by \parsername{} if desired.
-XXX DELAY AND DEFERRAL\@.  Unlike \parsername{}, YAALA does not maintain
-separate counters for each restriction; this rules out the possibility of
-using the collected data for optimisation, testing, or understanding of
-restrictions.  YAALA's Postfix parser does not deal with the complications
-explained in \sectionref{complications}, though it does correlate log lines
-by queueid.
+Unlike \parsername{}, YAALA does not maintain separate counters for each
+restriction; this rules out the possibility of using the collected data for
+optimisation, testing, or understanding of restrictions.  YAALA's Postfix
+parser does not deal with the complications explained in
+\sectionref{complications}, though it does correlate log lines by queueid.
 
 YAALA provides a mini-language based on \gls{SQL} that is used when
 generating reports; sample reports can be seen
@@ -801,7 +801,7 @@ supports saving extracted data for later report generation, but the format
 of this data store is undocumented; given the source code it should be
 possible, with enough time and effort, to understand the format.
 \parsername{} uses an \gls{SQL} database to make accessing the extracted
-data as easy as possible.  
+data as easy as possible.  In general Lire has poor documentation.
 
 Like AWStats and Logrep, Lire attempts to correlate log lines by queueid,
 but not by \gls{pid}, so the complete list of recipients for a mail should
@@ -869,16 +869,16 @@ Logrep extracts less than half the fields \parsername{} does:
 \end{itemize}
 
 It also counts the number of log lines parsed and skipped.  It omits client
-\gls{IP} address and hostname, server \gls{IP}, HELO hostname, queueid,
-timestamps of each log line, and message ID\@.  It extracts the delay for
-delivered mails, which \parsername{} does not.  Log lines are correlated
-based on the queueid (referred to as sessionname [sic] within Logrep), but
-not by \gls{pid}.  The parsing is error prone: empty fields are saved when
-the log line does not match the regex, though it appears that they will not
-overwrite existing data.  Most notably rejections are completely ignored,
-making it unsuitable for the purposes of this project.  It does not try to
-address any of the complications in \sectionref{complications} except for
-correlating by queueid.
+\gls{IP} address and hostname, server \gls{IP} address, HELO hostname,
+queueid, timestamps of each log line, and message ID\@.  It extracts the
+delay for delivered mails, which \parsername{} does not.  Log lines are
+correlated based on the queueid (referred to as sessionname [sic] within
+Logrep), but not by \gls{pid}.  The parsing is error prone: empty fields
+are saved when the log line does not match the regex, though it appears
+that they will not overwrite existing data.  Most notably rejections are
+completely ignored, making it unsuitable for the purposes of this project.
+It does not try to address any of the complications in
+\sectionref{complications} except for correlating by queueid.
 
 Logrep does not come with any documentation, though some scant
 documentation is available on its website (\parsername{} provides copious
@@ -906,21 +906,19 @@ parsing (some to a greater level of detail than others).   None of the
 reviewed parsers collect the breadth of information gathered by
 \parsername{}, or make it as easy to extend the parser to handle new log
 lines.  Some correlate log lines by queueid (none correlate by pid); none
-deal with any of the other complications described in XXX REFERENCE
-complications.  All of the reviewed parsers generate a report, and some
-provide a greater or lesser degree of customisation.  Most have a data
-store, but only \gls{LMA} provides any documentation on its format; some
-deliberately make the data store inaccessible to other tools.  Most but not
-all of the parsers provide documentation, with the quality varying from
-unusable to very good.  Fewer than half of the parsers were capable of
+deal with any of the other complications described in
+\sectionref{complications}.  All of the reviewed parsers generate a report,
+and some provide a greater or lesser degree of customisation.  Most have a
+data store, but only \gls{LMA} provides any documentation on its format;
+some deliberately make the data store inaccessible to other tools.  Most
+but not all of the parsers provide documentation, with the quality varying
+from unusable to very good.  Fewer than half of the parsers were capable of
 parsing the \numberOFlogFILES{} test log files, and improving or extending
 parsing would have been quite a difficult task for any of the parsers.
 Table \refwithpage{Summary of parsers' features} provides a summary of the
-parsers' features.
-
-XXX REPHRASE The overriding difference between \parsername{} and the other
-parsers reviewed herein is that none of them aim for the high level of
-understanding of Postfix log files achieved by \parsername{}.
+parsers' features.  The overriding difference between \parsername{} and the
+other parsers reviewed herein is that none of them aim for the high level
+of understanding of Postfix log files achieved by \parsername{}.
 
 
 \begin{table}[htb]
@@ -939,11 +937,12 @@ understanding of Postfix log files achieved by \parsername{}.
         Isoqlog         & No            & Yes               & No                & No English     & Yes          \\
                         &               &                   &                   & documentation  &              \\
         AWStats         & Partially     & Yes               & Partial \dag{}    & Good           & Yes          \\
-        Anteater        & No            & No                & No                & Poor           & Yes          \\
+        Anteater        & No            & No                & No                & None           & Yes          \\
         YAALA           & No            & Yes \ddag{}       & Searches          & Poor           & Yes          \\
+                        &               &                   & \& reports        &                &              \\
         Lire            & Yes           & Yes               & Yes               & Reasonable     & Yes          \\
         Logrep          & No            & Yes               & No                & None           & Yes          \\
-        \parsername{}   & Yes           & Yes \nibeta{}     & No \nichi{}       & XXX            & Yes          \\
+        \parsername{}   & Yes           & Yes \nibeta{}     & No \nichi{}       & \niepsilon{}   & Yes          \\
         \tablebottomline{}%
     \end{tabular}
 
@@ -965,6 +964,10 @@ understanding of Postfix log files achieved by \parsername{}.
         \item [\nichi{}] \parsername{} defers report generation to
             subsequent programs, but all the necessary data and
             documentation to produce reports is provided.
+
+        \item [\niepsilon{}] \parsername{} aims to have thorough and
+            complete documentation, but the author cannot provide an
+            unbiased review.
 
     \end{eqlist}
 
