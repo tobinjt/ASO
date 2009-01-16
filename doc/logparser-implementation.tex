@@ -1,5 +1,3 @@
-\newpage{}% XXX
-
 \chapter{Postfix Parser Implementation}
 \label{Postfix Parser Implementation}
 
@@ -525,16 +523,17 @@ There are 4 steps in the algorithm:
         counters required and thus the program's memory consumption.
 
     \item [Calculate word frequencies]  The position of words within a log
-        line is important: a word occurring in two lines does not indicate
-        similarity unless it occupies the same position within both log
-        lines.\footnote{If a variable term within a line contains spaces,
-        it will appear to the algorithm as two or more words rather than
-        one.  This will alter the position of subsequent words, so a word
-        occurring in different positions in two log lines \textit{may\/}
-        indicate similarity, but the algorithm does not attempt to deal
-        with this possibility.}  The algorithm maintains a counter for each
-        \texttt{(word, word's position within the log line)} tuple,
-        incrementing it each time that word occurs in that position.
+        line is important: a word occurring in two log lines does not
+        indicate similarity unless it occupies the same position within
+        both log lines.\footnote{If a variable term within a line contains
+        spaces, it will appear to the algorithm as two or more words rather
+        than one.  This will alter the position of subsequent words, so a
+        word occurring in different positions in two log lines
+        \textit{may\/} indicate similarity, but the algorithm does not
+        attempt to deal with this possibility.}  The algorithm maintains a
+        counter for each \texttt{(word, word's position within the log
+        line)} tuple, incrementing it each time that word occurs in that
+        position.
 
         The original algorithm only maintains counters for words whose hash
         result from the previous step has a high frequency; this reduces
@@ -655,8 +654,8 @@ The actions:
         The action also marks the mail as a bounce notification.  To deal
         with complication \sectionref{Bounce notification mails delivered
         before their creation is logged} this action checks a cache of
-        recent bounce mails to avoid creating bogus bounce mails when lines
-        are logged out of order.
+        recent bounce mails to avoid creating bogus bounce mails when log
+        lines are out of order.
 
     \item [CLONE] Multiple mails may be accepted on a single connection, so
         each time a mail is accepted the connection's state table entry
@@ -703,8 +702,8 @@ The actions:
     \item [MAIL\_QUEUED] This action represents Postfix picking a mail from
         the queue to deliver. This action is used for both \daemon{qmgr}
         and \daemon{cleanup} as it needs to deal with out of order log
-        lines; see \sectionref{discarding cleanup lines} for details.
-        XXXXXX EXPLAIN THIS BETTER\@.
+        lines; see \sectionref{discarding cleanup log lines} for details.
+        XXX EXPLAIN THIS BETTER\@.
 
     \item [MAIL\_TOO\_LARGE] When a client tries to send a mail larger than
         the local server accepts it will be discarded and the client
@@ -949,7 +948,7 @@ mail}.
 \label{Emergent behaviour}
 
 XXX DUNNO IF I SHOULD INCLUDE THIS SECTION\@; AT BEST IT NEEDS TO BE
-UPDATED, AT WORST IT'S RUBBISH\@.
+UPDATED, AT WORST IT IS RUBBISH\@.
 
 The rules and actions exhibit emergent behaviour that is far more
 complicated than the behaviour explicitly encoded in the algorithm.  The
@@ -1142,8 +1141,8 @@ subsequently clear the flag if and when the origin of the mail becomes
 clear.  Obviously the parser could omit checking where mails originate
 from, but requiring an explicit source helps to expose bugs in the parser;
 such checks helped to identify the complications described in
-\sectionref{discarding cleanup lines} and \sectionref{pickup logging after
-cleanup}.
+\sectionref{discarding cleanup log lines} and \sectionref{pickup logging
+after cleanup}.
 
 Process scheduling can have a still more confusing effect: quite often the
 child mail will be created, delivered, and entirely finished with
@@ -1367,7 +1366,7 @@ for the following:
 
     \item If there are third and subsequent results, are all their
         postfix\_action attributes equal to INFO\@?  If there are any log
-        lines after the first two they should be informational lines only.
+        lines after the first two they should be informational only.
 
 \end{itemize}
 
@@ -1408,8 +1407,8 @@ The checks to identify this happening are:
         make it too far.
 
     \item Were there three or more \daemon{smtpd} log lines for the mail?
-        There should be a connection line and a mail accepted line,
-        followed by one or more rejection lines.
+        There should be a connection log line and a mail accepted log line,
+        followed by one or more rejection log lines.
 
     \item Is the last \daemon{smtpd} log line a rejection line?
 
@@ -1468,14 +1467,14 @@ assumption is not necessarily correct, because Postfix may have accepted an
 earlier recipient and rejected a later one, in which case the timeout
 applies to the accepted mail, which should be discarded.  This has not been
 a problem in practice, though it may be in future.  This complication is
-further complicated by the presence of out of order \daemon{cleanup} lines:
-see \sectionref{discarding cleanup lines} for details.
+further complicated by the presence of out of order \daemon{cleanup} log
+lines: see \sectionref{discarding cleanup log lines} for details.
 
 This complication is dealt with in the TIMEOUT action.
 
-\subsection{Discarding cleanup lines}
+\subsection{Discarding cleanup log lines}
 
-\label{discarding cleanup lines}
+\label{discarding cleanup log lines}
 
 The author has only observed this complication occurring after a timeout,
 though there may be other circumstances that trigger it.  Sometimes the
@@ -1530,7 +1529,7 @@ occur later in the log file than the \daemon{cleanup} log line, so the
 PICKUP action will find that a state table entry exists for that queueid.
 Normally if the queueid given in the PICKUP line exists in the state tables
 a warning is generated by the \daemon{pickup} action, but if the following
-conditions are met it is assumed that the lines were out of order:
+conditions are met it is assumed that the log lines were out of order:
 
 \begin{itemize}
 
@@ -1538,7 +1537,7 @@ conditions are met it is assumed that the lines were out of order:
         is \daemon{cleanup}.
 
     \item There is less than a five second difference between the
-        timestamps of the \daemon{cleanup} and \daemon{pickup} lines.
+        timestamps of the \daemon{cleanup} and \daemon{pickup} log lines.
 
 \end{itemize}
 
@@ -1596,25 +1595,25 @@ SMTPD\_DIED, and SMTPD\_WATCHDOG\@.
 
 Occasionally a log file will have out of order log lines which cannot be
 dealt with by the techniques described in \sectionref{tracking re-injected
-mail}, \sectionref{discarding cleanup lines} or \sectionref{pickup logging
-after cleanup}.  In the \numberOFlogFILES{} log files used for testing this
-occurs only five times in 60,721,709 log lines, but for parser correctness
-it must be dealt with.  The five occurrences have the same characteristics:
-the \daemon{local} log line showing delivery to a local mailbox occurs
-after the \daemon{qmgr} log line showing removal of the mail from the queue
-because delivery is completed.  This causes problems: the data in the state
-tables for the mail is not complete, so entering it into the database
-fails; a new mail is created when the \daemon{local} line is parsed and
-remains in the state tables; four warnings are issued per pair of out of
-order log lines.
+mail}, \sectionref{discarding cleanup log lines} or \sectionref{pickup
+logging after cleanup}.  In the \numberOFlogFILES{} log files used for
+testing this occurs only five times in 60,721,709 log lines, but for parser
+correctness it must be dealt with.  The five occurrences have the same
+characteristics: the \daemon{local} log line showing delivery to a local
+mailbox occurs after the \daemon{qmgr} log line showing removal of the mail
+from the queue because delivery is completed.  This causes problems: the
+data in the state tables for the mail is not complete, so entering it into
+the database fails; a new mail is created when the \daemon{local} line is
+parsed and remains in the state tables; four warnings are issued per pair
+of out of order log lines.
 
-The COMMIT action examines the list of programs that have logged lines for
-each mail, comparing the list against a table of known-good program
-combinations.  If the mail's combination is found in the table the mail can
-be entered in the database; if the combination is not found entry must be
-postponed and the mail flagged for later entry.  The SAVE\_DATA action
-checks for that flag; if the additional log lines have caused the mail to
-reach a valid combination then entry in the database will proceed,
+The COMMIT action examines the list of programs that have produced a log
+lines for each mail, comparing the list against a table of known-good
+program combinations.  If the mail's combination is found in the table the
+mail can be entered in the database; if the combination is not found entry
+must be postponed and the mail flagged for later entry.  The SAVE\_DATA
+action checks for that flag; if the additional log lines have caused the
+mail to reach a valid combination then entry in the database will proceed,
 otherwise it must be postponed once more.
 
 The list of valid combinations is explained below.  Every mail will
@@ -1684,9 +1683,9 @@ state tables, deleting any mails displaying the following characteristics:
         or more earlier than the last log line parsed from the current log
         file.
 
-    \item IS THIS CORRECT NOW\@?  CAN THERE BE MORE smtpd LINES\@?  There
-        must be exactly two \daemon{smtpd} and one \daemon{cleanup} log
-        lines for the mail, with no additional log lines.
+    \item XXX IS THIS CORRECT NOW\@?  CAN THERE BE MORE smtpd LOG LINES\@?
+        There must be exactly two \daemon{smtpd} and one \daemon{cleanup}
+        log lines for the mail, with no additional log lines.
 
 \end{itemize}
 

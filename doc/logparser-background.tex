@@ -80,19 +80,18 @@ anti-spam techniques.  These statistics are far less feasible to assess
 directly from log files without prior pre-processing into a database in the
 fashion proposed, implemented, and tested herein.
 
-\section{Database as Application Programming Interface}
+\section{Using a Database as an Application Programming Interface}
 
 \label{database as API}
 
 The database populated by this program provides a simple interface to
 Postfix log files.  Although the interface is a database schema rather than
-a set of functions provided by shared code, it is in effect quite similar
-to any other \gls{API}: it provides a stable interface for users of the
+a set of functions provided by shared code, it performs the same function
+as any other \gls{API}: it provides a stable interface for users of the
 interface, allowing the implementation to be changed without adverse
-effects.  As long as the \gls{API} is maintained, the parser can be
-improved to handle additional complications; support can be added for
-earlier or later releases of Postfix; bugs can be fixed or limitations
-removed.
+effects.  If as the \gls{API} is maintained, the parser can be improved to
+handle additional complications; support can be added for earlier or later
+releases of Postfix; bugs can be fixed or limitations removed.
 
 Using a database simplifies writing programs that need to interact with the
 data in several ways:
@@ -118,13 +117,13 @@ data in several ways:
         \begin{itemize}
 
             \item New columns can be added to the tables used by the
-                program, with sufficient DEFAULT clauses or a clever
-                TRIGGER or two.\footnote{Please refer to an \gls{SQL} guide
-                for explanations of these terms, e.g.\
+                program, using DEFAULT clauses or TRIGGERS to populate
+                them.\footnote{Please refer to an \gls{SQL} guide for
+                explanations of these terms, e.g.\
                 \url{http://philip.greenspun.com/sql/}.}
 
-            \item A VIEW gives a custom arrangement of data with very
-                little effort.
+            \item A VIEW gives a custom arrangement of data with minimal
+                effort.
 
             \item If the database supports it, access can be granted on a
                 fine-grained basis, e.g.\ allowing the finance department
@@ -180,9 +179,9 @@ with no access to the original log files.
 The \acrlong{SMTP}, originally defined in \gls{RFC}~821~\cite{RFC821} and
 updated in \gls{RFC}~2821~\cite{RFC2821}, is used for transferring mail
 between the sending and receiving \gls{MTA}\@.  It is a simple, human
-readable, plain text protocol, making it quite easy to test and debug
-problems with it.  Despite the simplicity of the protocol many virus and
-spam sending programs fail to implement it properly, so requiring strict
+readable, plain text protocol, simplifying testing and debugging problems
+with it.  Despite the simplicity of the protocol many virus and spam
+sending programs fail to implement it properly, so requiring strict
 adherence to the protocol specification is beneficial in protecting against
 spam and viruses.\footnote{\label{footnote:rfc760}Originally all mail
 servers adhered to the principle of \textit{Be liberal in what you accept,
@@ -261,14 +260,14 @@ restrictions, allowing an administrator to deploy those restrictions which
 they judge suitable for their site's needs, rather than a fixed set chosen
 by Postfix's author.  These restrictions can be selectively applied,
 combined, and bypassed on a per-client, per-recipient, or per-sender basis,
-allowing varying levels of stricture and permissiveness.  Postfix leverages
-simple lookup tables to support arbitrarily complicated user-defined
-sequences of restrictions and exceptions; policy servers
+allowing different levels of stricture and permissiveness.  Postfix
+leverages simple lookup tables to support arbitrarily complicated
+user-defined sequences of restrictions and exceptions; policy servers
 (\sectionref{policy servers}) provide a simple way to write new
 restrictions.  Administrators can also supply their own rejection messages
 to make it clear to senders exactly why their mail was rejected.
 Unfortunately this flexibility has a cost: complexity in the log files
-generated.  Although it is easy to use standard Unix text processing
+generated.  Although it is simple to use standard Unix text processing
 utilities to determine the fate of an individual email, following the
 journey an email takes through Postfix can be quite difficult.  For most
 mails the journey is simple and brief, but the remaining minority can have
@@ -439,17 +438,17 @@ Some widely deployed policy servers:
         mail at the moment; the most effective restrictions from the
         \numberOFlogFILES{} log files used in testing the parser are shown
         in \tableref{Summary of rejections}.  Greylisting is obviously
-        worth using, at least at the moment, particularly when you consider
-        Greylisting's position as the final restriction that a mail must
-        overcome:\footnote{Greylisting is the final restriction a mail must
-        overcome in the configuration used on the mail server the log files
-        were obtained from; an administrator is free to use Greylisting
-        wherever in the restriction list they feel is most appropriate for
-        their mail system.} Greylisting only takes effect for mails that
-        have passed every other restriction.  Some problems may be
-        encountered when using greylisting: some servers fail to retry;
-        legitimate mail may be delayed, particularly when coming from a
-        pool of servers.
+        worth using, at least at the moment, particularly when you take
+        into account Greylisting's position as the final restriction that a
+        mail must overcome:\footnote{Greylisting is the final restriction a
+        mail must overcome in the configuration used on the mail server the
+        log files were obtained from; an administrator is free to use
+        Greylisting wherever in the restriction list they feel is most
+        appropriate for their mail system.} Greylisting only takes effect
+        for mails that have passed every other restriction.  Some problems
+        may be encountered when using greylisting: some servers fail to
+        retry; legitimate mail may be delayed, particularly when coming
+        from a pool of servers.
 
         \begin{table}[ht]
             \caption{Summary of rejections}\label{Summary of rejections}

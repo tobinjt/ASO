@@ -1,0 +1,30 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+# Convert paragraphs to long lines, so that searches with grep/ack won't be
+# confused by words appearing on different lines.  The output will be padded
+# with blank lines so that the line numbers for the first line of each paragraph
+# will be equal in both input and output; this will not apply if you provide
+# multiple input files, because they will be merged in the output.
+
+use IO::File;
+
+my ($line, $number_of_blank_lines) = (q{}, 1);
+while (<>) {
+    chomp;
+    s/^\s*//;
+    if (m/^$/) {
+        print $line;
+        print qq{\n} x $number_of_blank_lines;
+        ($line, $number_of_blank_lines) = (q{}, 1);
+    } else {
+        $line .= q{ } . $_;
+        $number_of_blank_lines++;
+    }
+}
+print $line;
+print qq{\n} x $number_of_blank_lines;

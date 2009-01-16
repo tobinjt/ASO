@@ -1,4 +1,3 @@
-\newpage{} %XXX
 \chapter{Results}
 
 XXX NEED AN INTRODUCTION\@.
@@ -9,6 +8,8 @@ XXX COMPARE PARSING + ACTIONS TO JUST PARSING\@.
 
 XXX USE THE DATA COLLECTED ABOUT NUMBER OF RULES TRIED\@.  MAYBE INCLUDE IN
 ORDERINGS SECTION\@?
+
+XXX COMPARE BEST AND WORST POSSIBLE RESULTS WITH REAL RESULTS\@.
 
 XXX REUSE THE CONTENT FROM THE PAPER FOR THIS SECTION\@.
 
@@ -64,38 +65,39 @@ running the tests were disabled.
 
 An important property of a parser is how parsing time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
-\Graphref{parsing time vs file size vs number of lines graph} shows the
+\Graphref{parsing time vs file size vs number of log lines graph} shows the
 parsing time in seconds, file size in MB, and tens of thousands of log
 lines for each of the \numberOFlogFILES{} log files.  All three lines run
 roughly in parallel, giving the impression that the algorithm scales
 linearly with input size.  This impression is borne out by
-\graphref{parsing time vs file size vs number lines factor} which plots
-both the ratio of file size vs parsing time, and the ratio of number of log
-lines vs parsing time (higher is better in both cases); \tableref{parsing
-time vs file size vs number lines factor table} shows the same ratios for
-different groups of log files.  The ratios are quite tightly banded,
-providing empirical evidence that the algorithm scales linearly.  The ratio
-increases (i.e.\ improves) for log files 22 and 62--68 despite their larger
-than average size (shown in \graphref{parsing time vs file size vs number
-of lines graph}); this is explained fully in \sectionref{Explaining the
-peaks in log file size}.  
+\graphref{parsing time vs file size vs number of log lines factor} which
+plots both the ratio of file size vs parsing time, and the ratio of number
+of log lines vs parsing time (higher is better in both cases);
+\tableref{parsing time vs file size vs number of log lines factor table}
+shows the same ratios for different groups of log files.  The ratios are
+quite tightly banded, providing empirical evidence that the algorithm
+scales linearly.  The ratio increases (i.e.\ improves) for log files 22 and
+62--68 despite their larger than average size (shown in \graphref{parsing
+time vs file size vs number of log lines graph}); this is explained fully
+in \sectionref{Explaining the peaks in log file size}.  
 
-\showtable{build/include-file-size-and-number-of-lines-vs-parsing-time}{Ratio
-of file size and number of lines to parsing time}{parsing time vs file size
-vs number lines factor table}
+\showtable{build/include-file-size-and-number-of-log-lines-vs-parsing-time}{Ratio
+of file size and number of log lines to parsing time}{parsing time vs file
+size vs number of log lines factor table}
 
 \showgraph{build/graph-input-size-vs-parsing-time}{Parsing time, file size,
-and number of lines}{parsing time vs file size vs number of lines graph}
+and number of log lines}{parsing time vs file size vs number of log lines
+graph}
 
 \showgraph{build/graph-input-size-vs-parsing-time-ratio}{Ratio of file size
-and number of lines to parsing time}{parsing time vs file size vs number
-lines factor}
+and number of log lines to parsing time}{parsing time vs file size vs
+number of log lines factor}
 
 \subsection{Explaining the peaks in log file size}
 
 \label{Explaining the peaks in log file size}
 
-\Graphref{parsing time vs file size vs number of lines graph} shows log
+\Graphref{parsing time vs file size vs number of log lines graph} shows log
 file size varying between 30--100MB, except for log files 22 (200MB) and
 62--68 (400--900MB).  These large log files were caused by a user
 unintentionally creating a mail forwarding loop, resulting in a huge number
@@ -114,7 +116,7 @@ in this instance the user noticed they had not received any mail in a while
 and opted to send a test mail to themselves, causing a loop not caught by
 Postfix:
 
-XXX REWRITE THIS SECTION SO THAT IT'S CORRECT\@: POINT 4 SAYS THAT THE
+XXX REWRITE THIS SECTION SO THAT IT IS CORRECT\@: POINT 4 SAYS THAT THE
 ENVELOPE SENDER CHANGES, IS THAT CORRECT\@?
 
 \begin{enumerate}
@@ -214,8 +216,8 @@ components that have few rules associated with them, whereas in general the
 most log lines are from Postfix components that have a high number of
 associated rules; this results in the average number of rules required to
 parse a log line from log files 22 or 62--68 being considerably lower than
-usual.  The ratio of number of lines versus parsing time in
-\graphref{parsing time vs file size vs number lines factor} shows a
+usual.  The ratio of number of log lines versus parsing time in
+\graphref{parsing time vs file size vs number of log lines factor} shows a
 noticeable improvement at log files 22 and 62--68, where a higher ratio
 means more log lines parsed per unit of time; similarly \graphref{Parsing
 time relative to shuffled ordering graph} shows a much smaller difference
@@ -292,16 +294,16 @@ when not caching compiled regexes graph}
 Two large dips can be seen in \graphref{Increase in parsing time when not
 caching compiled regexes graph} at log files 22 and 62--68, corresponding
 to the spikes in log file size in \graphref{parsing time vs file size vs
-number of lines graph}.  The distribution of log lines across rules when
-there is a mail loop is much different to the norm, and the average number
-of rules consulted per log line is much lower: this results in far fewer
-regex compilations per line when there is a mail loop, and a
+number of log lines graph}.  The distribution of log lines across rules
+when there is a mail loop is much different to the norm, and the average
+number of rules consulted per log line is much lower: this results in far
+fewer regex compilations per line when there is a mail loop, and a
 corresponding decrease in the average parsing time for a single log line.
 The outcome is that caching compiled regexes is proportionally less
 important when the log file contents were created by a mail loop.  The
-increases in parsing time when not caching compiled regexes for
-different groups of log files are summarised in \tableref{Increase in
-parsing time when not caching compiled regexes table}.
+increases in parsing time when not caching compiled regexes for different
+groups of log files are summarised in \tableref{Increase in parsing time
+when not caching compiled regexes table}.
 
 \showtable{build/include-cached-regexes-vs-discarded-regexes} {Increase in
 parsing time when not caching compiled regexes} {Increase in parsing time
@@ -389,8 +391,8 @@ time the log lines drift and change.  \Graphref{rule hits graph} shows the
 number of hits for each rule over all \numberOFlogFILES{} log files.  The
 number of hits per rule is quite unevenly spread, resembling a Power Law
 distribution --- it is obvious that a small number of rules match the vast
-majority of the lines, and more than half the rules match fewer than 100
-times.
+majority of the log lines, and more than half the rules match fewer than
+100 times.
 
 \showgraph{build/graph-hits}{Hits per rule}{rule hits graph}
 
@@ -505,15 +507,15 @@ evidence that the false positive rate is quite low:
 \end{itemize}
 
 Whereas verifying by inspection that the parser correctly deals with all
-60,721,709 lines in the test log files is infeasible, verifying a subset of
-those log files is a tractable, if extremely time consuming, task.  A
-sample of log lines was obtained by randomly selecting a log file:
+60,721,709 log lines in the test log files is infeasible, verifying a
+subset of those log files is a tractable, if extremely time consuming,
+task.  A sample of log lines was obtained by randomly selecting a log file:
 
 \verb!    perl -Mstrict -Mwarnings -MList::Util=shuffle \!\newline{}
 \verb!            -e 'print [shuffle(@ARGV)]->[0];'!
 
-The first 6000 lines of this log file (roughly 0.01\% of the total number
-of log lines used in testing) was extracted:
+The first 6000 log lines of this log file (roughly 0.01\% of the total
+number of log lines used in testing) was extracted:
 
 \verb!    sed -n -e '1,6000p' logfile > test-log-segment!
 
@@ -529,8 +531,8 @@ between the number of log lines and debugging lines: $33(connections) +
 30(accepted~~mails) + 21(results)$.  This formula is an approximation only,
 and has not been rigorously verified.}  All 167,448 lines were examined in
 conjunction with the input log file and a dump of the resulting database,
-verifying that for each of the input lines the parser used the correct rule
-and executed the correct action, that in turn produced the correct result
+verifying that for each of the log lines the parser used the correct rule
+and executed the correct action, which in turn produced the correct result
 and inserted the correct data in the database.  The log file segment
 produced 4 warnings, 10 mails remaining in the state tables, and 1625
 connections correctly entered in the database.

@@ -1,5 +1,6 @@
 # Cause make to delete output files when a command fails.
 .DELETE_ON_ERROR:
+MAKEFLAGS += --no-print-directory
 # NOTE: you need to run 'make clean' between running 'make foo.dvi' and 'make
 # foo.pdf', otherwise latex will only be run once and it will get very confused.
 all: logparser.pdf
@@ -37,17 +38,17 @@ sgai-2008.deps:									\
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
 logparser.deps: \
-		build/include-file-size-and-number-of-lines-vs-parsing-time.tex	\
-		build/include-optimal-and-reverse-vs-shuffle.tex 		\
-		build/include-cached-regexes-vs-discarded-regexes.tex		\
-		build/include-restriction-summary-table.tex			\
-		build/include-mails-received-table.tex				\
-		build/include-full-ruleset-vs-minimum-ruleset.tex		\
-		build/include-sample-sql-output.tex				\
-		build/include-sample-sql-query.tex				\
-		build/include-timing-run-duration.tex				\
-		build/include-timing-run-throughput.tex				\
-		build/include-median-throughput-log-lines.tex			\
+		build/include-file-size-and-number-of-log-lines-vs-parsing-time.tex	\
+		build/include-optimal-and-reverse-vs-shuffle.tex 			\
+		build/include-cached-regexes-vs-discarded-regexes.tex			\
+		build/include-restriction-summary-table.tex				\
+		build/include-mails-received-table.tex					\
+		build/include-full-ruleset-vs-minimum-ruleset.tex			\
+		build/include-sample-sql-output.tex					\
+		build/include-sample-sql-query.tex					\
+		build/include-timing-run-duration.tex					\
+		build/include-timing-run-throughput.tex					\
+		build/include-median-throughput-log-lines.tex				\
 		build/include-median-throughput-MB.tex
 	touch "$@"
 
@@ -138,7 +139,6 @@ run_makeindex:
 .PHONY: build
 build:
 	make build_loop
-	make check-contractions
 	grep -i -E 'underfull|overfull' "${DEST}.out" || true
 	grep -A 1 "LaTeX Warning: " "${DEST}.out" || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' "${DEST}.out"
@@ -275,25 +275,25 @@ build/stats-file-size-vs-parsing-time-other-logs-stddev: build/stats-input-size-
 	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
 	echo "Row: File size vs. parsing time (all other logs)" >> "$@"
 
-build/stats-number-of-lines-vs-parsing-time-stddev: build/stats-input-size-vs-parsing-time
+build/stats-number-of-log-lines-vs-parsing-time-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: Number of lines vs. parsing time" >> "$@"
+	echo "Row: Number of log lines vs. parsing time" >> "$@"
 
-build/stats-number-of-lines-vs-parsing-time-logs-22-62-68-stddev: build/stats-input-size-vs-parsing-time
+build/stats-number-of-log-lines-vs-parsing-time-logs-22-62-68-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: Number of lines vs. parsing time (logs 22, 62--68)" >> "$@"
+	echo "Row: Number of log lines vs. parsing time (logs 22, 62--68)" >> "$@"
 
-build/stats-number-of-lines-vs-parsing-time-other-logs-stddev: build/stats-input-size-vs-parsing-time
+build/stats-number-of-log-lines-vs-parsing-time-other-logs-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: Number of lines vs. parsing time (all other logs)" >> "$@"
+	echo "Row: Number of log lines vs. parsing time (all other logs)" >> "$@"
 
-build/include-file-size-and-number-of-lines-vs-parsing-time.tex: 			\
+build/include-file-size-and-number-of-log-lines-vs-parsing-time.tex: 			\
 		build/stats-file-size-vs-parsing-time-stddev				\
 		build/stats-file-size-vs-parsing-time-logs-22-62-68-stddev		\
 		build/stats-file-size-vs-parsing-time-other-logs-stddev 		\
-		build/stats-number-of-lines-vs-parsing-time-stddev			\
-		build/stats-number-of-lines-vs-parsing-time-logs-22-62-68-stddev	\
-		build/stats-number-of-lines-vs-parsing-time-other-logs-stddev
+		build/stats-number-of-log-lines-vs-parsing-time-stddev			\
+		build/stats-number-of-log-lines-vs-parsing-time-logs-22-62-68-stddev	\
+		build/stats-number-of-log-lines-vs-parsing-time-other-logs-stddev
 	perl mk-stats-cached-discarded-include $^ | sed -e 's/\\%//g' > "$@"
 
 # Optimal/shuffle/reverse ratios: stddev, mean, etc.
@@ -417,11 +417,12 @@ realclean: veryclean
 veryclean: clean
 	rm -f	build/stats-* build/include-* build/graph-*	\
 		build/logparser-flow-chart* build/Makefile.*	\
-		build/plot-*
+		build/plot-* build/logparser*.tex
 
 check:
 	chktex -I0 -q *.tex
 	chktex -q --nowarn 1 --nowarn 15 --nowarn 17 --nowarn 6 *.bbl
+	make check-contractions
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
@@ -430,18 +431,17 @@ check-acronyms:
 
 # Check for contractons like "don't".
 check-contractions:
-	ack '\w'\''(?![sS])\w' *.tex
+	ack -i 'it'\''s|\w'\''(?!s)\w' *.tex
 
 todo:
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib || true
 	grep -c -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | grep -v ':0$$'
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | wc -l
 
-underfull: all
-	grep -E -i '\./logparser|underfull' *.log
+underfull: overfull
 
 overfull: all
-	grep -E -i '\./logparser|overfull' *.log
+	grep -E -i '[<(]\./[^) ]*( |$$)|\]\)$$|overfull|underfull' *.log
 
 2up: logparser-2up.ps logparser-2up.pdf
 
@@ -457,9 +457,16 @@ xpdf: all
 spellcheck:
 	for file in *.tex; do aspell -t -c "$$file"; done
 
+log-files-lines:
+	for file in logparser*.tex; do \
+		perl paragraphs-to-lines "$$file" > "build/$$file"; \
+	done
+	ACK_PAGER="$$PAGER" ack -i '(?<!log[- ])(lines|files)(?!\{)' build/logparser*.tex
+
 diction:
+	# Is -a a good option for untex?
 	for file in *.tex; do \
-		untex -a -e "$$file" | diction --suggest --file diction-rules --no-default-file | less -M -w "-PM$$file %lt/%L"; \
+		untex -e "$$file" | diction --suggest --file diction-rules --no-default-file | less -M -w "-PM$$file %lt/%L"; \
 	done
 
 slides-xpdf: sgai-2008-slides.pdf

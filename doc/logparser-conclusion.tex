@@ -17,7 +17,7 @@ uneven distribution exhibited by log lines produced in normal operation
 
 
 Given the diverse nature of the log lines and the ease with which
-administrators can cause new lines to be logged (\sectionref{postfix
+administrators can cause new log lines to be logged (\sectionref{postfix
 background}), enabling users to easily extend the parser to deal with new
 log lines is a design imperative (\sectionref{parser design}).  Despite the
 resulting initial increase in complexity the task is quite tractable,
@@ -78,14 +78,14 @@ numerous, infrequently occurring log lines is a simple, albeit tiresome,
 task, (though alleviated by the tool described in \sectionref{adding new
 actions}), whereas dealing with mails where information appears to be
 missing is much more grueling.  Trawling through the log files, looking for
-something out of the ordinary, possibly hundreds or even thousands of lines
-away from the last mention of the queueid in question, is extremely time
-consuming and error prone.  Sometimes the task is not to spot the line that
-is unusual, but to spot that a line that is normally present is missing,
-i.e.\ to realise that one line amongst thousands is absent.  In all cases
-the evidence must be used to construct a hypothesis to explain the
-irregularities, and that hypothesis must then be tested in the parser; if
-successful, the parser must be modified to deal with the irregularities,
+something out of the ordinary, possibly hundreds or even thousands of log
+lines away from the last mention of the queueid in question, is extremely
+time consuming and error prone.  Sometimes the task is not to spot the line
+that is unusual, but to spot that a line that is normally present is
+missing, i.e.\ to realise that one line amongst thousands is absent.  In
+all cases the evidence must be used to construct a hypothesis to explain
+the irregularities, and that hypothesis must then be tested in the parser;
+if successful, the parser must be modified to deal with the irregularities,
 without adversely affecting the existing functionality.  The complications
 described in \sectionref{complications} were solved in the order they are
 described in, and that order closely resembles the frequency with which
