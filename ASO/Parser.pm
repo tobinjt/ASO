@@ -268,6 +268,23 @@ sub init_globals {
     $self->{current_logfile}  = q{INITIALISATION};
     $.                        = 0;
 
+    # Used in fixup_connection() to verify data.
+    my $mock_result = $self->{dbix}->resultset(q{Result})->new_result({});
+    my $mock_conn   = $self->{dbix}->resultset(q{Connection})->new_result({});
+    $self->{required_connection_cols} = $mock_conn->required_columns();
+    $self->{required_result_cols}     = $mock_result->required_columns();
+    $self->{nochange_result_cols}     = $mock_result->nochange_columns();
+
+    # Used in update_hash(), via save(), when deciding whether to overwrite an
+    # existing value or discard a new value.
+    $self->{c_cols_silent_overwrite}  = $mock_conn->silent_overwrite_columns();
+    $self->{c_cols_silent_discard}    = $mock_conn->silent_discard_columns();
+
+    # Used in parse_result_cols() and filter_regex().
+    $self->{NUMBER_REQUIRED}          = 1;
+    $self->{result_cols_names}        = $mock_result->result_cols_columns();
+    $self->{connection_cols_names}    = $mock_conn->connection_cols_columns();
+
     # Used to validate queueids in get_queueid_from_matches() and in
     # maybe_remove_faked() to check if a message-id contains a queueid.
     $self->{queueid_regex}    = $self->filter_regex(q{__QUEUEID__});
@@ -334,24 +351,7 @@ sub init_globals {
         DELETE
     ));
 
-    # Used in fixup_connection() to verify data.
-    my $mock_result = $self->{dbix}->resultset(q{Result})->new_result({});
-    my $mock_conn   = $self->{dbix}->resultset(q{Connection})->new_result({});
-    $self->{required_connection_cols} = $mock_conn->required_columns();
-    $self->{required_result_cols}     = $mock_result->required_columns();
-    $self->{nochange_result_cols}     = $mock_result->nochange_columns();
-
-    # Used in update_hash(), via save(), when deciding whether to overwrite an
-    # existing value or discard a new value.
-    $self->{c_cols_silent_overwrite}  = $mock_conn->silent_overwrite_columns();
-    $self->{c_cols_silent_discard}    = $mock_conn->silent_discard_columns();
-
     $self->{valid_combos}             = $self->create_valid_combos();
-
-    # Used in parse_result_cols().
-    $self->{NUMBER_REQUIRED}          = 1;
-    $self->{result_cols_names}        = $mock_result->result_cols_columns();
-    $self->{connection_cols_names}    = $mock_conn->connection_cols_columns();
 
     return $self;
 }
@@ -2458,6 +2458,20 @@ sub filter_regex {
     if ($options{restriction_start_only}) {
         return $regex;
     }
+
+    # Keyword replacement for automatic data extraction.
+    my @KEYWORDS = ($regex =~ m/\(__(\w+)__\)/g);
+    foreach my $KEYWORD (@KEYWORDS) {
+        my $keyword = lc $KEYWORD;
+        if (    not exists $self->{result_cols_names}->{$keyword}
+            and not exists $self->{connection_cols_names}->{$keyword}) {
+            $self->my_die(qq{keyword $keyword is not a known column name}
+                . qq{in regex: $regex});
+        }
+        my $capture = qq{(?<$keyword>__${KEYWORD}__)};
+        $regex =~ s/\(__${KEYWORD}__\)/$capture/;
+    }
+
     # I'm deliberately allowing a trailing . in $hostname_re.
     my $hostname_re = qr/(?:unknown|(?:[-.\w]+))/mx;
     my $ipv6_regex = $self->make_ipv6_regex();

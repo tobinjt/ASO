@@ -183,6 +183,7 @@ my %cols = (
     },
     # The queueid of the mail
     queueid             => {
+        connection_cols     => 1,
         sql                 => q{NOT NULL DEFAULT 'NOQUEUE'},
         type                => q{text},
     },
