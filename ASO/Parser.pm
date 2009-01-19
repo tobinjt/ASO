@@ -2460,39 +2460,7 @@ sub filter_regex {
     }
     # I'm deliberately allowing a trailing . in $hostname_re.
     my $hostname_re = qr/(?:unknown|(?:[-.\w]+))/mx;
-    # Build up a regex for IPv6 addresses.
-    # One segment of an IPv6 address.
-    my $ipv6_segment        = q/(?:[0-9A-Fa-f]{1,4})/;
-    my $ipv6_full_address   = qq/(?:$ipv6_segment:){7}$ipv6_segment/;
-    my $ipv6_elided_start   = qq/:(?::$ipv6_segment){1,7}/;
-    my $ipv6_elided_end     = qq/(?:$ipv6_segment:){1,7}:/;
-    # Elided addresses, e.g. 2001::1, ::1.
-    # (N colon separated segents)::(7 - N colon separated segents)
-    # 1 >= N <= 6
-    my (@ipv6_elided_pieces);
-    # This is the most segments we can have on one side; the other side will
-    # have 7 - $ipv6_elided_segment_count segments.
-    my $ipv6_elided_segment_count = 6;
-    while ($ipv6_elided_segment_count > 0) {
-        # Start with the smallest number of segments on the left and largest on
-        # the right to ensure we get maximal matching.
-        my $end_count   = $ipv6_elided_segment_count;
-        my $start_count = 7 - $end_count;
-        my $piece =   qq/(?:(?:$ipv6_segment:){1,$start_count}/
-                    . qq/(?::$ipv6_segment){1,$end_count})/;
-        $ipv6_elided_segment_count--;
-        push @ipv6_elided_pieces, $piece;
-    }
-    my $ipv6_elided_address = join qq{\n|}, @ipv6_elided_pieces;
-    # NOTE: $ipv6_elided_end must come after $ipv6_elided_address, otherwise
-    # $ipv6_elided_end will match instead of $ipv6_elided_address; the remainder
-    # of the regex that $ipv6_regex is embedded in will fail, but because
-    # $ipv6_regex is wrapped in (?>) the regex engine will not backtrack into
-    # it.
-    my $ipv6_regex          = qr/(?>(?:$ipv6_full_address)
-                                    |(?:$ipv6_elided_start)
-                                    |(?:$ipv6_elided_address)
-                                    |(?:$ipv6_elided_end))/mx;
+    my $ipv6_regex = $self->make_ipv6_regex();
 
     $regex =~ s/__SENDER__              /__EMAIL__/gmx;
     $regex =~ s/__RECIPIENT__           /__EMAIL__/gmx;
@@ -2542,6 +2510,54 @@ sub filter_regex {
 #   $regex =~ s/____/$RE{}{}/gx;
 
     return $regex;
+}
+
+=over 4
+
+=item $self->make_ipv6_regex()
+
+Returns a regex which matches IPv6 addresses.
+
+=back
+
+=cut
+
+sub make_ipv6_regex {
+    # Build up a regex for IPv6 addresses.
+    # One segment of an IPv6 address.
+    my $ipv6_segment        = q/(?:[0-9A-Fa-f]{1,4})/;
+    my $ipv6_full_address   = qq/(?:$ipv6_segment:){7}$ipv6_segment/;
+    my $ipv6_elided_start   = qq/:(?::$ipv6_segment){1,7}/;
+    my $ipv6_elided_end     = qq/(?:$ipv6_segment:){1,7}:/;
+    # Elided addresses, e.g. 2001::1, ::1.
+    # (N colon separated segents)::(7 - N colon separated segents)
+    # 1 >= N <= 6
+    my (@ipv6_elided_pieces);
+    # This is the most segments we can have on one side; the other side will
+    # have 7 - $ipv6_elided_segment_count segments.
+    my $ipv6_elided_segment_count = 6;
+    while ($ipv6_elided_segment_count > 0) {
+        # Start with the smallest number of segments on the left and largest on
+        # the right to ensure we get maximal matching.
+        my $end_count   = $ipv6_elided_segment_count;
+        my $start_count = 7 - $end_count;
+        my $piece =   qq/(?:(?:$ipv6_segment:){1,$start_count}/
+                    . qq/(?::$ipv6_segment){1,$end_count})/;
+        $ipv6_elided_segment_count--;
+        push @ipv6_elided_pieces, $piece;
+    }
+    my $ipv6_elided_address = join qq{\n|}, @ipv6_elided_pieces;
+    # NOTE: $ipv6_elided_end must come after $ipv6_elided_address, otherwise
+    # $ipv6_elided_end will match instead of $ipv6_elided_address; the remainder
+    # of the regex that $ipv6_regex is embedded in will fail, but because
+    # $ipv6_regex is wrapped in (?>) the regex engine will not backtrack into
+    # it.
+    my $ipv6_regex          = qr/(?>(?:$ipv6_full_address)
+                                    |(?:$ipv6_elided_start)
+                                    |(?:$ipv6_elided_address)
+                                    |(?:$ipv6_elided_end))/mx;
+
+    return $ipv6_regex;
 }
 
 =over 4
