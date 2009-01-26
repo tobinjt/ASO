@@ -2401,7 +2401,8 @@ The full list of keywords which are expanded is:
 __SENDER__, __RECIPIENT__, __MESSAGE_ID__, __HELO__, __EMAIL__, __HOSTNAME__,
 __CLIENT_IP__, __CLIENT_HOSTNAME__, __SERVER_IP__, __SERVER_HOSTNAME__, __IP__,
 __IPv4__, __IPv6__, __SMTP_CODE__, __RESTRICTION_START__, __QUEUEID__,
-__COMMAND__, __SHORT_CMD__, __DELAYS__, __DELAY__, __DSN__ and __CONN_USE__.
+__COMMAND__, __SHORT_CMD__, __DELAYS__, __DELAY__, __DSN__, __DATA__ and
+__CONN_USE__.
 
 __RESTRICTION_START__ matches:
 
@@ -2410,6 +2411,9 @@ __RESTRICTION_START__ matches:
 __SHORT_CMD__ matches:
 
     /(?:CONNECT|HELO|EHLO|AUTH|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN|XFORWARD|XCLIENT|XVERP)/gx;
+
+__DATA__ expands to nothing: it is used for automatic data extraction, but
+you'll need to add a pattern yourself - even if it's just .*
 
 These are the short form of commands, and are used when Postfix logs a lost
 connection or timeout.  It deliberately excludes DATA, because there are
@@ -2461,7 +2465,8 @@ sub filter_regex {
     }
 
     # Keyword replacement for automatic data extraction.
-    my @KEYWORDS = ($regex =~ m/\(__(\w+)__\)/g);
+    # NOTE: the trailing ) is not required, to make __DATA__ work flexibly.
+    my @KEYWORDS = ($regex =~ m/\(__(\w+)__/g);
     foreach my $KEYWORD (@KEYWORDS) {
         my $keyword = lc $KEYWORD;
         if (    not exists $self->{result_cols_names}->{$keyword}
@@ -2469,8 +2474,8 @@ sub filter_regex {
             $self->my_die(qq{keyword $keyword is not a known column name}
                 . qq{in regex: $regex});
         }
-        my $capture = qq{(?<$keyword>__${KEYWORD}__)};
-        $regex =~ s/\(__${KEYWORD}__\)/$capture/;
+        my $capture = qq{(?<$keyword>__${KEYWORD}__};
+        $regex =~ s/\(__${KEYWORD}__/$capture/;
     }
 
     # I'm deliberately allowing a trailing . in $hostname_re.
@@ -2522,6 +2527,7 @@ sub filter_regex {
     $regex =~ s/__DSN__                 /\\d\\.\\d\\.\\d/gmx;
     $regex =~ s/__CONN_USE__            /conn_use=\\d+, /gmx;
     $regex =~ s/__SIZE__                /\\d+/gmx;
+    $regex =~ s/__DATA__                //gmx;
 #   $regex =~ s/____/$RE{}{}/gx;
 
     return $regex;
