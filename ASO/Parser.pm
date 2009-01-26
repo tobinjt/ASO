@@ -2099,6 +2099,7 @@ sub dump_state {
     $self->prune_postsuper_deleted_queueids();
 
     local $Data::Dumper::Sortkeys = 1;
+    local $Data::Dumper::Purity   = 1;
     print $filehandle <<'PREAMBLE';
 ## vim: set foldmethod=marker :
 no warnings q{redefine};
@@ -2113,7 +2114,7 @@ PREAMBLE
         print $filehandle <<"HEADER";
 ## Starting dump of $data_source ($num_keys entries)
 ## $time
-    my \%$data_source;
+my \%$data_source;
 HEADER
 
         foreach my $queueid (sort keys %{$self->{$data_source}}) {
@@ -3213,14 +3214,22 @@ sub get_connection_by_queueid {
 
     if ($queueid eq q{NOQUEUE}) {
         $self->my_warn(q{get_connection_by_queueid: }
-            . qq{inappropriate queueid $queueid});
+            . qq{inappropriate queueid NOQUEUE});
     }
 
     if ($self->queueid_exists($queueid)) {
-        return $self->{queueids}->{$queueid};
+        if (defined $self->{queueids}->{$queueid}) {
+            return $self->{queueids}->{$queueid};
+        } else {
+            $self->my_warn(qq{get_connection_by_queueid: }
+                . qq{undefined connection for $queueid\n});
+            delete $self->{queueids}->{$queueid};
+        }
+    } else {
+        $self->my_warn(qq{get_connection_by_queueid: }
+            . qq{no connection for $queueid\n});
     }
 
-    $self->my_warn(qq{get_connection_by_queueid: no connection for $queueid\n});
     return $self->make_connection_by_queueid($queueid, faked => 1);
 }
 
