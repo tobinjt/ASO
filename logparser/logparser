@@ -95,7 +95,6 @@ foreach my $logfile (@logs) {
     print_timing(qq{Dumped state}, $logfile);
 }
 
-timewarn(qq{Updating hits\n});
 print_timing(qq{Updating hits}, q{});
 $parser->update_check_order();
 print_timing(qq{Updated hits}, q{});
@@ -225,10 +224,6 @@ sub getopt_to_key {
     } keys %opts;
 
     %names;
-}
-
-sub timewarn {
-    warn qq{$0: }, scalar localtime, q{: }, @_;
 }
 
 sub print_timing {
