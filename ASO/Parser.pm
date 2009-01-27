@@ -2164,6 +2164,27 @@ UNTRACKED_HEADER
 FOOTER
     }
 
+    # %connections and %queueids are dumped separately, so the references 
+    # from $connections{foo}->{cloned_mails} to $queueids{bar} break.  They need
+    # to be restored to avoid problems in DISCONNECT().
+    print $filehandle <<'CLEANUP';
+    CONNECTION:
+    foreach my $connection (values %connections) {
+        if (not exists $connection->{cloned_mails}) {
+            next CONNECTION;
+        }
+        my @cloned_mails;
+        foreach my $cloned_connection (@{$connection->{cloned_mails}}) {
+            if (exists $queueids{$cloned_connection->{queueid}}) {
+                push @cloned_mails, $queueids{$cloned_connection->{queueid}};
+            } else {
+                push @cloned_mails, $cloned_connection;
+            }
+        }
+        $connection->{cloned_mails} = \@cloned_mails;
+    }
+CLEANUP
+
     my $results = join qq{,\n} . q{ } x 12,
         map { qq{q($_) => \\\%$_} }
             @{$self->{data_to_dump}};
