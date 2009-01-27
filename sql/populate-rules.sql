@@ -867,7 +867,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Multi-recipient bounce rejected', 'Any mail from <> should be a bounce, therefore if there is more than one recipient it can be rejected (supposedly it had more than one sender)',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <DATA>: Data command rejected: Multi-recipient bounce; from=<()> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <DATA>: Data command rejected: Multi-recipient bounce; from=<(__SENDER__)> proto=E?SMTP helo=<(__HELO__)>$',
         'sender = 5',
         'helo = 6',
         'recipient = unknown',
