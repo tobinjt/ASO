@@ -227,7 +227,7 @@ sub result_cols_columns {
 
 =item $self->table_name()
 
-Returns the name of the table in the database, "connections" in this case.
+Returns the name of the table in the database, "results" in this case.
 
 =back
 

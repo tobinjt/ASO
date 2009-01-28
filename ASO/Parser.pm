@@ -2898,7 +2898,9 @@ sub save {
     # conflicts between result_cols and result_data in load_rules().
     # RESULT_COLS
     foreach my $r_col (keys %{$rule->{result_cols}}) {
-        $result{$r_col} = $matches->[$rule->{result_cols}->{$r_col}];
+        if (defined $matches->[$rule->{result_cols}->{$r_col}]) {
+            $result{$r_col} = $matches->[$rule->{result_cols}->{$r_col}];
+        }
     }
 
 

@@ -155,3 +155,6 @@ unparsed:
 	cut -f 7- -d ' ' unparsed > unparsed.stripped
 	perl logs2regexs unparsed.stripped > new-regexes
 	yes 'Jun 16 00:00:01 relay.cs.tcd.ie postfix/smtpd[16278]: [ID 197553 mail.info] ' | head -n $$( wc -l unparsed.stripped | awk '{print $$1}' ) | paste -d '' - unparsed.stripped > unparsed.input
+
+test-auto-regex:
+	perl logparser --year 2007 --skip_inserting_results "../../../../logs/mail.log-20070616.gz"
