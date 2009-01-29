@@ -166,7 +166,7 @@ sub new {
                 next OPTION_CHECK;
             }
         }
-        croak qq{${package}::new(): unknown option $option\n};
+        croak qq{${package}->new(): unknown option $option\n};
     }
 
     $self->{dbix} = ASO::DB->connect(
@@ -266,7 +266,6 @@ sub init_globals {
     # Used in $self->my_warn() and $self->my_die() to report the logfile we're
     # currently parsing.
     $self->{current_logfile}  = q{INITIALISATION};
-    $.                        = 0;
 
     # Used in fixup_connection() to verify data.
     my $mock_result = $self->{dbix}->resultset(q{Result})->new_result({});
@@ -499,6 +498,10 @@ sub parse {
         $self->my_die(q{parse: IO::Uncompress::AnyUncompress failed with}
             . qq{ $logfile: $IO::Uncompress::AnyUncompress::AnyUncompressError\n});
     }
+    # NOTE: we use $self->{current_logfile_fh}->input_line_number() instead of
+    # $. everywhere, because sometimes $. is wrong: it returns 0 after the first
+    # line has been read, rather than 1.
+    $self->{current_logfile_fh} = $uncompressing_fh;
     my $syslog = Parse::Syslog->new($uncompressing_fh, year => $self->{year});
     if (not $syslog) {
         $self->my_die(q{parse: failed creating syslog parser for }
@@ -707,7 +710,7 @@ sub parse_line {
         $rule->{count}++;
         $self->{num_lines_parsed}++;
 
-        # TODO: is there a way I can do this without matching twice??
+        # XXX: is there a way I can do this without matching twice??
         my @matches = ($line->{text} =~ m/$rule->{regex}/);
         # regex matches start at one, but array indices start at 0.
         # shift the array forward so they're aligned
@@ -726,8 +729,9 @@ sub parse_line {
 
     # Last ditch: complain to the user.  Notice that we deliberately don't 
     # use my_warn because it complicates and clutters the warning.
-    warn qq{$0: $self->{current_logfile}: $.: }
-        . qq{unparsed line: $line->{program}: $line->{text}\n};
+    warn qq{$0: $self->{current_logfile}: }
+        . $self->{current_logfile_fh}->input_line_number()
+        . qq{: unparsed line: $line->{program}: $line->{text}\n};
     $self->{num_lines_failed}++;
     return;
 }
@@ -2887,7 +2891,7 @@ sub save {
         %result = (
             date            => scalar localtime ($line->{timestamp}),
             line            => $line,
-            line_number     => $.,
+            line_number     => $self->{current_logfile_fh}->input_line_number(),
             logfile         => $self->{current_logfile},
             %result,
         );
@@ -3183,7 +3187,12 @@ sub format_error {
 
     my @message;
     my $timestamp = localtime;
-    push @message, qq{$0: $timestamp: $self->{current_logfile}: $.: };
+    push @message, qq{$0: $timestamp: $self->{current_logfile}: };
+    if (exists $self->{current_logfile_fh}
+            and defined $self->{current_logfile_fh}) {
+        push @message,  $self->{current_logfile_fh}->input_line_number(),
+                        qq{: };
+    }
 
     chomp $first_line;
     push @message, $first_line;
@@ -3558,7 +3567,7 @@ sub make_connection {
 
     return {
         logfile         => $self->{current_logfile},
-        line_number     => $.,
+        line_number     => $self->{current_logfile_fh}->input_line_number(),
         programs        => {},
         connection      => {},
         results         => [],
