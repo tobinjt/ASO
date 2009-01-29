@@ -710,9 +710,34 @@ to make assumptions about what an empty list means.
 sub parse_line {
     my ($self, $line) = @_;
 
+    my @correct_rule;
+    if (exists $self->{rule_order}) {
+        # If we're using either best or worst ordering we want the normal
+        # parsing loop below (marked RULE) to hit the correct rule first.
+        if ($self->{q{perfect-rule-order}} ne q{normal}) {
+            my $line_number = $self->{current_logfile_fh}->input_line_number();
+            my $rule_id = $self->{rule_order}->[$line_number];
+            push @correct_rule, $self->{rule_by_id}->[$rule_id];
+        }
+
+        # For worst order we try every rule and ignore the result, then continue
+        # on to the normal parsing loop below (marked RULE) where the correct
+        # rule will be first in the list.  This is slightly inaccurate because
+        # we'll try one more rule than strictly necessary - the correct rule
+        # will be tried twice - but it's good enough for the moment.
+        if ($self->{q{perfect-rule-order}} eq q{worst}) {
+            foreach my $rule (@{$self->{rules_by_program}->{$line->{program}}},
+                    @{$self->{rules_by_program}->{q{*}}}) {
+                $line->{text} =~ m/$rule->{regex}/;
+                $self->{num_rules_tried}++;
+            }
+        }
+    }
+
     RULE:
     # Use the program specific rules first, then the generic rules.
-    foreach my $rule (@{$self->{rules_by_program}->{$line->{program}}},
+    foreach my $rule (@correct_rule,
+            @{$self->{rules_by_program}->{$line->{program}}},
             @{$self->{rules_by_program}->{q{*}}}) {
         $self->{num_rules_tried}++;
         if ($line->{text} !~ m/$rule->{regex}/) {
@@ -1904,7 +1929,9 @@ sub load_rules {
 
     foreach my $rule ($self->{dbix}->resultset(q{Rule})->search()) {
         my $rule_hash = {
-            id               => $rule->id(),
+            # Force conversion from string to integer, so that Data::Dumper
+            # output is consistent whether perfect rule ordering is used or not.
+            id               => $rule->id() + 0,
             name             => $rule->name(),
             description      => $rule->description(),
             hits             => $rule->hits(),
@@ -2004,14 +2031,19 @@ sub load_rules {
 
     # Reset hits for all rules.
     map { $_->{hits} = 0; } @results;
+    $self->{rules} = \@results;
 
     # Collate rules by program, so that later we'll only try rules for the
     # program that logged the line.
     my %rules_by_program;
     map {        $rules_by_program{$_->{program}} = []; } @results;
     map { push @{$rules_by_program{$_->{program}}}, $_; } @results;
-    $self->{rules}            = \@results;
     $self->{rules_by_program} = \%rules_by_program;
+
+    # Map rule ids to rules, for use with perfect ordering.
+    my @rule_by_id;
+    map { $rule_by_id[$_->{id}] = $_ } @results;
+    $self->{rule_by_id} = \@rule_by_id;
 }
 
 =over 4
@@ -2319,7 +2351,7 @@ ids, one per line.
 sub load_rule_order {
     my ($self, $filehandle) = @_;
 
-    $self->{rule_order} = <$filehandle>;
+    $self->{rule_order} = [<$filehandle>];
     chomp @{$self->{rule_order}};
     return 1;
 }

@@ -70,6 +70,13 @@ foreach my $logfile (@logs) {
     print qq{Starting to read $logfile: $size, $num_logs_parsed/$num_logs\n};
     $num_logs_parsed++;
 
+    if ($Options->{q{in-rule-order}}) {
+        my $rule_file = IO::File->new(q{<} . $Options->{q{in-rule-order}})
+            or die qq{Failed to open $Options->{q{in-rule-order}}: $!\n};
+        $parser->load_rule_order($rule_file);
+        print_timing(qq{Loaded rule order}, $logfile);
+    }
+
     print_timing(qq{Start parsing logfile}, $logfile);
     my $results = $parser->parse($logfile);
     if ($Options->{q{timing-data}}) {
@@ -214,6 +221,12 @@ sub get_options {
         my $version = q{$Id$};
         print qq{$0 version $version\n};
         exit 0;
+    }
+
+    if (exists $opts{q{perfect-rule-order}}
+            and $opts{q{perfect-rule-order}} ne q{normal}
+            and not defined $opts{q{in-rule-order}}) {
+        die qq{$0: --perfect-rule-order requires --in-rule-order\n};
     }
 
     # Separate logparser and ASO::Parser options.
