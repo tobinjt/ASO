@@ -25,7 +25,14 @@ set -u -e
 full_run_dir="/home/tobinjt/results/results-full-run"
 mkdir -p "$full_run_dir"
 cp -p ../sql/db.maximum-ruleset.sq3 ../sql/db.sq3
-perl ../logparser/logparser --year 2007 --skip_inserting_results --out-statefile "$full_run_dir/state" --individual-state-files --timing-data "$full_run_dir/timing" $( < ../logparser/logs-some ) 2> "$full_run_dir/warnings"
+perl ../logparser/logparser --year 2007 --skip_inserting_results \
+    --out-statefile "$full_run_dir/state" --individual-state-files \
+    --timing-data "$full_run_dir/timing" \
+    --out-rule-order "$full_run_dir/rule-order" --individual-rule-order-files \
+    $( < ../logparser/logs-some ) 2> "$full_run_dir/warnings"
+rule_order_dir="$full_run_dir/../rule_order"
+mkdir -p "$rule_order_dir"
+cp -f "$full_run_dir/"rule-order* "$rule_order_dir"
 
 # Now do all the combinations.
 PRELUDE
@@ -51,6 +58,11 @@ my @options = (
         optimal_ordering            => q{--sort_rules=optimal},
         shuffle_ordering            => q{--sort_rules=shuffle},
         reverse_ordering            => q{--sort_rules=reverse},
+    },
+    {
+        perfect_best                => q{--perfect-rule-order=best},
+        perfect_normal              => q{--perfect-rule-order=normal},
+        perfect_worst               => q{--perfect-rule-order=worst},
     },
 );
 
