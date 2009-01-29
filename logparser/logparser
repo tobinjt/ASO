@@ -90,9 +90,23 @@ foreach my $logfile (@logs) {
     }
 
     my $statefile = IO::File->new(q{>} . $statefile_name)
-        or die qq{Failed to open $Options->{q{out-statefile}}: $!\n};
+        or die qq{Failed to open $statefile_name: $!\n};
     $parser->dump_state($statefile);
     print_timing(qq{Dumped state}, $logfile);
+
+    if ($Options->{q{out-rule-order}}) {
+        my $rule_file_name = $Options->{q{out-rule-order}};
+        if ($Options->{q{individual-rule-order-files}}) {
+            my ($volume, $dir, $file) = splitpath($logfile);
+            $file =~ s/(.gz|.bz2|.zip|.lzo)$//;
+            $rule_file_name .= q{-} . $file;
+        }
+
+        my $rule_file = IO::File->new(q{>} . $rule_file_name)
+            or die qq{Failed to open $rule_file_name: $!\n};
+        $parser->dump_rule_order($rule_file);
+        print_timing(qq{Dumped rule order}, $logfile);
+    }
 }
 
 print_timing(qq{Updating hits}, q{});
@@ -167,12 +181,15 @@ sub get_options {
 
     # Add logparser options.
     my %logparser_options = (
-        q{in-statefile|i=s}         => undef,
-        q{out-statefile|o=s}        => q{state},
-        q{individual-state-files}   => 0,
-        q{timing-data|t=s}          => undef,
-        q{help|h}                   => 0,
-        q{version|v}                => 0,
+        q{in-statefile|i=s}                 => undef,
+        q{out-statefile|o=s}                => q{state},
+        q{individual-state-files}           => 0,
+        q{out-rule-order=s}                 => undef,
+        q{in-rule-order=s}                  => undef,
+        q{individual-rule-order-files}      => 0,
+        q{timing-data|t=s}                  => undef,
+        q{help|h}                           => 0,
+        q{version|v}                        => 0,
     );
     push @switches, keys %logparser_options;
 
@@ -290,19 +307,18 @@ saved to a file named 'state' in the current directory.
 Instead of reusing the same state file when saving state, use one per logfile.
 The directory component of the log file is stripped off, and the resulting
 filename (plus a separating dash) is appended to the filename given to the
-B<--out-statefile> option.  If the logfile is compressed, a suffix of   If the
-logfile is compressed, a suffix of   If the logfile is compressed, a suffix of
-.gz, .bz2, .zip, or .lzo will be removed, to avoid confusion.
+B<--out-statefile> option.  If the logfile is compressed, a suffix of .gz, .bz2,
+.zip, or .lzo will be removed, to avoid confusion.
+
+=item --timing-data FILE
+
+Write timing data to FILE.
 
 =item --data_source STRING
 
 Specifies the database to use when loading rules and saving results.  Defaults
 to 'dbi:SQLite:dbname=../sql/db.sq3'.  See L<DBI> for more information about the
 format of this option.
-
-=item --timing-data FILE
-
-Write timing data to FILE.
 
 =item --username USERNAME
 
@@ -387,6 +403,53 @@ Dump each connection that is committed.  This might be useful for serious
 debugging, or verifying the parser's behaviour after changing the parser or
 rules.  This will take effect even if --skip_inserting_results has been
 specified.
+
+=item --out-rule-order FILE
+
+Write the list of rules used to FILE.  This can be loaded when parsing the same
+log file again to change parsing performance.  See also B<--in-rule-order>,
+B<--perfect-rule-order>, and B<--individual-rule-order-files>
+
+=item --in-rule-order FILE
+
+Read the list of rules to use from FILE, to change parsing performance.  See
+also B<--out-rule-order>, B<--perfect-rule-order>, and
+B<--individual-rule-order-files>
+
+=item --perfect-rule-order best|normal|worst
+
+How to use the list of rules loaded by B<--in-rule-order>:
+
+=over 8
+
+=item best
+
+Use the correct rule first, so only one rule will be tried per log line.
+
+=item normal
+
+Don't use the list of rules; this is the default behaviour.
+
+=item worst
+
+Use the correct rule last, so every other applicable rule will be tried per log
+line.
+
+=back
+
+This option exists for performance tests: how does normal rule ordering compare
+to a perfect random ordering, where the first or last rule randomly selected for
+each log line is the correct rule.  Default is normal, i.e. ignore the list of
+rules.  See also B<--in-rule-order>, B<--out-rule-order>, <--individual-rule-order-files>
+
+=item --individual-rule-order-files
+
+Instead of reusing the same file when saving rule order, use one per logfile.
+The directory component of the log file is stripped off, and the resulting
+filename (plus a separating dash) is appended to the filename given to the
+B<--out-rule-order> option.  If the logfile is compressed, a suffix of .gz,
+.bz2, .zip, or .lzo will be removed, to avoid confusion.  See also
+B<--in-rule-order>, B<--out-rule-order>, and B<--perfect-rule-order>.
 
 =item --timing-data FILE
 

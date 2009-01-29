@@ -169,6 +169,13 @@ sub new {
         croak qq{${package}->new(): unknown option $option\n};
     }
 
+    if ($self->{q{perfect-rule-order}} !~ m/^(best|normal|worst)$/i) {
+        croak <<"ERROR";
+${package}->new(): bad value for 'perfect-rule-order': $self->{q{perfect-rule-order}}
+Valid values are best, normal, and worst
+ERROR
+    }
+
     $self->{dbix} = ASO::DB->connect(
         $self->{data_source},
         $self->{username},
@@ -229,6 +236,7 @@ sub options_for_new {
             username                => undef,
             password                => undef,
             year                    => $year,
+            q{perfect-rule-order}   => q{normal},
         },
         optional_toggle     => {
             discard_compiled_regex  => 0,
@@ -292,6 +300,9 @@ sub init_globals {
     $self->{reject_warning}   =
             $self->filter_regex(q{^__QUEUEID__:\sreject_warning:});
     $self->{reject_warning}   = qr/$self->{reject_warning}/mx;
+
+    # Keep track of which rule matches each log line.
+    $self->{rule_order}       = [];
 
     # The data we maintain, and why (will also be dumped in dump_state())
     $self->{data_to_dump}     = [qw(queueids connections
@@ -709,6 +720,8 @@ sub parse_line {
         }
         $rule->{count}++;
         $self->{num_lines_parsed}++;
+        my $line_number = $self->{current_logfile_fh}->input_line_number();
+        $self->{rule_order}->[$line_number] = $rule->{id};
 
         # XXX: is there a way I can do this without matching twice??
         my @matches = ($line->{text} =~ m/$rule->{regex}/);
@@ -2270,6 +2283,46 @@ subroutine which does exactly this, so in general the calling sequence will be:
 =back
 
 =cut
+
+=over 4
+
+=item $self->dump_rule_order($filehandle)
+
+Dump rule ordering to $filehandle.  The output will be a list of rule ids, one
+per line.
+
+=back
+
+=cut
+
+sub dump_rule_order {
+    my ($self, $filehandle) = @_;
+
+    foreach my $rule_id (@{$self->{rule_order}}) {
+        print $filehandle defined $rule_id ? qq{$rule_id\n} : qq{\n};
+    }
+
+    return 1;
+}
+
+=over 4
+
+=item $self->load_rule_order($filehandle)
+
+Load rule ordering from $filehandle.  The file should contain a list of rule
+ids, one per line.
+
+=back
+
+=cut
+
+sub load_rule_order {
+    my ($self, $filehandle) = @_;
+
+    $self->{rule_order} = <$filehandle>;
+    chomp @{$self->{rule_order}};
+    return 1;
+}
 
 =over 4
 

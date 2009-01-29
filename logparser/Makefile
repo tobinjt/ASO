@@ -32,7 +32,7 @@ test.%: ../../../../logs/mail.log-%
 	make INPUT='"$<"'                 STATE='"state"'         OUTPUT='"warnings"'         TIMING='"timing"'			test-real
 
 test-real:
-	date; perl logparser --year 2007 --skip_inserting_results --out-statefile ${STATE} --individual-state-files --timing-data ${TIMING} ${INPUT} 2> ${OUTPUT}; date
+	date; perl logparser --out-rule-order order --individual-rule-order-files --year 2007 --skip_inserting_results --out-statefile ${STATE} --individual-state-files --timing-data ${TIMING} ${INPUT} 2> ${OUTPUT}; date
 
 ../sql/create-tables-sqlite3-generated.sql: ../ASO/DB.pm ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm ../ASO/DB/ClusterGroup.pm
 	(cd ../sql && perl make_schema > "$@")
