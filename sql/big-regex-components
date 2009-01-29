@@ -1,0 +1,75 @@
+(?:after|before) input_transp_cleanup: cleanup flags = .*
+auto_clnt_close: disconnect private/anvil stream
+auto_clnt_open: connected to __IP__:\d+
+auto_clnt_open: connected to (?:public|private)/.*
+before input_transp_cleanup: cleanup flags = enable_header_body_filter enable_automatic_bcc enable_address_mapping enable_milters
+check_access: __EMAIL__
+check_addr_access: __IP__
+check_domain_access: __HOSTNAME__
+>>> CHECKING RECIPIENT MAPS <<<
+check_mail_access: __EMAIL__
+check_namadr_access: name __HOSTNAME__ addr __IP__
+check_server_access: MX __EMAIL__
+check_table_result: .*
+connect to subsystem .+
+ctable_locate: install entry key .*
+ctable_locate: leave existing entry key .+
+ctable_locate: move existing entry key .*
+ctable_locate: purge entry key .+
+dict_cidr_lookup: .* (?:__HOSTNAME__|__IP__)
+dict_pcre_lookup: .*
+dns_get_answer: type MX for .*
+dns_query: .*
+>>> END Client host RESTRICTIONS <<<
+>>> END Data command RESTRICTIONS <<<
+>>> END Recipient address RESTRICTIONS <<<
+event_cancel_timer: .*
+event_disable_readwrite: fd \d+
+event_enable_read: fd \d+
+event_extend: fd \d+
+event_request_timer: .*
+extract_addr: in: <__EMAIL__>, result: __EMAIL__
+extract_addr: input: <__EMAIL__>
+fsspace: .: block size \d+, blocks free .+
+generic_checks: .*
+[<>] __HOSTNAME__\[__IP__\]: .*
+input attribute (?:name|value): .*
+__IP__:\d+:? wanted attribute: .*
+lookup __HOSTNAME__ type MX flags 0
+mail_addr_find: __EMAIL__ -> .*
+maps_find: (?:canonical_maps|local_recipient_maps|recipient_canonical_maps|virtual_alias_maps): .*
+match_hostaddr: __IP__ ~\? \[__IP__\](?:/\d+)?
+match_hostaddr: __IP__ ~\? __IP__(?:/\d+)?
+match_hostname: __HOSTNAME__ ~\? __IP__(?:/\d+)?
+match_hostname: __HOSTNAME__ ~\? \[__IP__\](?:/\d+)?
+match_list_match: .+ no match
+match_string: .* ~\? .*
+name_mask: .*
+permit_auth_destination: __EMAIL__
+permit_inet_interfaces: __HOSTNAME__ __IP__
+permit_mynetworks: __HOSTNAME__ __IP__
+private/anvil: wanted attribute: .*
+(?:private|public)/.* socket: wanted attribute: .*
+rec_put: type .* len \d+ data.*
+reject_invalid_hostname: __HOSTNAME__
+reject_non_fqdn_address: .+
+reject_non_fqdn_hostname: __HOSTNAME__
+reject_rbl: Client host __IP__
+reject_unauth_destination: __EMAIL__
+reject_unauth_pipelining: DATA
+reject_unknown_address: __EMAIL__
+reject_unknown_client: __HOSTNAME__ __IP__
+reject_unknown_mailhost: __HOSTNAME__
+resolve_clnt: .*flags= .+
+rewrite_clnt: local: __EMAIL__ -> __EMAIL__
+send attr .* =.*
+smtpd_check_addr: .+
+smtpd_check_queue: .*
+smtpd_check_rewrite: trying: permit_inet_interfaces
+>>> START Client host RESTRICTIONS <<<
+>>> START Data command RESTRICTIONS <<<
+>>> START Recipient address RESTRICTIONS <<<
+trying... \[__CLIENT_IP__\]
+vstream_buf_get_ready: fd \d* got \d*
+vstream_fflush_some: fd \d* flush \d*
+watchdog_pat: .*

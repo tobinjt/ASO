@@ -1,0 +1,12 @@
+Nov  5 19:47:43 relay.cs.tcd.ie postfix/smtpd[17185]: [ID 197553 mail.info] connect from xmx2.tcd.ie[134.226.1.152]
+Nov  5 19:47:43 relay.cs.tcd.ie postfix/smtpd[17185]: [ID 197553 mail.info] 34B3F4317: client=xmx2.tcd.ie[134.226.1.152]
+Nov  5 19:47:43 relay.cs.tcd.ie postfix/cleanup[17336]: [ID 197553 mail.info] 34B3F4317: message-id=<CA6DA99F6C385FC.F18243FC6F@tpnet.pl>
+Nov  5 19:47:43 relay.cs.tcd.ie postfix/qmgr[21370]: [ID 197553 mail.info] 34B3F4317: from=<tqzqqrzsey@tpnet.pl>, size=3326, nrcpt=1 (queue active)
+Nov  5 19:47:50 relay.cs.tcd.ie postfix/smtpd[16836]: [ID 197553 mail.info] connect from localhost[127.0.0.1]
+Nov  5 19:47:50 relay.cs.tcd.ie postfix/smtpd[16836]: [ID 197553 mail.info] 8B22B43C3: client=xmx2.tcd.ie[134.226.1.152]
+Nov  5 19:47:50 relay.cs.tcd.ie postfix/cleanup[17318]: [ID 197553 mail.info] 8B22B43C3: message-id=<CA6DA99F6C385FC.F18243FC6F@tpnet.pl>
+Nov  5 19:47:50 relay.cs.tcd.ie postfix/qmgr[21370]: [ID 197553 mail.info] 8B22B43C3: from=<tqzqqrzsey@tpnet.pl>, size=5800, nrcpt=1 (queue active)
+Nov  5 19:47:50 relay.cs.tcd.ie postfix/local[15363]: [ID 197553 mail.info] 8B22B43C3: to=<gabriel.matthews@cs.tcd.ie>, relay=local, delay=0, status=sent (forwarded as 9627443F0)
+Nov  5 19:47:50 relay.cs.tcd.ie postfix/qmgr[21370]: [ID 197553 mail.info] 8B22B43C3: removed
+Nov  5 19:47:50 relay.cs.tcd.ie postfix/smtp[17354]: [ID 197553 mail.info] 34B3F4317: to=<gabriel.matthews@cs.tcd.ie>, relay=127.0.0.1[127.0.0.1], delay=7, status=sent (250 2.6.0 Ok, id=16661-16, from MTA([127.0.0.1]:11025): 250 Ok: queued as 8B22B43C3)
+Nov  5 19:47:50 relay.cs.tcd.ie postfix/qmgr[21370]: [ID 197553 mail.info] 34B3F4317: removed

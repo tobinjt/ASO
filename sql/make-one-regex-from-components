@@ -1,0 +1,1 @@
+strictperl -e 'my @lines = <>; chomp @lines; my $regex = join q{|}, @lines; print qq{'\''^(?:$regex)\$'\'',\n};' big-regex-components > file
