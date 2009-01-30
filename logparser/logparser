@@ -71,8 +71,14 @@ foreach my $logfile (@logs) {
     $num_logs_parsed++;
 
     if ($Options->{q{in-rule-order}}) {
-        my $rule_file = IO::File->new(q{<} . $Options->{q{in-rule-order}})
-            or die qq{Failed to open $Options->{q{in-rule-order}}: $!\n};
+        my $rule_file_name = $Options->{q{in-rule-order}};
+        if ($Options->{q{individual-rule-order-files}}) {
+            my ($volume, $dir, $file) = splitpath($logfile);
+            $file =~ s/(.gz|.bz2|.zip|.lzo)$//;
+            $rule_file_name .= q{-} . $file;
+        }
+        my $rule_file = IO::File->new(q{<} . $rule_file_name)
+            or die qq{Failed to open $rule_file_name: $!\n};
         $parser->load_rule_order($rule_file);
         print_timing(qq{Loaded rule order}, $logfile);
     }
@@ -457,10 +463,10 @@ rules.  See also B<--in-rule-order>, B<--out-rule-order>, <--individual-rule-ord
 
 =item --individual-rule-order-files
 
-Instead of reusing the same file when saving rule order, use one per logfile.
-The directory component of the log file is stripped off, and the resulting
-filename (plus a separating dash) is appended to the filename given to the
-B<--out-rule-order> option.  If the logfile is compressed, a suffix of .gz,
+Instead of reusing the same file when saving or loading rule order, use one per
+logfile.  The directory component of the log file is stripped off, and the
+resulting filename (plus a separating dash) is appended to the filename given to
+the B<--out-rule-order> option.  If the logfile is compressed, a suffix of .gz,
 .bz2, .zip, or .lzo will be removed, to avoid confusion.  See also
 B<--in-rule-order>, B<--out-rule-order>, and B<--perfect-rule-order>.
 
