@@ -1,0 +1,29 @@
+Elsevier's new document class for typeset journal articles,
+elsarticle.cls, now available for user testing
+
+Elsevier's document class for typeset articles elsart.cls is over 10
+years old. Therefore it will be replaced with the newly written
+document class elsarticle.cls, which was developed for Elsevier by the
+leading TeX company River-Valley Technologies.
+
+elsarticle.cls is based upon the standard LaTeX document class
+article.cls. It uses natbib.sty for bibliographical references.
+
+The following files are available:
+- elsarticle.cls, the class file
+- elsdoc.pdf, the user documentation
+- elsarticle-template-num.tex, template file for numerical references
+- elsarticle-template-harv.tex, template file for name-year references
+
+Elsevier encourages authors to use this document class for testing,
+and report bugs and problems to the developers of the class,
+elsarticle@river-valley.com. It is the intention to finalize this
+document class by the end of August. By that date it will be accepted
+for submitted articles, both in Elsevier's electronic submission
+system and otherwise.
+
+Copyright 2007-2008, Elsevier. Bugs, feature requests, suggestions and
+comments may be mailed to elsarticle@river-valley.com. elsarticle.cls,
+related documentation and supporting packages are released under the
+LATEX Project Public Licence, either version 1.3 or any later version.
+This work has the LPPL maintenance status 'author-maintained'.
