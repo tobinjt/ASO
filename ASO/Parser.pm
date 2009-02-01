@@ -642,9 +642,7 @@ sub update_check_order {
 
 =item $self->parse_result_cols($spec, $rule, $number_required, $column_names)
 
-Parses an assignment list for result_cols, result_data, connection_cols or
-connection_data.  Example list:
-  hostname = 1; helo = 2, sender = 4
+Parses an assignment list for result_data or connection_data.  Example list:
   client_ip = ::1; client_hostname = localhost, helo = unknown;
 
 Either semi-colons or commas can separate assignments.  The variable on the left
@@ -653,8 +651,6 @@ result_data and connection_data, hence the relaxed regex (.* instead of \d+); if
 $number_required is true the right hand side is later required to match \d+.
 There is no way to put a comma or semi-colon in the string.  Returns a hash
 reference containing variable => value.
-
-See result_cols in ASO::DB::Rule for more details.
 
 =back
 
@@ -743,16 +739,12 @@ sub parse_line {
         if ($line->{text} !~ m/$rule->{regex}/) {
             next RULE;
         }
+
+        my %matches = %+;
         $rule->{count}++;
         $self->{num_lines_parsed}++;
         my $line_number = $self->{current_logfile_fh}->input_line_number();
         $self->{rule_order}->[$line_number] = $rule->{id};
-
-        # XXX: is there a way I can do this without matching twice??
-        my @matches = ($line->{text} =~ m/$rule->{regex}/);
-        # regex matches start at one, but array indices start at 0.
-        # shift the array forward so they're aligned
-        unshift @matches, undef;
 
         if ($self->{print_matching_regex}) {
             print $rule->{regex_orig}, q{ !!!! }, $line->{text}, qq{\n};
@@ -762,7 +754,7 @@ sub parse_line {
         }
         # Hmmm, I can't figure out how to combine the next two lines.
         my $action = $rule->{action};
-        return $self->$action($rule, $line, \@matches);
+        return $self->$action($rule, $line, \%matches);
     }
 
     # Last ditch: complain to the user.  Notice that we deliberately don't 
@@ -780,7 +772,7 @@ When a rule successfully matches a line the action specified in the rule will be
 performed; these are the subroutines implementing the actions.  All actions are
 called in the same way:
 
-  $self->ACTION($rule, $line, \@matches);
+  $self->ACTION($rule, $line, $matches);
 
 Most actions have more documentation, but it's only of interest to developers
 digging into the internals.
@@ -934,11 +926,10 @@ sub DISCONNECT {
 
 =item SAVE_DATA
 
-Use the queueid from $rule and @matches to find the correct connection and call
+Use the queueid from $matches to find the correct connection and call
 $self->save() with the appropriate arguments - see save() in SUBROUTINES for
-more details.  If the connection doesn't exist a connection marked faked will be
-created and a warning issued.  If the connection has already reached COMMIT()
-but failed is_valid_program_combination(), COMMIT() will be attempted again.
+more details.  If the connection has already reached COMMIT() but failed
+is_valid_program_combination(), COMMIT() will be attempted again.
 
 =back
 
@@ -978,7 +969,7 @@ sub SAVE_DATA {
 Enter the data into the database.  Entry may be postponed if the mail is a
 child waiting to be tracked.
 
-Find the correct connection using the queueid from $rule and @matches, then:
+Find the correct connection using the queueid from $matches, then:
 
 =over 8
 
@@ -1578,37 +1569,9 @@ MESSAGE
 
 =over  4
 
-=item $self->get_connection_col($rule, $matches, $column)
-
-Get the value assigned to $column by connection_cols or connection_data in $rule
-and $matches.  Calls my_die() if the column wasn't found; returns the value if
-it was.
-
-=back
-
-=cut
-
-sub get_connection_col {
-    my ($self, $rule, $matches, $column) = @_;
-
-    my $index;
-    foreach my $source (qw(connection_cols connection_data)) {
-        if (exists $rule->{$source}->{$column}) {
-            $index = $rule->{$source}->{$column};
-        }
-    }
-
-    if (not defined $index) {
-        $self->my_die(qq{get_connection_col: Missing column $column});
-    }
-    return $matches->[$index];
-}
-
-=over  4
-
 =item $self->get_result_col($rule, $matches, $column)
 
-Get the value assigned to $column by result_cols or result_data in $rule and
+Get the value assigned to $column by the regex or result_data in $rule and
 $matches.  Calls my_die() if the column wasn't found; returns the value if it
 was.
 
@@ -1619,17 +1582,13 @@ was.
 sub get_result_col {
     my ($self, $rule, $matches, $column) = @_;
 
-    my $index;
-    foreach my $source (qw(result_cols result_data)) {
-        if (exists $rule->{$source}->{$column}) {
-            $index = $rule->{$source}->{$column};
-        }
-    }
-
-    if (not defined $index) {
+    if (exists $matches->{$column}) {
+        return $matches->{$column};
+    } elsif (exists $rule->{result_data}->{$column}) {
+        return $rule->{result_data}->{$column};
+    } else {
         $self->my_die(qq{get_result_col: Missing column $column});
     }
-    return $matches->[$index];
 }
 
 =over 4
@@ -1707,9 +1666,8 @@ sub tidy_after_timeout {
 =item $self->handle_dead_smtpd($rule, $line, $matches, $action);
 
 Deals with an smtpd dying or being killed.  The pid needs to be captured by the
-rule's regex; the number of the capture is specified by B<pid> in result_cols.
-Uses $action in error messages.  Calls delete_dead_smtpd() if the connection
-exists, returns silently otherwise.
+rule's regex.  Uses $action in error messages.  Calls delete_dead_smtpd() if the
+connection exists, returns silently otherwise.
 
 =back
 
@@ -1718,12 +1676,11 @@ exists, returns silently otherwise.
 sub handle_dead_smtpd {
     my ($self, $rule, $line, $matches, $action) = @_;
 
-    my $pid_capture = $rule->{result_cols}->{pid};
-    if (not defined $pid_capture) {
-        $self->my_die(qq{handle_dead_smtpd: rule doesn't define pid},
+    if (not exists $matches->{pid}) {
+        $self->my_die(qq{handle_dead_smtpd: rule doesn't capture pid},
             $self->dump_rule($rule));
     }
-    my $pid = $matches->[$pid_capture];
+    my $pid = $matches->{pid};
     if (not $self->pid_exists($pid)) {
         return;
     }
@@ -1879,17 +1836,12 @@ Sorting rules according to sort_rules
 
 =item *
 
-Expanding connection_cols and result_cols when __RESTRICTION_START__ is found in
-a regex.
-
-=item *
-
 Passing regexs through filter_regex() and compiling them.
 
 =item *
 
-Checking for overlaps in result_cols and result_data; likewise in
-connection_cols and connection_data.
+Checking for overlaps the regex and result_data; likewise between the regex and
+connection_data.
 
 =item *
 
@@ -1897,11 +1849,12 @@ Discarding the compiled regex if discard_compiled_regex is set.
 
 =item *
 
-Collating rules by program.
+Collating rules by program and by id.
 
 =back
 
-Saves rules in $self->{rules} and collated rules in $self->{rules_by_program}.
+Saves rules in $self->{rules}, $self->{rules_by_program}, and
+$self->{rule_by_id}.
 
 =back
 
@@ -1910,22 +1863,6 @@ Saves rules in $self->{rules} and collated rules in $self->{rules_by_program}.
 sub load_rules {
     my ($self) = @_;
     my @results;
-
-    # __RESTRICTION_START__ captures; we need to add to result_cols and
-    # connection_cols whenever it's used.
-    my $extra_rejection_cols = {
-        connection_cols => $self->parse_result_cols(
-            q{client_hostname = 2, client_ip = 3},
-            undef, $self->{NUMBER_REQUIRED},
-            $self->{connection_cols_names},
-        ),
-        result_cols     => $self->parse_result_cols(
-            q{smtp_code = 4},
-            undef, $self->{NUMBER_REQUIRED},
-            $self->{result_cols_names},
-        ),
-    };
-
 
     foreach my $rule ($self->{dbix}->resultset(q{Rule})->search()) {
         my $rule_hash = {
@@ -1941,12 +1878,6 @@ sub load_rules {
             program          => $rule->program(),
             queueid          => $rule->queueid(),
             regex_orig       => $rule->regex(),
-            result_cols      => $self->parse_result_cols($rule->result_cols(),
-                                    $rule, $self->{NUMBER_REQUIRED},
-                                    $self->{result_cols_names}),
-            connection_cols  => $self->parse_result_cols($rule->connection_cols(),
-                                    $rule, $self->{NUMBER_REQUIRED},
-                                    $self->{connection_cols_names}),
             result_data      => $self->parse_result_cols($rule->result_data(),
                                     $rule, 0,
                                     $self->{result_cols_names}),
@@ -1957,33 +1888,6 @@ sub load_rules {
             rule             => $rule,
         };
 
-        if ($rule_hash->{regex_orig} =~ m/__RESTRICTION_START__/) {
-            foreach my $cols (qw(connection_cols result_cols)) {
-                # Add the extra captures, but allow them to be overridden.
-                $rule_hash->{$cols} = {
-                    %{$extra_rejection_cols->{$cols}},
-                    %{$rule_hash->{$cols}},
-                };
-            }
-        }
-
-        # Check for overlapping columns {result,connection}_{cols,data}.
-        my $overlapping_cols = 0;
-        foreach my $type (qw(connection result)) {
-            my ($type_data, $type_cols) = (qq{${type}_data}, qq{${type}_cols});
-            foreach my $col (keys %{$rule_hash->{$type_data}}) {
-                if (exists $rule_hash->{$type_cols}->{$col}) {
-                    $overlapping_cols++;
-                    $self->my_warn(q{load_rules: Overlapping column in both }
-                        . qq{$type_cols and $type_data: $col\n});
-                }
-            }
-        }
-        if ($overlapping_cols) {
-            $self->my_die(qq{Exiting due to overlapping columns in rule:\n},
-                $self->dump_rule($rule_hash));
-        }
-
         if (not exists $self->{actions}->{$rule_hash->{action}}) {
             $self->my_die(qq{load_rules: unknown action $rule_hash->{action}: },
                 $self->dump_rule_from_db($rule));
@@ -1991,7 +1895,8 @@ sub load_rules {
 
         # Compile the regex for efficiency, otherwise it'll be recompiled every
         # time it's used.
-        my $filtered_regex = $self->filter_regex($rule_hash->{regex_orig});
+        my ($filtered_regex, $captures)
+            = $self->filter_regex($rule_hash->{regex_orig});
         eval {
             $rule_hash->{regex} = qr/$filtered_regex/;
         };
@@ -2005,6 +1910,31 @@ sub load_rules {
         }
         if ($self->{discard_compiled_regex}) {
             $rule_hash->{regex} = $filtered_regex;
+        }
+
+        # Check for overlap between the regex and connection_data/result_data.
+        my $overlaps = 0;
+        foreach my $capture (keys %{$captures}) {
+            my $overlap = q{};
+            if (exists $self->{result_cols_names}->{$capture}) {
+                if (exists $rule_hash->{result_data}->{$capture}) {
+                    $overlap = q{result_data};
+                }
+            } else {
+                if (exists $rule_hash->{connection_data}->{$capture}) {
+                    $overlap = q{connection_data};
+                }
+            }
+            if ($overlap) {
+                $self->my_warn(qq{load_rules: overlap between regex }
+                    . qq{and $overlap: $capture\n});
+                $overlaps++;
+            }
+        }
+
+        if ($overlaps) {
+            $self->my_die(qq{Exiting due to overlaps in rule:\n},
+                $self->dump_rule($rule_hash));
         }
 
         push @results, $rule_hash;
@@ -2501,18 +2431,19 @@ sub prune_aborted_mails {
 =item $self->filter_regex($regex, %options)
 
 Substitutes certain keywords in the regex with regex snippets, e.g.
-__SMTP_CODE__ is replaced with C<\d{3}>.  Every regex loaded from the database
-will be processed by filter_regex(), allowing each regex to be largely
-self-documenting and far simpler than it would otherwise have been, and also
-allowing bugs in the regex components to be fixed in one place only.
+__SMTP_CODE__ is replaced with C<\d{3}>; these regex snippets cause captured
+data to be saved automatically.  Every regex loaded from the database will be
+processed by filter_regex(), allowing each regex to be largely self-documenting
+and far simpler than it would otherwise have been, and also allowing bugs in the
+regex components to be fixed in one place only.
 
 The full list of keywords which are expanded is:
 
 __SENDER__, __RECIPIENT__, __MESSAGE_ID__, __HELO__, __EMAIL__, __HOSTNAME__,
 __CLIENT_IP__, __CLIENT_HOSTNAME__, __SERVER_IP__, __SERVER_HOSTNAME__, __IP__,
 __IPv4__, __IPv6__, __SMTP_CODE__, __RESTRICTION_START__, __QUEUEID__,
-__COMMAND__, __SHORT_CMD__, __DELAYS__, __DELAY__, __DSN__, __DATA__ and
-__CONN_USE__.
+__COMMAND__, __SHORT_CMD__, __PID__, __CHILD__, __DELAYS__, __DELAY__, __DSN__,
+__DATA__ and __CONN_USE__.
 
 __RESTRICTION_START__ matches:
 
@@ -2522,12 +2453,14 @@ __SHORT_CMD__ matches:
 
     /(?:CONNECT|HELO|EHLO|AUTH|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN|XFORWARD|XCLIENT|XVERP)/gx;
 
-__DATA__ expands to nothing: it is used for automatic data extraction, but
-you'll need to add a pattern yourself - even if it's just .*
-
 These are the short form of commands, and are used when Postfix logs a lost
 connection or timeout.  It deliberately excludes DATA, because there are
 separate rules matching lost connections or timeouts after DATA.
+
+__DATA__ expands to nothing: it B<is> used for automatic data extraction, but
+you'll need to add a pattern yourself - even if it's just .*
+
+__CHILD__ and __PID__ are used by certain actions XXX WHICH ONES?
 
 The other names should be reasonably self-explanatory.
 
@@ -2543,14 +2476,11 @@ B<logs2regexs> needs the more restrictive regex components, because it uses them
 in isolation, whereas ASO::Parser needs the less restrictive components to match
 email addresses like B<< <>@example.com >>.  Default: not strict.
 
-=item restriction_start_only
-
-If C<$options{restriction_start_only}> is true, only C<__RESTRICTION_START__>
-will be substituted in $regex.  This is used when extracting keywords to
-automatically populate each rule's result_cols and connection_cols.  Default:
-substitute all keywords.
-
 =back
+
+filter_regex() returns the filtered regex; if called in array context it also
+returns a hash reference whose keys are the columns captured by the filtered
+regex.
 
 =back
 
@@ -2561,7 +2491,6 @@ sub filter_regex {
 
     my %default_options = (
         strict                  => 0,
-        restriction_start_only  => 0,
     );
     foreach my $option (keys %options) {
         if (not exists $default_options{$option}) {
@@ -2570,15 +2499,14 @@ sub filter_regex {
     }
 
     $regex =~ s/__RESTRICTION_START__   /(__QUEUEID__): reject(?:_warning)?: (?:RCPT|DATA) from (?>(__CLIENT_HOSTNAME__)\\[)(?>(__CLIENT_IP__)\\]): (__SMTP_CODE__)(?: __DSN__)?/gmx;
-    if ($options{restriction_start_only}) {
-        return $regex;
-    }
 
     # Keyword replacement for automatic data extraction.
     # NOTE: the trailing ) is not required, to make __DATA__ work flexibly.
+    my %keywords_to_return;
     my @KEYWORDS = ($regex =~ m/\(__(\w+)__/g);
     foreach my $KEYWORD (@KEYWORDS) {
         my $keyword = lc $KEYWORD;
+        $keywords_to_return{$keyword} = 1;
         if (    not exists $self->{result_cols_names}->{$keyword}
             and not exists $self->{connection_cols_names}->{$keyword}) {
             $self->my_die(qq{keyword $keyword is not a known column name}
@@ -2624,6 +2552,7 @@ sub filter_regex {
     $regex =~ s/__IPv4__                /(?:::ffff:)?$RE{net}{IPv4}/gmx;
     $regex =~ s/__IPv6__                /$ipv6_regex/gmx;
     $regex =~ s/__SMTP_CODE__           /\\d{3}/gmx;
+    $regex =~ s/__PID__                 /\\d+/gmx;
     $regex =~ s/__CHILD__               /__QUEUEID__/gmx;
     # 3-9 was a guess.  Turns out that we need at least 10, might as well go to
     # 12 to be sure.
@@ -2640,7 +2569,11 @@ sub filter_regex {
     $regex =~ s/__DATA__                //gmx;
 #   $regex =~ s/____/$RE{}{}/gx;
 
-    return $regex;
+    if (wantarray) {
+        return ($regex, \%keywords_to_return);
+    } else {
+        return $regex;
+    }
 }
 
 =over 4
@@ -2937,16 +2870,16 @@ sub is_valid_program_combination {
 
 =over 4
 
-=item $self->save($connection, $line, $rule, \@matches)
+=item $self->save($connection, $line, $rule, $matches)
 
-Save data extracted from $line, using $rule and \@matches, to $connection.
-$connection->{connection} will be updated according to connection_data and
-connection_cols - see update_hash() for full discussion.  The start time will be
-saved if it is unset.  A new result will be created, containing the attributes
-from result_data and result_cols plus the rule_id, postfix_action and timestamp.
-If the rule matches a queueid (and the result is not NOQUEUE), the queueid will
-be saved as $connection->{queueid}; if the queueid changes a warning will be
-logged.
+Save data extracted from $line, using $rule and $matches, to $connection.
+$connection->{connection} will be updated according to connection_data and the
+regex - see update_hash() for full discussion.  The start time will be saved if
+it is unset.  A new result will be created, containing the attributes from
+result_data and those extracted by the rule's regex, plus the rule_id,
+postfix_action, and timestamp.  If the rule matches a queueid (and the result is
+not NOQUEUE), the queueid will be saved as $connection->{queueid}; if the
+queueid changes a warning will be logged.
 
 =back
 
@@ -2983,28 +2916,31 @@ sub save {
     }
     push @{$connection->{results}}, \%result;
 
-    # We don't use $self->update_hash() for result_cols, we check for internal
-    # conflicts between result_cols and result_data in load_rules().
-    # RESULT_COLS
-    foreach my $r_col (keys %{$rule->{result_cols}}) {
-        if (defined $matches->[$rule->{result_cols}->{$r_col}]) {
-            $result{$r_col} = $matches->[$rule->{result_cols}->{$r_col}];
+    # Separate the data extracted by the regex into result and connections.
+    # We don't use $self->update_hash() for %result, we check for internal
+    # conflicts between the regex and result_data in load_rules(); similarly we
+    # check for clashes between connection_data and the regex in load_rules().
+    my %connection_updates = %{$rule->{connection_data}};
+    foreach my $column (keys %{$matches}) {
+        if (exists $self->{connection_cols_names}->{$column}) {
+            $connection_updates{$column} = $matches->{$column};
+        } else {
+            $result{$column} = $matches->{$column};
         }
     }
 
-
-    # Populate connection.
-    # CONNECTION_DATA
+    # Update connection
     $self->update_hash(
         $connection->{connection},
         $self->{c_cols_silent_overwrite},
-        $rule->{connection_data},
+        \%connection_updates,
         $self->{c_cols_silent_discard},
         $rule,
         $line,
         $connection,
-        q{save: connection_data}
+        q{save: connection}
     );
+
     if (not exists $connection->{start}) {
         $connection->{start} = localtime $line->{timestamp};
     }
@@ -3012,31 +2948,8 @@ sub save {
         $connection->{connection}->{start} = $line->{timestamp};
     }
 
-
-    # CONNECTION_COLS
-    my %c_cols_updates;
-    foreach my $c_col (keys %{$rule->{connection_cols}}) {
-        $c_cols_updates{$c_col}
-            = $matches->[$rule->{connection_cols}->{$c_col}];
-    }
-    if ($rule->{queueid}) {
-        my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
-        $c_cols_updates{queueid} = $queueid;
-    }
-    $self->update_hash(
-        $connection->{connection},
-        $self->{c_cols_silent_overwrite},
-        \%c_cols_updates,
-        $self->{c_cols_silent_discard},
-        $rule,
-        $line,
-        $connection,
-        q{save: connection_cols}
-    );
-
-
     # queueid saving.
-    if ($rule->{queueid}) {
+    if (exists $matches->{queueid}) {
         my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
         if ($queueid ne q{NOQUEUE}) {
             if (exists $connection->{queueid}
@@ -3449,17 +3362,6 @@ sub delete_connection_by_queueid {
 
 =over 4
 
-=item $self->get_queueid_from_matches($line, $rule, \@matches)
-
-Returns the queueid from $line, using $rule and \@matches.  Logs a warning if
-there's anything wrong with the queueid, or it's not found.
-
-=back
-
-=cut
-
-=over 4
-
 =item $self->get_all_connections_by_queueid()
 
 Returns all connections saved by queueid in the state tables.
@@ -3473,32 +3375,25 @@ sub get_all_connections_by_queueid {
     return values %{$self->{queueids}};
 }
 
+=over 4
+
+=item $self->get_queueid_from_matches($line, $rule, $matches)
+
+Returns the queueid from $line, using $rule and $matches.  Logs a warning if
+there's anything wrong with the queueid, or it's not found.
+
+=back
+
+=cut
+
 sub get_queueid_from_matches {
     my ($self, $line, $rule, $matches) = @_;
 
-    if (not $rule->{queueid}) {
+    if (not exists $matches->{queueid}) {
         $self->my_die(qq{get_queueid_from_matches: no queueid extracted by:\n},
             $self->dump_rule($rule));
     }
-    my $queueid     = $matches->[$rule->{queueid}];
-    if (not defined $queueid or not $queueid) {
-        $self->my_die(qq{get_queueid_from_matches: blank/undefined queueid\n},
-            $self->dump_line($line),
-            q{using: },
-            $self->dump_rule($rule),
-            q{@matches: },
-            Dumper($matches),
-        );
-    }
-    if ($queueid !~ m/^$self->{queueid_regex}$/mox) {
-        $self->my_die(qq{get_queueid_from_matches: $queueid !~ __QUEUEID__;\n},
-            $self->dump_line($line),
-            q{using: },
-            $self->dump_rule($rule)
-        );
-    }
-
-    return $queueid;
+    return $matches->{queueid};
 }
 
 =over 4
@@ -3682,40 +3577,26 @@ file which triggered the error.
 
 =item parse_result_cols: empty assignment found in: <dumped rule from database>
 
-One of result_cols, connection_cols, result_data or connection_data contains
-nothing on the right hand side of the assignment; check the rule dumped with the
-error message and correct as required.
+One of result_data or connection_data contains nothing on the right hand side of
+the assignment; check the rule dumped with the error message and correct as
+required.
 
 =item parse_result_cols: bad assignment found in: <dumped rule from database>
 
-One of result_cols, connection_cols, result_data or connection_data has an
-assignment which isn't in the form B<variable = value>; check the rule dumped
-with the error message and correct as required.
-
-=item parse_result_cols: $value: not a number in: <dumped rule from database>
-
-One of result_cols or connection_cols contains an assignment with a value which
-isn't an integer; check the rule dumped with the error message and correct as
+One of result_data or connection_data has an assignment which isn't in the form
+B<variable = value>; check the rule dumped with the error message and correct as
 required.
 
 =item parse_result_cols: $key: unknown variable in: <dumped rule from database>
 
-One of result_cols, connection_cols, result_data or connection_data has an
-assignment which has an unknown variable on the left hand side; check the rule
-dumped with the error message and correct as required.
+One of result_data or connection_data has an assignment which has an unknown
+variable on the left hand side; check the rule dumped with the error message and
+correct as required.
 
-=item load_rules: Overlapping column in both connection_cols and
-connection_data: $column Exiting due to overlapping columns in rule: <dump of
-rule>
+=item load_rules: overlap between regex and result_data|connection_data: $column Exiting due to overlapping columns in rule: <dump of rule>
 
-$column appears in both connection_cols and connection_data in a rule.  Check
-the rule and correct the overlap.
-
-=item load_rules: Overlapping column in both result_cols and result_data:
-$column Exiting due to overlapping columns in rule: <dump of rule>
-
-$column appears in both result_cols and result_data in a rule.  Check
-the rule and correct the overlap.
+$column appears in both regex and result_data or connection_data in a rule.
+Check the rule and correct the overlap.
 
 =item load_rules: unknown action $action: <dump of rule>
 
@@ -3841,9 +3722,8 @@ regex to extract the pid from the line; this error message is issued when $regex
 failed to match $line.  Improve the regex in the rule so it successfully matches
 $line, or add another rule which does.
 
-=item save: connection_data|connection_cols: new value for $column ($new_value)
-differs from existing value ($original_value) This rule produced conflicts:
-<pages of debugging info>
+=item save: connection: new value for $column ($new_value) differs from existing
+value ($original_value) This rule produced conflicts: <pages of debugging info>
 
 Data extracted from the current log line for a connection differs from data
 extracted from previous log lines, e.g. the IP address of the client or server.
