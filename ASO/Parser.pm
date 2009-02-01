@@ -3019,6 +3019,10 @@ sub save {
         $c_cols_updates{$c_col}
             = $matches->[$rule->{connection_cols}->{$c_col}];
     }
+    if ($rule->{queueid}) {
+        my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
+        $c_cols_updates{queueid} = $queueid;
+    }
     $self->update_hash(
         $connection->{connection},
         $self->{c_cols_silent_overwrite},
