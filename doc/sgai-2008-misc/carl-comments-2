@@ -1,0 +1,84 @@
+
+Hi John.
+
+Is it possible to indicate what sample rules look for and what the
+actions do?  Maybe you don't need to include the examples, but state
+them.  Then it might be clearer what the re-ordering of rules is
+about.  what sort of action do you want for some rejections and not
+for others?  or, what sort of action do you want for things that
+aren't rejections?
+
+I guess one thing to also emphasize is that this provides the
+framework for the rule clustering research that you've got in mind,
+and that this provides an integrated data source on which to apply the
+machine learning techniques.
+
+A reviewer approaching this might ask the question:  why
+not do machine learning on the logs directly -- what does
+this initial processing add?
+
+Can space be saved by attaching the glossary in the relevant
+spots in the text as footnotes?
+
+In terms of related literature that employs black-box analysis
+along the lines that you've got going, attached is:
+
+Jungwoo Ha, Christopher J. Rossbach, Jason V. Davis, Indrajit Roy,
+David L. Chen, Hany E. Ramadan, Emmett Witchel "Improved Error
+Reporting for Software that Uses Black-Box Components" In Proceedings
+of the ACM SIGPLAN 2007 Conference on Programming Language Design and
+Implementation (PLDI), San Deigo, CA June 2007.
+
+(http://www.cs.utexas.edu/~witchel/pubs/)
+
+This appears to be about doing what you're doing to improve what
+you get out of the log reports of things like latex, among other
+things.
+
+
+Also:
+
+This seems to be doing something located on the same planet, but with
+software testing applications in mind.
+
+http://www.site.uottawa.ca/~bernard/
+
+
+And:
+
+This raises a distinction between "simple pattern matching" and
+"stateful pattern matching" (p9) -- the latter might be a term for us
+to latch on to.  i guess a difference here is in the part of the
+network that one is looking at -- yours is much more focused on
+a particular part.
+www.cisco.com/web/CA/events/pdfs/Designing_and_Deploying_ids_technologies.pdf
+
+That last one might be too big for an email, though.... in fact, it
+is.  It's on /tmp/ on wilde, though.
+
+Well, I guess I'll go read the thing more slowly now.
+
+
+I think it is worth emphazising the connection to Jungwoo Ha (et al.)
+that your approach is one that could be turned to any scenario which
+involves optimizing the behavior of a system by dealing with it as a
+black box analyzed via extremely voluminous data logs.  Then, yours
+has the added focus on stateful pattern matching (if that's what they
+meant) attuned to the particular problem of mail monitoring on the
+basis of envelopes alone, and not their contents.  
+
+presumably on that basis there is application in areas of social
+network analysis over ridiculously large data sets (such as the
+recent case of identifying 17 phones in use in italy by the CIA
+in terms of their network and timing of communications) in other
+areas of research.  
+
+it's a pretty big piece of foundation work that you've got here, isn't
+it?
+
+I hope this helps.
+
+Carl
+
+
+

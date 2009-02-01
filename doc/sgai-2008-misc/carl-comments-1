@@ -1,0 +1,51 @@
+
+
+hi John,
+
+i've had more interruptions than i thought i would today,
+so this isn't very complete.  in fact, i think i'll go for
+lunch shortly and take it with me.
+
+my initial thought is that given the setting of an AI context,
+the abstract creates the false impression that this will be
+about parsing natural language.  it is interesting to speculate
+on how this work relates to that, of course, but that's not
+the main content of the paper.  
+
+i think the introduction should drop in a citation or two to
+work on content based spam filtering, and quickly point out that
+this is to be viewed either as a tool for intelligent reasoning
+about spam filtering (meta- spam-processing) or equivalently
+emphasize that it is a tool for envelope (rather than content)
+filtering.  we do need some sample lines from the log files
+in there also.
+
+mention is made of "the casual user" or something such, but
+i think that mythic individual is very different from the
+casual user of your average desktop application.  i think you're
+trying to target three classes of folks aren't you?   mail system
+experts, system administrator generalists, and system administrator
+novices.  possibly the latter (i picture a department of 10 people
+including one person who is charged with keeping the systems going
+and who occasionally has a chance to poke into something like 
+prioritizing spam filters out of curiosity) might be your notion
+of a casual user?  basically, i think your sense of casual user
+is someone far more aware of what's up than me or anyone in the
+CLG.
+
+would some space be saved by ditching references to wikipedia
+and citing W Venema as ("Postfix documentation") just once
+in the bibliography, with an indication of the relevant section
+at the in-text place?
+
+i see you found the abney thing, and i guess you're right that
+this really isn't a cascade.  maybe it makes sense to state that
+each rule applies once and that it isn't a cascade of rules,
+and that reference could go, too.
+
+i found some thing else that seems relevant, though.  i'll
+send that separately.
+
+take care,
+carl
+
