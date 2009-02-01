@@ -40,14 +40,15 @@ PRELUDE
 # Options:
 # * Discarding of results.
 # * Caching of regexes
-# * Rule ordering
+# * Rule ordering, including perfect best and perfect worst.
 #
 # Plus minimum versus maximum rule sets.
 # XXX AT SOME POINT NEED TO TEST AGAINST A RAM DISK.
 
 my @options = (
     {
-        insert_results              => q{},
+#        XXX RENABLE THIS OPTION
+#        insert_results              => q{},
         skip_inserting_results      => q{--skip_inserting_results},
     },
     {
@@ -55,13 +56,10 @@ my @options = (
         discard_compiled_regexes    => q{--discard_compiled_regex},
     },
     {
+        perfect_best                => q{--perfect-rule-order=best},
         optimal_ordering            => q{--sort_rules=optimal},
         shuffle_ordering            => q{--sort_rules=shuffle},
         reverse_ordering            => q{--sort_rules=reverse},
-    },
-    {
-        perfect_best                => q{--perfect-rule-order=best},
-        perfect_normal              => q{--perfect-rule-order=normal},
         perfect_worst               => q{--perfect-rule-order=worst},
     },
 );
@@ -78,6 +76,8 @@ my @mega_results = add_options(\@options, \@arguments, {});
 #print Dumper(\@mega_results);
 
 print_commands($fh, \@mega_results);
+my $num_test_runs = scalar @mega_results;
+print qq{$num_test_runs test runs with different options\n};
 
 sub add_options {
     my ($options, $arguments, $results) = @_;
