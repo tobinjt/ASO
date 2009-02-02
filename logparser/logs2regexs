@@ -18,6 +18,8 @@ use Pod::Usage;
 use Regexp::Common;
 
 my $COUNT_STRING = q{__COUNT__};
+my $parser = ASO::Parser->new({data_source =>
+        q{dbi:SQLite:dbname=../sql/db.sq3}});
 
 my %Options = get_options();
 
@@ -96,10 +98,12 @@ sub replace_regexs {
         q/<__RECIPIENT__>: Relay access denied:/,
         # In the input [] will be replaced by \[\], so I need to match \\\[, 
         # and every \ needs to be doubled.
-        [q/(__HOSTNAME__)\\\\\\[(__IP__)\\\\\\]/, q/(__HOSTNAME__)\[(__IP__)\]/],
-        [q/(__IPv4__|__IPv6__)/, q/(__IP__)/],
-        q/hostname (__HOSTNAME__) verification failed:/,
-        q/(__HOSTNAME__): Host not found(?:, try again)?/,
+        [q/(__CLIENT_HOSTNAME__)\\\\\\[(__CLIENT_IP__)\\\\\\]/, q/(__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]/],
+        # XXX WHAT WAS THIS SUPPOSED TO DEAL WITH?  CAN I JUST USE
+        # __CLIENT_IP__?
+        #[q/(__IPv4__|__IPv6__)/, q/(__CLIENT_IP__)/],
+        q/hostname (__CLIENT_HOSTNAME__) verification failed:/,
+        q/(__CLIENT_HOSTNAME__): Host not found(?:, try again)?/,
         # This won't catch every queueid, but it's a start.
         q/^(__QUEUEID__)/,
         q/(?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?/,
@@ -155,14 +159,13 @@ sub compile_regexs {
     foreach my $regex (@regexs) {
         if (ref $regex) {
             my ($unfiltered_regex, $replacement) = @$regex;
-            # Sneakily use undef instead of an ASO::Parser object.
             # Make filtered_regex() use strict regex components, to avoid greedy
             # matching problems.
-            my $filtered_regex = ASO::Parser::filter_regex(
-                undef, $unfiltered_regex, strict => 1);
+            my $filtered_regex = $parser->filter_regex(
+                $unfiltered_regex, strict => 1);
             push @regex_pairs, [$replacement, qr/$filtered_regex/];
         } else {
-            my $filtered_regex = ASO::Parser::filter_regex(undef, $regex);
+            my $filtered_regex = $parser->filter_regex($regex, strict => 1);
             push @regex_pairs, [$regex, qr/$filtered_regex/];
         }
     }
@@ -345,6 +348,12 @@ logs2regexs reads unparsed Postfix log lines and creates regexes which match
 those lines.  These regexes can then be used to create new rules for use by
 logparser(1).
 
+=item WARNING
+
+logs2regexs always uses __CLIENT_HOSTNAME__ and __CLIENT_IP__, not
+__SERVER_HOSTNAME__ OR __SERVER_IP__, so your regexs may need to be manually
+edited.
+
 =head1 OPTIONS
 
 Defaults are equivalent to:
@@ -394,7 +403,7 @@ ASO::Parser's documentation).  This improves the resulting regexes in two ways:
 the regexes are more precise, and provide more information to the user, e.g.
 compare:
 
-    ^connect from (__HOSTNAME__)\[(__IP__)\]$
+    ^connect from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]$
     ^connect from (.+)\[(.+)\]$
 
 The newly substituted lines are saved to a temporary file which is used as input

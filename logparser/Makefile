@@ -130,7 +130,7 @@ pod-coverage:
 	done
 
 todo:
-	ack [X]XX . ../ASO ../stats
+	ack [X]XX . ../ASO ../stats ../sql
 
 .PHONY: random-sample-logs-regex-check
 random-sample-logs-regex-check:
