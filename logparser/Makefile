@@ -34,6 +34,12 @@ test.%: ../../../../logs/mail.log-%
 test-real:
 	date; perl logparser --out-rule-order order --individual-rule-order-files --year 2007 --skip_inserting_results --out-statefile state${SUFFIX} --individual-state-files --timing-data timing${SUFFIX} --memory-data memory${SUFFIX} ${INPUT} 2> warnings${SUFFIX}; date
 
+test-parsing-only:
+	rm -f warnings-parsing-only
+	for log in ../../../../logs/mail.log-200*.gz; do \
+		perl logparser --year 2007 --parse_lines_only "$$log" 2>> warnings-parsing-only; \
+	done
+
 ../sql/create-tables-sqlite3-generated.sql: ../ASO/DB.pm ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm ../ASO/DB/ClusterGroup.pm
 	(cd ../sql && perl make_schema > "$@")
 
