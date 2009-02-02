@@ -900,7 +900,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, result_data, action, queueid, postfix_action, restriction_name, cluster_group_id)
     VALUES('Rejected mail too large', 'The client tried to send a mail but it is too big to be accepted.',
         'postfix/smtpd',
-        '^(NOQUEUE): reject: MAIL from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: (__SMTP_CODE__) (?:__DSN__ )?Message size exceeds fixed limit; proto=ESMTP helo=<(__HELO__)>$',
+        '^(__QUEUEID__): reject: MAIL from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: (__SMTP_CODE__) (?:__DSN__ )?Message size exceeds fixed limit; proto=ESMTP helo=<(__HELO__)>$',
         'smtp_code = 4',
         'client_hostname = 2, client_ip = 3, helo = 5',
         'sender = unknown, recipient = unknown',
@@ -1052,6 +1052,34 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'REJECTED',
         'check_client_access',
         1
+);
+
+-- Recipient address rejected: undeliverable address: mail for gforgeisg.cs.tcd.ie loops back to myself; from=<noreply@gforgeisg.cs.tcd.ie> to=<noreply@gforgeisg.cs.tcd.ie> proto=ESMTP helo=<pc910.cs.tcd.ie>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
+    VALUES('Mail loop detected (2)', 'This host is the MX for the addresses domain, but is not final destination for that domain (2)',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <__RECIPIENT__>: Recipient address rejected: undeliverable address: mail for (__DATA__(?:)__SERVER_HOSTNAME__) loops back to myself; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '',
+        '',
+        'DELIVERY_REJECTED',
+        1,
+        'REJECTED',
+        'Mail loop detection',
+        10
+);
+
+-- <root@lehane.cs.tcd.ie>: Recipient address rejected: unverified address: connect to lehane.cs.tcd.ie[134.226.35.142]:25: Connection refused; from=<root@lehane.cs.tcd.ie> to=<root@lehane.cs.tcd.ie> proto=SMTP helo=<lehane.cs.tcd.ie>
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
+    VALUES('Mail addressed to a local server that would not accept it', 'This mail was sent to a local server that rejected the address',
+        'postfix/smtpd',
+        '^__RESTRICTION_START__ <__RECIPIENT__>: Recipient address rejected: unverified address: connect to (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]:25: Connection (refused|timed out); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '',
+        '',
+        'DELIVERY_REJECTED',
+        1,
+        'REJECTED',
+        'reject_unverified_recipient',
+        4
 );
 
 -- }}}
@@ -1796,6 +1824,20 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
         'IGNORED'
 );
 
+-- 6F50FF34BC: to=<maa10887@relay.cs.tcd.ie>, relay=none, delay=0.03, delays=0.01/0.02/0/0, dsn=5.4.6, status=undeliverable (mail for relay.cs.tcd.ie loops back to myself)
+INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, restriction_name, cluster_group_id)
+    VALUES('Mail loop detected (3)', 'This host is the MX for the addresses domain, but is not final destination for that domain (3)',
+        'postfix/smtp',
+    	 '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=undeliverable \(mail for __SERVER_HOSTNAME__ loops back to myself\)$',
+        '',
+        '',
+        'SAVE_DATA',
+        1,
+        'REJECTED',
+        'Mail loop detection',
+        10
+);
+
 -- }}}
 
 
@@ -2306,7 +2348,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action, priority)
     VALUES('Master daemon killed an smtpd', 'Master daemon had to kill an smtpd forcefully',
         'postfix/master',
-        '^warning: process .*/libexec/smtpd pid (\d+) killed by signal \d+$',
+        '^warning: process .*/libexec/smtpd pid (__PID__) killed by signal \d+$',
         'pid = 1',
         '',
         'SMTPD_DIED',
@@ -2319,7 +2361,7 @@ INSERT INTO rules(name, description, program, regex, result_cols, connection_col
 INSERT INTO rules(name, description, program, regex, result_cols, connection_cols, action, queueid, postfix_action)
     VALUES('smtpd died', 'An smtpd died for some reason',
         'postfix/master',
-        '^warning: process .*/libexec/smtpd pid (\d+) exit status \d+$',
+        '^warning: process .*/libexec/smtpd pid (__PID__) exit status \d+$',
         'pid = 1',
         '',
         'SMTPD_DIED',
