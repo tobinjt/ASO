@@ -707,24 +707,27 @@ sub parse_line {
     my ($self, $line) = @_;
 
     my @correct_rule;
-    # If we're using either best or worst ordering we want the normal
-    # parsing loop below (marked RULE) to hit the correct rule first.
-    if ($self->{q{perfect-rule-order}} ne q{normal}) {
-        my $line_number = $self->{current_logfile_fh}->input_line_number();
-        my $rule_id = $self->{rule_order}->[$line_number];
-        push @correct_rule, $self->{rule_by_id}->[$rule_id];
-    }
+    # Check that we've loaded rule_order.
+    if (@{$self->{rule_order}}) {
+        # If we're using either best or worst ordering we want the normal
+        # parsing loop below (marked RULE) to hit the correct rule first.
+        if ($self->{q{perfect-rule-order}} ne q{normal}) {
+            my $line_number = $self->{current_logfile_fh}->input_line_number();
+            my $rule_id = $self->{rule_order}->[$line_number];
+            push @correct_rule, $self->{rule_by_id}->[$rule_id];
+        }
 
-    # For worst order we try every rule and ignore the result, then continue
-    # on to the normal parsing loop below (marked RULE) where the correct
-    # rule will be first in the list.  This is slightly inaccurate because
-    # we'll try one more rule than strictly necessary - the correct rule
-    # will be tried twice - but it's good enough for the moment.
-    if ($self->{q{perfect-rule-order}} eq q{worst}) {
-        foreach my $rule (@{$self->{rules_by_program}->{$line->{program}}},
-                @{$self->{rules_by_program}->{q{*}}}) {
-            $line->{text} =~ m/$rule->{regex}/;
-            $self->{num_rules_tried}++;
+        # For worst order we try every rule and ignore the result, then continue
+        # on to the normal parsing loop below (marked RULE) where the correct
+        # rule will be first in the list.  This is slightly inaccurate because
+        # we'll try one more rule than strictly necessary - the correct rule
+        # will be tried twice - but it's good enough for the moment.
+        if ($self->{q{perfect-rule-order}} eq q{worst}) {
+            foreach my $rule (@{$self->{rules_by_program}->{$line->{program}}},
+                    @{$self->{rules_by_program}->{q{*}}}) {
+                $line->{text} =~ m/$rule->{regex}/;
+                $self->{num_rules_tried}++;
+            }
         }
     }
 
