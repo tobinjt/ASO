@@ -16,11 +16,13 @@ BEGIN {
 use lib q{..};
 use ASO::Parser;
 use Getopt::Long;
+use IO::File;
 use Pod::Usage;
 use File::Temp qw(tempfile);
 use Number::Format qw(format_bytes);
 use File::stat;
 use File::Spec::Functions qw(splitpath);
+use Devel::Size qw(total_size);
 
 # Required under Windows.
 binmode STDOUT;
@@ -28,18 +30,21 @@ binmode STDERR;
 $| = 1;
 
 my ($Options, $parser_options) = get_options();
+if ($Options->{q{memory-data}}) {
+    $Options->{last_parser_size} = $Options->{last_process_size} = 0;
+    $Options->{memory_fh} = IO::File->new(q{< /proc/self/statm})
+        or die qq{$0: failed opening /proc/self/statm: $!\n};
+    $Options->{memory_file} = IO::File->new(q{> } . $Options->{q{memory-data}})
+        or die qq{$0: failed opening } . $Options->{q{memory-data}} . qq{: $!\n};
+}
 
 # Ensure that we don't try to read from a terminal.
 my @logs = @ARGV;
 if (not @logs and -t STDIN) {
     die qq{Usage: $0 logfile [logfiles]\n};
 }
-if (not @logs) {
-    @logs = q{-};
-}
-my $timing_file;
 if ($Options->{q{timing-data}}) {
-    $timing_file = IO::File->new(q{> } . $Options->{q{timing-data}})
+    $Options->{timing_file} = IO::File->new(q{> } . $Options->{q{timing-data}})
         or die qq{$0: failed opening } . $Options->{q{timing-data}} . qq{: $!\n};
 }
 
@@ -86,7 +91,8 @@ foreach my $logfile (@logs) {
     print_timing(qq{Start parsing logfile}, $logfile);
     my $results = $parser->parse($logfile);
     if ($Options->{q{timing-data}}) {
-        print $timing_file
+        my $fh = $Options->{timing_file};
+        print $fh
             map { qq{$_: $logfile: $results->{$_}\n} }
                 sort keys %{$results};
     }
@@ -117,6 +123,7 @@ foreach my $logfile (@logs) {
 
         my $rule_file = IO::File->new(q{>} . $rule_file_name)
             or die qq{Failed to open $rule_file_name: $!\n};
+        print_timing(qq{Before dumping rule order}, $logfile);
         $parser->dump_rule_order($rule_file);
         print_timing(qq{Dumped rule order}, $logfile);
     }
@@ -132,7 +139,8 @@ print_timing(qq{Updated hits}, q{});
 redirect_stdout();
 if ($Options->{q{timing-data}}) {
     my $now = [gettimeofday()];
-    printf $timing_file qq{Total time: : %.6f\n}, 
+    my $fh = $Options->{timing_file};
+    printf $fh qq{Total time: : %.6f\n}, 
         tv_interval($start_timestamp, $now)
 }
 
@@ -200,7 +208,8 @@ sub get_options {
         q{out-rule-order=s}                 => undef,
         q{in-rule-order=s}                  => undef,
         q{individual-rule-order-files}      => 0,
-        q{timing-data|t=s}                  => undef,
+        q{timing-data=s}                    => undef,
+        q{memory-data=s}                    => undef,
         q{help|h}                           => 0,
         q{version|v}                        => 0,
     );
@@ -266,10 +275,50 @@ sub print_timing {
     my ($message, $filename) = @_;
     if ($Options->{q{timing-data}}) {
         my $now = [gettimeofday()];
-        printf $timing_file qq{$message: $filename: %.6f\n}, 
+        my $fh = $Options->{timing_file};
+        printf $fh qq{$message: $filename: %.6f\n}, 
             tv_interval($last_timestamp, $now);
         $last_timestamp = $now;
     }
+    print_memory($message, $filename);
+}
+
+sub print_memory {
+    my ($message, $filename) = @_;
+    if ($Options->{q{memory-data}}) {
+        my $new_parser_size = total_size($parser);
+        print_difference(qq{$message -  parser}, $new_parser_size,
+            $Options->{last_parser_size},
+            $Options->{timing_file});
+        $Options->{last_parser_size} = $new_parser_size;
+
+        $Options->{memory_fh}->seek(0, 0);
+        my $fh = $Options->{memory_fh};
+        my $line = <$fh>;
+        $line =~ m/^(\d+)/;
+        my $new_process_size = $1 * 1024;
+        print_difference(qq{$message - process}, $new_process_size,
+            $Options->{last_process_size},
+            $Options->{timing_file});
+        $Options->{last_process_size} = $new_process_size;
+    }
+}
+
+sub print_difference {
+    my ($label, $new_size, $last_size, $filehandle) = @_;
+
+    my $size_difference = $new_size - $last_size;
+    my $sign = q{};
+    if ($size_difference < 0) {
+        $size_difference = 0 - $size_difference;
+        $sign = q{-};
+    }
+    my $fh = $Options->{memory_file};
+    printf $fh
+        qq{%35s: new size is %12d (%11s); increase is %12d (%11s)\n},
+        $label,
+        $new_size, format_bytes($new_size), 
+        $sign . $size_difference, $sign . format_bytes($size_difference);
 }
 
 =pod
@@ -473,6 +522,10 @@ B<--in-rule-order>, B<--out-rule-order>, and B<--perfect-rule-order>.
 =item --timing-data FILE
 
 Save timing data to FILE.
+
+=item --memory-data FILE
+
+Save information about memory usage to FILE.
 
 =back
 
