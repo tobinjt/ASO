@@ -548,8 +548,9 @@ sub parse {
         }
 
         # To avoid data structures growing uncontrollably, we prune them every
-        # 20000 log lines; this number is a guess, and may need to be changed.
-        if ($self->{num_lines_read} % 20000 == 0) {
+        # 50000 log lines; this number is a guess, and may need to be changed,
+        # but anything over 50000 is a big log file.
+        if ($self->{num_lines_read} % 50000 == 0) {
             $self->post_parsing();
         }
 
