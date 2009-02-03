@@ -68,6 +68,7 @@ use Regexp::Common qw(net);
 use List::Util qw(shuffle);
 use Data::Compare;
 use IO::Uncompress::AnyUncompress;
+use feature qw(say);
 
 our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
 
@@ -300,9 +301,6 @@ sub init_globals {
     $self->{reject_warning}   =
             $self->filter_regex(q{^__QUEUEID__:\sreject_warning:});
     $self->{reject_warning}   = qr/$self->{reject_warning}/mx;
-
-    # Keep track of which rule matches each log line.
-    $self->{rule_order}       = [];
 
     # The data we maintain, and why (will also be dumped in dump_state())
     $self->{data_to_dump}     = [qw(queueids connections
@@ -719,13 +717,12 @@ sub parse_line {
     my ($self, $line) = @_;
 
     my @correct_rule;
-    # Check that we've loaded rule_order.
-    if (@{$self->{rule_order}}) {
+    if (exists $self->{rule_order_load_fh}) {
         # If we're using either best or worst ordering we want the normal
         # parsing loop below (marked RULE) to hit the correct rule first.
         if ($self->{q{perfect-rule-order}} ne q{normal}) {
-            my $line_number = $self->{current_logfile_fh}->input_line_number();
-            my $rule_id = $self->{rule_order}->[$line_number];
+            my $fh = $self->{rule_order_load_fh};
+            my $rule_id = <$fh>;
             push @correct_rule, $self->{rule_by_id}->[$rule_id];
         }
 
@@ -756,8 +753,10 @@ sub parse_line {
         my %matches = %+;
         $rule->{count}++;
         $self->{num_lines_parsed}++;
-        my $line_number = $self->{current_logfile_fh}->input_line_number();
-        $self->{rule_order}->[$line_number] = $rule->{id};
+        if (exists $self->{rule_order_save_fh}) {
+            my $fh = $self->{rule_order_save_fh};
+            say $fh $rule->{id};
+        }
 
         if ($self->{print_matching_regex}) {
             print $rule->{regex_orig}, q{ !!!! }, $line->{text}, qq{\n};
@@ -2260,41 +2259,38 @@ subroutine which does exactly this, so in general the calling sequence will be:
 
 =over 4
 
-=item $self->dump_rule_order($filehandle)
+=item $self->save_rule_order_to($filehandle)
 
-Dump rule ordering to $filehandle.  The output will be a list of rule ids, one
-per line.
+When parsing, save the rule id of the successful rule to $filehandle, one rule
+id per line.
 
 =back
 
 =cut
 
-sub dump_rule_order {
+sub save_rule_order_to {
     my ($self, $filehandle) = @_;
 
-    foreach my $rule_id (@{$self->{rule_order}}) {
-        print $filehandle defined $rule_id ? qq{$rule_id\n} : qq{\n};
-    }
+    $self->{rule_order_save_fh} = $filehandle;
 
     return 1;
 }
 
 =over 4
 
-=item $self->load_rule_order($filehandle)
+=item $self->load_rule_order_from($filehandle)
 
-Load rule ordering from $filehandle.  The file should contain a list of rule
-ids, one per line.
+When parsing, load the rule id of the correct rule from $filehandle, which
+should contain one rule id per line.
 
 =back
 
 =cut
 
-sub load_rule_order {
+sub load_rule_order_from {
     my ($self, $filehandle) = @_;
 
-    $self->{rule_order} = [<$filehandle>];
-    chomp @{$self->{rule_order}};
+    $self->{rule_order_load_fh} = $filehandle;
     return 1;
 }
 

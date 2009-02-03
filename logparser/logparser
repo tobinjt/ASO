@@ -32,9 +32,9 @@ $| = 1;
 my ($Options, $parser_options) = get_options();
 if ($Options->{q{memory-data}}) {
     $Options->{last_parser_size} = $Options->{last_process_size} = 0;
-    $Options->{memory_fh} = IO::File->new(q{< /proc/self/statm})
+    $Options->{memory_in_fh} = IO::File->new(q{< /proc/self/statm})
         or die qq{$0: failed opening /proc/self/statm: $!\n};
-    $Options->{memory_file} = IO::File->new(q{> } . $Options->{q{memory-data}})
+    $Options->{memory_out_fh} = IO::File->new(q{> } . $Options->{q{memory-data}})
         or die qq{$0: failed opening } . $Options->{q{memory-data}} . qq{: $!\n};
 }
 
@@ -82,15 +82,23 @@ foreach my $logfile (@logs) {
     if ($Options->{q{in-rule-order}}) {
         my $rule_file_name = $Options->{q{in-rule-order}};
         if ($Options->{q{individual-rule-order-files}}) {
-            my ($volume, $dir, $file) = splitpath($logfile);
-            $file =~ s/(.gz|.bz2|.zip|.lzo)$//;
-            $rule_file_name .= q{-} . $file;
+            $rule_file_name = individualise_file($logfile, $rule_file_name);
         }
         my $rule_file = IO::File->new(q{<} . $rule_file_name)
             or die qq{Failed to open $rule_file_name: $!\n};
-        $parser->load_rule_order($rule_file);
-        print_timing(qq{Loaded rule order}, $logfile);
+        $parser->load_rule_order_from($rule_file);
     }
+    if ($Options->{q{out-rule-order}}) {
+        my $rule_file_name = $Options->{q{out-rule-order}};
+        if ($Options->{q{individual-rule-order-files}}) {
+            $rule_file_name = individualise_file($logfile, $rule_file_name);
+        }
+
+        my $rule_file = IO::File->new(q{>} . $rule_file_name)
+            or die qq{Failed to open $rule_file_name: $!\n};
+        $parser->save_rule_order_to($rule_file);
+    }
+    print_timing(qq{Rule order set up complete}, $logfile);
 
     print_timing(qq{Start parsing logfile}, $logfile);
     my $results = $parser->parse($logfile);
@@ -107,9 +115,7 @@ foreach my $logfile (@logs) {
 
     my $statefile_name = $Options->{q{out-statefile}};
     if ($Options->{q{individual-state-files}}) {
-        my ($volume, $dir, $file) = splitpath($logfile);
-        $file =~ s/(.gz|.bz2|.zip|.lzo)$//;
-        $statefile_name .= q{-} . $file;
+        $statefile_name = individualise_file($logfile, $statefile_name);
     }
 
     my $statefile = IO::File->new(q{>} . $statefile_name)
@@ -117,23 +123,9 @@ foreach my $logfile (@logs) {
     $parser->dump_state($statefile);
     print_timing(qq{Dumped state}, $logfile);
 
-    if ($Options->{q{out-rule-order}}) {
-        my $rule_file_name = $Options->{q{out-rule-order}};
-        if ($Options->{q{individual-rule-order-files}}) {
-            my ($volume, $dir, $file) = splitpath($logfile);
-            $file =~ s/(.gz|.bz2|.zip|.lzo)$//;
-            $rule_file_name .= q{-} . $file;
-        }
-
-        my $rule_file = IO::File->new(q{>} . $rule_file_name)
-            or die qq{Failed to open $rule_file_name: $!\n};
-        print_timing(qq{Before dumping rule order}, $logfile);
-        $parser->dump_rule_order($rule_file);
-        print_timing(qq{Dumped rule order}, $logfile);
-    }
+    print_timing(qq{Finished parsing}, $logfile);
 }
 
-print_timing(qq{Updating hits}, q{});
 $parser->update_check_order();
 print_timing(qq{Updated hits}, q{});
 
@@ -141,12 +133,8 @@ print_timing(qq{Updated hits}, q{});
 # that.  If the correct environment variable is set stdout will be redirected
 # here and the data will go to the requested file.
 redirect_stdout();
-if ($Options->{q{timing-data}}) {
-    my $now = [gettimeofday()];
-    my $fh = $Options->{timing_file};
-    printf $fh qq{Total time: : %.6f\n}, 
-        tv_interval($start_timestamp, $now)
-}
+$last_timestamp = $start_timestamp;
+print_timing(q{Total time}, q{});
 
 exit 0;
 
@@ -296,8 +284,8 @@ sub print_memory {
             $Options->{timing_file});
         $Options->{last_parser_size} = $new_parser_size;
 
-        $Options->{memory_fh}->seek(0, 0);
-        my $fh = $Options->{memory_fh};
+        $Options->{memory_in_fh}->seek(0, 0);
+        my $fh = $Options->{memory_in_fh};
         my $line = <$fh>;
         $line =~ m/^(\d+)/;
         my $new_process_size = $1 * 1024;
@@ -317,12 +305,20 @@ sub print_difference {
         $size_difference = 0 - $size_difference;
         $sign = q{-};
     }
-    my $fh = $Options->{memory_file};
+    my $fh = $Options->{memory_out_fh};
     printf $fh
         qq{%35s: new size is %12d (%11s); increase is %12d (%11s)\n},
         $label,
         $new_size, format_bytes($new_size), 
         $sign . $size_difference, $sign . format_bytes($size_difference);
+}
+
+sub individualise_file {
+    my ($logfile, $filename_to_change) = @_;
+
+    my ($volume, $dir, $will_be_suffix) = splitpath($logfile);
+    $will_be_suffix =~ s/(.gz|.bz2|.zip|.lzo)$//;
+    return qq{$filename_to_change-$will_be_suffix};
 }
 
 =pod
