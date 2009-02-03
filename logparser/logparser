@@ -23,6 +23,7 @@ use Number::Format qw(format_bytes);
 use File::stat;
 use File::Spec::Functions qw(splitpath);
 use Devel::Size qw(total_size);
+use Data::Dumper;
 
 # Required under Windows.
 binmode STDOUT;
@@ -68,6 +69,7 @@ print_timing(q{State loaded}, q{});
 my $num_logs = scalar @logs;
 # Start at one because that's what people expect.
 my $num_logs_parsed = 1;
+my %memory_usage;
 foreach my $logfile (@logs) {
     my $stat = stat $logfile
         or die qq{$0: failed stating $logfile: $!\n};
@@ -109,6 +111,11 @@ foreach my $logfile (@logs) {
                 sort keys %{$results};
     }
     print_timing(qq{Parsed logfile}, $logfile);
+    if (exists $Options->{memory_out_fh}) {
+        $memory_usage{$logfile} = $Options->{last_process_size};
+        $Data::Dumper::Sortkeys = 1;
+        print {$Options->{memory_out_fh}} Dumper(\%memory_usage);
+    }
 
     $parser->post_parsing();
     print_timing(qq{Post parse}, $logfile);
@@ -307,7 +314,7 @@ sub print_difference {
     }
     my $fh = $Options->{memory_out_fh};
     printf $fh
-        qq{%35s: new size is %12d (%11s); increase is %12d (%11s)\n},
+        qq{%36s: new size is %12d (%11s); increase is %12d (%11s)\n},
         $label,
         $new_size, format_bytes($new_size), 
         $sign . $size_difference, $sign . format_bytes($size_difference);
