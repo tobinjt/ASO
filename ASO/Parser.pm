@@ -547,6 +547,12 @@ sub parse {
             }
         }
 
+        # To avoid data structures growing uncontrollably, we prune them every
+        # 20000 log lines; this number is a guess, and may need to be changed.
+        if ($self->{num_lines_read} % 20000 == 0) {
+            $self->post_parsing();
+        }
+
         $self->parse_line($line);
     }
 
@@ -596,8 +602,9 @@ MESSAGE
 
 =item $parser->post_parsing()
 
-Do anything that needs to be done after parsing: currently it just runs 
-$self->prune_aborted_mails().
+Do anything that needs to be done after parsing: currently it runs
+$self->prune_timeout_queueids(), $self->prune_bounce_queueids(),
+$self->prune_postsuper_deleted_queueids(), and $self->prune_aborted_mails().
 
 =back
 
@@ -606,7 +613,11 @@ $self->prune_aborted_mails().
 sub post_parsing {
     my ($self) = @_;
 
-    return $self->prune_aborted_mails();
+    $self->prune_timeout_queueids();
+    $self->prune_bounce_queueids();
+    $self->prune_postsuper_deleted_queueids();
+    $self->prune_aborted_mails();
+    return;
 }
 
 =over 4
@@ -753,6 +764,7 @@ sub parse_line {
         if ($self->{parse_lines_only}) {
             return;
         }
+
         # Hmmm, I can't figure out how to combine the next two lines.
         my $action = $rule->{action};
         return $self->$action($rule, $line, \%matches);
@@ -2074,9 +2086,7 @@ sub dump_state {
     my ($self, $filehandle) = @_;
     my $state = q{};
 
-    $self->prune_timeout_queueids();
-    $self->prune_bounce_queueids();
-    $self->prune_postsuper_deleted_queueids();
+    $self->post_parsing();
 
     local $Data::Dumper::Sortkeys = 1;
     local $Data::Dumper::Purity   = 1;
