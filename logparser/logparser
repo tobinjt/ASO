@@ -73,8 +73,8 @@ foreach my $logfile (@logs) {
         or die qq{$0: failed stating $logfile: $!\n};
     my $size = format_bytes($stat->size()) . q{B};
     print qq{Starting to read $logfile: $size, $num_logs_parsed/$num_logs\n};
-    if (exists $Options->{memory_fh}) {
-        my $fh = $Options->{memory_fh};
+    if (exists $Options->{memory_out_fh}) {
+        my $fh = $Options->{memory_out_fh};
         print $fh qq{parsing $logfile\n};
     }
     $num_logs_parsed++;
