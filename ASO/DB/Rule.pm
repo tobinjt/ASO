@@ -197,32 +197,10 @@ my %cols = (
         sql                 => q{NOT NULL},
         type                => q{text},
     },
-    # This is how we extract the matched fields from the regex: 
-    # result_cols and connection_cols specify fields to go in the result and
-    # connection table respectively; the format is:
-    # hostname = 1; helo = 2; sender = 4;
-    # i.e. semi-colon seperated assignment statements, with the column name on
-    # the left and the match from the regex ($1, $2 etc) on the right hand side
-    # (without $).
-    result_cols         => {
-        sql                 => q{NOT NULL},
-        type                => q{text},
-    },
-    connection_cols     => {
-        sql                 => q{NOT NULL},
-        type                => q{text},
-    },
     # The action to take: IGNORE, CONNECT, DISCONNECT . . .
     action              => {
         sql                 => q{NOT NULL},
         type                => q{text},
-    },
-    # The regex above should give the queueid; this give the index of the match
-    # e.g. $1, $5, whatever.  smtpd rules won't need this, as restriction_start
-    # handles it for them.
-    queueid             => {
-        sql                 => q{NOT NULL},
-        type                => q{integer},
     },
     # The order to apply the rules in: highest first; this is automatically
     # updated after every run of the program.
