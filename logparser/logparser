@@ -24,6 +24,8 @@ use File::stat;
 use File::Spec::Functions qw(splitpath);
 use Devel::Size qw(total_size);
 use Data::Dumper;
+# Required for MProf
+local $Data::Dumper::Useperl = 1;
 
 # Required under Windows.
 binmode STDOUT;
@@ -37,6 +39,7 @@ if ($Options->{q{memory-data}}) {
         or die qq{$0: failed opening /proc/self/statm: $!\n};
     $Options->{memory_out_fh} = IO::File->new(q{> } . $Options->{q{memory-data}})
         or die qq{$0: failed opening } . $Options->{q{memory-data}} . qq{: $!\n};
+    $Options->{memory_out_fh}->autoflush(1);
 }
 
 # Ensure that we don't try to read from a terminal.
@@ -47,6 +50,7 @@ if (not @logs and -t STDIN) {
 if ($Options->{q{timing-data}}) {
     $Options->{timing_file} = IO::File->new(q{> } . $Options->{q{timing-data}})
         or die qq{$0: failed opening } . $Options->{q{timing-data}} . qq{: $!\n};
+    $Options->{timing_file}->autoflush(1);
 }
 
 # Save the startup times separately, when profiling with Devel::Profile.
@@ -113,7 +117,7 @@ foreach my $logfile (@logs) {
     print_timing(qq{Parsed logfile}, $logfile);
     if (exists $Options->{memory_out_fh}) {
         $memory_usage{$logfile} = $Options->{last_process_size};
-        $Data::Dumper::Sortkeys = 1;
+        local $Data::Dumper::Sortkeys = 1;
         print {$Options->{memory_out_fh}} Dumper(\%memory_usage);
     }
 

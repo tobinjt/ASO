@@ -487,7 +487,7 @@ contain rules for.  Lines which aren't parsed will be warned about; warnings may
 also be generated for a myriad of other reasons, see DIAGNOSTICS for more
 information.  Data gathered from the logs will be inserted into the database
 (depending on the value of skip_inserting_results).  Always returns true.  Uses
-L<IO::Uncompress::AnyUncompress> to support reading compresses files; see its
+L<IO::Uncompress::AnyUncompress> to support reading compressed files; see its
 documentation for which compression formats it supports.
 
 =back
@@ -502,10 +502,16 @@ sub parse {
     if (not $logfile_fh) {
         $self->my_die(qq{parse: failed to open $logfile: $!\n});
     }
-    my $uncompressing_fh = IO::Uncompress::AnyUncompress->new($logfile_fh);
-    if (not $uncompressing_fh) {
-        $self->my_die(q{parse: IO::Uncompress::AnyUncompress failed with}
-            . qq{ $logfile: $IO::Uncompress::AnyUncompress::AnyUncompressError\n});
+    my $uncompressing_fh;
+    if ($logfile =~ m/(.gz|.bz2|.zip|.lzo)$/) {
+        $uncompressing_fh = IO::Uncompress::AnyUncompress->new($logfile_fh);
+        if (not $uncompressing_fh) {
+            $self->my_die(qq{parse: $logfile: IO::Uncompress::AnyUncompress }
+                . qq{ failed with }
+                . qq{$IO::Uncompress::AnyUncompress::AnyUncompressError\n});
+        }
+    } else {
+        $uncompressing_fh = $logfile_fh;
     }
     # NOTE: we use $self->{current_logfile_fh}->input_line_number() instead of
     # $. everywhere, because sometimes $. is wrong: it returns 0 after the first
@@ -1051,11 +1057,13 @@ sub COMMIT {
     # Let the parent know we're being deleted
     if (exists $connection->{parent}) {
         $self->delete_child_from_parent($connection, $line, $rule);
+        delete $connection->{parent};
     }
 
     # Try to commit any children we can.
     if (exists $connection->{children}) {
         $self->maybe_commit_children($connection);
+        delete $connection->{children};
     }
 
     # Add the mail to bounce_queueids if it's a bounce notification and the
@@ -1772,7 +1780,7 @@ sub maybe_commit_children {
             $self->fixup_connection($child);
             $self->commit_connection($child);
             $self->delete_connection_by_queueid($child->{queueid});
-            # This is safe: see perldoc -f each for the guarantee.
+            # This is safe: see 'perldoc -f each' for the guarantee.
             delete $parent->{children}->{$child_queueid};
             $count++;
         }
@@ -1889,7 +1897,6 @@ sub load_rules {
             postfix_action   => $rule->postfix_action(),
             action           => $rule->action(),
             program          => $rule->program(),
-            queueid          => $rule->queueid(),
             regex_orig       => $rule->regex(),
             result_data      => $self->parse_result_cols($rule->result_data(),
                                     $rule, 0,
