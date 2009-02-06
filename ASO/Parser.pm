@@ -756,6 +756,8 @@ sub parse_line {
             next RULE;
         }
 
+        # Memory leak here, according to Devel::LeakTrace::Fast.
+        # The leak is fixed in bleadperl, and will be fixed in 5.10.1.
         my %matches = %+;
         $rule->{count}++;
         $self->{num_lines_parsed}++;
@@ -1060,10 +1062,10 @@ sub COMMIT {
         delete $connection->{parent};
     }
 
-    # Try to commit any children we can.
+    # Try to commit any children we can.  We don't delete
+    # $connection->{children} because it's needed in delete_child_from_parent().
     if (exists $connection->{children}) {
         $self->maybe_commit_children($connection);
-        delete $connection->{children};
     }
 
     # Add the mail to bounce_queueids if it's a bounce notification and the
