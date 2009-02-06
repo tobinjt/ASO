@@ -13,6 +13,12 @@ BEGIN {
     $start_timestamp = $last_timestamp = [gettimeofday()];
 }
 
+#use Devel::LeakTrace::Fast;
+use Devel::Size qw(total_size);
+use Data::Dumper;
+#use Devel::Leak;
+# Required for MProf
+#local $Data::Dumper::Useperl = 1;
 use lib q{..};
 use ASO::Parser;
 use Getopt::Long;
@@ -22,17 +28,20 @@ use File::Temp qw(tempfile);
 use Number::Format qw(format_bytes);
 use File::stat;
 use File::Spec::Functions qw(splitpath);
-use Devel::Size qw(total_size);
-use Data::Dumper;
-# Required for MProf
-local $Data::Dumper::Useperl = 1;
+use feature qw(say);
 
 # Required under Windows.
 binmode STDOUT;
 binmode STDERR;
 $| = 1;
 
+#my $devel_leak_handle; 
+#my $devel_leak_count = Devel::Leak::NoteSV($devel_leak_handle);
+
 my ($Options, $parser_options) = get_options();
+if (not @ARGV) {
+    die qq{Usage: $0 logfile [logfiles]\n};
+}
 if ($Options->{q{memory-data}}) {
     $Options->{last_parser_size} = $Options->{last_process_size} = 0;
     $Options->{memory_in_fh} = IO::File->new(q{< /proc/self/statm})
@@ -42,11 +51,6 @@ if ($Options->{q{memory-data}}) {
     $Options->{memory_out_fh}->autoflush(1);
 }
 
-# Ensure that we don't try to read from a terminal.
-my @logs = @ARGV;
-if (not @logs and -t STDIN) {
-    die qq{Usage: $0 logfile [logfiles]\n};
-}
 if ($Options->{q{timing-data}}) {
     $Options->{timing_file} = IO::File->new(q{> } . $Options->{q{timing-data}})
         or die qq{$0: failed opening } . $Options->{q{timing-data}} . qq{: $!\n};
@@ -58,7 +62,7 @@ devel_profile_startup();
 # Restrict the packages Devel::SmallProf will report about.
 set_SmallProf_packages();
 
-print_timing(q{Loaded modules}, q{});
+print_timing(q{Loaded modules and processed options}, q{});
 
 warn qq{vim: set foldmethod=marker :\n};
 my $parser = ASO::Parser->new($parser_options);
@@ -70,11 +74,11 @@ if ($Options->{q{in-statefile}}) {
 }
 print_timing(q{State loaded}, q{});
 
-my $num_logs = scalar @logs;
+my $num_logs = scalar @ARGV;
 # Start at one because that's what people expect.
 my $num_logs_parsed = 1;
 my %memory_usage;
-foreach my $logfile (@logs) {
+foreach my $logfile (@ARGV) {
     my $stat = stat $logfile
         or die qq{$0: failed stating $logfile: $!\n};
     my $size = format_bytes($stat->size()) . q{B};
@@ -147,6 +151,9 @@ redirect_stdout();
 $last_timestamp = $start_timestamp;
 print_timing(q{Total time}, q{});
 
+$Options = $parser = $parser_options = undef;
+#my $devel_leak_new_count = Devel::Leak::CheckSV($devel_leak_handle);
+#say qq{Devel::Leak says: }, $devel_leak_count, q{ -> }, $devel_leak_new_count;
 exit 0;
 
 sub devel_profile_startup {
@@ -318,7 +325,7 @@ sub print_difference {
     }
     my $fh = $Options->{memory_out_fh};
     printf $fh
-        qq{%36s: new size is %12d (%11s); increase is %12d (%11s)\n},
+        qq{%46s: new size is %12d (%11s); increase is %12d (%11s)\n},
         $label,
         $new_size, format_bytes($new_size), 
         $sign . $size_difference, $sign . format_bytes($size_difference);
