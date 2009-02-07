@@ -19,6 +19,7 @@ use Data::Dumper;
 #use Devel::Leak;
 # Required for MProf
 #local $Data::Dumper::Useperl = 1;
+#use Devel::Cycle;
 use lib q{..};
 use ASO::Parser;
 use Getopt::Long;
@@ -40,7 +41,7 @@ $| = 1;
 
 my ($Options, $parser_options) = get_options();
 if (not @ARGV) {
-    die qq{Usage: $0 logfile [logfiles]\n};
+    die qq{Usage: $0 [options] logfile [logfiles]\n};
 }
 if ($Options->{q{memory-data}}) {
     $Options->{last_parser_size} = $Options->{last_process_size} = 0;
@@ -57,7 +58,7 @@ if ($Options->{q{timing-data}}) {
     $Options->{timing_file}->autoflush(1);
 }
 
-# Save the startup times separately, when profiling with Devel::Profile.
+# Save the startup times separately when profiling with Devel::Profile.
 devel_profile_startup();
 # Restrict the packages Devel::SmallProf will report about.
 set_SmallProf_packages();
@@ -84,28 +85,24 @@ foreach my $logfile (@ARGV) {
     my $size = format_bytes($stat->size()) . q{B};
     print qq{Starting to read $logfile: $size, $num_logs_parsed/$num_logs\n};
     if (exists $Options->{memory_out_fh}) {
-        my $fh = $Options->{memory_out_fh};
-        print $fh qq{parsing $logfile\n};
+        print {$Options->{memory_out_fh}} qq{parsing $logfile\n};
     }
     $num_logs_parsed++;
 
     if ($Options->{q{in-rule-order}}) {
-        my $rule_file_name = $Options->{q{in-rule-order}};
-        if ($Options->{q{individual-rule-order-files}}) {
-            $rule_file_name = individualise_file($logfile, $rule_file_name);
-        }
-        my $rule_file = IO::File->new(q{<} . $rule_file_name)
-            or die qq{Failed to open $rule_file_name: $!\n};
+        my $rule_file = open_file(  $Options->{q{in-rule-order}},
+                                    $logfile,
+                                    q{individual-rule-order-files},
+                                    q{<}
+                                );
         $parser->load_rule_order_from($rule_file);
     }
     if ($Options->{q{out-rule-order}}) {
-        my $rule_file_name = $Options->{q{out-rule-order}};
-        if ($Options->{q{individual-rule-order-files}}) {
-            $rule_file_name = individualise_file($logfile, $rule_file_name);
-        }
-
-        my $rule_file = IO::File->new(q{>} . $rule_file_name)
-            or die qq{Failed to open $rule_file_name: $!\n};
+        my $rule_file = open_file(  $Options->{q{out-rule-order}},
+                                    $logfile,
+                                    q{individual-rule-order-files},
+                                    q{>}
+                                );
         $parser->save_rule_order_to($rule_file);
     }
     print_timing(qq{Rule order set up complete}, $logfile);
@@ -113,8 +110,7 @@ foreach my $logfile (@ARGV) {
     print_timing(qq{Start parsing logfile}, $logfile);
     my $results = $parser->parse($logfile);
     if ($Options->{q{timing-data}}) {
-        my $fh = $Options->{timing_file};
-        print $fh
+        print {$Options->{timing_file}}
             map { qq{$_: $logfile: $results->{$_}\n} }
                 sort keys %{$results};
     }
@@ -128,13 +124,11 @@ foreach my $logfile (@ARGV) {
     $parser->post_parsing();
     print_timing(qq{Post parse}, $logfile);
 
-    my $statefile_name = $Options->{q{out-statefile}};
-    if ($Options->{q{individual-state-files}}) {
-        $statefile_name = individualise_file($logfile, $statefile_name);
-    }
-
-    my $statefile = IO::File->new(q{>} . $statefile_name)
-        or die qq{Failed to open $statefile_name: $!\n};
+    my $statefile = open_file(  $Options->{q{out-statefile}},
+                                $logfile,
+                                q{individual-state-files},
+                                q{>}
+                            );
     $parser->dump_state($statefile);
     print_timing(qq{Dumped state}, $logfile);
 
@@ -151,6 +145,7 @@ redirect_stdout();
 $last_timestamp = $start_timestamp;
 print_timing(q{Total time}, q{});
 
+#find_cycle($parser);
 $Options = $parser = $parser_options = undef;
 #my $devel_leak_new_count = Devel::Leak::CheckSV($devel_leak_handle);
 #say qq{Devel::Leak says: }, $devel_leak_count, q{ -> }, $devel_leak_new_count;
@@ -285,8 +280,7 @@ sub print_timing {
     my ($message, $filename) = @_;
     if ($Options->{q{timing-data}}) {
         my $now = [gettimeofday()];
-        my $fh = $Options->{timing_file};
-        printf $fh qq{$message: $filename: %.6f\n}, 
+        printf {$Options->{timing_file}} qq{$message: $filename: %.6f\n}, 
             tv_interval($last_timestamp, $now);
         $last_timestamp = $now;
     }
@@ -297,17 +291,18 @@ sub print_memory {
     my ($message, $filename) = @_;
     if ($Options->{q{memory-data}}) {
         my $new_parser_size = total_size($parser);
-        print_difference(qq{$message -  parser}, $new_parser_size,
+        print_difference(qq{$message -  parser},
+            $new_parser_size,
             $Options->{last_parser_size},
             $Options->{timing_file});
         $Options->{last_parser_size} = $new_parser_size;
 
         $Options->{memory_in_fh}->seek(0, 0);
-        my $fh = $Options->{memory_in_fh};
-        my $line = <$fh>;
+        my $line = readline $Options->{memory_in_fh};
         $line =~ m/^(\d+)/;
         my $new_process_size = $1 * 1024;
-        print_difference(qq{$message - process}, $new_process_size,
+        print_difference(qq{$message - process},
+            $new_process_size,
             $Options->{last_process_size},
             $Options->{timing_file});
         $Options->{last_process_size} = $new_process_size;
@@ -323,20 +318,25 @@ sub print_difference {
         $size_difference = 0 - $size_difference;
         $sign = q{-};
     }
-    my $fh = $Options->{memory_out_fh};
-    printf $fh
+    printf {$Options->{memory_out_fh}}
         qq{%46s: new size is %12d (%11s); increase is %12d (%11s)\n},
         $label,
         $new_size, format_bytes($new_size), 
         $sign . $size_difference, $sign . format_bytes($size_difference);
 }
 
-sub individualise_file {
-    my ($logfile, $filename_to_change) = @_;
+sub open_file {
+    my ($filename, $logfile, $individualise, $mode) = @_;
 
-    my ($volume, $dir, $will_be_suffix) = splitpath($logfile);
-    $will_be_suffix =~ s/(.gz|.bz2|.zip|.lzo)$//;
-    return qq{$filename_to_change-$will_be_suffix};
+    if ($Options->{$individualise}) {
+        my ($volume, $dir, $will_be_suffix) = splitpath($logfile);
+        $will_be_suffix =~ s/(.gz|.bz2|.zip|.lzo)$//;
+        $filename = qq{$filename-$will_be_suffix};
+    }
+
+    my $fh = IO::File->new($mode . $filename)
+        or die qq{Failed to open $filename: $!\n};
+    return $fh;
 }
 
 =pod
