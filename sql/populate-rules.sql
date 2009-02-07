@@ -738,7 +738,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 INSERT INTO rules(name, description, program, regex, result_data, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Client host rejected for some reason', 'The client was rejected but no reason was specified',
         'postfix/smtpd',
-        '^(NOQUEUE): reject: CONNECT from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: (__SMTP_CODE__) (?:__DSN__ )?<\2\[\3\]>: Client host rejected: Access denied; proto=E?SMTP$',
+        '^(__QUEUEID__): reject: CONNECT from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: (__SMTP_CODE__) (?:__DSN__ )?<\2\[\3\]>: Client host rejected: Access denied; proto=E?SMTP$',
         'sender = unknown, recipient = unknown',
         'DELIVERY_REJECTED',
         'REJECTED',
@@ -880,7 +880,7 @@ INSERT INTO rules(name, description, program, regex, result_data, action, postfi
 INSERT INTO rules(name, description, program, regex, action, priority, postfix_action)
     VALUES('Logging HELO (ignored)', 'HELO logged to provide additional data (ignored, an improved version is now in use)',
         'postfix/smtpd',
-        '^NOQUEUE: warn: __SHORT_CMD__ from (?:__CLIENT_HOSTNAME__)\[(?:__CLIENT_IP__)\]: Logging HELO; from=<(?:__SENDER__)> to=<(?:__RECIPIENT__)> proto=E?SMTP helo=<(?:__HELO__)>$',
+        '^__QUEUEID__: warn: __SHORT_CMD__ from (?:__CLIENT_HOSTNAME__)\[(?:__CLIENT_IP__)\]: Logging HELO; from=<(?:__SENDER__)> to=<(?:__RECIPIENT__)> proto=E?SMTP helo=<(?:__HELO__)>$',
         'UNINTERESTING',
         5,
         'IGNORED'

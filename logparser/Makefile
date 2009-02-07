@@ -46,6 +46,7 @@ test-parsing-only:
 db: ../sql/create-tables-sqlite3-generated.sql
 	(cd ../sql/ && rm -f db.sq3 && perl setup-database create-tables-sqlite3-generated.sql populate-cluster-groups.sql populate-rules.sql)
 	sqlite3 ../sql/db.sq3 'select name, regex from rules where regex not like "^%$$"';
+	sqlite3 ../sql/db.sq3 'select name, regex from rules where regex     like "%NOQUEUE%"';
 
 db-clean:
 	(cd ../sql/ && perl setup-database cleanup.sql)
