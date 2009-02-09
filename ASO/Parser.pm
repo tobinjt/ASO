@@ -2628,15 +2628,20 @@ sub make_ipv6_regex {
         push @ipv6_elided_pieces, $piece;
     }
     my $ipv6_elided_address = join qq{\n|}, @ipv6_elided_pieces;
+    # Occasionally we see the name of the interface appended to an IPv6 address,
+    # so allow that too.
+    my $interface_regex = qr/(?:%\w{1,3}\d?)?/;
     # NOTE: $ipv6_elided_end must come after $ipv6_elided_address, otherwise
     # $ipv6_elided_end will match instead of $ipv6_elided_address; the remainder
     # of the regex that $ipv6_regex is embedded in will fail, but because
     # $ipv6_regex is wrapped in (?>) the regex engine will not backtrack into
     # it.
-    my $ipv6_regex          = qr/(?>(?:$ipv6_full_address)
-                                    |(?:$ipv6_elided_start)
-                                    |(?:$ipv6_elided_address)
-                                    |(?:$ipv6_elided_end))/mx;
+    my $ipv6_regex  = qr/(?>( (?:$ipv6_full_address)
+                             |(?:$ipv6_elided_start)
+                             |(?:$ipv6_elided_address)
+                             |(?:$ipv6_elided_end)
+                            )$interface_regex
+                         )/mx;
 
     return $ipv6_regex;
 }

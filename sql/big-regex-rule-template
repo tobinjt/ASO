@@ -1,0 +1,9 @@
+-- vim: set filetype=sql :
+
+INSERT INTO rules(name, description, program, regex, action, postfix_action)
+    VALUES('Debugging information', 'Debugging information generated when a client matches debug_peer_list',
+        'postfix/smtpd',
+        __REGEX__
+        'UNINTERESTING',
+        'IGNORED'
+);

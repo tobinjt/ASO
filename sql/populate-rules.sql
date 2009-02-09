@@ -121,14 +121,8 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
         'IGNORED'
 );
 
+-- NOTE: SEE big-regex-rule ALSO.
 
-INSERT INTO rules(name, description, program, regex, action, postfix_action)
-    VALUES('Debugging information', 'Debugging information generated when a client matches debug_peer_list',
-        'postfix/smtpd',
-        '^(?:(?:after|before) input_transp_cleanup: cleanup flags = .*|auto_clnt_close: disconnect private/anvil stream|auto_clnt_open: connected to __CLIENT_IP__:\d+|auto_clnt_open: connected to (?:public|private)/.*|before input_transp_cleanup: cleanup flags = enable_header_body_filter enable_automatic_bcc enable_address_mapping enable_milters|check_access: __EMAIL__|check_addr_access: __CLIENT_IP__|check_domain_access: __CLIENT_HOSTNAME__|>>> CHECKING RECIPIENT MAPS <<<|check_mail_access: __EMAIL__|check_namadr_access: name __CLIENT_HOSTNAME__ addr __CLIENT_IP__|check_server_access: MX __EMAIL__|check_table_result: .*|connect to subsystem .+|ctable_locate: install entry key .*|ctable_locate: leave existing entry key .+|ctable_locate: move existing entry key .*|ctable_locate: purge entry key .+|dict_cidr_lookup: .* (?:__CLIENT_HOSTNAME__|__CLIENT_IP__)|dict_pcre_lookup: .*|dns_get_answer: type MX for .*|dns_query: .*|>>> END Client host RESTRICTIONS <<<|>>> END Data command RESTRICTIONS <<<|>>> END Recipient address RESTRICTIONS <<<|event_cancel_timer: .*|event_disable_readwrite: fd \d+|event_enable_read: fd \d+|event_extend: fd \d+|event_request_timer: .*|extract_addr: in: <__EMAIL__>, result: __EMAIL__|extract_addr: input: <__EMAIL__>|fsspace: .: block size \d+, blocks free .+|generic_checks: .*|[<>] __CLIENT_HOSTNAME__\[__CLIENT_IP__\]: .*|input attribute (?:name|value): .*|__CLIENT_IP__:\d+:? wanted attribute: .*|lookup __CLIENT_HOSTNAME__ type MX flags 0|mail_addr_find: __EMAIL__ -> .*|maps_find: (?:canonical_maps|local_recipient_maps|recipient_canonical_maps|virtual_alias_maps): .*|match_hostaddr: __CLIENT_IP__ ~\? \[__CLIENT_IP__\](?:/\d+)?|match_hostaddr: __CLIENT_IP__ ~\? __CLIENT_IP__(?:/\d+)?|match_hostname: __CLIENT_HOSTNAME__ ~\? __CLIENT_IP__(?:/\d+)?|match_hostname: __CLIENT_HOSTNAME__ ~\? \[__CLIENT_IP__\](?:/\d+)?|match_list_match: .+ no match|match_string: .* ~\? .*|name_mask: .*|permit_auth_destination: __EMAIL__|permit_inet_interfaces: __CLIENT_HOSTNAME__ __CLIENT_IP__|permit_mynetworks: __CLIENT_HOSTNAME__ __CLIENT_IP__|private/anvil: wanted attribute: .*|(?:private|public)/.* socket: wanted attribute: .*|rec_put: type .* len \d+ data.*|reject_invalid_hostname: __CLIENT_HOSTNAME__|reject_non_fqdn_address: .+|reject_non_fqdn_hostname: __CLIENT_HOSTNAME__|reject_rbl: Client host __CLIENT_IP__|reject_unauth_destination: __EMAIL__|reject_unauth_pipelining: DATA|reject_unknown_address: __EMAIL__|reject_unknown_client: __CLIENT_HOSTNAME__ __CLIENT_IP__|reject_unknown_mailhost: __CLIENT_HOSTNAME__|resolve_clnt: .*flags= .+|rewrite_clnt: local: __EMAIL__ -> __EMAIL__|send attr .* =.*|smtpd_check_addr: .+|smtpd_check_queue: .*|smtpd_check_rewrite: trying: permit_inet_interfaces|>>> START Client host RESTRICTIONS <<<|>>> START Data command RESTRICTIONS <<<|>>> START Recipient address RESTRICTIONS <<<|trying... \[__CLIENT_IP__\]|vstream_buf_get_ready: fd \d* got \d*|vstream_fflush_some: fd \d* flush \d*|watchdog_pat: .*)$',
-        'UNINTERESTING',
-        'IGNORED'
-);
 -- }}}
 
 -- SMTPD FATAL RULES {{{1
@@ -512,10 +506,22 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 );
 
 -- <cs.tcd.ie>: Helo command rejected: You are not in cs.tcd.ie; from=<van9219@yahoo.co.jp> to=<david.ocallaghan@cs.tcd.ie> proto=SMTP helo=<cs.tcd.ie>
+-- NOQUEUE: reject_warning: RCPT from unknown[fe80::a800:86ff:fee2:21a1%bge0]: 550 5.7.1 <co001023.condor.cs.tcd.ie>: Helo command rejected: You are not in cs.tcd.ie; from=<root@co001023.condor.cs.tcd.ie> to=<grid-ireland-alert@cs.tcd.ie> proto=ESMTP helo=<co001023.condor.cs.tcd.ie>
 INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Faked CS HELO', 'The client used a CS address in HELO but is not within our network',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__HELO__)>: Helo command rejected: You are not in cs.tcd.ie; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
+        '^__RESTRICTION_START__ <__HELO__>: Helo command rejected: You are not in cs.tcd.ie; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'DELIVERY_REJECTED',
+        'REJECTED',
+        'check_helo_access',
+        6
+);
+
+-- NOQUEUE: reject_warning: RCPT from scan14.cs.tcd.ie[134.226.54.40]: 550 5.7.1 <134.226.54.40>: Helo command rejected: You are not in my network.  Go away.; from=<Conor> to=<cgaffne@cs.tcd.ie> proto=SMTP helo=<134.226.54.40>
+INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
+    VALUES('Faked HELO', 'The client used a local address in HELO but is not within our network',
+        'postfix/smtpd',
+	    '^__RESTRICTION_START__ <__HELO__>: Helo command rejected: You are not in my network. +Go away.; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
         'REJECTED',
         'check_helo_access',
@@ -857,6 +863,17 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
         4
 );
 
+-- NOQUEUE: reject: RCPT from cagnode21.cs.tcd.ie[134.226.53.85]: 450 4.1.1 <root@cagnode21.cs.tcd.ie>: Recipient address rejected: unverified address: Address verification in progress; from=<root@cagnode21.cs.tcd.ie> to=<root@cagnode21.cs.tcd.ie> proto=ESMTP helo=<gridgate.cs.tcd.ie>
+INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
+    VALUES('Address verification not finished', 'Address verification is in progress',
+        'postfix/smtpd',
+	    '^__RESTRICTION_START__ <__RECIPIENT__>: Recipient address rejected: unverified address: Address verification in progress; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'DELIVERY_REJECTED',
+        'REJECTED',
+        'reject_unverified_recipient',
+        4
+);
+
 -- }}}
 
 -- SMTPD ACCEPT RULES {{{1
@@ -951,7 +968,7 @@ INSERT INTO rules(name, description, program, regex, result_data, action, postfi
 INSERT INTO rules(name, description, program, regex, action, postfix_action)
     VALUES('delivery suspended because the connection was refused/timed out', 'qmgr deferred delivery because the smtp connection was refused/timed out',
         'postfix/qmgr',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(delivery temporarily suspended: connect to (__SERVER_HOSTNAME__)\[(__SERVER_IP__)\]: Connection (?:refused|timed out)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(delivery temporarily suspended: connect to (__SERVER_HOSTNAME__)\[(__SERVER_IP__)\]: Connection (?:refused|timed out)\)$',
         'SAVE_DATA',
         'INFO'
 );
@@ -1454,6 +1471,24 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
         10
 );
 
+-- F2295F3894: to=<root@cagnode21.cs.tcd.ie>, relay=none, delay=30, delays=0.02/0/30/0, dsn=4.4.1, status=undeliverable (connect to cagnode21.cs.tcd.ie[134.226.53.85]:25: Connection timed out)
+INSERT INTO rules(name, description, program, regex, action, postfix_action)
+    VALUES('Mail bounced because the connection was refused/timed out', 'Mail bounced because the smtp connection was refused/timed out',
+        'postfix/smtp',
+	    '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=undeliverable \(connect to (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]:25: Connection (?:refused|timed out)\)$',
+        'SAVE_DATA',
+        'BOUNCED'
+);
+
+-- 2C1DEF38F9: to=<hansjanek@t-online.de>, relay=mx01.t-online.de[194.25.134.72]:25, delay=0.3, delays=0.02/0/0.11/0.17, dsn=5.7.0, status=bounced (host mx01.t-online.de[194.25.134.72] said: 550-5.7.0 Message considered as spam or virus, rejected 550-5.7.0 Message rejected because it was considered as spam. If you feel this 550-5.7.0 to be an error, please forward the wrong classified e-mail to our 550-5.7.0 abuse department at FPR@RX.T-ONLINE.DE with all the header lines! 550-5.7.0 We will analyse the problem and solve it. We are sorry for any 550-5.7.0 inconvenience and thank you very much in advance for your support! 550-5.7.0   550-5.7.0 Die Annahme Ihrer Nachricht wurde abgelehnt, da sie als Spam 550-5.7.0 eingestuft wurde. Sollten Sie dies als Fehler ansehen, bitten wir 550-5.7.0 Sie darum, die E-Mail mit allen Kopfzeilen an FPR@RX.T-ONLINE.DE 550-5.7.0 weiterzuleiten. Das Problem wird dann untersucht und geloest. 550-5.7.0 Wir bedauer
+INSERT INTO rules(name, description, program, regex, action, postfix_action)
+    VALUES('Mail rejected by T-ONLINE.DE', 'Mail rejected by T-ONLINE.DE with an enormous error message in English and German.',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=(__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]:25, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=bounced \(host (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\] said: 550-5.7.0 Message considered as spam or virus, rejected 550-5.7.0 Message rejected because it was considered as spam. If you feel this 550-5.7.0 to be an error, please forward the wrong classified e-mail to our 550-5.7.0 abuse department at FPR@RX.T-ONLINE.DE with all the header lines! 550-5.7.0 We will analyse the problem and solve it. We are sorry for any 550-5.7.0 inconvenience and thank you very much in advance for your support!.*$',
+        'SAVE_DATA',
+        'BOUNCED'
+);
+
 -- }}}
 
 
@@ -1639,6 +1674,15 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
         'BOUNCED'
 );
 
+-- 6C7D1F3894: to=<james.murphy@cs.tcd.ie>, relay=local, delay=0.04, delays=0.02/0.02/0/0, dsn=2.0.0, status=deliverable (aliased to jfmurphy)
+INSERT INTO rules(name, description, program, regex, action, postfix_action)
+    VALUES('Postfix logging how it will deliver some mail', 'XXX FIGURE OUT WHY THIS HAPPENS',
+        'postfix/local',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=local, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=deliverable \((__DATA__.*)\)$',
+        'SAVE_DATA',
+        'INFO'
+);
+
 -- 1}}}
 
 -- PICKUP RULES {{{1
@@ -1786,6 +1830,24 @@ INSERT INTO rules(name, description, program, regex, result_data, action, postfi
         'postfix/cleanup',
         '^warning: (__QUEUEID__): queue file size limit exceeded$',
         'sender = unknown, recipient = unknown, smtp_code = unknown',
+        'COMMIT',
+        'DISCARDED'
+);
+
+-- C86F93FD8B: reject: body # THIS IS A WARNING ONLY.  YOU DO NOT NEED TO RESEND YOUR MESSAGE. # from dns1.dns.imagine.ie[87.232.1.40]; from=<> to=<stephen.farrell@cs.tcd.ie> proto=ESMTP helo=<relay.imagine.ie>: 5.7.1 Rejecting backscatter mail
+INSERT INTO rules(name, description, program, regex, action, postfix_action)
+    VALUES('Rejecting backscatter mail (1)', 'Rejecting backscatter mail: THIS IS A WARNING ONLY. YOU DO NOT NEED TO RESEND YOUR MESSAGE.',
+        'postfix/cleanup',
+        '^(__QUEUEID__): reject: body # THIS IS A WARNING ONLY. YOU DO NOT NEED TO RESEND YOUR MESSAGE. # from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>: 5.7.1 Rejecting backscatter mail$',
+        'COMMIT',
+        'DISCARDED'
+);
+
+-- 4EB26439F6: reject: body This is the mail system at host relay.iol.cz. from wpad.iss.tcd.ie[134.226.17.160]; from=<> to=<jones@cs.tcd.ie> proto=ESMTP helo=<imx1.tcd.ie>: 5.7.1 Rejecting backscatter mail
+INSERT INTO rules(name, description, program, regex, action, postfix_action)
+    VALUES('Rejecting backscatter mail (2)', 'Rejecting backscatter mail: relay.iol.cz',
+        'postfix/cleanup',
+        '^(__QUEUEID__): reject: body This is the mail system at host relay.iol.cz. from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>: 5.7.1 Rejecting backscatter mail$',
         'COMMIT',
         'DISCARDED'
 );

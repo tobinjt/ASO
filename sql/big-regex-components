@@ -1,4 +1,5 @@
 (?:after|before) input_transp_cleanup: cleanup flags = .*
+auto_clnt_close: disconnect 127.0.0.1:800 stream
 auto_clnt_close: disconnect private/anvil stream
 auto_clnt_open: connected to __IP__:\d+
 auto_clnt_open: connected to (?:public|private)/.*
@@ -6,6 +7,7 @@ before input_transp_cleanup: cleanup flags = enable_header_body_filter enable_au
 check_access: __EMAIL__
 check_addr_access: __IP__
 check_domain_access: __HOSTNAME__
+check_domain_access: \[__IP__\]
 >>> CHECKING RECIPIENT MAPS <<<
 check_mail_access: __EMAIL__
 check_namadr_access: name __HOSTNAME__ addr __IP__
@@ -18,7 +20,7 @@ ctable_locate: move existing entry key .*
 ctable_locate: purge entry key .+
 dict_cidr_lookup: .* (?:__HOSTNAME__|__IP__)
 dict_pcre_lookup: .*
-dns_get_answer: type MX for .*
+dns_get_answer: type (?:MX|A|AAAA|CNAME) for .*
 dns_query: .*
 >>> END Client host RESTRICTIONS <<<
 >>> END Data command RESTRICTIONS <<<
@@ -35,11 +37,11 @@ generic_checks: .*
 [<>] __HOSTNAME__\[__IP__\]: .*
 input attribute (?:name|value): .*
 __IP__:\d+:? wanted attribute: .*
-lookup __HOSTNAME__ type MX flags 0
+lookup __HOSTNAME__ type (?:MX|A|AAAA|CNAME) flags 0
 mail_addr_find: __EMAIL__ -> .*
 maps_find: (?:canonical_maps|local_recipient_maps|recipient_canonical_maps|virtual_alias_maps): .*
-match_hostaddr: __IP__ ~\? \[__IP__\](?:/\d+)?
 match_hostaddr: __IP__ ~\? __IP__(?:/\d+)?
+match_hostaddr: __IP__ ~\? \[__IP__\](?:/\d+)?
 match_hostname: __HOSTNAME__ ~\? __IP__(?:/\d+)?
 match_hostname: __HOSTNAME__ ~\? \[__IP__\](?:/\d+)?
 match_list_match: .+ no match
@@ -51,6 +53,7 @@ permit_mynetworks: __HOSTNAME__ __IP__
 private/anvil: wanted attribute: .*
 (?:private|public)/.* socket: wanted attribute: .*
 rec_put: type .* len \d+ data.*
+reject_invalid_hostaddr: \[__IP__\]
 reject_invalid_hostname: __HOSTNAME__
 reject_non_fqdn_address: .+
 reject_non_fqdn_hostname: __HOSTNAME__
@@ -66,6 +69,7 @@ send attr .* =.*
 smtpd_check_addr: .+
 smtpd_check_queue: .*
 smtpd_check_rewrite: trying: permit_inet_interfaces
+smtp_get: EOF
 >>> START Client host RESTRICTIONS <<<
 >>> START Data command RESTRICTIONS <<<
 >>> START Recipient address RESTRICTIONS <<<

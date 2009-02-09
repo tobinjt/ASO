@@ -1,4 +1,6 @@
 # $Id$
+# Cause make to delete output files when a command fails.
+.DELETE_ON_ERROR:
 
 SHELL=bash
 
@@ -43,8 +45,14 @@ test-parsing-only:
 ../sql/create-tables-sqlite3-generated.sql: ../ASO/DB.pm ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm ../ASO/DB/ClusterGroup.pm
 	(cd ../sql && perl make_schema > "$@")
 
-db: ../sql/create-tables-sqlite3-generated.sql
-	(cd ../sql/ && rm -f db.sq3 && perl setup-database create-tables-sqlite3-generated.sql populate-cluster-groups.sql populate-rules.sql)
+../sql/big-regex: ../sql/big-regex-components
+	perl -Mstrict -w -e 'my @lines = <>; chomp @lines; my $$regex = join q{|}, @lines; print qq{'\''^(?:$$regex)\$$'\'',\n};' "$<" > "$@"
+
+../sql/big-regex-rule: ../sql/big-regex
+	perl -Mstrict -w -MFile::Slurp -e 'my $$regex = read_file(q{$<}); chomp $$regex; my $$template = read_file(q{$@-template}); $$template =~ s/__REGEX__/$$regex/; print $$template;' > "$@"
+
+db: ../sql/create-tables-sqlite3-generated.sql ../sql/big-regex-rule
+	(cd ../sql/ && rm -f db.sq3 && perl setup-database create-tables-sqlite3-generated.sql populate-cluster-groups.sql populate-rules.sql big-regex-rule)
 	sqlite3 ../sql/db.sq3 'select name, regex from rules where regex not like "^%$$"';
 	sqlite3 ../sql/db.sq3 'select name, regex from rules where regex     like "%NOQUEUE%"';
 
@@ -161,7 +169,7 @@ unparsed:
 	grep unparsed warnings > unparsed
 	cut -f 7- -d ' ' unparsed > unparsed.stripped
 	perl logs2regexs unparsed.stripped > new-regexes
-	yes 'Jun 16 00:00:01 relay.cs.tcd.ie postfix/smtpd[16278]: [ID 197553 mail.info] ' | head -n $$( wc -l unparsed.stripped | awk '{print $$1}' ) | paste -d '' - unparsed.stripped > unparsed.input
+	perl -p -E 's/^(:?[^ ]+ ){5}//; s/^([^ ]+): /Jun 16 00:00:01 relay.cs.tcd.ie $${1}[16278]: [ID 197553 mail.info] /;' unparsed > unparsed.input
 
 test-auto-regex:
 	perl logparser --year 2007 --skip_inserting_results "../../../../logs/mail.log-20070616.gz"
