@@ -166,38 +166,34 @@ The following attributes are defined for each rule:
         against any log lines that are not parsed by program specific
         rules.
 
-    \item [regex] XXX THIS NEEDS TO BE UPDATED ONCE AUTOMATIC DATA
-        EXTRACTION IS FINISHED\@.  The regex to match the log line
-        against.  The regex will first have several keywords expanded:
-        this simplifies reading and writing rules; avoids needless
-        repetition of complex regex components; allows the components to
-        be corrected and/or improved in one location; and makes each
-        regex largely self-documenting.  For efficiency the keywords are
-        expanded and every rule's regex is compiled before attempting to
-        parse the log file --- otherwise each regex would be recompiled
-        each time it was used, resulting in a large, data dependent
-        slowdown.  Efficiency concerns are discussed in \sectionref{parser
-        efficiency}, with caching compiled regexes covered in
-        \sectionref{Caching compiled regexes}.
+    \item [regex] The regex to match the log line against.  The regex will
+        have several keywords expanded when the rules are loaded: this
+        simplifies reading and writing rules; avoids needless repetition of
+        complex regex components; allows the components to be corrected
+        and/or improved in one location; enables automatic extraction and
+        saving of data; and makes each regex largely self-documenting.  For
+        efficiency the keywords are expanded and every rule's regex is
+        compiled before attempting to parse the log file --- otherwise each
+        regex would be recompiled each time it was used, resulting in a
+        large, data dependent slowdown.  Efficiency concerns are discussed
+        in \sectionref{parser efficiency}, with caching compiled regexes
+        covered in \sectionref{Caching compiled regexes}.
 
-    \item [result\_data] Sometimes rules need to save a result that is not
-        present in the log line: e.g.\ setting \texttt{smtp\_code} when
-        mail is accepted.  The format is: \newline{} \tab{} \texttt{XXX
-        UPDATE EXAMPLE\@; smtp\_code = 550; \newline{} recipient = 2,
-        sender = 4;} \newline{} i.e.\ semi-colon or comma separated
+    \item [connection\_data] Sometimes rules need to save data that is not
+        present in the log line: e.g.\ setting \texttt{client\_ip} when a
+        mail is being delivered to another server.  The format is:
+        \newline{} \tab{} \texttt{ client\_hostname = localhost, client\_ip
+        = 127.0.0.1} \newline{} i.e.\ semi-colon or comma separated
         assignment statements, with the variable name on the left and the
         value on the right hand side.\footnote{Commas and semi-colons
         cannot be escaped and thus cannot be used.  This feature is
         intended for use with small amounts of data rather than large
         amounts in any one rule, so dealing with escape sequences was
-        deemed unnecessary.}  Any field in the results table can be set in
-        this way; additionally \texttt{child} and \texttt{pid} are accepted
-        and used respectively by the \texttt{TRACK}, \texttt{BOUNCE}, and
-        \texttt{SMTPD\_DIED} actions, but do not cause data to be entered
-        in the database.
+        deemed unnecessary.}  Any field in the connections table can be set
+        in this way.
 
-    \item [connection\_data] The connections table equivalent of
-        \texttt{result\_data}.
+    \item [result\_data] The result table equivalent of
+        \texttt{connection\_data}.
 
     \item [action] The action that will be invoked when this rule matches a
         log line; a full list of actions and the parameters they are
@@ -227,53 +223,6 @@ The following attributes are defined for each rule:
 %        described in a separate document.
 
 \end{eqlist}
-
-\label{list of postfix actions}
-
-\begin{description}
-
-    \item [ACCEPTED] Postfix has accepted a mail, and will
-        subsequently attempt to deliver it.
-
-    \item [BOUNCED] The mail has bounced, because of a mail loop,
-        delivery failure, or five day timeout.\footnote{As with
-        much of Postfix's behaviour, five days is the default value
-        but can be changed by the administrator if they choose.}
-
-    \item [DELETED] The mail was deleted from the queue by an
-        administrator.
-
-    \item [DISCARDED] Postfix discarded the mail it was in the
-        process of accepting, because it was either larger than the
-        size limit set by the administrator, or the client timed
-        out or disconnected.
-
-    \item [EXPIRED] The mail has been in the queue for five
-        days\footnotemark[\value{footnote}] XXX CHECK IF THIS
-        FOOTNOTE WORKS without successful delivery.  A bounce mail
-        will be generated and sent to the sender address.
-
-    \item [INFO] Represents an unspecified intermediate action that
-        the parser is not interested in per se, but that does log
-        useful information, supplementing other log lines.
-
-    \item [IGNORED] An action that is not only uninteresting in
-        itself, but that also provides no useful data.
-
-    \item [POSTFIX\_RELOAD] The administrator has instructed
-        Postfix to start or stop, and all \daemon{smtpd} processes
-        will be terminated.  This does not negatively affect the
-        log files or mail queued by Postfix for delivery.
-
-    \item [PROCESSING] \daemon{cleanup} is processing a mail.
-        XXX ADD MORE DETAIL HERE
-
-    \item [REJECTED] Postfix rejected a command from the remote
-        client, causing at least one recipient to be rejected.
-
-    \item [SENT] Postfix has successfully sent a mail.
-
-\end{description}
 
 \subsection{Connections table}
 
@@ -418,10 +367,9 @@ description         & We do not accept mail from unknown domains        \\
 restriction\_name   & reject\_unknown\_sender\_domain                   \\
 postfix\_action     & REJECTED                                          \\
 program             & \daemon{smtpd}                                    \\
-XXX                 & UPDATE REGEX FOR AUTOMATIC SAVING                 \\
 regex               & \verb!^__RESTRICTION_START__ <(__SENDER__)>: !    \\
                     & \verb!Sender address rejected: Domain not found;! \\
-                    & \verb!from=<\5> to=<(__RECIPIENT__)> !            \\
+                    & \verb!from=<\k<sender>> to=<(__RECIPIENT__)> !    \\
                     & \verb!proto=E?SMTP helo=<(__HELO__)>$!            \\
 result\_data        &                                                   \\
 connection\_data    &                                                   \\
@@ -635,7 +583,7 @@ XXX IMPROVE HOW THIS LOOKS
 
     \item [rule] The matching rule.
 
-    \item [matches] The fields in the line captured by the rule's regex.
+    \item [matches] The data extracted from the line by the rule's regex.
 
 \end{eqlist}
 
@@ -772,6 +720,91 @@ rules per action}.
 \showgraph{build/graph-action-distribution}{Distribution of rules per
 action}{Distribution of rules per action}
 
+\subsection{Postfix actions}
+
+\label{list of postfix actions}
+
+XXX WHY DO I NEED HAVE postfix\_actions AT ALL\@?
+
+THERE IS NEARLY A 1--1 MAPPING BETWEEN action AND postfix\_action.
+
+\begin{tabular}{lll}
+
+1 & BOUNCE & BOUNCED \\
+1 & CLONE & ACCEPTED \\
+3 & COMMIT & DISCARDED \\
+1 & COMMIT & INFO \\
+1 & CONNECT & INFO \\
+1 & DELETE & DELETED \\
+64 & DELIVERY\_REJECTED & REJECTED \\
+1 & DISCONNECT & INFO \\
+1 & EXPIRY & EXPIRED \\
+1 & MAIL\_QUEUED & INFO \\
+1 & MAIL\_QUEUED & PROCESSING \\
+1 & MAIL\_TOO\_LARGE & DISCARDED \\
+1 & PICKUP & INFO \\
+2 & POSTFIX\_RELOAD & POSTFIX\_RELOAD \\
+13 & SAVE\_DATA & BOUNCED \\
+38 & SAVE\_DATA & INFO \\
+1 & SAVE\_DATA & REJECTED \\
+5 & SAVE\_DATA & SENT \\
+2 & SMTPD\_DIED & IGNORED \\
+1 & SMTPD\_WATCHDOG & IGNORED \\
+2 & TIMEOUT & DISCARDED \\
+1 & TRACK & SENT \\
+42 & UNINTERESTING & IGNORED \\
+
+\end{tabular}
+
+postfix\_action IS USED IN A FEW ACTIONS, BUT IT COULD PROBABLY BE EASILY
+REMOVED, OR MAYBE I SHOULD KEEP TRACK OF actions INSTEAD\@?
+
+XXX IF I KEEP THESE I NEED TO EXPLAIN WHY I HAVE THEM\@.
+
+\begin{description}
+
+    \item [ACCEPTED] Postfix has accepted a mail, and will
+        subsequently attempt to deliver it.
+
+    \item [BOUNCED] The mail has bounced, because of a mail loop,
+        delivery failure, or five day timeout.\footnote{As with
+        much of Postfix's behaviour, five days is the default value
+        but can be changed by the administrator if they choose.}
+
+    \item [DELETED] The mail was deleted from the queue by an
+        administrator.
+
+    \item [DISCARDED] Postfix discarded the mail it was in the
+        process of accepting, because it was either larger than the
+        size limit set by the administrator, or the client timed
+        out or disconnected.
+
+    \item [EXPIRED] The mail has been in the queue for five days without
+        successful delivery.  A bounce mail will be generated and sent to
+        the sender address.
+
+    \item [INFO] Represents an unspecified intermediate action that
+        the parser is not interested in per se, but that does log
+        useful information, supplementing other log lines.
+
+    \item [IGNORED] An action that is not only uninteresting in
+        itself, but that also provides no useful data.
+
+    \item [POSTFIX\_RELOAD] The administrator has instructed
+        Postfix to start or stop, and all \daemon{smtpd} processes
+        will be terminated.  This does not negatively affect the
+        log files or mail queued by Postfix for delivery.
+
+    \item [PROCESSING] \daemon{cleanup} is processing a mail.
+        XXX ADD MORE DETAIL HERE
+
+    \item [REJECTED] Postfix rejected a command from the remote
+        client, causing at least one recipient to be rejected.
+
+    \item [SENT] Postfix has successfully sent a mail.
+
+\end{description}
+
 \subsection{Adding new actions}
 
 \label{adding new actions}
@@ -850,30 +883,32 @@ experience could be summarised as:
 
 \end{enumerate}
 
-\Figureref{flow chart image} shows the paths the data representing a mail
-can take through the parser algorithm.  The flow chart covers the most
-common paths only, the complications described in
-\sectionref{complications} are excluded for the sake of clarity.  XXX WHERE
-ARE THE PATHS DESCRIBED\@?
+\Figureref{flow chart image} shows the most common paths the data
+representing a mail can take through the parser; the complications
+described in \sectionref{complications} are excluded for the sake of
+clarity.
 
 \showgraph{build/logparser-flow-chart-part-1}{Parser flow chart}{flow chart
 image}
 
-\clearpage
-
-\subsection{Mail enters the system}
-
 \label{mail-enters-the-system}
-
-XXX SHOULD THESE BE SEPARATE SUBSUBSECTIONS\@?
 
 Everything starts off with a mail entering the system, whether by local
 submission via \daemon{postdrop}, by \gls{SMTP}, by re-injection due to
 forwarding, or internally generated by Postfix.  Local submission is the
 simplest case: a queueid is assigned immediately and the sender address is
-logged (action: PICKUP\@; flowchart:~2).
+logged (action: PICKUP\@; flowchart:~2).  Re-injection due to forwarding
+sadly lacks explicit log lines of its own; it is explained in
+\sectionref{Re-injected mails}.
 
-\gls{SMTP} is more complicated:
+Internally generated mails lack any explicit origin in Postfix 2.2.x and
+must be detected using heuristics as described in
+\sectionref{identifying-bounce-notifications}.  Bounce notifications are
+the primary example of internally generated mails, though there may be
+other types.  Postfix may generate mails to the administrator when it
+encounters configuration errors, but such mails are presumably rare.
+
+\gls{SMTP} is more complicated than local submission:
 
 \begin{enumerate}
 
@@ -896,18 +931,6 @@ logged (action: PICKUP\@; flowchart:~2).
         for those mails later, see \sectionref{mail-delivery}.
 
 \end{enumerate}
-
-Re-injection due to forwarding sadly lacks explicit log lines of its
-own; it is explained in \sectionref{Re-injected mails}.
-
-Internally generated mails lack any explicit origin in Postfix 2.2.x and
-must be detected using heuristics as described in
-\sectionref{identifying-bounce-notifications}.  Bounce notifications are
-the primary example of internally generated mails, though there may be
-other types.  Postfix may generate mails to the administrator when it
-encounters configuration errors, but such mails are presumably rare.
-
-\subsection{Mail delivery}
 
 \label{mail-delivery}
 
@@ -942,80 +965,6 @@ bounced (due to a mail loop, delivery failure, or five day timeout), or
 deleted by the administrator, \textit{unless\/} the mail is either parent
 or child of re-injection, as explained in \sectionref{tracking re-injected
 mail}.
-
-\subsection{Emergent behaviour}
-
-\label{Emergent behaviour}
-
-XXX DUNNO IF I SHOULD INCLUDE THIS SECTION\@; AT BEST IT NEEDS TO BE
-UPDATED, AT WORST IT IS RUBBISH\@.
-
-The rules and actions exhibit emergent behaviour that is far more
-complicated than the behaviour explicitly encoded in the algorithm.  The
-top-level parser could be written in pseudo-code like so (with indentation
-level indicating flow control):
-
-\begin{verbatim}
-for each line in the input files:
-    for each rule defined by the user:
-        if this rule matches the input line:
-            perform the action specified by the rule
-            skip the remaining rules
-            process the next input line
-    warn the user that the input line was not parsed
-\end{verbatim}
-
-Yet despite the brevity of the algorithm above the (simplified) flow chart
-in \sectionref{flow-chart} contains:
-
-\begin{itemize}
-
-    \item Twenty one states (not including explicit branches).
-
-    \item Three entry points (1, 2, 3).
-
-    \item Five exit points (8, 14, 17, 20, 25).
-
-    \item Five loops (4--4, 4--5--4, 5--5, 9--9, 9--10--9).
-
-    \item Four explicit branches (7, 13, 15, 18); these are decisions taken
-        by an action, determining what will happen next to a mail.
-
-    \item Four implicit branches, where the transition is determined by the
-        next log line that is processed for that mail, e.g.\ state 1 can
-        transition to either state 4 or state 5.  (1--\{4,5\},
-        4--\{4,5,6\}, 5--\{4,5,6\}, 9--\{9,10,11,12\})
-
-\end{itemize}
-
-Several more states and corresponding branches are omitted for the sake of
-clarity (these extra states are caused by solving the complications
-described in \sectionref{complications}).
-
-The actions introduce some of the complexity seen in the flow chart: all
-explicit branches and the transitions between some stages (19--20,
-21--22--23--24) in the second half of the flow chart are encoded within the
-actions; the transitions between the other stages (16--17, 24--25) in the
-second half arise from the interaction between actions
-
-However the transitions between stages in the first half of the flow chart
-(\figureref{flow chart image}) are not encoded anywhere in
-the parser; the transitions are determined by the ordering of log lines in
-the log file.  The complexity of the first 12 stages in the flow chart
-emerges from the interaction of simple rules and actions, easing the
-process of adding new actions (described in \sectionref{adding new
-actions}), as there is no requirement to explicitly insert the action into
-an algorithmic version of the flow chart.\footnote{The solution to the
-complication in \sectionref{out of order log lines} (out of order log
-lines) requires a list of the acceptable combinations of Postfix programs a
-mail can pass through; however this does not correspond to the
-\textit{parser actions\/} a mail must pass through.  Before that
-complication was overcome, i.e.\ for the first half of the development of
-this parser, there was nothing in the parser explicitly encoding the states
-or paths a mail could take; no other component in the parser has any need
-for this flow of data to be specified.}
-
-
 
 \section{Complications encountered}
 
@@ -1096,6 +1045,8 @@ the above sequence, but currently there will only be one.
 
 \label{Re-injected mails}
 
+\label{tracking re-injected mail}
+
 The most difficult complication initially encountered is that locally
 addressed mails are not always delivered directly to a mailbox: sometimes
 they are addressed to and accepted for a local address but need to be
@@ -1111,21 +1062,6 @@ creation of the child mail, e.g.\ parent mail 3FF7C4317 creates child mail
 
 \texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline{}
 \tab{} delay=0, status=sent (forwarded as 56F5B43FD)}
-
-XXX DO I NEED THIS LIST\@? IMPROVE HOW IT LOOKS IF I KEEP IT\@.
-
-Different delivery methods result in different log lines:
-
-\begin{description}
-
-    \item [Re-injected for forwarding:] forwarded as 56F5B43FD
-
-    \item [Delivered to a remote \gls{SMTP} server:] 250 Ok: queued as
-        BD07D3C49
-
-    \item [Local delivery:] delivered to command: /usr/bin/procmail
-
-\end{description}
 
 Unfortunately, while all log lines from an individual process appear in
 chronological order, the order in which log lines from different processes
@@ -1153,43 +1089,38 @@ entry and subsequently entered once the parent mail has been identified.
 
 XXX MERGE THE REMAINDER OF THIS SECTION INTO THE PRIOR MATERIAL\@.
 
-subsubsection{Tracking re-injected mail}
-
-\label{tracking re-injected mail}
-
-The crux of the problem is that re-injected mails appear in the log files
-without explicit logging indicating their source.  There are two implicit
-indications:
+The crux of this complication is that re-injected mails appear in the log
+files without explicit logging indicating their source.  There are two
+implicit indications:
 
 \begin{enumerate}
 
     \item The indicator which more commonly introduces re-injection is when
         \daemon{qmgr} selects a mail with a previously unseen queueid for
-        delivery (action: MAIL\_QUEUED\@; flowchart:~3), in which case a
-        new data structure will be created for that mail.  The mail will be
-        flagged as having unknown origins; this flag should be subsequently
-        cleared once the origin has been established.  This may also be an
-        indicator that the mail is a bounce notification, see
+        delivery, in which case a new data structure will be created for
+        that mail.  The mail will be flagged as having unknown origins;
+        this flag will subsequently be cleared once the origin has been
+        established.  This may also be an indicator that the mail is a
+        bounce notification, see
         \sectionref{identifying-bounce-notifications} for details.
 
     \item Local delivery re-injects the mail and logs a relayed delivery
         rather than delivering directly to a mailbox or program as it
-        usually would (action: TRACK\@; flowchart:~10).\footnote{Relayed
-        delivery is performed by the \gls{SMTP} client; local delivery
-        means local to the server, i.e.\ an address the server is final
-        destination for.} In this case the mail may already have been
-        created (described above) and the unknown origin flag will be
-        cleared; if not a new data structure will be created.  In both
-        cases the re-injected mail is marked as a child of the original
-        mail.  The log line in question is:
+        usually would.\footnote{Relayed delivery is performed by the
+        \gls{SMTP} client; local delivery means local to the server, i.e.\
+        an address the server is final destination for.}  In this case the
+        mail may already have been created (described above) and the
+        unknown origin flag will be cleared; if not a new data structure
+        will be created.  In both cases the re-injected mail is marked as a
+        child of the original mail.  The log line in question is:
 
         \texttt{3FF7C4317: to=<username@example.com>, relay=local,
-        \newline{} delay=0, status=sent (forwarded as 56F5B43FD)}
+        \newline{} \tab{} delay=0, status=sent (forwarded as 56F5B43FD)}
 
-        This second indicator always occurs for re-injected mail but
-        typically occurs after the first indicator explained above.  This
-        is required to tie the parent and child mails together and so is
-        central to the process of tracking re-injected mails.
+        This always occurs for re-injected mail but typically occurs after
+        the first indicator.  This log line is required to tie the parent
+        and child mails together and so is central to the process of
+        tracking re-injected mails.
 
 \end{enumerate}
 
@@ -1199,32 +1130,29 @@ finally be described:
 \begin{itemize}
 
     \item If the mail is of unknown origin it is assumed to be a child mail
-        whose parent has not yet been identified (action: COMMIT\@;
-        flowchart:~15).  Mark the mail as ready for entry in the database
-        (flowchart:~16), and wait for the parent to deal with it
-        (flowchart:~17).  The mail should not have subsequent log lines;
-        only its parent should refer to it.
+        whose parent has not yet been identified.  Mark the mail as ready
+        for entry in the database and wait for the parent to deal with it.
+        The mail should not have any subsequent log lines; only its parent
+        should refer to it.
 
-    \item If the mail is a child mail then it has already been tracked
-        (action: COMMIT\@; flowchart:~18): as with all other mail, the data
-        is cleaned up, the child is entered in the database
-        (flowchart:~19), then deleted from the state tables.  The child
-        mail will be removed from the parent mail's list of children
-        (flowchart:~20); if this is the last child and the parent has also
-        been entered in the database the parent will be deleted from the
-        state tables.
+    \item If the mail is a child mail then it has already been tracked: as
+        with all other mail, the data is cleaned up, the child is entered
+        in the database, and then deleted from the state tables.  The child
+        mail will be removed from the parent mail's list of children; if
+        this is the last child and the parent has already been entered in
+        the database, the parent will also be deleted from the state
+        tables.
 
-    \item The last alternative is that the mail is a parent mail (action:
-        COMMIT\@; flowchart:~21).  Regardless of the state of its children
-        its data is cleaned up and entered in the database (flowchart:~22).
-        The parent may have children that are waiting to be entered in the
-        database (flowchart:~23); each of those children's data is cleaned
-        up and entered in the database, then deleted from the state tables.
-        The parent may also have outstanding children which are not yet
-        delivered (flowchart:~24), in which case the parent must wait for
-        those children to be finished with.  As soon as the last child is
-        deleted from the state tables the parent will also be finished with
-        (flowchart:~25), and deleted from the state tables.
+    \item The last alternative is that the mail is a parent mail.
+        Regardless of the state of its children its data is cleaned up and
+        entered in the database.  The parent may have children that are
+        waiting to be entered in the database; the data for each of those
+        children is cleaned up and entered in the database, then deleted
+        from the state tables.  The parent may also have outstanding
+        children which are not yet delivered, in which case the parent must
+        be retained in the state tables until those children are finished
+        with.  As soon as the last child is deleted from the state tables
+        the parent will also be deleted from the state tables.
 
 \end{itemize}
 
