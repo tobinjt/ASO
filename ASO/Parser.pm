@@ -2636,10 +2636,10 @@ sub make_ipv6_regex {
     # of the regex that $ipv6_regex is embedded in will fail, but because
     # $ipv6_regex is wrapped in (?>) the regex engine will not backtrack into
     # it.
-    my $ipv6_regex  = qr/(?>( (?:$ipv6_full_address)
-                             |(?:$ipv6_elided_start)
-                             |(?:$ipv6_elided_address)
-                             |(?:$ipv6_elided_end)
+    my $ipv6_regex  = qr/(?>(?: (?:$ipv6_full_address)
+                               |(?:$ipv6_elided_start)
+                               |(?:$ipv6_elided_address)
+                               |(?:$ipv6_elided_end)
                             )$interface_regex
                          )/mx;
 
