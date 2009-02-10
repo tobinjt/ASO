@@ -310,7 +310,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Greylisted recipient', 'Recipient greylisted; see http://www.greylisting.org/ for more details',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Greylisted, see (__DATA__http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+) from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Greylisted, see (__DATA__http://postgrey.schweikert.ch/help/.*|http://isg.ee.ethz.ch/tools/postgrey/help/.*); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
         'REJECTED',
         'check_policy_service',
@@ -647,7 +647,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Unwanted mail to root 2', 'People keep sending us mail for root at their machine (2)',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__SENDER__)>: Recipient address rejected: alias root to some other user, damnit.; from=<(__RECIPIENT__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <__RECIPIENT__>: Recipient address rejected: (?:alias root to some other user, damnit.|Please do something with root.s mail.); from=<(__RECIPIENT__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
         'REJECTED',
         'check_recipient_access',
@@ -868,6 +868,17 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
     VALUES('Address verification not finished', 'Address verification is in progress',
         'postfix/smtpd',
 	    '^__RESTRICTION_START__ <__RECIPIENT__>: Recipient address rejected: unverified address: Address verification in progress; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        'DELIVERY_REJECTED',
+        'REJECTED',
+        'reject_unverified_recipient',
+        4
+);
+
+-- reject_unverified_address: asdf@oenone.cs.tcd.ie
+INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
+    VALUES('Address verification was unsuccessful', 'Address verification did not find the address at the remote server',
+        'postfix/smtpd',
+        '^reject_unverified_address: (__RECIPIENT__)$',
         'DELIVERY_REJECTED',
         'REJECTED',
         'reject_unverified_recipient',
@@ -1452,12 +1463,22 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
 );
 
 -- connect to alamut.cs.tcd.ie[2001:770:10:200:210:22ff:fefe:57c1]: Network is unreachable (port 25)
+-- connect to ogma.cp.dias.ie[2001:770:60:18:215:c5ff:fee5:5c86]:25: Network is unreachable
 INSERT INTO rules(name, description, program, regex, action, postfix_action)
     VALUES('Network unreachable', 'The remote network is unreachable',
         'postfix/smtp',
-        '^connect to __SERVER_HOSTNAME__\[__SERVER_IP__\]: Network is unreachable(?: \(port \d+\))?$',
+        '^connect to __SERVER_HOSTNAME__\[__SERVER_IP__\]:(?:\d+:)? Network is unreachable(?: \(port \d+\))?$',
         'UNINTERESTING',
         'IGNORED'
+);
+
+-- 6F118F3A4B: to=<pmcsween@revenue.ie>, orig_to=<macsweep@CS.TCD.IE>, relay=none, delay=31656, delays=31160/0.32/496/0, dsn=4.4.1, status=deferred (connect to prim-smtp.revenue.ie[137.191.227.38]:25: Network is unreachable)
+INSERT INTO rules(name, description, program, regex, action, postfix_action)
+    VALUES('Network unreachable (more detailed)', 'The remote network is unreachable - more details given about the mail',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=deferred \(connect to (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\](?::\d+)?: Network is unreachable\)$',
+        'SAVE_DATA',
+        'INFO'
 );
 
 -- 6F50FF34BC: to=<maa10887@relay.cs.tcd.ie>, relay=none, delay=0.03, delays=0.01/0.02/0/0, dsn=5.4.6, status=undeliverable (mail for relay.cs.tcd.ie loops back to myself)
@@ -1480,6 +1501,15 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
         'BOUNCED'
 );
 
+-- C1D4AF3B36: to=<promotion@the-bingo.co.uk>, relay=none, delay=0.04, delays=0.02/0/0.01/0, dsn=5.4.4, status=bounced (Name server loop for mx.the-bingo.co.uk)
+INSERT INTO rules(name, description, program, regex, action, postfix_action)
+    VALUES('Mail bounced because of a DNS loop', 'Mail bounced because there was a loop when looking up MX/A/AAAA records for the recipient domain',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=bounced \(Name server loop for (__SERVER_HOSTNAME__)\)$',
+        'SAVE_DATA',
+        'BOUNCED'
+);
+
 -- 2C1DEF38F9: to=<hansjanek@t-online.de>, relay=mx01.t-online.de[194.25.134.72]:25, delay=0.3, delays=0.02/0/0.11/0.17, dsn=5.7.0, status=bounced (host mx01.t-online.de[194.25.134.72] said: 550-5.7.0 Message considered as spam or virus, rejected 550-5.7.0 Message rejected because it was considered as spam. If you feel this 550-5.7.0 to be an error, please forward the wrong classified e-mail to our 550-5.7.0 abuse department at FPR@RX.T-ONLINE.DE with all the header lines! 550-5.7.0 We will analyse the problem and solve it. We are sorry for any 550-5.7.0 inconvenience and thank you very much in advance for your support! 550-5.7.0   550-5.7.0 Die Annahme Ihrer Nachricht wurde abgelehnt, da sie als Spam 550-5.7.0 eingestuft wurde. Sollten Sie dies als Fehler ansehen, bitten wir 550-5.7.0 Sie darum, die E-Mail mit allen Kopfzeilen an FPR@RX.T-ONLINE.DE 550-5.7.0 weiterzuleiten. Das Problem wird dann untersucht und geloest. 550-5.7.0 Wir bedauer
 INSERT INTO rules(name, description, program, regex, action, postfix_action)
     VALUES('Mail rejected by T-ONLINE.DE', 'Mail rejected by T-ONLINE.DE with an enormous error message in English and German.',
@@ -1487,6 +1517,24 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=(__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]:25, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=bounced \(host (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\] said: 550-5.7.0 Message considered as spam or virus, rejected 550-5.7.0 Message rejected because it was considered as spam. If you feel this 550-5.7.0 to be an error, please forward the wrong classified e-mail to our 550-5.7.0 abuse department at FPR@RX.T-ONLINE.DE with all the header lines! 550-5.7.0 We will analyse the problem and solve it. We are sorry for any 550-5.7.0 inconvenience and thank you very much in advance for your support!.*$',
         'SAVE_DATA',
         'BOUNCED'
+);
+
+-- 32CBB3FA53: to=<obries10@hiteshpc.cs.tcd.ie>, relay=hiteshpc.cs.tcd.ie[2001:770:10:200:201:3ff:fe49:b00d]:25, delay=0.16, delays=0.01/0/0.09/0.05, dsn=2.1.5, status=deliverable (250 2.1.5 Ok)
+INSERT INTO rules(name, description, program, regex, action, postfix_action)
+    VALUES('Postfix logging how it will deliver some mail via SMTP', 'XXX FIGURE OUT WHY THIS HAPPENS 2',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=(__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=deliverable \((__DATA__.*)\)$',
+        'SAVE_DATA',
+        'INFO'
+);
+
+-- 143C0F3E27: to=<arash@dcs.qmul.ac.uk>, relay=mail.dcs.qmul.ac.uk[138.37.95.139]:25, delay=4.4, delays=0.05/0.02/3.3/1.1, dsn=4.0.0, status=deferred (host mail.dcs.qmul.ac.uk[138.37.95.139] said: 451-response to "RCPT TO:<fg07participants-bounces+arash=dcs.qmul.ac.uk@cs.tcd.ie>" from smtp.cs.tcd.ie [134.226.32.56] was: 450 4.2.0 <fg07participants-bounces+arash=dcs.qmul.ac.uk@cs.tcd.ie>: Recipient address rejected: Greylisted, see http://postgrey.schweikert.ch/help/cs.tcd.ie.html 451-Could not complete sender verify callout for 451-<fg07participants-bounces+arash=dcs.qmul.ac.uk@cs.tcd.ie>. 451-The mail server(s) for the domain may be temporarily unreachable, or 451-they may be permanently unreachable from this server. In the latter case, 451-you need to change the address or create an MX record for its domain 451-if it is supposed to be generally accessible from the Internet. 451 Talk to your mail administrator for details. (in reply to RCP
+INSERT INTO rules(name, description, program, regex, action, postfix_action)
+    VALUES('Delivery attempt failed sender validation', 'Delivery attempt failed sender validation',
+        'postfix/smtp',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=(__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=deferred \(host (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\] said: (__SMTP_CODE__)(__DATA__.*451.Could not complete sender verify callout for .*)$',
+        'SAVE_DATA',
+        'INFO'
 );
 
 -- }}}
@@ -1559,9 +1607,20 @@ INSERT INTO rules(name, description, program, regex, result_data, action, postfi
 
 -- warning: required alias not found: mailer-daemon
 INSERT INTO rules(name, description, program, regex, action, postfix_action)
-    VALUES('Postifx warning about something', 'Postfix has logged a warning; probably it should be investigated',
+    VALUES('Postfix warning about something', 'Postfix has logged a warning; probably it should be investigated',
         'postfix/local',
         '^warning: (?:required alias not found: .*|pipe_command_read: read time limit exceeded|premature end-of-input on .* socket while reading input attribute name|__QUEUEID__: defer service failure|close file .*.forward: Permission denied)$',
+        'UNINTERESTING',
+        'IGNORED'
+);
+
+-- Ideally we'd do something with these, but we don't have anything to tie them too.
+-- We'd need to add another table to save details in.
+-- fatal: main.cf configuration error: mailbox_size_limit is smaller than message_size_limit
+INSERT INTO rules(name, description, program, regex, action, postfix_action)
+    VALUES('Postfix fatal configuration error', 'Postfix has detected a fatal error in main.cf, and cannot run',
+        'postfix/local',
+        '^fatal: main.cf configuration error: (?:mailbox_size_limit is smaller than message_size_limit)$',
         'UNINTERESTING',
         'IGNORED'
 );
@@ -1676,7 +1735,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
 
 -- 6C7D1F3894: to=<james.murphy@cs.tcd.ie>, relay=local, delay=0.04, delays=0.02/0.02/0/0, dsn=2.0.0, status=deliverable (aliased to jfmurphy)
 INSERT INTO rules(name, description, program, regex, action, postfix_action)
-    VALUES('Postfix logging how it will deliver some mail', 'XXX FIGURE OUT WHY THIS HAPPENS',
+    VALUES('Postfix logging how it will deliver some mail via local delivery', 'XXX FIGURE OUT WHY THIS HAPPENS',
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=local, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__,\s)?status=deliverable \((__DATA__.*)\)$',
         'SAVE_DATA',
@@ -1838,7 +1897,7 @@ INSERT INTO rules(name, description, program, regex, result_data, action, postfi
 INSERT INTO rules(name, description, program, regex, action, postfix_action)
     VALUES('Rejecting backscatter mail (1)', 'Rejecting backscatter mail: THIS IS A WARNING ONLY. YOU DO NOT NEED TO RESEND YOUR MESSAGE.',
         'postfix/cleanup',
-        '^(__QUEUEID__): reject: body # THIS IS A WARNING ONLY. YOU DO NOT NEED TO RESEND YOUR MESSAGE. # from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>: 5.7.1 Rejecting backscatter mail$',
+        '^(__QUEUEID__): reject: body # THIS IS A WARNING ONLY.  YOU DO NOT NEED TO RESEND YOUR MESSAGE. # from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>: 5.7.1 Rejecting backscatter mail$',
         'COMMIT',
         'DISCARDED'
 );
