@@ -45,14 +45,14 @@ test-parsing-only:
 ../sql/create-tables-sqlite3-generated.sql: ../ASO/DB.pm ../ASO/DB/Connection.pm ../ASO/DB/Result.pm ../ASO/DB/Rule.pm ../ASO/DB/ClusterGroup.pm
 	(cd ../sql && perl make_schema > "$@")
 
-../sql/big-regex: ../sql/big-regex-components
+../sql/debug_peer_list-regex: ../sql/debug_peer_list-regex-components
 	perl -Mstrict -w -e 'my @lines = <>; chomp @lines; my $$regex = join q{|}, @lines; print qq{'\''^(?:$$regex)\$$'\'',\n};' "$<" > "$@"
 
-../sql/big-regex-rule: ../sql/big-regex
+../sql/debug_peer_list-rule: ../sql/debug_peer_list-regex
 	perl -Mstrict -w -MFile::Slurp -e 'my $$regex = read_file(q{$<}); chomp $$regex; my $$template = read_file(q{$@-template}); $$template =~ s/__REGEX__/$$regex/; print $$template;' > "$@"
 
-db: ../sql/create-tables-sqlite3-generated.sql ../sql/big-regex-rule
-	(cd ../sql/ && rm -f db.sq3 && perl setup-database create-tables-sqlite3-generated.sql populate-cluster-groups.sql populate-rules.sql big-regex-rule)
+db: ../sql/create-tables-sqlite3-generated.sql ../sql/debug_peer_list-rule
+	(cd ../sql/ && rm -f db.sq3 && perl setup-database create-tables-sqlite3-generated.sql populate-cluster-groups.sql populate-rules.sql debug_peer_list-rule)
 	sqlite3 ../sql/db.sq3 'select name, regex from rules where regex not like "^%$$"';
 	sqlite3 ../sql/db.sq3 'select name, regex from rules where regex     like "%NOQUEUE%"';
 
