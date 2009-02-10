@@ -236,7 +236,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Blacklisted by SpamHaus SBL-XBL', 'The client IP address is blacklisted by SpamHaus SBL-XBL',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using sbl-xbl.spamhaus.org;(?:(__DATA__(?:(?:(?: http://www.spamhaus.org/SBL/sbl.lasso\?query=\w+)|(?: http://www.spamhaus.org/query/bl\?ip=\5))(?: /)?)*);)? (?>from=<(__SENDER__)>) to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using sbl-xbl.spamhaus.org;(?:(__DATA__(?:(?:(?: http://www.spamhaus.org/SBL/sbl.lasso\?query=\w+)|(?: http://www.spamhaus.org/query/bl\?ip=\k<client_ip>))(?: /)?)*);)? (?>from=<(__SENDER__)>) to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
         'REJECTED',
         'reject_rbl_client',
@@ -250,7 +250,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Blacklisted by SpamHaus Zen', 'The client IP address is blacklisted by SpamHaus Zen',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using zen.spamhaus.org; (?:(__DATA__(?:http://www.spamhaus.org/(?:query/bl\?ip=\5|SBL/sbl.lasso\?query=[^\s]+))| / )+; )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using zen.spamhaus.org; (?:(__DATA__(?:http://www.spamhaus.org/(?:query/bl\?ip=\k<client_ip>|SBL/sbl.lasso\?query=[^\s]+))| / )+; )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
         'REJECTED',
         'reject_rbl_client',
@@ -262,7 +262,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Blacklisted by DSBL', 'The client IP address is blacklisted by DSBL',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using list.dsbl.org; (?:(?>(__DATA__http://dsbl.org/listing\?\5);) )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using list.dsbl.org; (?:(?>(__DATA__http://dsbl.org/listing\?\k<client_ip>);) )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
         'REJECTED',
         'reject_rbl_client',
@@ -273,7 +273,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Blacklisted by ordb.org', 'The client IP address is blacklisted by ordb.org',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using relays.ordb.org; (?>(__DATA__This mail was handled by an open relay - please visit <http://ORDB.org/lookup/\?host=\5>);) from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using relays.ordb.org; (?>(__DATA__This mail was handled by an open relay - please visit <http://ORDB.org/lookup/\?host=\k<client_ip>>);) from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
         'REJECTED',
         'reject_rbl_client',
@@ -285,7 +285,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Blacklisted by CBL', 'The client IP address is blacklisted by CBL',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using cbl.abuseat.org;(?>(__DATA__ Blocked - see http://cbl.abuseat.org/lookup.cgi\?ip=\5);)? from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using cbl.abuseat.org;(?>(__DATA__ Blocked - see http://cbl.abuseat.org/lookup.cgi\?ip=\k<client_ip>);)? from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
         'REJECTED',
         'reject_rbl_client',
@@ -555,7 +555,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Non-FQDN HELO', 'The hostname given in the HELO command is not fully qualified, i.e. it lacks a domain',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ (?><(__HELO__)>:) Helo command rejected: need fully-qualified hostname; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
+        '^__RESTRICTION_START__ (?><(__HELO__)>:) Helo command rejected: need fully-qualified hostname; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\k<helo>>$',
         'DELIVERY_REJECTED',
         'REJECTED',
         'reject_non_fqdn_hostname, reject_non_fqdn_helo_hostname',
@@ -591,7 +591,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Invalid HELO hostname/ip', 'The hostname/ip used in the HELO command is invalid',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__HELO__)>: Helo command rejected: (__DATA__invalid ip address|Invalid name); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
+        '^__RESTRICTION_START__ <(__HELO__)>: Helo command rejected: (__DATA__invalid ip address|Invalid name); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\k<helo>>$',
         'DELIVERY_REJECTED',
         'REJECTED',
         'reject_invalid_helo_hostname',
@@ -659,7 +659,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 INSERT INTO rules(name, description, program, regex, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Fake localhost HELO', 'The client claimed to be localhost in the HELO command',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <(__HELO__)>: Helo command rejected: You are not me\.?; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\5>$',
+        '^__RESTRICTION_START__ <(__HELO__)>: Helo command rejected: You are not me\.?; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<\k<helo>>$',
         'DELIVERY_REJECTED',
         'REJECTED',
         'check_helo_access',
@@ -744,7 +744,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
 INSERT INTO rules(name, description, program, regex, result_data, action, postfix_action, restriction_name, cluster_group_id)
     VALUES('Client host rejected for some reason', 'The client was rejected but no reason was specified',
         'postfix/smtpd',
-        '^(__QUEUEID__): reject: CONNECT from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: (__SMTP_CODE__) (?:__DSN__ )?<\2\[\3\]>: Client host rejected: Access denied; proto=E?SMTP$',
+        '^(__QUEUEID__): reject: CONNECT from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: (__SMTP_CODE__) (?:__DSN__ )?<\k<client_hostname>\[\k<client_ip>\]>: Client host rejected: Access denied; proto=E?SMTP$',
         'sender = unknown, recipient = unknown',
         'DELIVERY_REJECTED',
         'REJECTED',
@@ -936,7 +936,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
 INSERT INTO rules(name, description, program, regex, action, postfix_action)
     VALUES('Recipient addresses triggers HOLD action', 'The recipient addresses causes the mail to be moved to the hold queue',
         'postfix/smtpd',
-        '^(__QUEUEID__): hold: DATA from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: <(__RECIPIENT__)>: Recipient address triggers HOLD action; from=<(__SENDER__)> to=<(\4)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^(__QUEUEID__): hold: DATA from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]: <(__RECIPIENT__)>: Recipient address triggers HOLD action; from=<(__SENDER__)> to=<(\k<recipient>)> proto=E?SMTP helo=<(__HELO__)>$',
         'SAVE_DATA',
         'INFO'
 );
@@ -1131,7 +1131,7 @@ INSERT INTO rules(name, description, program, regex, connection_data, action, po
 INSERT INTO rules(name, description, program, regex, connection_data, action, postfix_action)
     VALUES('mail deferred because of a temporary remote failure', 'There is a temporary failure of some sort on the remote side, mail deferred',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(host \3\[\4\] said: (__SMTP_CODE__)(__DATA__.*) \(in reply to __COMMAND__ command\)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(host \k<server_hostname>\[\k<server_ip>\] said: (__SMTP_CODE__)(__DATA__.*) \(in reply to __COMMAND__ command\)\)$',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_DATA',
         'INFO'
@@ -1178,7 +1178,7 @@ INSERT INTO rules(name, description, program, regex, connection_data, action, po
 INSERT INTO rules(name, description, program, regex, connection_data, action, postfix_action)
     VALUES('mail to outside world rejected', 'mail to the outside world was rejected',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?>(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced) \(host \3\[\4\] said: (__SMTP_CODE__)(__DATA__.*) \(in reply to __COMMAND__ command\)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?>(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced) \(host \k<server_hostname>\[\k<server_ip>\] said: (__SMTP_CODE__)(__DATA__.*) \(in reply to __COMMAND__ command\)\)$',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_DATA',
         'BOUNCED'
@@ -1332,7 +1332,7 @@ INSERT INTO rules(name, description, program, regex, result_data, connection_dat
 INSERT INTO rules(name, description, program, regex, connection_data, action, postfix_action)
     VALUES('Conversation timed out after sending <CR>.<CR>', 'The conversation timed out after Postfix had finished sending the data; mail will be retried, but may have already been delivered on the remote end',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:lost connection with|conversation with) \3\[\4\] (?:timed out )?while sending end of data -- message may be sent more than once\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:lost connection with|conversation with) \k<server_hostname>\[\k<server_ip>\] (?:timed out )?while sending end of data -- message may be sent more than once\)$',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_DATA',
         'INFO'
@@ -1342,7 +1342,7 @@ INSERT INTO rules(name, description, program, regex, connection_data, action, po
 INSERT INTO rules(name, description, program, regex, result_data, connection_data, action, postfix_action)
     VALUES('Mail too big for remote server', 'The remote server will not accept mails bigger than X, and this mail is bigger',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced \((__DATA__message size \d+ exceeds size limit \d+ of server) \3\[\4\]\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced \((__DATA__message size \d+ exceeds size limit \d+ of server) \k<server_hostname>\[\k<server_ip>\]\)$',
         'smtp_code = 552',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_DATA',
@@ -1368,7 +1368,7 @@ INSERT INTO rules(name, description, program, regex, connection_data, action, po
 INSERT INTO rules(name, description, program, regex, connection_data, action, postfix_action)
     VALUES('Server refused to talk (politely)', 'The remote server politely declied to talk to our server',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(host \3\[\4\] refused to talk to me: (__SMTP_CODE__)(__DATA__.*)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(host \k<server_hostname>\[\k<server_ip>\] refused to talk to me: (__SMTP_CODE__)(__DATA__.*)\)$',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_DATA',
         'INFO'
@@ -1382,7 +1382,7 @@ INSERT INTO rules(name, description, program, regex, connection_data, action, po
 INSERT INTO rules(name, description, program, regex, connection_data, action, postfix_action)
     VALUES('Initial handshake timed out', 'The initial handshake did not complete within the timeout',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:lost connection with|conversation with) \3\[\4\] (?:(?:timed out )?while performing the (?:initial protocol|HELO|EHLO) handshake|while receiving the initial server greeting)\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \((?:lost connection with|conversation with) \k<server_hostname>\[\k<server_ip>\] (?:(?:timed out )?while performing the (?:initial protocol|HELO|EHLO) handshake|while receiving the initial server greeting)\)$',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_DATA',
         'INFO'
@@ -1393,7 +1393,7 @@ INSERT INTO rules(name, description, program, regex, connection_data, action, po
 INSERT INTO rules(name, description, program, regex, connection_data, action, postfix_action)
     VALUES('Lost connection with server', 'Lost connection with remote host during transaction',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(lost connection with \3\[\4\] while sending __COMMAND__\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(lost connection with \k<server_hostname>\[\k<server_ip>\] while sending __COMMAND__\)$',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_DATA',
         'INFO'
@@ -1403,7 +1403,7 @@ INSERT INTO rules(name, description, program, regex, connection_data, action, po
 INSERT INTO rules(name, description, program, regex, connection_data, action, postfix_action)
     VALUES('Conversation timed out', 'The conversation timed out at some stage',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(conversation with \3\[\4\] timed out while sending __COMMAND__\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=deferred \(conversation with \k<server_hostname>\[\k<server_ip>\] timed out while sending __COMMAND__\)$',
         'client_hostname = localhost, client_ip = 127.0.0.1',
         'SAVE_DATA',
         'INFO'
@@ -1599,7 +1599,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
 INSERT INTO rules(name, description, program, regex, result_data, action, postfix_action)
     VALUES('Mail forwarding loop', 'Postfix bounced a mail due to a mail forwarding loop',
         'postfix/local',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced \(mail forwarding loop for \2\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__DSN__, )?status=bounced \(mail forwarding loop for \k<recipient>\)$',
         'smtp_code = 554',
         'SAVE_DATA',
         'BOUNCED'
