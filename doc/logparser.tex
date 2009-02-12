@@ -107,6 +107,9 @@
 \renewcommand{\glsautoprefix}[1]{glossary:#1}
 \newglossary[plg]{postfix}{pin}{pout}{Postfix Daemons}
 \makeglossaries{}
+\newcommand{\acronym}[1]{%
+    \gls{#1}\glsadd{#1 glossary}%
+}
 
 % Provides commands to distinguish between pdf and dvi output.
 \usepackage{ifpdf}
@@ -223,8 +226,8 @@
 }
 
 % The name of the program, so I only have to change it in one place.
-\newcommand{\parsername}{\gls{PLP}}
-\newcommand{\parsernames}{\gls{PLP}'s}
+\newcommand{\parsername}{\acronym{PLP}}
+\newcommand{\parsernames}{\acronym{PLP}'s}
 
 \begin{document}
 

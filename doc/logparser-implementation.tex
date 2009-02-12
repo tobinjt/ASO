@@ -126,7 +126,98 @@ storing the data is a write-once operation, whereas utilising the data
 requires frequent searching, sorting, and manipulation of the data to
 produce customised reports or statistics.
 
-\subsection{Rules table}
+\subsection{Using a Database as an Application Programming Interface}
+
+\label{database as API}
+
+XXX LAST CHECKED DATES FOR ALL URLS\@.
+
+The database populated by this program provides a simple interface to
+Postfix log files.  Although the interface is a database schema rather than
+a set of functions provided by a library, it performs the same function as
+any other \acronym{API}: it provides a stable interface, allowing code on
+either side of the interface to be changed without adverse effects, as long
+as the interface is maintained.  The parser can be improved to handle
+additional complications, support earlier or later releases of Postfix,
+bugs can be fixed or limitations removed.  Programs that use the database
+can range from the simple examples in \sectionref{motivation} to far more
+complex data mining tools.
+
+Using a database simplifies writing programs that need to interact with the
+data in several ways:
+
+\begin{enumerate}
+
+    \item Facilities are provided to access databases from most programming
+        languages, allowing a developer to access the data gathered using
+        their preferred programming language, rather than being restricted
+        to the language the parser is written in.  It is often possible to
+        write an interface layer allowing code written in one language to
+        be used in another language, but this greatly increases the effort
+        required to use the parser.
+
+    \item Databases provide complex querying and sorting functionality to
+        the user without requiring large amounts of programming.  All
+        databases provide a program, of varying complexity and
+        sophistication, that can be used for ad hoc queries with minimal
+        investment of time.
+
+    \item Databases are easily extensible, e.g.:
+
+        \begin{itemize}
+
+            \item New columns can be added to the tables used by the
+                program, using DEFAULT clauses or TRIGGERS to populate
+                them.
+
+            \item A VIEW gives a custom arrangement of data with minimal
+                effort.
+
+            \item If the database supports it, access can be granted on a
+                fine-grained basis, e.g.\ allowing the finance department
+                to produce invoices, the helpdesk to run limited queries as
+                part of dealing with support calls, and the administrators
+                to have full access to the data.
+
+            \item Triggers can be written to perform actions when certain
+                events occur.  In pseudo-\acronym{SQL}\@:
+
+\begin{verbatim}
+CREATE TRIGGER ON INSERT INTO results
+    WHERE sender = 'boss@example.com'
+        AND postfix_action = 'REJECTED'
+    SEND PANIC EMAIL TO 'postmaster@example.com';
+\end{verbatim}
+
+            \item Other tables can be added to the database, e.g.\ to cache
+                historical, summary, or computed data.
+
+        \end{itemize}
+
+
+    \item \acronym{SQL} is reasonably standard and many people will already
+        be familiar with it; for those unfamiliar with it there are lots of
+        readily available resources from which to learn (a good
+        introduction to \acronym{SQL} can be found at
+        \url{http://philip.greenspun.com/sql/}, others are
+        \url{http://www.w3schools.com/sql/default.asp},
+        \url{http://sqlcourse.com/}).  Although every vendor implements a
+        different dialect of \acronym{SQL}, the basics are the same
+        everywhere (analogous to the overall similarities and minor
+        differences amongst Irish English, British English, American
+        English, and Australian English).  Depending on the database in use
+        there may be tools available that reduce or remove the requirement
+        to know \acronym{SQL}; several are available for \gls{SQLite}, the
+        default database used by the parser implementation.
+
+\end{enumerate}
+
+Storing the results in a database will also increase the efficiency of
+using those results, because the log files need only be parsed once rather
+than each time the data is used; indeed the results may be used by someone
+with no access to the original log files.
+
+\subsection{Rules Table}
 
 \label{rule attributes}
 
@@ -224,7 +315,7 @@ The following attributes are defined for each rule:
 
 \end{eqlist}
 
-\subsection{Connections table}
+\subsection{Connections Table}
 
 \label{connections table}
 
@@ -236,27 +327,27 @@ fields:
 
     \item [id] This field uniquely identifies the row.
 
-    \item [server\_ip] The \gls{IP} address (IPv4 or IPv6) of the server:
-        the local address when receiving mail, the remote address when
-        sending mail.
+    \item [server\_ip] The \acronym{IP} address (IPv4 or IPv6) of the
+        server: the local address when receiving mail, the remote address
+        when sending mail.
 
     \item [server\_hostname] The hostname of the server, it will be
-        \texttt{unknown} if the \gls{IP} address could not be resolved to a
-        hostname via DNS\@.
+        \texttt{unknown} if the \acronym{IP} address could not be resolved
+        to a hostname via DNS\@.
 
-    \item [client\_ip] The client \gls{IP} address (IPv4 or IPv6): the
+    \item [client\_ip] The client \acronym{IP} address (IPv4 or IPv6): the
         remote address when receiving mail, the local address when sending
         mail.
 
     \item [client\_hostname] The hostname of the client, it will be
-        \texttt{unknown} if the \gls{IP} address could not be resolved to a
-        hostname via DNS\@.
+        \texttt{unknown} if the \acronym{IP} address could not be resolved
+        to a hostname via DNS\@.
 
     \item [helo] The hostname used in the HELO command.  The HELO hostname
         occasionally changes during a connection, presumably because spam
         or virus senders think it is a good idea.  By default Postfix only
-        logs the HELO hostname when it rejects an \gls{SMTP} command, but
-        it is quite simple to rectify this, as described in
+        logs the HELO hostname when it rejects an \acronym{SMTP} command,
+        but it is quite simple to rectify this, as described in
         \sectionref{logging helo}.
 
     \item [queueid] The queueid of the mail if the connection represents an
@@ -270,7 +361,7 @@ fields:
 
 \end{eqlist}
 
-\subsection{Results table}
+\subsection{Results Table}
 
 \label{results table}
 
@@ -290,20 +381,21 @@ connection, and there may be many results per connection.
     \item [id] A unique identifier for this result.
 
     \item [warning] Postfix can be configured to log a warning instead of
-        enforcing a restriction that would reject an \gls{SMTP} command ---
-        a mechanism that is quite useful for testing new restrictions.
+        enforcing a restriction that would reject an \acronym{SMTP} command
+        --- a mechanism that is quite useful for testing new restrictions.
         This field will be 1 if the log line parsed was a warning rather
         than a real rejection, or 0 for a real rejection.  This field
         should be ignored if the result is not a rejection, i.e.\ the
         action field of the associated rule is not \texttt{REJECTION}.
 
-    \item [smtp\_code] The \gls{SMTP} code associated with the log line.
-        In general an \gls{SMTP} code is only present in a log line for a
-        rejection or final delivery; results initially missing an
-        \gls{SMTP} code will duplicate the \gls{SMTP} code of other results
-        in that connection.  Some final delivery log lines do not contain
-        an \gls{SMTP} code: in those cases the code is specified by the
-        rule, based on the success or failure represented by the log line.
+    \item [smtp\_code] The \acronym{SMTP} code associated with the log
+        line.  In general an \acronym{SMTP} code is only present in a log
+        line for a rejection or final delivery; results initially missing
+        an \acronym{SMTP} code will duplicate the \acronym{SMTP} code of
+        other results in that connection.  Some final delivery log lines do
+        not contain an \acronym{SMTP} code: in those cases the code is
+        specified by the rule, based on the success or failure represented
+        by the log line.
 
     \item [sender] The sender's email address.  Because multiple mails may
         be delivered during one connection, there may be different sender
@@ -322,7 +414,7 @@ connection, and there may be many results per connection.
         \texttt{NULL} if no mail was accepted.
 
     \item [data] A field available for anything not covered by other
-        fields, e.g.\ the rejection message from a \gls{DNSBL}\@.
+        fields, e.g.\ the rejection message from a \acronym{DNSBL}\@.
 
     \item [timestamp] The time at which the log line was logged, in seconds
         since the epoch.\glsadd{Epoch}
@@ -337,7 +429,7 @@ connection, and there may be many results per connection.
 
 XXX NEED AN INTRODUCTION\@.
 
-\subsection{Example rule}
+\subsection{Example Rule}
 
 \label{example rule}
 
@@ -420,23 +512,24 @@ connections tables.
 \end{description}
 
 
-\subsection{Creating new rules}
+\subsection{Creating New Rules}
 
 \label{creating new rules}
 
 The log files produced by Postfix differ from installation to installation,
 because administrators have the freedom to choose the subset of available
-restrictions which suits their needs, including using different \gls{DNSBL}
-services, policy servers, or custom rejection messages.  To facilitate
-parsing new log lines, the parser's design separates parsing rules from
-parsing actions: adding new actions can be difficult, but adding new rules
-to parse new rejection messages is trivial, and occurs much more
+restrictions which suits their needs, including using different
+\acronym{DNSBL} services, policy servers, or custom rejection messages.  To
+facilitate parsing new log lines, the parser's design separates parsing
+rules from parsing actions: adding new actions can be difficult, but adding
+new rules to parse new rejection messages is trivial, and occurs much more
 frequently.  A program is provided to ease the process of creating new
 rules from unparsed log lines, based on the algorithm developed by Risto
-Vaarandi for his \gls{SLCT}~\cite{slct-paper}.  The differences between the
-two algorithms will be outlined as part of the general explanation below.
+Vaarandi for his \acronym{SLCT}~\cite{slct-paper}.  The differences between
+the two algorithms will be outlined as part of the general explanation
+below.
 
-The core of the \gls{SLCT} algorithm is quite simple: log lines are
+The core of the \acronym{SLCT} algorithm is quite simple: log lines are
 generally created by substituting variable words into a fixed pattern, and
 analysis of the frequency with which each word occurs can be used to
 determine whether the word is variable or part of the fixed pattern.  This
@@ -450,7 +543,7 @@ There are 4 steps in the algorithm:
     \item [Pre-process the file]  The new algorithm leverages the knowledge
         gained when writing rules and performs a large number of
         substitutions on the input log lines, replacing commonly occurring
-        variable terms (e.g.\ email addresses, \gls{IP} addresses, the
+        variable terms (e.g.\ email addresses, \acronym{IP} addresses, the
         standard start of rejection messages, etc.) with regex keywords
         that the parser will expand when it loads the rule (see the
         regex entry in \sectionref{rule attributes}).  The purpose of
@@ -553,7 +646,7 @@ greatly reduce the effort required to parse new or different log lines.
 
 XXX INTRODUCTION\@.
 
-\subsection{Actions in detail}
+\subsection{Actions in Detail}
 
 \label{actions-in-detail}
 
@@ -575,7 +668,8 @@ XXX IMPROVE HOW THIS LOOKS
 
             \item [program] The name of the program that logged the line.
 
-            \item [pid] The \gls{pid} of the program that logged the line.
+            \item [pid] The \acronym{pid} of the program that logged the
+                line.
 
             \item [text] The remainder of the line.
 
@@ -618,8 +712,8 @@ The actions:
         mail (\sectionref{Re-injected mails}).
 
     \item [CONNECT] Handle a remote client connecting: create a new state
-        table entry (indexed by \daemon{smtpd} \gls{pid}) and save both the
-        client hostname and \gls{IP} address.
+        table entry (indexed by \daemon{smtpd} \acronym{pid}) and save both
+        the client hostname and \acronym{IP} address.
 
     \item [DELETE] Deals with mail deleted using Postfix's administrative
         command \daemon{postsuper}.  This action adds a dummy recipient
@@ -628,9 +722,10 @@ The actions:
         deals with is described fully in \sectionref{Mail deleted before
         delivery is attempted}.  
 
-    \item [DELIVERY\_REJECTED] Deals with Postfix rejecting an \gls{SMTP}
-        command from the remote client: log the rejection with a mail if
-        there is a queueid in the log line, or with the connection if not.
+    \item [DELIVERY\_REJECTED] Deals with Postfix rejecting an
+        \acronym{SMTP} command from the remote client: log the rejection
+        with a mail if there is a queueid in the log line, or with the
+        connection if not.
 
     \item [DISCONNECT] Deal with the remote client disconnecting: enter the
         connection in the database, perform any required cleanup, and
@@ -720,7 +815,7 @@ rules per action}.
 \showgraph{build/graph-action-distribution}{Distribution of rules per
 action}{Distribution of rules per action}
 
-\subsection{Postfix actions}
+\subsection{Postfix Actions}
 
 \label{list of postfix actions}
 
@@ -805,7 +900,7 @@ XXX IF I KEEP THESE I NEED TO EXPLAIN WHY I HAVE THEM\@.
 
 \end{description}
 
-\subsection{Adding new actions}
+\subsection{Adding New Actions}
 
 \label{adding new actions}
 
@@ -874,7 +969,7 @@ experience could be summarised as:
 
 \begin{enumerate}
 
-    \item Mail enters the system via \gls{SMTP} or local submission.
+    \item Mail enters the system via \acronym{SMTP} or local submission.
 
     \item If the mail is rejected, save all data and finish.
 
@@ -894,7 +989,7 @@ image}
 \label{mail-enters-the-system}
 
 Everything starts off with a mail entering the system, whether by local
-submission via \daemon{postdrop}, by \gls{SMTP}, by re-injection due to
+submission via \daemon{postdrop}, by \acronym{SMTP}, by re-injection due to
 forwarding, or internally generated by Postfix.  Local submission is the
 simplest case: a queueid is assigned immediately and the sender address is
 logged (action: PICKUP\@; flowchart:~2).  Re-injection due to forwarding
@@ -908,7 +1003,7 @@ the primary example of internally generated mails, though there may be
 other types.  Postfix may generate mails to the administrator when it
 encounters configuration errors, but such mails are presumably rare.
 
-\gls{SMTP} is more complicated than local submission:
+\acronym{SMTP} is more complicated than local submission:
 
 \begin{enumerate}
 
@@ -916,16 +1011,16 @@ encounters configuration errors, but such mails are presumably rare.
         CONNECT\@; flowchart:~1).
 
     \item This is followed by rejection of sender address, recipient
-        addresses, client \gls{IP} address or hostname, HELO hostname,
+        addresses, client \acronym{IP} address or hostname, HELO hostname,
         etc.\ (action: REJECTION\@; flowchart:~4); acceptance of one or
         more mails (action: CLONE\@; flowchart:~5); or some interleaving of
         both.
 
     \item The client disconnects (action: DISCONNECT\@; flowchart:~6).  If
-        Postfix has rejected any \gls{SMTP} commands the data will be saved
-        to the database; if not there will not be any data to save (any
-        mails accepted will already have been cloned so their data is in
-        another data structure).
+        Postfix has rejected any \acronym{SMTP} commands the data will be
+        saved to the database; if not there will not be any data to save
+        (any mails accepted will already have been cloned so their data is
+        in another data structure).
 
     \item If one or more mails were accepted there will be more log lines
         for those mails later, see \sectionref{mail-delivery}.
@@ -966,7 +1061,7 @@ deleted by the administrator, \textit{unless\/} the mail is either parent
 or child of re-injection, as explained in \sectionref{tracking re-injected
 mail}.
 
-\section{Complications encountered}
+\section{Complications Encountered}
 
 \label{complications}
 
@@ -988,10 +1083,10 @@ state tables and error messages, and make the remaining problems more
 apparent.  The first three complications were encountered early in the
 parser's implementation and guided its design and development.
 
-\subsection{Queueid vs pid}
+\subsection{Queueid Vs Pid}
 
 The mail lacks a queueid until it has been accepted, so log lines must
-first be correlated by the \daemon{smtpd} \gls{pid}, then transition to
+first be correlated by the \daemon{smtpd} \acronym{pid}, then transition to
 being correlated by the queueid.  This is relatively minor, but does
 require:
 
@@ -1004,11 +1099,11 @@ require:
         and mail.
 
     \item Most importantly: every section of code must know whether it
-        needs to lookup the data structures by \gls{pid} or queueid.
+        needs to lookup the data structures by \acronym{pid} or queueid.
 
 \end{itemize}
 
-\subsection{Connection reuse}
+\subsection{Connection Reuse}
 
 \label{connection reuse}
 
@@ -1017,19 +1112,20 @@ requires the algorithm to clone the current data as soon as a mail is
 accepted, so that subsequent mails will not trample over each other's data.
 This must be done every time a mail is accepted, as it is impossible to
 tell in advance which connections will accept multiple mails.  Once the
-mail has been accepted its log lines will not be correlated by \gls{pid}
-any more, its queueid will be used instead (except when timeouts occur
-during the data phase \sectionref{timeouts-during-data-phase}).  If the
-original connection has any useful data (e.g.\ rejections) it will be saved
-to the database when the client disconnects.  One unsolved difficulty is
-distinguishing between different groups of rejections, e.g.\ when dealing
-with the following sequence:
+mail has been accepted its log lines will not be correlated by
+\acronym{pid} any more, its queueid will be used instead (except when
+timeouts occur during the data phase
+\sectionref{timeouts-during-data-phase}).  If the original connection has
+any useful data (e.g.\ rejections) it will be saved to the database when
+the client disconnects.  One unsolved difficulty is distinguishing between
+different groups of rejections, e.g.\ when dealing with the following
+sequence:
 
 \begin{enumerate}
 
     \item The client attempts to deliver a mail, but it is rejected.
 
-    \item The client issues the RSET command to reset the \gls{SMTP}
+    \item The client issues the RSET command to reset the \acronym{SMTP}
         session.
 
     \item The client attempts to deliver another mail, likewise rejected.
@@ -1041,7 +1137,7 @@ the above sequence, but currently there will only be one.
 
 
 
-\subsection{Re-injected mails}
+\subsection{Re-injected Mails}
 
 \label{Re-injected mails}
 
@@ -1107,12 +1203,13 @@ implicit indications:
     \item Local delivery re-injects the mail and logs a relayed delivery
         rather than delivering directly to a mailbox or program as it
         usually would.\footnote{Relayed delivery is performed by the
-        \gls{SMTP} client; local delivery means local to the server, i.e.\
-        an address the server is final destination for.}  In this case the
-        mail may already have been created (described above) and the
-        unknown origin flag will be cleared; if not a new data structure
-        will be created.  In both cases the re-injected mail is marked as a
-        child of the original mail.  The log line in question is:
+        \acronym{SMTP} client; local delivery means local to the server,
+        i.e.\ an address the server is final destination for.}  In this
+        case the mail may already have been created (described above) and
+        the unknown origin flag will be cleared; if not a new data
+        structure will be created.  In both cases the re-injected mail is
+        marked as a child of the original mail.  The log line in question
+        is:
 
         \texttt{3FF7C4317: to=<username@example.com>, relay=local,
         \newline{} \tab{} delay=0, status=sent (forwarded as 56F5B43FD)}
@@ -1160,7 +1257,7 @@ A parent mail can have multiple children, which may be delivered before or
 after the parent mail.
 
 
-\subsection{Identifying bounce notifications}
+\subsection{Identifying Bounce Notifications}
 
 \label{identifying-bounce-notifications}
 
@@ -1179,7 +1276,7 @@ notifications, and those heuristics are:
 
     \item Neither \daemon{smtpd} nor \daemon{pickup} have logged any
         messages associated with the mail, indicating it was generated
-        internally by Postfix, not accepted via \gls{SMTP} or submitted
+        internally by Postfix, not accepted via \acronym{SMTP} or submitted
         locally by \daemon{postdrop}.
 
     \item The message-id has a specific format: \newline{}
@@ -1225,12 +1322,12 @@ hopefully subsequent versions) log the creation of a bounce message.
 
 This check is performed during the COMMIT action.
 
-\subsection{Aborted delivery attempts}
+\subsection{Aborted Delivery Attempts}
 
 \label{aborted-delivery-attempts}
 
-Some mail clients behave unexpectedly during the \gls{SMTP} dialogue: the
-client aborts the first delivery attempt after the first recipient is
+Some mail clients behave unexpectedly during the \acronym{SMTP} dialogue:
+the client aborts the first delivery attempt after the first recipient is
 accepted, then makes a second delivery attempt for the same recipient which
 it continues with until delivery is complete.  Microsoft Outlook is one
 client that behaves in this fashion; other clients may act in a similar
@@ -1303,7 +1400,7 @@ aborted delivery attempt and is discarded.  There will be no further
 entries logged for such mails, so without identifying and discarding them
 they accumulate in the state table and will cause clashes if the queueid is
 reused.  The mail cannot be entered in the database as the only data
-available is the client hostname and \gls{IP} address, but the database
+available is the client hostname and \acronym{IP} address, but the database
 schema requires many more fields be populated (see \sectionref{connections
 table} and \sectionref{results table}).  This heuristic is quite
 restrictive, and it appears there is little scope for false positives; if
@@ -1317,7 +1414,10 @@ run.
 This check is performed in the DISCONNECT action; it requires support in
 the CLONE action where a list of cloned connections is maintained.
 
-\subsection{Further aborted delivery attempts}
+
+\newpage{} % XXX
+
+\subsection{Further Aborted Delivery Attempts}
 
 XXX MAYBE FIND OUT WHAT CLIENTS DISCONNECT\@?  Some mail clients disconnect
 abruptly if a second or subsequent recipient is rejected; they may also
@@ -1350,12 +1450,12 @@ clashes if the queueid is reused.
 
 These checks are made during the DISCONNECT action.
 
-\subsection{Timeouts during DATA phase}
+\subsection{Timeouts During DATA Phase}
 
 \label{timeouts-during-data-phase}
 
-The DATA phase of the \gls{SMTP} conversation is where the headers and body
-of the mail are transferred.  Sometimes there is a timeout or the
+The DATA phase of the \acronym{SMTP} conversation is where the headers and
+body of the mail are transferred.  Sometimes there is a timeout or the
 connection is lost\footnote{For brevity's sake \textit{timeout\/} will be
 used throughout this section, but everything applies equally to lost
 connections.} during the DATA phase; when this occurs Postfix will discard
@@ -1400,7 +1500,7 @@ lines: see \sectionref{discarding cleanup log lines} for details.
 
 This complication is dealt with in the TIMEOUT action.
 
-\subsection{Discarding cleanup log lines}
+\subsection{Discarding Cleanup Log Lines}
 
 \label{discarding cleanup log lines}
 
@@ -1447,7 +1547,7 @@ regardless of whether it meets the criteria above.
 
 This complication is handled by the TIMEOUT and MAIL\_QUEUED actions.
 
-\subsection{Pickup logging after cleanup}
+\subsection{Pickup Logging After Cleanup}
 
 \label{pickup logging after cleanup}
 
@@ -1476,7 +1576,7 @@ is most likely caused by process scheduling vagaries.
 
 This complication is dealt with during the PICKUP action.
 
-\subsection{Smtpd stops logging}
+\subsection{Smtpd Stops Logging}
 
 \label{smtpd stops logging}
 
@@ -1517,7 +1617,7 @@ is untouched.
 These occurrences are handled by the three actions POSTFIX\_RELOAD,
 SMTPD\_DIED, and SMTPD\_WATCHDOG\@.
 
-\subsection{Out of order log lines}
+\subsection{Out of Order Log Lines}
 
 \label{out of order log lines}
 
@@ -1591,7 +1691,7 @@ XXX WOULD IT BE BETTER TO BEGIN THE EXPLANATIONS ON THE FOLLOWING LINE\@?
 This check applies to accepted mails only, not to rejected mails.  This
 check is performed during the COMMIT action.
 
-\subsection{Yet more aborted delivery attempts}
+\subsection{Yet More Aborted Delivery Attempts}
 
 \label{yet-more-aborted-delivery-attempts}
 
@@ -1623,7 +1723,7 @@ running for an extended period of time).  The state tables are scanned for
 mails matching the characteristics above each time the end of a log file is
 reached, and matching mails are deleted.
 
-\subsection{Mail deleted before delivery is attempted}
+\subsection{Mail Deleted Before Delivery is Attempted}
 
 \label{Mail deleted before delivery is attempted}
 
@@ -1643,8 +1743,8 @@ grouped.
 
 The DELETE action is responsible for handling this complication.
 
-\subsection{Bounce notification mails delivered before their creation is
-logged}
+\subsection{Bounce Notification Mails Delivered Before Their Creation Is
+Logged}
 
 \label{Bounce notification mails delivered before their creation is logged}
 
@@ -1674,7 +1774,7 @@ mails will be pruned whenever the parser's state is saved, though if the
 size of the cache ever becomes a problem it could be pruned periodically to
 keep the size in check.  XXX EXPLAIN PRUNING\@.
 
-\subsection{Mails deleted during delivery}
+\subsection{Mails Deleted During Delivery}
 
 \label{Mails deleted during delivery}
 
@@ -1704,7 +1804,7 @@ in the \numberOFlogFILES{} log files used for testing; if this complication
 occurred more frequently it might be desirable to find the mail in the
 database and add the log line to it.
 
-\section{Limitations and possible improvements}
+\section{Limitations and Possible Improvements}
 
 \label{limitations-improvements}
 
@@ -1720,12 +1820,12 @@ improvements that have been identified in the parser.
 
     \item Each new Postfix release requires new rules to be written or
         existing rules modified to cope with the new or changed log lines.
-        Similarly using a new \gls{DNSBL}, a new policy server, or new
+        Similarly using a new \acronym{DNSBL}, a new policy server, or new
         administrator-defined rejection messages require new rules.
 
     \item The hostname used in the HELO command is not logged if the mail
-        is accepted.\footnote{Tested with Postfix 2.2.10, 2.3.11, and 2.4.7;
-        this may possibly have changed in Postfix 2.5. XXX TEST THIS
+        is accepted.\footnote{Tested with Postfix 2.2.10, 2.3.11, and
+        2.4.7; this may possibly have changed in Postfix 2.5. XXX TEST THIS
         AGAIN.}  Rectifying this is relatively simple: create a restriction
         that is guaranteed to warn for every accepted mail, as follows:
 
@@ -1789,7 +1889,7 @@ improvements that have been identified in the parser.
 
 \end{enumerate}
 
-\subsection{Possible improvements}
+\subsection{Possible Improvements}
 
 \begin{itemize}
 
@@ -1818,10 +1918,10 @@ the parser's emergent behaviour --- the data from the log files creates the
 paths in the flow chart, they are not specified anywhere in the parser.
 The framework which holds the parser together was covered next, after which
 came a description of the current actions provided by the parser, and the
-algorithm for analysing unparsed log lines to create regexes for new
-rules.  Detecting, diagnosing, and defeating complications forms the largest
-single portion of this section, mirroring the development of the parser.
-The complications are described in the order they were overcome, with
+algorithm for analysing unparsed log lines to create regexes for new rules.
+Detecting, diagnosing, and defeating complications forms the largest single
+portion of this section, mirroring the development of the parser.  The
+complications are described in the order they were overcome, with
 subsequent problems affecting fewer mails (often by an order or magnitude),
 though the time required to solve problems increased with each successive
 problem.

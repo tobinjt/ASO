@@ -423,7 +423,7 @@ check:
 	chktex -I0 -q *.tex
 	chktex -q --nowarn 1 --nowarn 15 --nowarn 17 --nowarn 6 *.bbl
 	make check-contractions
-	# ack '\\(sub)*section\{([[:lower:]]|.* [[:lower:]])' logparser*.tex
+	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? (?!(a|and|is|in|of|the) )[[:lower:]])' logparser*.tex
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:

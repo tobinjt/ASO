@@ -25,8 +25,8 @@ mails received on weekdays than at weekends.   Median log file size is
 50MB, containing 285,000 log lines --- large scale mail servers would have
 much larger log files.  Note that \graphref{Mails received per day} and
 \tableref{Number of mails received per day: statistics} show the number of
-mails received by \gls{SMTP} only; in particular the mail loops noticeable
-in other graphs do not contribute to these figures.
+mails received by \acronym{SMTP} only; in particular the mail loops
+noticeable in other graphs do not contribute to these figures.
 
 \showgraph{build/graph-mails-received}{Number of mails received via SMTP
 per day}{Mails received per day}
@@ -93,7 +93,7 @@ graph}
 and number of log lines to parsing time}{parsing time vs file size vs
 number of log lines factor}
 
-\subsection{Explaining the peaks in log file size}
+\subsection{Explaining the Peaks in Log File Size}
 
 \label{Explaining the peaks in log file size}
 
@@ -163,7 +163,7 @@ has unexpected effects on parsing time, described in detail in
 \sectionref{rule ordering for efficiency}, \sectionref{scalability as the
 number of rules rises}, and \sectionref{Caching compiled regexes}.
 
-\subsection{Rule ordering for efficiency}
+\subsection{Rule Ordering For Efficiency}
 
 \label{rule ordering for efficiency}
 
@@ -223,7 +223,7 @@ means more log lines parsed per unit of time; similarly \graphref{Parsing
 time relative to shuffled ordering graph} shows a much smaller difference
 between the orderings at log files 22 and 62--68.
 
-\subsection{Scalability as the number of rules rises}
+\subsection{Scalability as the Number of Rules Rises}
 
 \label{scalability as the number of rules rises}
 
@@ -262,7 +262,7 @@ number of rules used.  These results show that the architecture scales very
 well as the number of rules increases, and that optimally sorting the rules
 is an important optimisation contributing to this scalability.
 
-\subsection{Caching compiled regexs}
+\subsection{Caching Compiled Regexs}
 
 \label{Caching compiled regexes}
 
@@ -336,7 +336,7 @@ less intrusive, as it just requires new rules to be written; improving the
 latter is much more intrusive as it requires changes to the parser
 algorithm, and it can also be much harder to notice a deficiency.
 
-\subsection{Log lines covered}
+\subsection{Log Lines Covered}
 
 \label{log-lines-covered}
 
@@ -384,14 +384,14 @@ of writing the parser is tested with \numberOFrules{} rules, fully parsing
 \numberOFlogFILESall{} contiguous log files from Postfix 2.2 through to
 Postfix 2.5), and new rules are easy to add.  Maintaining full coverage is
 hard because other servers have different restrictions with custom
-messages, \gls{DNSBL} messages change over time, major releases of Postfix
-change warning messages (usually adding more information), etc.,\ so over
-time the log lines drift and change.  \Graphref{rule hits graph} shows the
-number of hits for each rule over all \numberOFlogFILES{} log files.  The
-number of hits per rule is quite unevenly spread, resembling a Power Law
-distribution --- it is obvious that a small number of rules match the vast
-majority of the log lines, and more than half the rules match fewer than
-100 times.
+messages, \acronym{DNSBL} messages change over time, major releases of
+Postfix change warning messages (usually adding more information), etc.,\
+so over time the log lines drift and change.  \Graphref{rule hits graph}
+shows the number of hits for each rule over all \numberOFlogFILES{} log
+files.  The number of hits per rule is quite unevenly spread, resembling a
+Power Law distribution --- it is obvious that a small number of rules match
+the vast majority of the log lines, and more than half the rules match
+fewer than 100 times.
 
 \showgraph{build/graph-hits}{Hits per rule}{rule hits graph}
 
@@ -420,7 +420,7 @@ even when parsing all \numberOFlogFILES{} log files not all the rules are
 exercised (some of the rules are for parsing log lines that only appear in
 other log files).
 
-\subsection{Mails covered}
+\subsection{Mails Covered}
 
 \label{mails-covered}
 
@@ -428,20 +428,19 @@ Coverage of mails is much more difficult to determine accurately than
 coverage of log lines.  The parser can dump its state tables in a human
 readable form; examining these tables with reference to the log files is
 the best way to detect mails that were not handled properly (many of the
-complications discussed in \sectionref{complications} were
-detected in this way).  The parser issues warnings when it detects any
-errors, some of which may alert the user to a problem, e.g.\ when a queueid
-is reused before the previous mail is fully dealt with, when a queueid or
-\gls{pid} is not found in the state tables,\footnote{There will often be
-warnings about a missing queueid or \gls{pid} in the first few hundred or
-thousand log lines because the earlier log lines for those connections or
-mails are in the previous log file; loading the saved state from the
-previous log file will solve this problem.} or when there are problems
-tracking a child mail (see \sectionref{tracking re-injected mail}).  There
-should be few or no warnings when parsing, and when finished parsing the
-state table should only contain entries for mails that had yet to be
-delivered when the log files ended, or were accepted before the log files
-began.
+complications discussed in \sectionref{complications} were detected in this
+way).  The parser issues warnings when it detects any errors, some of which
+may alert the user to a problem, e.g.\ when a queueid is reused before the
+previous mail is fully dealt with, when a queueid or \acronym{pid} is not
+found in the state tables,\footnote{There will often be warnings about a
+missing queueid or \acronym{pid} in the first few hundred or thousand log
+lines because the earlier log lines for those connections or mails are in
+the previous log file; loading the saved state from the previous log file
+will solve this problem.} or when there are problems tracking a child mail
+(see \sectionref{tracking re-injected mail}).  There should be few or no
+warnings when parsing, and when finished parsing the state table should
+only contain entries for mails that had yet to be delivered when the log
+files ended, or were accepted before the log files began.
 
 At the time of writing the parser is being tested with \numberOFlogFILES{}
 log files.  There are 5 warnings produced, but because the parser errs on
@@ -553,10 +552,10 @@ subsequently the latter takes precedence because reproducing the path a
 mail takes through Postfix is the aim of the parser.  Increasing the
 percentage of log lines parsed is relatively simple and non-intrusive:
 adding new rules or modifying existing rules is simplified by the
-separation of rules, actions, and framework.  Improving the logical coverage
-is harder, as the actions taken by Postfix must be reconstructed by the
-author, and the new sequence of actions integrated into the existing model
-without breaking the existing parsing.  Detecting a deficiency in the
+separation of rules, actions, and framework.  Improving the logical
+coverage is harder, as the actions taken by Postfix must be reconstructed
+by the author, and the new sequence of actions integrated into the existing
+model without breaking the existing parsing.  Detecting a deficiency in the
 parsing algorithm is also significantly harder than detecting unparsed log
 lines, as the parser will warn about any unparsed line, whereas discovering
 a flaw in the parser requires understanding of the warnings produced and

@@ -6,7 +6,7 @@ XXX NEEDS AN INTRODUCTION\@.
 
 XXX MERGE SOME OF THE PAPER'S CONTENT IN HERE\@.
 
-\section{Parser architecture and design}
+\section{Parser Architecture and Design}
 
 \label{parser design}
 
@@ -94,11 +94,11 @@ algorithm; only in the rare event that the new actions require support from
 other sections of the code will more extensive changes be required.
 
 There is some similarity between the parser's design and William Wood's
-\gls{ATN}~\cite{atns,nlpip}, a tool used in Computational Linguistics for
-creating grammars to parse or generate sentences.  The resemblance between
-\gls{ATN} and the parser is accidental, but it is obvious that the two
-different approaches share an underlying separation of concerns; this
-appears to be a natural division of responsibility and functionality.
+\acronym{ATN}~\cite{atns,nlpip}, a tool used in Computational Linguistics
+for creating grammars to parse or generate sentences.  The resemblance
+between \acronym{ATN} and the parser is accidental, but it is obvious that
+the two different approaches share an underlying separation of concerns;
+this appears to be a natural division of responsibility and functionality.
 \Tableref{Similarities between ATN and this architecture} shows the
 similarities.
 
@@ -109,7 +109,7 @@ similarities.
     \empty{}\label{Similarities between ATN and this architecture}
     \begin{tabular}[]{lll}
         \tabletopline{}%
-        \gls{ATN}          & Architecture  & Similarity                \\
+        \acronym{ATN}   & Architecture  & Similarity                \\
         \tablemiddleline{}%
         Networks        & Algorithm     & Determines the sequence 
                                         of transitions              \\
@@ -132,7 +132,7 @@ similarities.
 XXX TO BE WRITTEN\@.  TAKE CONTENT FROM THE PAPER AND POSSIBLY FROM THE
 IMPLEMENTATION SECTION\@.
 
-\subsection{Rule characteristics}
+\subsection{Rule Characteristics}
 
 \label{rule characteristics}
 
@@ -171,7 +171,7 @@ $\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
 \text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
 
 
-\subsection{Overlapping rules}
+\subsection{Overlapping Rules}
 
 \label{overlapping rules}
 
@@ -185,8 +185,8 @@ inconsistent parsing and data extraction because the order in which rules
 are tried against each line may change between log files, and the first
 matching rule wins.  Overlapping rules are frequently a requirement,
 allowing a more specific rule to match some log lines and a more general
-rule to match the majority, e.g.\ separating \gls{SMTP} delivery to
-specific sites from \gls{SMTP} delivery to the rest of the world.  The
+rule to match the majority, e.g.\ separating \acronym{SMTP} delivery to
+specific sites from \acronym{SMTP} delivery to the rest of the world.  The
 algorithm provides a mechanism for ordering overlapping rules: the priority
 field in each rule (defaults to zero).  Negative priorities may be useful
 for catchall rules.
@@ -196,8 +196,9 @@ be helpful:
 
 \begin{itemize}
 
-    \item Sort by regex and visually inspect the list, e.g.\ with \gls{SQL}
-        similar to: \textbf{select regex from rules order by regex;}
+    \item Sort by regex and visually inspect the list, e.g.\ with
+        \acronym{SQL} similar to: \textbf{select regex from rules order by
+        regex;}
 
     \item Compare the results of parsing using sorted, shuffled, and
         reversed rules (described in \sectionref{rule ordering for
