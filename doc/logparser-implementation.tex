@@ -273,7 +273,8 @@ The following attributes are defined for each rule:
     \item [connection\_data] Sometimes rules need to save data that is not
         present in the log line: e.g.\ setting \texttt{client\_ip} when a
         mail is being delivered to another server.  The format is:
-        \newline{} \tab{} \texttt{ client\_hostname = localhost, client\_ip
+        \newline{} \tab{} \texttt{ client\_hostname = localhost,}
+        \newline{} \tab{} \tab{} \texttt{client\_ip
         = 127.0.0.1} \newline{} i.e.\ semi-colon or comma separated
         assignment statements, with the variable name on the left and the
         value on the right hand side.\footnote{Commas and semi-colons
@@ -1743,8 +1744,8 @@ grouped.
 
 The DELETE action is responsible for handling this complication.
 
-\subsection{Bounce Notification Mails Delivered Before Their Creation Is
-Logged}
+\subsection{Bounce Notification Mails Are Delivered Before Their Creation
+Is Logged}
 
 \label{Bounce notification mails delivered before their creation is logged}
 
