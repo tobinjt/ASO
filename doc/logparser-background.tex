@@ -331,35 +331,33 @@ Some widely deployed policy servers:
         joe~jobs~\cite{Wikipedia-joe-job}\glsadd{Joe job}.  There has been
         considerable resistance to the proposal because it breaks or vastly
         complicates some features of \acronym{SMTP}, e.g.\ forwarding mail
-        from one company or university to another when a user moves.
+        from one domain to another when a user moves.
 
     \item Greylisting~\cite{greylisting} is a technique that temporarily
         rejects a delivery attempt when the triple of \newline{}
         \tab{}\texttt{(sender address, recipient address, remote
         \acronym{IP} address)}\newline{} has not been seen before; on
         second and subsequent delivery attempts from that triple the mail
-        will be accepted.  This blocks spam because maintaining a list of
-        failed addresses and retrying after a temporary failure is
-        uneconomical for a spam sender, but a legitimate mail server must
-        retry deliveries that temporarily failed.  Sadly spam senders are
-        using increasingly complex and well written programs to distribute
-        spam, frequently using an ISP provided \acronym{SMTP} server from a
-        compromised machine on the ISP's network.  Greylisting will slowly
-        become less useful, but it does block a large percentage of spam
-        mail at the moment; the most effective restrictions from the
-        \numberOFlogFILES{} log files used in testing the parser are shown
-        in \tableref{Summary of rejections}.  Greylisting is obviously
-        worth using, at least at the moment, particularly when you take
-        into account Greylisting's position as the final restriction that a
-        mail must overcome:\footnote{Greylisting is the final restriction a
-        mail must overcome in the configuration used on the mail server the
-        log files were obtained from; an administrator is free to use
-        Greylisting wherever in the restriction list they feel is most
-        appropriate for their mail system.} Greylisting only takes effect
-        for mails that have passed every other restriction.  Some problems
-        may be encountered when using greylisting: some servers fail to
-        retry; legitimate mail may be delayed, particularly when coming
-        from a pool of servers.
+        will be accepted.  This blocks spam from some senders because
+        maintaining a list of failed addresses and retrying after a
+        temporary failure is uneconomical for a spam sender, but a
+        legitimate mail server must retry deliveries that failed
+        temporarily.  Sadly spam senders are using increasingly complex and
+        well written programs to distribute spam, frequently using an ISP
+        provided \acronym{SMTP} server from a compromised machine on the
+        ISP's network.  Greylisting will slowly become less useful, but it
+        does block a large percentage of spam mail at the moment; the most
+        effective restrictions from the \numberOFlogFILES{} log files used
+        when generating the results in \sectionref{Results} are shown in
+        \tableref{Summary of rejections}.  The table shows that greylisting
+        is worth using at the moment, particularly when you take into
+        account its position as the final restriction that a mail must
+        overcome in the configuration used on the mail server that
+        generated the log files: on that server greylisting only takes
+        effect for mails that have passed all other restrictions.  Some
+        problems may be encountered when using greylisting: some servers
+        fail to retry after a temporary failure, or legitimate mail may be
+        delayed, particularly when coming from a pool of servers.
 
         \begin{table}[ht]
             \caption{Summary of rejections}\label{Summary of rejections}
@@ -371,22 +369,16 @@ Some widely deployed policy servers:
         \acronym{IP} address, sender address), incrementing or decrementing
         a score based on the results; if the eventual score is higher than
         a threshold the mail is rejected.  The administrator must manually
-        whitelist clients if they are to bypass a Postfix restriction;
-        using a threshold that requires a delivery attempt to hit several
-        restrictions frees the administrator from whitelisting clients that
-        fall foul of one restriction only.
-
-    \item Rate limiting on a per-sender, per-client or per-recipient basis
-        as performed by Policyd~\cite{policyd}.
+        whitelist clients if they are to bypass a Postfix restriction,
+        whereas using a threshold that requires a delivery attempt to hit
+        several scored restrictions frees the administrator from
+        whitelisting clients that fall foul of one binary restriction only.
 
 \end{itemize}
 
-
-
 \section{Summary}
 
-This section has provided background information on several topics,
-starting with the motivation behind the project, continuing with an
-explanation of the use of a database as an \acronym{API} and an
-introduction to \acronym{SMTP}.  The focus then switched to Postfix, the
-\acronym{MTA} in use, and its restrictions and policy servers.
+This section has provided background information useful in understanding
+this thesis, starting with the motivation behind the project, continuing
+with an introduction to \acronym{SMTP}, and finishing with Postfix, its
+anti-spam restrictions, and its support for policy servers.
