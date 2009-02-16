@@ -159,10 +159,12 @@ test-logs:
 	perl logparser --year 2007 --debug_results --dump_committed_connections --out-statefile test-logs.state test-logs 2> test-logs.warnings
 	perl dump-database > test-logs.database-dump
 
+ALL_LOGS_OPTIONS=--skip_inserting_results --debug_results --out-statefile state-all-logs/state --individual-state-files --out-rule-order order-all-logs/order --individual-rule-order-files
 all-logs:
 	make db
-	perl logparser --skip_inserting_results --year 2007 --debug_results --out-statefile state.all-logs-2007 --individual-state-files                                                       ../../../../logs/mail.log-2007* 2> warnings.all-logs-2007
-	perl logparser --skip_inserting_results --year 2008 --debug_results --out-statefile state.all-logs-2008 --individual-state-files --in-statefile state.all-logs-2007-mail.log-20071231  ../../../../logs/mail.log-2008* 2> warnings.all-logs-2008
+	perl logparser ${ALL_LOGS_OPTIONS} --year 2007 --timing-data timing-2007 --memory-data memory-2007                                                       ../../../../logs/mail.log-2007* 2> warnings.all-logs-2007
+	perl logparser ${ALL_LOGS_OPTIONS} --year 2008 --timing-data timing-2008 --memory-data memory-2008 --in-statefile state-all-logs/state-mail.log-20071231 ../../../../logs/mail.log-2008* 2> warnings.all-logs-2008
+	perl logparser ${ALL_LOGS_OPTIONS} --year 2009 --timing-data timing-2009 --memory-data memory-2009 --in-statefile state-all-logs/state-mail.log-20081231 ../../../../logs/mail.log-2009* 2> warnings.all-logs-2009
 
 .PHONY: unparsed
 unparsed:
