@@ -1,13 +1,24 @@
 \chapter{Parser Architecture}
 
+\label{parser architecture}
+
 XXX REWRITE\@: MERGE CONTENT FROM ELSEWHERE IN THE THESIS AND PAPER\@.
-
-XXX NEEDS AN INTRODUCTION\@.
-
-XXX MERGE SOME OF THE PAPER'S CONTENT IN HERE\@.
 
 XXX WHEN FINISHED, CHECK ALL REFERENCES TO ENSURE THEY POINT AT THE CORRECT
 CHAPTER\@.
+
+To avoid cluttering the explanation of the parser architecture with details
+of the difficulties encountered while parsing Postfix log files, the
+description of the parser architecture has been separated from the
+description of \parsername{}, the implementation developed for this
+project.  This chapter presents the architecture that has been designed and
+developed for this project, beginning with the overall architecture and
+design, followed by the three components of the architecture: Framework,
+Actions, and finally Rules.  The discussion in this chapter centers on the
+theoretical, XXX EXTEND WHEN THE CHAPTER IS FINISHED\@.
+
+The practical difficulties of writing a parser for Postfix log files are
+covered in detail in \sectionref{Postfix Parser Implementation}.
 
 \section{Parser Architecture and Design}
 
@@ -22,16 +33,12 @@ own log files.  To enable this the architecture is divided into three
 parts: framework, actions and rules.  Each will be discussed separately,
 but first an overview:
 
-XXX UPDATE SECTION REFERENCES BELOW\@: THEY SHOULD ONLY REFER TO THE
-ARCHITECTURE, THE IMPLEMENTATION CAN REFER BACK TO HERE\@.
-
 \begin{eqlist}
 
     \item [Framework]  The framework is the structure that actions and
         rules plug into.  It provides the parsing loop, shared data
         storage, loading and validation of rules, storage of results, and
-        other support functions.  The framework is described in detail in
-        \sectionref{framework in architecture}.
+        other support functions.
 
     \item [Actions] Each action performs the work required to deal with a
         single category of inputs, e.g.\ processing data from rejections.
@@ -39,71 +46,59 @@ ARCHITECTURE, THE IMPLEMENTATION CAN REFER BACK TO HERE\@.
         identified by the rules: actions modify data structures, handle
         complications, and cause data to be saved to the database.
 
-    \item [Rules]  The rules are responsible for classifying inputs,
-        specifying the action to invoke and the regex that matches the
-        inputs and extracts data.  Rules provide an easily extensible
-        method of associating log lines with actions, and are described in
-        detail in \sectionref{rules in architecture}.
+    \item [Rules]  The rules are responsible for classifying inputs; they
+        specify the action to invoke and the regex that matches the inputs
+        and extracts data.  Rules provide an easily extensible method of
+        associating log lines with actions.
 
 \end{eqlist}
 
-It may help to think of the rules and actions as components that plug into
-the framework.  The framework tries each rule in turn until is finds one
-which matches the log line, then invokes the action specified by the rule.
+For each input the framework tries each rule in turn until it finds a rule
+that matches the input, then invokes the action specified by that rule.
 
 \label{why separate rules, actions, and framework?}
 
-XXX MERGE THE NEXT TWO PARAGRAPHS\@.  PULL CONTENT FROM THE PAPER\@.
-
-Decoupling the parsing rules from the associated actions and framework
-allows new rules to be written and tested without requiring modifications
-to the parser source code (significantly lowering the barrier to entry for
-new or casual users who need to parse new log lines), and greatly
-simplifies framework, actions, and rules.  Decoupling also creates a clear
-separation of functionality: rules handle low level details of identifying
-log lines and extracting data from a log line; actions handle the higher
-level details of following the path a mail takes through Postfix,
-assembling the required data before storing it, dealing with complications
-arising, etc; the framework provides services to actions and stores data.
-
-Decoupling the actions from the framework simplifies both framework and
-actions: the framework provides services to the actions, and does not need
-to deal with the complications that arise, or the task of reconstructing a
-mail's journey through Postfix; actions benefit from having services
-provided by the framework, freeing them to concentrate on the task of
-accurately reconstructing each mail's journey through Postfix and dealing
-with the complications described in \sectionref{complications}.
+Decoupling the parsing rules from their associated actions allows new rules
+to be written and tested without requiring modifications to the parser
+source code, significantly lowering the barrier to entry for casual users
+who need to parse new inputs, e.g.\ part-time systems administrators
+attempting to combat and reduce spam; it also allows companies to develop
+user-extensible parsers without divulging their source code.  Decoupling
+the framework, actions, and rules simplifies all three and creates a clear
+separation of functionality: the framework provides services to the
+actions, but does not need to perform any tasks specific to the input being
+parsed; actions benefit from having services provided by the framework,
+freeing them to concentrate on the task of accurately and correctly
+processing the information provided by rules; rules handle the low level
+details of classifying inputs and extracting data from those inputs.
 
 Separating the rules from the actions and framework makes it possible to
 parse new log lines without modifying the core parsing algorithm.  Adding a
 new rule with the action to invoke and a regex to match the log lines is
-trivial in comparison to understanding a program's entire parsing
-algorithm, identifying the correct location to change and making the
-appropriate changes.  Bear in mind that the changes must be made without
+trivial in comparison to understanding a program's entire parser,
+identifying the correct location to change, and making the appropriate
+changes.  Bear in mind that changes to the parser must be made without
 adversely affecting existing parsing, particularly as there may be edge
 cases that are not immediately obvious ---
 \sectionref{yet-more-aborted-delivery-attempts} describes a complication
-that occurs only four times in \numberOFlogFILES{} log files tested.
-Requiring changes to the parser's code also complicates upgrades, as the
+that occurs only four times in \numberOFlogFILES{} log files.  Requiring
+changes to the parser's source code also complicates upgrades, as the
 changes must be preserved during the upgrade, and may clash with changes
-made by the developer (\sectionref{adding new actions in implementation}
-describes safely adding new actions).  \parsername{} allows the user to add
-new rules to the database without changing the parsing algorithm, unless
-the new log lines to be parsed require functionality not already provided
-by the algorithm.  If the new log lines do require new functionality, new
-actions can be added to the parser without modifying existing actions or
-other parts of the algorithm; only in the rare event that the new actions
-require support from other sections of the code will more extensive changes
-be required.
+made by the developer.  This architecture allows the user to add new rules
+without changing the parser, unless the new log lines require functionality
+not already provided by the existing actions.  If the new log lines do
+require new functionality, new actions can be added to the parser without
+modifying existing actions (\sectionref{adding new actions in
+implementation} describes how to safely add new actions); only in the rare
+event that the new actions require support from other sections of the code
+will more extensive changes be required.
 
 There is some similarity between the parser's design and William Wood's
-\acronym{ATN}~\cite{atns,nlpip}, a tool used in Computational Linguistics
-for creating grammars to parse or generate sentences.  The resemblance
-between \acronym{ATN} and the parser is accidental, but it is obvious that
-the two different approaches share an underlying separation of concerns;
-this appears to be a natural division of responsibility and functionality.
-\Tableref{Similarities between ATN and this architecture} shows the
-similarities.
+\acronym{ATN}~\cite{atns}, used in Computational Linguistics for creating
+grammars to parse or generate sentences.  The resemblance between the two
+(shown in \tableref{Similarities between ATN and this architecture}) is
+accidental, but it is obvious that the two different approaches share a
+similar division of responsibilities, despite having different semantics.
 
 % Do Not Reformat!
 
@@ -127,6 +122,60 @@ similarities.
         \tablebottomline{}%
     \end{tabular}
 \end{table}
+
+\section{Framework}
+
+XXX PULL CONTENT FROM THE PAPER FOR HERE\@; IT IS BETTER WRITTEN\@.
+
+XXX EXTEND FRAMEWORK SECTION IF NECESSARY\@.
+
+\label{framework in architecture}
+
+The intermingling of log entries from different mails immediately rules out
+the possibility of handling each mail in isolation; the parser must be able
+to handle multiple mails in parallel, each potentially at a different stage
+in its journey, without any interference between mails --- except in the
+minority of cases where intra-mail interference is required.  The best way
+to implement this is to maintain state information for every unfinished
+mail and manipulate the appropriate mail correctly for each log line
+encountered.
+
+This functionality is provided by the framework, which both drives parsing
+overall and provides services to the actions it invokes.  The framework is
+responsible for loading rules from the database and sanity checking them,
+reading log files, matching each rule against the current log line,
+invoking the correct action, maintaining state tables, loading and saving
+state, displaying a progress indicator, and miscellaneous other tasks.
+Actions use services provided by the framework, including storing and
+retrieving data in the state tables, extracting and saving data captured by
+rules, storage of global data, debugging functions, preparing a mail for
+entry in the database, and entering mails in the database.
+
+There is a similarity between this design and the event-driven programming
+paradigm commonly used in GUI programs, where one part of the program
+responds to events (mouse clicks in a GUI program, log lines being matched
+in the parser) and invokes the correct action.
+
+The framework's high level overview could be expressed as (indentation
+denoting flow of control):
+
+\begin{verbatim}
+for each line in the input files:
+    for each rule defined by the user:
+        if this rule matches the input line:
+            perform the action specified by the rule
+            skip the remaining rules
+            process the next input line
+    warn the user that the input line was not parsed
+\end{verbatim}
+
+
+\section{Actions}
+
+\label{actions in architecture}
+
+XXX TO BE WRITTEN\@.  START WITH THE CONTENT FROM THE PAPER, THEN CHECK THE
+IMPLEMENTATION SECTION\@.
 
 \section{Rules}
 
@@ -222,57 +271,6 @@ be helpful:
 \end{itemize}
 
 
-\section{Framework}
+\section{Conclusion}
 
-XXX PULL CONTENT FROM THE PAPER FOR HERE\@; IT IS BETTER WRITTEN\@.
-
-XXX EXTEND FRAMEWORK SECTION IF NECESSARY\@.
-
-\label{framework in architecture}
-
-The intermingling of log entries from different mails immediately rules out
-the possibility of handling each mail in isolation; the parser must be able
-to handle multiple mails in parallel, each potentially at a different stage
-in its journey, without any interference between mails --- except in the
-minority of cases where intra-mail interference is required.  The best way
-to implement this is to maintain state information for every unfinished
-mail and manipulate the appropriate mail correctly for each log line
-encountered.
-
-This functionality is provided by the framework, which both drives parsing
-overall and provides services to the actions it invokes.  The framework is
-responsible for loading rules from the database and sanity checking them,
-reading log files, matching each rule against the current log line,
-invoking the correct action, maintaining state tables, loading and saving
-state, displaying a progress indicator, and miscellaneous other tasks.
-Actions use services provided by the framework, including storing and
-retrieving data in the state tables, extracting and saving data captured by
-rules, storage of global data, debugging functions, preparing a mail for
-entry in the database, and entering mails in the database.
-
-There is a similarity between this design and the event-driven programming
-paradigm commonly used in GUI programs, where one part of the program
-responds to events (mouse clicks in a GUI program, log lines being matched
-in the parser) and invokes the correct action.
-
-The framework's high level overview could be expressed as (indentation
-denoting flow of control):
-
-\begin{verbatim}
-for each line in the input files:
-    for each rule defined by the user:
-        if this rule matches the input line:
-            perform the action specified by the rule
-            skip the remaining rules
-            process the next input line
-    warn the user that the input line was not parsed
-\end{verbatim}
-
-
-\section{Actions}
-
-\label{actions in architecture}
-
-XXX TO BE WRITTEN\@.  START WITH THE CONTENT FROM THE PAPER, THEN CHECK THE
-IMPLEMENTATION SECTION\@.
-
+XXX TO BE WRITTEN\@.
