@@ -16,7 +16,6 @@ developed for this project, beginning with the overall architecture and
 design, followed by the three components of the architecture: Framework,
 Actions, and finally Rules.  The discussion in this chapter centers on the
 theoretical, XXX EXTEND WHEN THE CHAPTER IS FINISHED\@.
-
 The practical difficulties of writing a parser for Postfix log files are
 covered in detail in \sectionref{Postfix Parser Implementation}.
 
@@ -107,68 +106,59 @@ similar division of responsibilities, despite having different semantics.
     \empty{}\label{Similarities between ATN and this architecture}
     \begin{tabular}[]{lll}
         \tabletopline{}%
-        \acronym{ATN}   & Architecture  & Similarity                \\
+        \acronym{ATN}   & Architecture  & Similarity                  \\
         \tablemiddleline{}%
-        Networks        & Algorithm     & Determines the sequence 
-                                        of transitions              \\
-                        &               & or actions that 
-                                        constitutes a valid  input. \\
-        Transitions     & Actions       & Save data and impose
-                                        conditions the              \\
-                        &               & input must meet to be
-                                        accepted as valid.          \\
+        Networks        & Overall       & Determines the sequence 
+                                          of transitions              \\
+                        & Algorithm     & or actions that 
+                                          constitutes a valid input.  \\
+        Transitions     & Actions       & Assembles data and
+                                          imposes conditions          \\
+                        &               & the input must meet to be
+                                          accepted as                 \\
+                        &               & valid.                      \\
         Abbreviations   & Rules         & Responsible for 
-                                        classifying input.          \\
+                                          classifying input.          \\
         \tablebottomline{}%
     \end{tabular}
 \end{table}
 
 \section{Framework}
 
-XXX PULL CONTENT FROM THE PAPER FOR HERE\@; IT IS BETTER WRITTEN\@.
-
-XXX EXTEND FRAMEWORK SECTION IF NECESSARY\@.
+XXX EXTEND FRAMEWORK SECTION\@: EXPAND ON ALL OF THE POINTS IN THE LIST IN
+THE NEXT PARAGRAPH\@.
 
 \label{framework in architecture}
 
-The intermingling of log entries from different mails immediately rules out
-the possibility of handling each mail in isolation; the parser must be able
-to handle multiple mails in parallel, each potentially at a different stage
-in its journey, without any interference between mails --- except in the
-minority of cases where intra-mail interference is required.  The best way
-to implement this is to maintain state information for every unfinished
-mail and manipulate the appropriate mail correctly for each log line
-encountered.
+The framework takes care of miscellaneous support functions and low level
+details of parsing, freeing the programmers writing actions to concentrate
+on writing productive code.  It links actions and rules, allowing either to
+be improved independently of the other.  It provides shared storage to pass
+data between actions, loads and saves state, loads and validates rules,
+manages parsing, invokes actions, tracks how often each rule matches to
+optimise rule ordering (\sectionref{rule ordering for efficiency}), stores
+results of parsing, and miscellaneous other tasks.
+Most parsers will require the same basic functionality from the framework,
+plus some specialised support functions.  The framework is the core of the
+architecture and is deliberately quite simple: the rules deal with the
+variation in inputs, and the actions deal with the intricacies and
+complications encountered when parsing.
 
-This functionality is provided by the framework, which both drives parsing
-overall and provides services to the actions it invokes.  The framework is
-responsible for loading rules from the database and sanity checking them,
-reading log files, matching each rule against the current log line,
-invoking the correct action, maintaining state tables, loading and saving
-state, displaying a progress indicator, and miscellaneous other tasks.
-Actions use services provided by the framework, including storing and
-retrieving data in the state tables, extracting and saving data captured by
-rules, storage of global data, debugging functions, preparing a mail for
-entry in the database, and entering mails in the database.
+The function that finds the rule matching the input and invokes the
+requested action can be expressed in pseudo-code (indentation denoting flow
+of control) as:
 
-There is a similarity between this design and the event-driven programming
-paradigm commonly used in GUI programs, where one part of the program
-responds to events (mouse clicks in a GUI program, log lines being matched
-in the parser) and invokes the correct action.
-
-The framework's high level overview could be expressed as (indentation
-denoting flow of control):
+% DO NOT REFORMAT!
 
 \begin{verbatim}
-for each line in the input files:
-    for each rule defined by the user:
-        if this rule matches the input line:
+for each input:
+    for each rule defined by the user: 
+        if this rule matches the input:
             perform the action specified by the rule
             skip the remaining rules
-            process the next input line
-    warn the user that the input line was not parsed
+            process the next input
+    warn the user that the input was not parsed
 \end{verbatim}
-
 
 \section{Actions}
 

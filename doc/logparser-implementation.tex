@@ -1,4 +1,5 @@
 \chapter{Postfix Parser Implementation}
+
 \label{Postfix Parser Implementation}
 
 XXX WRITE AN INTRODUCTION\@.
@@ -29,6 +30,20 @@ Please refer to \sectionref{parser design} for a discussion of why the
 rules, actions, and framework have been separated in the parser's design.
 In this section algorithm can be taken to mean the combination of framework
 and actions.
+
+The intermingling of log entries from different mails immediately rules out
+the possibility of handling each mail in isolation; the parser must be able
+to handle multiple mails in parallel, each potentially at a different stage
+in its journey, without any interference between mails --- except in the
+minority of cases where intra-mail interference is required.  The best way
+to implement this is to maintain state information for every unfinished
+mail and manipulate the appropriate mail correctly for each log line
+encountered.
+
+There is a similarity between this design and the event-driven programming
+paradigm commonly used in GUI programs, where one part of the program
+responds to events (mouse clicks in a GUI program, log lines being matched
+in the parser) and invokes the correct action.
 
 
 \section{Assumptions}
@@ -652,11 +667,10 @@ greatly reduce the effort required to parse new or different log lines.
 
 XXX INTRODUCTION\@.
 
-The actions do the work of reconstructing the journey a mail takes through
-Postfix.  Details of the actions available in the Postfix parser can be
-found in \sectionref{actions in detail in implementation}, and
-\sectionref{adding new actions in implementation} describes the process of
-adding new actions.
+The actions reconstruct the journey a mail takes through Postfix.  Details
+of the actions available in the Postfix parser can be found in
+\sectionref{actions in detail in implementation}, and \sectionref{adding
+new actions in implementation} describes the process of adding new actions.
 
 \subsection{Actions in Detail}
 

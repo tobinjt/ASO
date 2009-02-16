@@ -15,7 +15,9 @@
 \usepackage{lastpage}
 
 % Extra footnote functionality, including references to earlier footnotes.
-\usepackage[bottom]{footmisc}
+% Removed for now, because it generates a warning:
+% "LaTeX Warning: Command \@makecol  has changed."
+%\usepackage[bottom]{footmisc}
 % The Euro symbol
 \usepackage{eurofont}
 
@@ -260,6 +262,9 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 \begin{center}
     \SVNId{}
 \end{center}
+
+XXX CONSIDER REPLACING bibtex, BECAUSE IT IS SUCH A PAIN IN THE ARSE TRYING
+TO CHANGE THE FORMAT OF THE PRODUCED BIBLIOGRAPHY\@.
 
 XXX WHY DOES \\ref{} NOT WORK PROPERLY FOR CHAPTERS IN THE APPENDIX\@?
 

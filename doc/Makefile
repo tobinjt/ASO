@@ -417,6 +417,8 @@ veryclean: clean
 
 .PHONY: check
 check:
+	# Edit the log file to remove stuff I don't want to see.
+	sed -i -e '/.\/.*.bbl$$/,$$s/^Underfull.*//' *.log
 	make join-lines | grep -i -E 'underfull|overfull' || true
 	make join-lines | grep -i "LaTeX Warning: " || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' *.log
