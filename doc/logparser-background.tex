@@ -189,9 +189,9 @@ required of an \acronym{MTA}\@: receive mail, send mail, local delivery of
 mail, etc.\ (full details can be found in~\cite{postfix-overview}).  Each
 log line contains the name of the Postfix component that produced it, and
 this information is used when determining which rules should be used to
-parse each log line (see \sectionref{rule characteristics} for details).
-Postfix's design is strongly influenced by security concerns: those
-components that interact with other hosts are not
+parse each log line (see \sectionref{rule characteristics in architecture}
+for details).  Postfix's design is strongly influenced by security
+concerns: those components that interact with other hosts are not
 privileged,\footnote{Privilege means the power to perform actions that are
 limited to the administrator, and not available to ordinary users.} so bugs
 in those components will not give an attacker extra privileges; those

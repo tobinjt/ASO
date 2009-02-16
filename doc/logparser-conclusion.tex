@@ -24,15 +24,16 @@ resulting initial increase in complexity the task is quite tractable,
 though it does raise efficiency and optimisation questions (answered in
 \sectionref{parser efficiency}).  Providing a tool to ease the generation
 of regexes from unparsed log lines should greatly help users add rules
-to parse previously unparsed log lines (\sectionref{creating new rules}).
+to parse previously unparsed log lines (\sectionref{creating new rules in
+implementation}).
 
 
-The architecture not only substantially eases the parsing of new log
-lines, it makes adding new actions (\sectionref{adding new actions}) a
-relatively simple task.  The simplicity of adding a new action frees the
-implementor from worrying about how their action might interfere with
-existing parsing, so they can focus on correctly implementing their new
-action.
+The architecture not only substantially eases the parsing of new log lines,
+it makes adding new actions (\sectionref{adding new actions in
+implementation}) a relatively simple task.  The simplicity of adding a new
+action frees the implementor from worrying about how their action might
+interfere with existing parsing, so they can focus on correctly
+implementing their new action.
 
 
 The division of the parser into rules, actions, and framework is unusual
@@ -66,22 +67,22 @@ The real difficulties arise once the parser is successfully dealing with
 log lines have been parsed successfully.  Adding new rules to deal with
 numerous, infrequently occurring log lines is a simple, albeit tiresome,
 task, (though alleviated by the tool described in \sectionref{adding new
-actions}), whereas dealing with mails where information appears to be
-missing is much more grueling.  Trawling through the log files, looking for
-something out of the ordinary, possibly hundreds or even thousands of log
-lines away from the last mention of the queueid in question, is extremely
-time consuming and error prone.  Sometimes the task is not to spot the line
-that is unusual, but to spot that a line that is normally present is
-missing, i.e.\ to realise that one line amongst thousands is absent.  In
-all cases the evidence must be used to construct a hypothesis to explain
-the irregularities, and that hypothesis must then be tested in the parser;
-if successful, the parser must be modified to deal with the irregularities,
-without adversely affecting the existing functionality.  The complications
-described in \sectionref{complications} were solved in the order they are
-described in, and that order closely resembles the frequency with which
-they occur; the most frequently occurring complications dominate the
-warning messages produced, and so naturally they are the first
-complications to be dealt with.
+actions in implementation}), whereas dealing with mails where information
+appears to be missing is much more grueling.  Trawling through the log
+files, looking for something out of the ordinary, possibly hundreds or even
+thousands of log lines away from the last mention of the queueid in
+question, is extremely time consuming and error prone.  Sometimes the task
+is not to spot the line that is unusual, but to spot that a line that is
+normally present is missing, i.e.\ to realise that one line amongst
+thousands is absent.  In all cases the evidence must be used to construct a
+hypothesis to explain the irregularities, and that hypothesis must then be
+tested in the parser; if successful, the parser must be modified to deal
+with the irregularities, without adversely affecting the existing
+functionality.  The complications described in \sectionref{complications}
+were solved in the order they are described in, and that order closely
+resembles the frequency with which they occur; the most frequently
+occurring complications dominate the warning messages produced, and so
+naturally they are the first complications to be dealt with.
 
 A parser's ability to correctly parse its input is extremely important; the
 parser's coverage of its test log files is discussed in \sectionref{parsing

@@ -58,14 +58,15 @@ described in \sectionref{database schema}, explaining in detail the tables
 used for storing the data gleaned from the log files and the table that
 stores the rules.
 
-Section~\ref{rules} discusses the parsing rules in detail, explaining the
-purpose and usage of each field in a rule, referring to an example rule and
-sample data it matches successfully against.  The pros and cons of
-overlapping rules are considered, including techniques for detecting
-unintentional overlaps.  Rule efficiency concerns are discussed, in
-particular the optimisations used by the algorithm.  The section concludes
-with a description of using the tools provided with the parser to generate
-new rules (specifically the regex in each rule) from unparsed log lines.
+Section~\ref{rules in architecture} discusses the parsing rules in detail,
+explaining the purpose and usage of each field in a rule, referring to an
+example rule and sample data it matches successfully against.  The pros and
+cons of overlapping rules are considered, including techniques for
+detecting unintentional overlaps.  Rule efficiency concerns are discussed,
+in particular the optimisations used by the algorithm.  The section
+concludes with a description of using the tools provided with the parser to
+generate new rules (specifically the regex in each rule) from unparsed log
+lines.
 
 Section~\ref{Postfix Parser Implementation} contains the core of the paper,
 describing a naive parsing algorithm and the complications initially
@@ -89,10 +90,10 @@ false positives is also included.  As part of determining the coverage of
 the parser a random sampling of log lines was parsed, and the correctness
 of the results manually verified.
 
-Section~\ref{limitations-improvements} lists the limitations of the
-algorithm, then suggests some ways of dealing with them, with the goal of
-improving parsing and reproduction of the journey a mail takes through
-Postfix.
+Section~\ref{limitations and improvements in implementation} lists the
+limitations of the algorithm, then suggests some ways of dealing with them,
+with the goal of improving parsing and reproduction of the journey a mail
+takes through Postfix.
 
 Section~\ref{conclusion} contains the conclusion of the thesis, describing
 the results of the research, design, and implementation of the parser.

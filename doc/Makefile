@@ -181,11 +181,11 @@ build_loop:
 	# Other reasons to run it:
 	# 5 table lengths in the acronym/glossary pages may have changed
 	# 6 hyperref may need to add stuff (not sure what)
-	# So this loop runs four times, and may need to run more times in future
+	# So this loop runs three times, and may need to run more times in future
 	# (e.g. if I added an index).
 	make build_run
 	set -e; \
-	for i in $$( seq 1 4 ); do \
+	for i in $$( seq 1 3 ); do \
 		echo "iteration $$i starting"; \
 		make "${BASENAME}.bbl"; \
 		if [ -e build/ran_bibtex ]; then \
@@ -422,7 +422,7 @@ veryclean: clean
 check:
 	chktex -I0 -q *.tex
 	chktex -q --nowarn 1 --nowarn 15 --nowarn 17 --nowarn 6 *.bbl
-	make check-contractions
+	ack -i 'it'\''s|\w'\''(?!s)\w' *.tex
 	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? (?!(a|and|is|in|of|the) )[[:lower:]])' logparser*.tex
 
 # List all acronyms not followed by {}, for visual inspection.
@@ -430,19 +430,25 @@ check-acronyms:
 	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{e]/; p;' logparser-acronyms.tex \
 		| grep -f - -n $$(ls logparser*.tex | grep -v ^logparser-acronyms.tex)
 
-# Check for contractons like "don't".
-check-contractions:
-	ack -i 'it'\''s|\w'\''(?!s)\w' *.tex
-
 todo:
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib || true
 	grep -c -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | grep -v ':0$$'
 	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | wc -l
 
+join-lines:
+	perl -p -E 'if (m/LaTeX Warning:/ and not m/\.$$/) { chomp; }' *.log
+
 underfull: overfull
 
 overfull: all
-	grep -E -i '[<(]\./[^) ]*( |$$)|\]\)$$|overfull|underfull' *.log
+	if grep -q -E -i 'underfull|overfull' *.log; then \
+		grep -E -i '[<(]\./[^) ]*( |$$)|\]\)$$|overfull|underfull' *.log; \
+	fi
+
+undefined-references: all
+	if make join-lines | grep -q -E -i 'reference.*undefined'; then \
+		make join-lines | grep -E -i '[<(]\./[^) ]*( |$$)|\]\)$$|reference.*undefined.*'; \
+	fi
 
 2up: logparser-2up.ps logparser-2up.pdf
 

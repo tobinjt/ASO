@@ -6,6 +6,9 @@ XXX NEEDS AN INTRODUCTION\@.
 
 XXX MERGE SOME OF THE PAPER'S CONTENT IN HERE\@.
 
+XXX WHEN FINISHED, CHECK ALL REFERENCES TO ENSURE THEY POINT AT THE CORRECT
+CHAPTER\@.
+
 \section{Parser Architecture and Design}
 
 \label{parser design}
@@ -16,34 +19,33 @@ host, depending on the set of restrictions chosen by the administrator.
 With this in mind, one of the parser's design aims was to make adding new
 rules as easy as possible, to enable administrators to properly parse their
 own log files.  To enable this the architecture is divided into three
-parts:
+parts: framework, actions and rules.  Each will be discussed separately,
+but first an overview:
 
-XXX UPDATE SECTION REFERENCES BELOW\@: THEY NEED TO REFER TO BOTH THE
-ARCHITECTURE AND THE IMPLEMENTATION\@.
+XXX UPDATE SECTION REFERENCES BELOW\@: THEY SHOULD ONLY REFER TO THE
+ARCHITECTURE, THE IMPLEMENTATION CAN REFER BACK TO HERE\@.
 
-\begin{description}
+\begin{eqlist}
 
-    \item [framework] The framework is responsible for loading rules,
-        managing data structures, finding the rule that matches each log
-        line, invoking the correct action, etc\@.  The framework is
-        described in detail in \sectionref{framework}.  XXX EXTEND
-        FRAMEWORK SECTION IF NECESSARY\@.
+    \item [Framework]  The framework is the structure that actions and
+        rules plug into.  It provides the parsing loop, shared data
+        storage, loading and validation of rules, storage of results, and
+        other support functions.  The framework is described in detail in
+        \sectionref{framework in architecture}.
 
-    \item [rules] Rules match individual log lines and determine which
-        actions will be executed.  Rules provide an easily extensible
+    \item [Actions] Each action performs the work required to deal with a
+        single category of inputs, e.g.\ processing data from rejections.
+        Actions are invoked to deal with a log line once it has been
+        identified by the rules: actions modify data structures, handle
+        complications, and cause data to be saved to the database.
+
+    \item [Rules]  The rules are responsible for classifying inputs,
+        specifying the action to invoke and the regex that matches the
+        inputs and extracts data.  Rules provide an easily extensible
         method of associating log lines with actions, and are described in
-        detail in \sectionref{rules}.
+        detail in \sectionref{rules in architecture}.
 
-    \item [actions] Actions are invoked to deal with a log line once it has
-        been identified by the rules: actions modify data structures,
-        handle complications, and cause data to be saved to the database.
-        The actions do the work of reconstructing the journey a mail takes
-        through Postfix.  Details of the actions available in the Postfix
-        parser can be found in \sectionref{actions-in-detail}, and
-        \sectionref{adding new actions} describes the process of adding new
-        actions.
-
-\end{description}
+\end{eqlist}
 
 It may help to think of the rules and actions as components that plug into
 the framework.  The framework tries each rule in turn until is finds one
@@ -84,14 +86,15 @@ cases that are not immediately obvious ---
 that occurs only four times in \numberOFlogFILES{} log files tested.
 Requiring changes to the parser's code also complicates upgrades, as the
 changes must be preserved during the upgrade, and may clash with changes
-made by the developer (\sectionref{adding new actions} describes safely
-adding new actions).  \parsername{} allows the user to add new rules to the
-database without changing the parsing algorithm, unless the new log lines
-to be parsed require functionality not already provided by the algorithm.
-If the new log lines do require new functionality, new actions can be added
-to the parser without modifying existing actions or other parts of the
-algorithm; only in the rare event that the new actions require support from
-other sections of the code will more extensive changes be required.
+made by the developer (\sectionref{adding new actions in implementation}
+describes safely adding new actions).  \parsername{} allows the user to add
+new rules to the database without changing the parsing algorithm, unless
+the new log lines to be parsed require functionality not already provided
+by the algorithm.  If the new log lines do require new functionality, new
+actions can be added to the parser without modifying existing actions or
+other parts of the algorithm; only in the rare event that the new actions
+require support from other sections of the code will more extensive changes
+be required.
 
 There is some similarity between the parser's design and William Wood's
 \acronym{ATN}~\cite{atns,nlpip}, a tool used in Computational Linguistics
@@ -127,14 +130,14 @@ similarities.
 
 \section{Rules}
 
-\label{rule in architecture}
+\label{rules in architecture}
 
 XXX TO BE WRITTEN\@.  TAKE CONTENT FROM THE PAPER AND POSSIBLY FROM THE
 IMPLEMENTATION SECTION\@.
 
 \subsection{Rule Characteristics}
 
-\label{rule characteristics}
+\label{rule characteristics in architecture}
 
 Rule have certain characteristics that may help in understanding the
 parser:
@@ -173,7 +176,7 @@ $\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
 
 \subsection{Overlapping Rules}
 
-\label{overlapping rules}
+\label{overlapping rules in architecture}
 
 XXX IS THERE ANY PREVIOUS RESEARCH IN THIS AREA\@?
 
@@ -223,7 +226,9 @@ be helpful:
 
 XXX PULL CONTENT FROM THE PAPER FOR HERE\@; IT IS BETTER WRITTEN\@.
 
-\label{framework}
+XXX EXTEND FRAMEWORK SECTION IF NECESSARY\@.
+
+\label{framework in architecture}
 
 The intermingling of log entries from different mails immediately rules out
 the possibility of handling each mail in isolation; the parser must be able

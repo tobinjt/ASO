@@ -12,6 +12,9 @@ XXX THIS MIGHT BE USEFUL SOMEWHERE\@:
 
 XXX SHOULD I SAY ``cleaned up'' EVERYWHERE OR NOT\@?
 
+XXX WHEN FINISHED, CHECK ALL REFERENCES TO ENSURE THEY POINT AT THE CORRECT
+CHAPTER\@.
+
 Whereas the rules are quite simple and each rule is completely independent
 of the other rules, the algorithm is significantly more complicated and
 highly internally interdependent.  The algorithm deals with all the
@@ -102,8 +105,8 @@ parse log files, and the data saved from the parsing of log files.  Rules
 have the fields required to parse the log lines, extract data to be saved,
 and specify the action to be executed; they also have several fields that
 aid the user in understanding the meaning of the log lines parsed by each
-rule.  The rules are described in detail in \sectionref{rules} but the
-fields are covered in \sectionref{rule attributes}.
+rule.  The rules are described in detail in \sectionref{rules in
+implementation} but the fields are covered in \sectionref{rule attributes}.
 
 The data saved from parsing the log files is also divided into two tables
 as described below: connections and results.  The connections table
@@ -221,12 +224,12 @@ with no access to the original log files.
 
 \label{rule attributes}
 
-Rules are discussed in detail in \sectionref{rules}, but the structure of
-the rules table is covered here.  Rules are created by the user, not the
-parser, and will not be modified by the parser (except for the hits and
-hits\_total fields).  Rules parse the individual log lines, extracting data
-to be saved in the connections and results tables, and specifying the
-action to take for that log line.
+Rules are discussed in detail in \sectionref{rules in implementation}, but
+the structure of the rules table is covered here.  Rules are created by the
+user, not the parser, and will not be modified by the parser (except for
+the hits and hits\_total fields).  Rules parse the individual log lines,
+extracting data to be saved in the connections and results tables, and
+specifying the action to take for that log line.
 
 The following attributes are defined for each rule:
 
@@ -248,7 +251,7 @@ The following attributes are defined for each rule:
 
     \item [postfix\_action] The action Postfix must have taken to generate
         this log line; the possible actions are described later in
-        \sectionref{list of postfix actions}.
+        \sectionref{list of postfix actions in implementation}.
 
     \item [program] The program (\daemon{smtpd}, \daemon{qmgr}, etc.) whose
         log lines the rule applies to.  This avoids needlessly trying rules
@@ -289,7 +292,8 @@ The following attributes are defined for each rule:
 
     \item [action] The action that will be invoked when this rule matches a
         log line; a full list of actions and the parameters they are
-        invoked with can be found in \sectionref{actions-in-detail}.
+        invoked with can be found in \sectionref{actions in detail in
+        implementation}.
 
     \item [hits] This counter is maintained for every rule and incremented
         each time the rule successfully matches.  At the start of each run
@@ -308,7 +312,7 @@ The following attributes are defined for each rule:
     \item [priority] This is the user-configurable companion to hits: when
         the list of rules is sorted, priority overrides hits.  This allows
         more specific rules to take precedence over more general rules
-        (described in \sectionref{overlapping rules}).
+        (described in \sectionref{overlapping rules in architecture}).
 
 %    \item [cluster\_group] A reference to the \texttt{cluster\_group}
 %        table.  That table is used by the Decision Tree algorithm
@@ -426,13 +430,13 @@ connection, and there may be many results per connection.
 
 \section{Rules}
 
-\label{rules}
+\label{rules in implementation}
 
 XXX NEED AN INTRODUCTION\@.
 
 \subsection{Example Rule}
 
-\label{example rule}
+\label{example rule in implementation}
 
 This example rule matches the message logged by Postfix when it rejects
 mail from a sender address because the domain in the sender address does
@@ -494,9 +498,10 @@ connections tables.
         warning will be issued.
 
     \item [action:] The action to be executed if the regex matches
-        successfully.  See \sectionref{actions-in-detail} for details of
-        the actions implemented by the parser, \sectionref{actions in
-        architecture} for the role of actions in the parser architecture.
+        successfully.  See \sectionref{actions in detail in implementation}
+        for details of the actions implemented by the parser,
+        \sectionref{actions in architecture} for the role of actions in the
+        parser architecture.
 
     \item [result\_data and connection\_data:] are used to provide XXX
 
@@ -515,7 +520,7 @@ connections tables.
 
 \subsection{Creating New Rules}
 
-\label{creating new rules}
+\label{creating new rules in implementation}
 
 The log files produced by Postfix differ from installation to installation,
 because administrators have the freedom to choose the subset of available
@@ -647,9 +652,15 @@ greatly reduce the effort required to parse new or different log lines.
 
 XXX INTRODUCTION\@.
 
+The actions do the work of reconstructing the journey a mail takes through
+Postfix.  Details of the actions available in the Postfix parser can be
+found in \sectionref{actions in detail in implementation}, and
+\sectionref{adding new actions in implementation} describes the process of
+adding new actions.
+
 \subsection{Actions in Detail}
 
-\label{actions-in-detail}
+\label{actions in detail in implementation}
 
 Each action is passed the same arguments:
 
@@ -818,7 +829,7 @@ action}{Distribution of rules per action}
 
 \subsection{Postfix Actions}
 
-\label{list of postfix actions}
+\label{list of postfix actions in implementation}
 
 XXX WHY DO I NEED HAVE postfix\_actions AT ALL\@?
 
@@ -903,7 +914,7 @@ XXX IF I KEEP THESE I NEED TO EXPLAIN WHY I HAVE THEM\@.
 
 \subsection{Adding New Actions}
 
-\label{adding new actions}
+\label{adding new actions in implementation}
 
 XXX HALF OF THIS CONTENT IS IN FOOTNOTES, WHICH SHOULD BE INLINED\@.
 
@@ -1807,7 +1818,7 @@ database and add the log line to it.
 
 \section{Limitations and Possible Improvements}
 
-\label{limitations-improvements}
+\label{limitations and improvements in implementation}
 
 Every piece of software suffers from some limitations and there is almost
 always room for improvement.  Below are the limitations and possible
