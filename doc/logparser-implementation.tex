@@ -672,9 +672,33 @@ of the actions available in the Postfix parser can be found in
 \sectionref{actions in detail in implementation}, and \sectionref{adding
 new actions in implementation} describes the process of adding new actions.
 
-\subsection{Actions in Detail}
+In the Postfix log parser developed for this project there are
+\numberOFactions{} actions and \numberOFrules{} rules, with an uneven
+distribution of rules to actions as shown in \graphref{Distribution of
+rules per action}.  Unsurprisingly, the action with the most associated
+rules is \texttt{DELIVERY\_REJECTED}, the action that handles Postfix
+rejecting a mail delivery attempt; it is followed by \texttt{SAVE\_DATA},
+the action responsible for handling informative log lines, supplementing
+the data gathered from other log lines.  The third most common action is,
+perhaps surprisingly, \texttt{UNINTERESTING}: this action does nothing when
+executed, allowing uninteresting log lines to be parsed without causing any
+effects (it does not imply that the input is ungrammatical or unparsed).
+Generally rules specifying the \texttt{UNINTERESTING} action parse log
+lines that are not associated with a specific mail, e.g.\ notices about
+configuration files changing.  The remaining actions have only one or two
+associated rules: some actions are required to address a deficiency in the
+log files, or a complication that arises during parsing;  other actions
+will only ever have one log line variant, e.g.\ all log lines showing that
+a remote client has connected are matched by a single rule and handled by
+the \texttt{CONNECT} action.
 
-\label{actions in detail in implementation}
+Using the \texttt{CONNECT} action as an example: it creates a new data
+structure in memory for the new client connection, saving the data
+extracted by the rule into it; this data will be entered into the database
+when the mail delivery attempt is complete.  If a data structure already
+exists for the new connection it is treated as a symptom of a bug, and the
+action issues a warning containing the full contents of the existing data
+structure, plus the log line that has just been parsed.
 
 Each action is passed the same arguments:
 
@@ -707,12 +731,16 @@ XXX IMPROVE HOW THIS LOOKS
 
 \end{eqlist}
 
-All data extracted by the rule will be automatically saved, regardless of
-the action which is invoked.
+
+\subsection{Actions in Detail}
+
+\label{actions in detail in implementation}
+
+Each action saves all data extracted by the rule's regex, if there is
+enough information in the log line to identify the correct connection to
+save the data to.
 
 XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.  
-
-The actions:
 
 \begin{description}
 
@@ -847,7 +875,11 @@ action}{Distribution of rules per action}
 
 XXX WHY DO I NEED HAVE postfix\_actions AT ALL\@?
 
-THERE IS NEARLY A 1--1 MAPPING BETWEEN action AND postfix\_action.
+SEE TABLE (PROBABLY ON NEXT PAGE): THERE IS NEARLY A 1--1 MAPPING BETWEEN
+action AND postfix\_action.  NEW ACTIONS COULD BE ADDED TO FORCE A 1--1
+MAPPING, E.G. COMMIT + DISCARDED COULD BECOME A DISCARD ACTION\@.
+MAIL\_QUEUED HAVING INFO AND PROCESSING CAN PROBABLY BE DEALT WITH, THE
+BIGGEST DIFFICULTY WILL BE WITH SAVE\_DATA\@.
 
 \begin{tabular}{lll}
 
