@@ -107,13 +107,13 @@ run_latex:
 	# next run, and on the third run will properly resolve \cite commands.
 	if grep -q "Warning: Citation .* on page .* undefined" "${DEST}.out"; then \
 		bibtex "${BASENAME}" || rm -f "${DEST}" "${BASENAME}.bbl"; \
-		touch build/ran_bibtex; \
+		echo "Undefined citation(s)" >> build/run-latex-again; \
 	fi
 	touch "${BASENAME}.cite.old"
 	grep '^\\citation' "${BASENAME}.aux" > "${BASENAME}.cite"
 	if ! cmp -s "${BASENAME}.cite.old" "${BASENAME}.cite"; then \
 		bibtex "${BASENAME}" || rm -f "${DEST}" "${BASENAME}.bbl"; \
-		touch build/ran_bibtex; \
+		echo "Citations have changed" >> build/run-latex-again; \
 	fi
 	cp "${BASENAME}.cite" "${BASENAME}.cite.old"
 	[ -f "${DEST}" ]
@@ -132,18 +132,13 @@ run_makeindex:
 	if ! cmp -s "${INPUT}" "${INPUT}.old"; then \
 		makeindex -s "${STYLE}" -t "${LOG}" -o "${OUTPUT}" "${INPUT}"; \
 		cp "${INPUT}" "${INPUT}.old"; \
-		touch build/ran_makeindex; \
+		echo "Updated ${INPUT}" >> build/run-latex-again; \
 	fi
 
 # build is a directory so it needs to be marked as PHONY.
 .PHONY: build
 build:
 	make build_loop
-	grep -i -E 'underfull|overfull' "${DEST}.out" || true
-	grep -A 1 "LaTeX Warning: " "${DEST}.out" || true
-	sed -n -e '/^Package .* Warning/,/^$$/p' "${DEST}.out"
-	grep ^Warning *.blg || true;
-	grep '!!' *.glg *.alg || true;
 	# Finally done.
 	make check
 
@@ -161,6 +156,11 @@ build_run:
 		set -- `echo "$$line" | sed -e 's/\\\\@newglossary{.\+}{\(.\+\)}{\(.\+\)}{\(.\+\)}/\1 \2 \3/'`; \
 		make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.$$1" OUTPUT="${BASENAME}.$$2" INPUT="${BASENAME}.$$3"; \
 	done
+	touch "${BASENAME}.toc.old"
+	if ! cmp -s "${BASENAME}.toc.old" "${BASENAME}.toc"; then \
+		echo "Table of contents updated" >> build/run-latex-again; \
+	fi
+	cp "${BASENAME}.toc" "${BASENAME}.toc.old"
 	# The next time latex is run it will include the new glossary and acronyms 
 	# if they've changed.
 
@@ -188,15 +188,11 @@ build_loop:
 	for i in $$( seq 1 3 ); do \
 		echo "iteration $$i starting"; \
 		make "${BASENAME}.bbl"; \
-		if [ -e build/ran_bibtex ]; then \
-			echo "ran_bibtex exists, running latex again"; \
+		if [ -e build/run-latex-again ]; then \
+			echo -n "run-latex-again exists, running latex again because: "; \
+			cat build/run-latex-again; \
+			rm -f build/run-latex-again; \
 			make build_run; \
-			rm -f build/ran_bibtex; \
-		fi; \
-		if [ -e build/ran_makeindex ]; then \
-			echo "ran_makeindex exists, running latex again"; \
-			make build_run; \
-			rm -f build/ran_makeindex; \
 		fi; \
 		if grep -q -f latex-warnings "${DEST}.out"; then \
 			echo "warnings found, running latex again"; \
@@ -419,7 +415,13 @@ veryclean: clean
 		build/logparser-flow-chart* build/Makefile.*	\
 		build/plot-* build/logparser*.tex
 
+.PHONY: check
 check:
+	make join-lines | grep -i -E 'underfull|overfull' || true
+	make join-lines | grep -i "LaTeX Warning: " || true
+	sed -n -e '/^Package .* Warning/,/^$$/p' *.log
+	grep ^Warning *.blg || true;
+	grep '!!' *.glg *.alg || true;
 	chktex -I0 -q *.tex
 	chktex -q --nowarn 1 --nowarn 15 --nowarn 17 --nowarn 6 *.bbl
 	ack -i 'it'\''s|\w'\''(?!s)\w' *.tex
@@ -464,11 +466,14 @@ xpdf: all
 spellcheck:
 	for file in *.tex; do aspell -t -c "$$file"; done
 
-log-files-lines:
+.PHONY: paragraphs-to-lines
+paragraphs-to-lines:
 	for file in logparser*.tex; do \
 		perl paragraphs-to-lines "$$file" > "build/$$file"; \
 	done
-	ACK_PAGER="$$PAGER" ack -i '(?<!log[- ])(lines|files)(?!\{)' build/logparser*.tex
+
+log-files-lines: paragraphs-to-lines
+	ACK_PAGER="$$PAGER" ack -i '(?<!log[- ])(lines|files)\b(?!\{)' build/logparser*.tex
 
 diction:
 	# Is -a a good option for untex?
