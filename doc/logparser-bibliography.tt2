@@ -1,0 +1,589 @@
+[%# vim: set filetype=tt2 : -%]
+[% bibliography = {
+    "postfix" = {
+        author  = "Wietse Venema",
+        url     = "http://www.postfix.org/",
+        title   = "Postfix Home Page",
+        year    = 2008,
+        journal = "Postfix documentation",
+        note    = "Last checked 2008/08/20",
+    },
+
+    "postfix-cleanup" = {
+        author  = "Wietse Venema",
+        url     = "http://www.postfix.org/cleanup.8.html",
+        title   = "cleanup --- canonicalize and enqueue Postfix message",
+        year    = 2008,
+        journal = "Postfix documentation",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "postfix-backscatter" = {
+        author  = "Wietse Venema",
+        url     = "http://www.postfix.org/BACKSCATTER_README.html",
+        title   = "Postfix Backscatter Howto",
+        year    = 2007,
+        journal = "Postfix documentation",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "postfix-lookup-tables" = {
+        author  = "Wietse Venema",
+        url     = "http://www.postfix.org/DATABASE_README.html",
+        title   = "Postfix Lookup Table Overview",
+        year    = 2008,
+        journal = "Postfix documentation",
+        note    = "Last checked 2008/05/29",
+    },
+            
+    "openspf" = {
+        author  = "The SPF Council",
+        url     = "http://www.openspf.org/",
+        title   = "SPF\\@: Project Overview",
+        year    = 2007,
+        journal = "SPF Website",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-joe-job" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Joe_job",
+        title   = "Joe job",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "greylisting" = {
+        author  = "Bjarne Lundgren",
+        url     = "http://www.greylisting.org/",
+        title   = "Greylisting",
+        year    = 2007,
+        journal = "Greylisting information",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "policyd-weight" = {
+        author  = "Robert Felber",
+        url     = "http://www.policyd-weight.org/",
+        title   = "policyd-weight --- A policy daemon for Postfix",
+        year    = 2006,
+        journal = "Policyd-weight website",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "policyd" = {
+        author  = "Cami",
+        url     = "http://www.policyd.org/",
+        title   = "Policy Daemon",
+        year    = 2006,
+        journal = "Policy Daemon documentation",
+        note    = "Last checked 2009/02/16",
+    },
+
+    "policy-servers" = {
+        author  = "Wietse Venema",
+        url     = "http://www.postfix.org/SMTPD_POLICY_README.html",
+        title   = "Postfix SMTP Access Policy Delegation",
+        year    = 2008,
+        journal = "Postfix documentation",
+        note    = "Last checked 2008/08/20",
+    },
+
+    "reject-unknown-sender-domain" = {
+        author  = "Wietse Venema",
+        url     = "http://www.postfix.org/postconf.5.html#reject_unknown_sender_domain",
+        title   = "Postfix Configuration Parameters",
+        year    = 2007,
+        journal = "Postfix documentation",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "smtpd_access_readme" = {
+        author  = "Wietse Venema",
+        url     = "http://www.postfix.org/SMTPD_ACCESS_README.html",
+        title   = "Postfix SMTP relay and access control",
+        year    = 2007,
+        journal = "Postfix documentation",
+        note    = "Last checked 2008/05/29",
+    },
+    "smtpd_per_user_control" = {
+        author  = "Wietse Venema",
+        url     = "http://www.postfix.org/RESTRICTION_CLASS_README.html",
+        title   = "Postfix Per-Client/User/etc. Access Control",
+        year    = 2007,
+        journal = "Postfix documentation",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "cidr_table" = {
+        author  = "Wietse Venema",
+        url     = "http://www.postfix.org/cidr_table.5.html",
+        title   = "cidr table --- format of Postfix CIDR tables",
+        year    = 2007,
+        journal = "Postfix documentation",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "rfc760" = {
+        author  = "Jonathan B. Postel",
+        url     = "http://www.faqs.org/rfcs/rfc760.html",
+        title   = "RFC 760 --- DOD Standard Internet Protocol",
+        year    = 1980,
+        journal = "The Internet Society Requests for Comment",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "RFC2821" = {
+        author  = "John C. Klensin",
+        url     = "http://www.faqs.org/rfcs/rfc2821.html",
+        title   = "RFC 2821 --- Simple Mail Transfer Protocol",
+        year    = 2001,
+        journal = "The Internet Society Requests for Comment",
+        note    = "Last checked 2008/08/20",
+    },
+
+    "RFC821" = {
+        author  = "Jonathan B. Postel",
+        url     = "http://www.faqs.org/rfcs/rfc821.html",
+        title   = "RFC 821 --- Simple Mail Transfer Protocol",
+        year    = 1982,
+        journal = "The Internet Society Requests for Comment",
+        note    = "Last checked 2008/08/20",
+    },
+
+    "RFC1869" = {
+        author  = "John Klensin and Ned Freed and Marshall T. Rose and Einar A. Stefferud and Dave Crocker",
+        url     = "http://www.faqs.org/rfcs/rfc1869.html",
+        title   = "RFC 1869 --- SMTP Service Extensions",
+        year    = 1995,
+        journal = "The Internet Society Requests for Comment",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "log-mail-analyser" = {
+        author  = "Maurizio Aiello and David Avanzini and Davide Chiarella and
+            Gianluca Papaleo",
+        url     = "http://www.terena.nl/events/tnc2006/core/getfile.php?file_id=770",
+        title   = "Log Mail Analyzer: Architecture and Practical Utilizations",
+        year    = 2006,
+        journal = "Trans-European Research and Education Networking Association",
+        note    = "Last checked 2008/08/20",
+    },
+
+    "smtp-intro-01" = {
+        author  = "Chris Siebenmann",
+        url     = "http://cns.utoronto.ca/usg/technotes/smtp-intro.html",
+        title   = " A quick overview of SMTP\\@",
+        year    = 2003,
+        journal = "University of Toronto Computing and Network Services: Unix Systems Group",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "smtp-intro-02" = {
+        author  = "Philip S Tellis",
+        url     = "http://db.glug-bom.org/lug-authors/philip/docs/mail-stuff/smtp-intro.html",
+        title   = "Introduction to SMTP\\@",
+        year    = 2000,
+        journal = "Indian GNU/Linux Users Group of Mumbai",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "lmtp-rfc" = {
+        author  = "J. Myers",
+        url     = "http://tools.ietf.org/html/rfc2033",
+        title   = "Local Mail Transfer Protocol",
+        year    = 1996,
+        journal = "The Internet Society Requests for Comment",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-phishing" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Phishing",
+        title   = "Phishing",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-sql" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/SQL",
+        title   = "SQL\\@",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-regex" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Regular_expression",
+        title   = "Regular expressions",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "sqlite-features" = {
+        author  = "D. Richard Hipp",
+        url     = "http://www.sqlite.org/different.html",
+        title   = "Distinctive features of SQLite",
+        year    = 2006,
+        journal = "SQLite Documentation",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "perlre" = {
+        author  = "Perl 5 Porters",
+        url     = "http://perldoc.perl.org/perlre.html",
+        title   = "perlre",
+        year    = 2006,
+        journal = "Perl 5 Documentation",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "perl-storable" = {
+        author  = "Abhijit Menon-Sen",
+        url     = "http://search.cpan.org/author/AMS/Storable-2.18/Storable.pm",
+        title   = "Storable --- persistence for Perl data structures",
+        year    = 2007,
+        journal = "Perl 5 Module Documentation",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "unix-philosophy" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Unix_philosophy",
+        title   = "Unix philosophy",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "postfix-overview" = {
+        author  = "Wietse Venema",
+        url     = "http://www.postfix.org/OVERVIEW.html",
+        title   = "Postfix Architecture Overview",
+        year    = 2007,
+        journal = "Postfix documentation",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "powerlaw" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Power_law",
+        title   = "Power law",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "a-plan-for-spam" = {
+        author  = "Paul Graham",
+        title   = "A plan for spam",
+        year    = 2004,
+        journal = "Hackers \\& Painters",
+        note    = "ISBN-10: 0--596--00662--4",
+        pages   = "121-129",
+        publisher   = "O'Reilly \\& Associates, Inc.",
+        address     = "Sebastopol, CA, USA",
+    },
+
+    "Wikipedia-html" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/HTML",
+        title   = "HTML\\@",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-halting-problem" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Halting_problem",
+        title   = "Halting problem",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-church-turing-thesis" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Church%E2%80%93Turing_thesis",
+        title   = "Church–Turing thesis",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "bayesian-filtering" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Bayesian_spam_filtering",
+        title   = "Bayesian spam filtering",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-ip" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Internet_Protocol",
+        title   = "Internet Protocol",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-ip-address" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/IP_address",
+        title   = "IP address",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-ipv4" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Ipv4",
+        title   = "IPv4",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-ipv6" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Ipv6",
+        title   = "IPv6",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-object-orientation" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Object-oriented_programming",
+        title   = "Object-oriented programming",
+        year    = 2008,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-Emergence" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Emergence",
+        title   = "Emergence",
+        year    = 2008,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-unix-signals" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Signal_%28computing%29",
+        title   = "Signal",
+        year    = 2007,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "risto-vaarandi" = {
+        author  = "Risto Vaarandi",
+        url     = "http://kodu.neti.ee/~risto/",
+        title   = "Risto Vaarandi",
+        year    = 2007,
+        journal = "Risto Vaarandi's Website",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "slct-paper" = {
+        title   = "A data clustering algorithm for mining patterns from event logs", 
+        author  = "Vaarandi, R.", 
+        journal = "IP Operations and Management, 2003. (IPOM 2003). 3rd IEEE Workshop on", 
+        year    = "2003", 
+        month   = "Oct.", 
+        volume  = {}, 
+        number  = {}, 
+        pages   = "119--126", 
+        url     = "http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=1251233",
+        note    = "Last checked 2008/08/20",
+    },
+
+    "hash-functions" = {
+        author  = "M. V. Ramakrishna and Justin Zobel",
+        url     = "http://www.cs.rmit.edu.au/~jz/fulltext/dasfaa97.ps",
+        title   = "Performance in Practice of String Hashing Functions",
+        year    = 1997,
+        journal = "Proceedings of the 5th International Conference on Database Systems for Advanced Applications",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "sqlite-guis" = {
+        author  = "Anonymous",
+        url     = "http://www.sqlite.org/cvstrac/wiki?p=ManagementTools",
+        title   = "sqlite --- Management Tools",
+        year    = 2007,
+        journal = "SQLite Website",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "atns" = {
+        author  = "W. A. Woods",
+        url     = "http://portal.acm.org/citation.cfm?id=362773",
+        title   = "Transition network grammars for natural language analysis",
+        journal = "Commun. ACM",
+        volume  = "13",
+        number  = "10",
+        year    = "1970",
+        issn    = "0001--0782",
+        pages   = "591--606",
+        publisher = "ACM",
+        note    = "Last checked 2008/08/20",
+    },
+
+    "nlpip" = {
+        author  = "Gerald Gazdar and Chris Mellish",
+        title   = "Natural Language Processing in Prolog",
+        year    = "1989",
+        journal = "An Introduction to Computational Linguistics",
+        publisher = "Addison Wesley",
+        pages   = "63--98",
+        note    = "ISBN-10: 0201180537",
+    },
+
+    "Wikipedia-nlp" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/Natural_language_processing",
+        title   = "Natural language processing",
+        year    = 2008,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "Wikipedia-DNSBL" = {
+        author  = "Wikipedia",
+        url     = "http://en.wikipedia.org/wiki/DNSBL",
+        title   = "DNSBL\\@",
+        year    = 2008,
+        journal = "Wikipedia, the free encyclopedia",
+        note    = "Last checked 2008/05/29",
+    },
+
+    "stepwise-refinement" = {
+        author    = "Niklaus Wirth",
+        title     = "Program development by stepwise refinement",
+        journal   = "Commun. ACM",
+        volume    = "14",
+        number    = "4",
+        year      = "1971",
+        issn      = "0001--0782",
+        pages     = "221--227",
+        doi       = "10.1145/362575.362577",
+        publisher = "ACM",
+        address   = "New York, NY, USA",
+        url       = "http://portal.acm.org/citation.cfm?doid=362575.362577",
+        note      = "Last checked 2008/08/20",
+    },
+
+    "cascaded-parsing" = {
+        author    = "Steven Abney",
+        title     = "Partial parsing via finite-state cascades",
+        journal   = "Nat. Lang. Eng.",
+        volume    = "2",
+        number    = "4",
+        year      = "1996",
+        issn      = "1351--3249",
+        pages     = "337--344",
+        doi       = "10.1017/S1351324997001599",
+        publisher = "Cambridge University Press",
+        address   = "New York, NY, USA",
+        url       = "http://portal.acm.org/citation.cfm?coll=GUIDE&dl=GUIDE&id=974705",
+        note      = "Last checked 2008/08/20",
+    },
+
+    "word-stemming" = {
+        author  = "Shabbir Ahmed and Farzana Mithun",
+        url     = "http://www.ceas.cc/papers-2004/167.pdf",
+        title   = "Word Stemming to Enhance Spam Filtering",
+        year    = 2004,
+        journal = "First Conference on Email and Anti-Spam CEAS 2004",
+        note    = "Last checked 2008/08/20",
+    },
+
+    "relaxed-online-svms" = {
+        author  = "D. Sculley and Gabriel M. Wachman",
+        url     = "http://trec.nist.gov/pubs/trec16/papers/tuftsu.spam.final.pdf",
+        title   = "Relaxed Online SVMs in the TREC Spam Filtering Track",
+        year    = 2007,
+        journal = "Text REtrieval Conference (TREC)",
+        note    = "Last checked 2008/08/20",
+    },
+
+    "black-box-error-reporting" = {
+        author      = "Jungwoo Ha and Christopher J. Rossbach and Jason V. Davis and Indrajit Roy and Hany E. Ramadan and Donald E. Porter and David L. Chen and Emmett Witchel",
+        title       = "Improved error reporting for software that uses black-box components",
+        journal     = "SIGPLAN Not.",
+        volume      = "42",
+        number      = "6",
+        year        = "2007",
+        issn        = "0362--1340",
+        pages       = "101--111",
+        doi         = "10.1145/1273442.1250747",
+        publisher   = "ACM",
+        address     = "New York, NY, USA",
+        url         = "http://portal.acm.org/citation.cfm?id=1250747",
+        note        = "Last checked 2008/08/20",
+    },
+
+    "instance-based-learning" = {
+        author      = "David W. Aha and Dennis Kibler and Marc K. Albert",
+        title       = "Instance-Based Learning Algorithms",
+        journal     = "Mach. Learn.",
+        volume      = "6",
+        number      = "1",
+        year        = "1991",
+        issn        = "0885--6125",
+        pages       = "37--66",
+        doi         = "10.1023/A:1022689900470",
+        publisher   = "Kluwer Academic Publishers",
+        address     = "Hingham, MA, USA",
+        url         = "http://portal.acm.org/citation.cfm?id=104717",
+        note        = "Last checked 2008/07/29",
+    },
+
+    "mastering-regular-expressions" = {
+        author      = "Jeffrey E. F. Friedl",
+        journal     = "Mastering regular expressions",
+        year        = "2006",
+        note        = "ISBN-10: 0596528124",
+        publisher   = "O'Reilly \\& Associates, Inc.",
+        address     = "Sebastopol, CA, USA",
+        title       = "Crafting an Efficient Expression",
+        pages       = "185--222",
+    },
+
+    "intersection-of-NFA-using-Z" = {
+        author  = "Nazir Ahmad Zafar and Nabeel Sabir and Amir Ali",
+        Xurl     = "http://www.waset.org/pwaset/v30/v30-101.pdf",
+        title   = "Construction of Intersection of Nondeterministic Finite Automata using Z Notation",
+        year    = 2008,
+        journal = "Proceedings of World Academy of Science, Engineering and Technology",
+        Xnote    = "Last checked 2008/08/16",
+        volume  = 30,
+        issn    = "1307--6884",
+        pages   = "591--596",
+    },
+
+    "lex-and-yacc-book" = {
+        author      = "John Levine and Tony Mason and Doug Brown",
+        title       = "lex \\& yacc",
+        year        = "1992",
+        note        = "ISBN-10: 1--56592--000--7",
+        publisher   = "O'Reilly \\& Associates, Inc.",
+        address     = "Sebastopol, CA, USA",
+    },
+}
+
+-%]

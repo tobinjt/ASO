@@ -6,7 +6,7 @@ MAKEFLAGS += --no-print-directory
 all: logparser.pdf
 
 logparser.pdf: logparser.deps logparser.pdf.deps logparser-*.tex \
-		logparser-bibliography.bib logparser-bibliography-style.bst
+		logparser-bibliography.tt2 bibtex.tt2
 
 %.pdf: %.tex
 	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@" BASENAME=$$( basename "$<" .tex )
@@ -93,9 +93,19 @@ logparser.ps: logparser.dvi
 sgai-2008.ps: sgai-2008.dvi
 	dvips -o "$@" "$<"
 
-%.bbl: %-bibliography.bib
-	bibtex $$( basename "$@" .bbl )
-	touch build/ran_bibtex
+logparser.bbl: bibtex.tt2 logparser-bibliography.tt2 citations.tt2 
+	tpage --debug=3 bibtex.tt2 > logparser.bbl
+	echo "Ran bibtex.tt2" >> build/run-latex-again
+
+.PRECIOUS: citations.tt2
+.PHONY: citations.tt2
+citations.tt2:
+	perl -w -Mstrict -E 'my @citations; while (<>) { if (m/^\\citation\{(.*)\}/) { push @citations, split /,/, $$1; }} my %seen; map { $$seen{$$_}++; } @citations; my $$citations = join q{, }, map { qq{"$$_"}; } keys %seen; say qq{[% citations = [ }, $$citations, q{ ] -%]};' *.aux > "$@.new"
+	if ! cmp -s "$@" "$@.new"; then \
+		mv -f "$@.new" "$@"; \
+	else \
+		rm -f "$@.new"; \
+	fi
 
 %.dvi: %.tex
 	make build PROGRAM="latex"    SOURCE="$<" DEST="$@" BASENAME=$$( basename "$<" .tex )
@@ -105,15 +115,21 @@ run_latex:
 	[ -f "${DEST}" ]
 	# Run bibtex if necessary; latex will pick up the new information on the
 	# next run, and on the third run will properly resolve \cite commands.
-	if grep -q "Warning: Citation .* on page .* undefined" "${DEST}.out"; then \
-		bibtex "${BASENAME}" || rm -f "${DEST}" "${BASENAME}.bbl"; \
-		echo "Undefined citation(s)" >> build/run-latex-again; \
-	fi
 	touch "${BASENAME}.cite.old"
 	grep '^\\citation' "${BASENAME}.aux" > "${BASENAME}.cite"
+	rm -f build/run-bibtex
+	set -e; \
+	if grep -q "Warning: Citation .* on page .* undefined" "${BASENAME}.log"; then \
+		echo "Undefined citations" >> build/run-bibtex; \
+	fi; \
 	if ! cmp -s "${BASENAME}.cite.old" "${BASENAME}.cite"; then \
-		bibtex "${BASENAME}" || rm -f "${DEST}" "${BASENAME}.bbl"; \
-		echo "Citations have changed" >> build/run-latex-again; \
+		echo "Citations have changed" >> build/run-bibtex; \
+	fi; \
+	if [ -e build/run-bibtex ]; then \
+		echo "Running bibtex because:"; \
+		cat build/run-bibtex; \
+		rm -f "${BASENAME}.bbl"; \
+		make "${BASENAME}.bbl"; \
 	fi
 	cp "${BASENAME}.cite" "${BASENAME}.cite.old"
 	[ -f "${DEST}" ]
@@ -181,21 +197,20 @@ build_loop:
 	# Other reasons to run it:
 	# 5 table lengths in the acronym/glossary pages may have changed
 	# 6 hyperref may need to add stuff (not sure what)
-	# So this loop runs three times, and may need to run more times in future
+	# So this loop runs four times, and may need to run more times in future
 	# (e.g. if I added an index).
 	make build_run
+	make "${BASENAME}.bbl"
 	set -e; \
-	for i in $$( seq 1 3 ); do \
+	for i in $$( seq 1 4 ); do \
 		echo "iteration $$i starting"; \
-		make "${BASENAME}.bbl"; \
+		if grep -q -f latex-warnings "${BASENAME}.log"; then \
+			echo "warnings found" >> build/run-latex-again; \
+		fi; \
 		if [ -e build/run-latex-again ]; then \
 			echo -n "run-latex-again exists, running latex again because: "; \
 			cat build/run-latex-again; \
 			rm -f build/run-latex-again; \
-			make build_run; \
-		fi; \
-		if grep -q -f latex-warnings "${DEST}.out"; then \
-			echo "warnings found, running latex again"; \
 			make build_run; \
 		fi; \
 	done
@@ -407,7 +422,8 @@ build/include-sample-sql-query.tex: generate-sample-sql-output.sql
 clean:
 	rm -f	*.acn *.acr *.alg *.aux *.bbl *.blg *.cbk *.cit *.deps *.dvi \
 		*.glg *.glo *.gls *.idx *.ist *.lof *.log *.lot *.old *.out \
-		*.pdf *.ps *.toc *.cite *.pin *.plg *.pout *.nav *.snm
+		*.pdf *.ps *.toc *.cite *.pin *.plg *.pout *.nav *.snm \
+		citations.tt2
 
 realclean: veryclean
 veryclean: clean
@@ -418,7 +434,7 @@ veryclean: clean
 .PHONY: check
 check:
 	# Edit the log file to remove stuff I don't want to see.
-	sed -i -e '/.\/.*.bbl$$/,$$s/^Underfull.*//' *.log
+	# sed -i -e '/.\/.*.bbl$$/,$$s/^Underfull.*//' *.log
 	make join-lines | grep -i -E 'underfull|overfull' || true
 	make join-lines | grep -i "LaTeX Warning: " || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' *.log
