@@ -26,8 +26,7 @@
     [% END -%]
     \bibitem{[% entry.citation_name %]}
     [% entry.title %].
-    [%# XXX IMPROVE AUTHOR FORMATTING -%]
-    [% entry.author %].
+    [% entry.author.split(" and ").join(", ") %].
     [% IF entry.exists("journal") -%]
         \emph{[% entry.journal %]}
         [%# Assume that if volume exists, the other attributes do too. -%]
