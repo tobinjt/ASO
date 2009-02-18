@@ -6,7 +6,7 @@
         title   = "Postfix Home Page",
         year    = 2008,
         journal = "Postfix documentation",
-        note    = "Last checked 2008/08/20",
+        checked  = "2008/08/20",
     },
 
     "postfix-cleanup" = {
@@ -15,7 +15,7 @@
         title   = "cleanup --- canonicalize and enqueue Postfix message",
         year    = 2008,
         journal = "Postfix documentation",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "postfix-backscatter" = {
@@ -24,7 +24,7 @@
         title   = "Postfix Backscatter Howto",
         year    = 2007,
         journal = "Postfix documentation",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "postfix-lookup-tables" = {
@@ -33,7 +33,7 @@
         title   = "Postfix Lookup Table Overview",
         year    = 2008,
         journal = "Postfix documentation",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
             
     "openspf" = {
@@ -42,7 +42,7 @@
         title   = "SPF\\@: Project Overview",
         year    = 2007,
         journal = "SPF Website",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-joe-job" = {
@@ -51,7 +51,7 @@
         title   = "Joe job",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "greylisting" = {
@@ -60,7 +60,7 @@
         title   = "Greylisting",
         year    = 2007,
         journal = "Greylisting information",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "policyd-weight" = {
@@ -69,7 +69,7 @@
         title   = "policyd-weight --- A policy daemon for Postfix",
         year    = 2006,
         journal = "Policyd-weight website",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "policyd" = {
@@ -78,7 +78,7 @@
         title   = "Policy Daemon",
         year    = 2006,
         journal = "Policy Daemon documentation",
-        note    = "Last checked 2009/02/16",
+        checked  = "2009/02/16",
     },
 
     "policy-servers" = {
@@ -87,7 +87,7 @@
         title   = "Postfix SMTP Access Policy Delegation",
         year    = 2008,
         journal = "Postfix documentation",
-        note    = "Last checked 2008/08/20",
+        checked  = "2008/08/20",
     },
 
     "reject-unknown-sender-domain" = {
@@ -96,7 +96,7 @@
         title   = "Postfix Configuration Parameters",
         year    = 2007,
         journal = "Postfix documentation",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "smtpd_access_readme" = {
@@ -105,7 +105,7 @@
         title   = "Postfix SMTP relay and access control",
         year    = 2007,
         journal = "Postfix documentation",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
     "smtpd_per_user_control" = {
         author  = "Wietse Venema",
@@ -113,7 +113,7 @@
         title   = "Postfix Per-Client/User/etc. Access Control",
         year    = 2007,
         journal = "Postfix documentation",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "cidr_table" = {
@@ -122,7 +122,7 @@
         title   = "cidr table --- format of Postfix CIDR tables",
         year    = 2007,
         journal = "Postfix documentation",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "rfc760" = {
@@ -131,7 +131,7 @@
         title   = "RFC 760 --- DOD Standard Internet Protocol",
         year    = 1980,
         journal = "The Internet Society Requests for Comment",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "RFC2821" = {
@@ -140,7 +140,7 @@
         title   = "RFC 2821 --- Simple Mail Transfer Protocol",
         year    = 2001,
         journal = "The Internet Society Requests for Comment",
-        note    = "Last checked 2008/08/20",
+        checked  = "2008/08/20",
     },
 
     "RFC821" = {
@@ -149,7 +149,7 @@
         title   = "RFC 821 --- Simple Mail Transfer Protocol",
         year    = 1982,
         journal = "The Internet Society Requests for Comment",
-        note    = "Last checked 2008/08/20",
+        checked  = "2008/08/20",
     },
 
     "RFC1869" = {
@@ -158,17 +158,16 @@
         title   = "RFC 1869 --- SMTP Service Extensions",
         year    = 1995,
         journal = "The Internet Society Requests for Comment",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "log-mail-analyser" = {
-        author  = "Maurizio Aiello and David Avanzini and Davide Chiarella and
-            Gianluca Papaleo",
+        author  = "Maurizio Aiello and David Avanzini and Davide Chiarella and Gianluca Papaleo",
         url     = "http://www.terena.nl/events/tnc2006/core/getfile.php?file_id=770",
         title   = "Log Mail Analyzer: Architecture and Practical Utilizations",
         year    = 2006,
         journal = "Trans-European Research and Education Networking Association",
-        note    = "Last checked 2008/08/20",
+        checked  = "2008/08/20",
     },
 
     "smtp-intro-01" = {
@@ -177,7 +176,7 @@
         title   = " A quick overview of SMTP\\@",
         year    = 2003,
         journal = "University of Toronto Computing and Network Services: Unix Systems Group",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "smtp-intro-02" = {
@@ -186,7 +185,7 @@
         title   = "Introduction to SMTP\\@",
         year    = 2000,
         journal = "Indian GNU/Linux Users Group of Mumbai",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "lmtp-rfc" = {
@@ -195,7 +194,7 @@
         title   = "Local Mail Transfer Protocol",
         year    = 1996,
         journal = "The Internet Society Requests for Comment",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-phishing" = {
@@ -204,7 +203,7 @@
         title   = "Phishing",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-sql" = {
@@ -213,7 +212,7 @@
         title   = "SQL\\@",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-regex" = {
@@ -222,7 +221,7 @@
         title   = "Regular expressions",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "sqlite-features" = {
@@ -231,7 +230,7 @@
         title   = "Distinctive features of SQLite",
         year    = 2006,
         journal = "SQLite Documentation",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "perlre" = {
@@ -240,7 +239,7 @@
         title   = "perlre",
         year    = 2006,
         journal = "Perl 5 Documentation",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "perl-storable" = {
@@ -249,7 +248,7 @@
         title   = "Storable --- persistence for Perl data structures",
         year    = 2007,
         journal = "Perl 5 Module Documentation",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "unix-philosophy" = {
@@ -258,7 +257,7 @@
         title   = "Unix philosophy",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "postfix-overview" = {
@@ -267,7 +266,7 @@
         title   = "Postfix Architecture Overview",
         year    = 2007,
         journal = "Postfix documentation",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "powerlaw" = {
@@ -276,7 +275,7 @@
         title   = "Power law",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "a-plan-for-spam" = {
@@ -287,7 +286,7 @@
         note    = "ISBN-10: 0--596--00662--4",
         pages   = "121-129",
         publisher   = "O'Reilly \\& Associates, Inc.",
-        address     = "Sebastopol, CA, USA",
+        address     = "Sebastopol, CA, USA\\@",
     },
 
     "Wikipedia-html" = {
@@ -296,7 +295,7 @@
         title   = "HTML\\@",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-halting-problem" = {
@@ -305,7 +304,7 @@
         title   = "Halting problem",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-church-turing-thesis" = {
@@ -314,7 +313,7 @@
         title   = "Church–Turing thesis",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "bayesian-filtering" = {
@@ -323,7 +322,7 @@
         title   = "Bayesian spam filtering",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-ip" = {
@@ -332,7 +331,7 @@
         title   = "Internet Protocol",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-ip-address" = {
@@ -341,7 +340,7 @@
         title   = "IP address",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-ipv4" = {
@@ -350,7 +349,7 @@
         title   = "IPv4",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-ipv6" = {
@@ -359,7 +358,7 @@
         title   = "IPv6",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-object-orientation" = {
@@ -368,7 +367,7 @@
         title   = "Object-oriented programming",
         year    = 2008,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-Emergence" = {
@@ -377,7 +376,7 @@
         title   = "Emergence",
         year    = 2008,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-unix-signals" = {
@@ -386,7 +385,7 @@
         title   = "Signal",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "risto-vaarandi" = {
@@ -395,20 +394,16 @@
         title   = "Risto Vaarandi",
         year    = 2007,
         journal = "Risto Vaarandi's Website",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "slct-paper" = {
         title   = "A data clustering algorithm for mining patterns from event logs", 
         author  = "Vaarandi, R.", 
-        journal = "IP Operations and Management, 2003. (IPOM 2003). 3rd IEEE Workshop on", 
+        journal = "3rd IEEE Workshop on IP Operations and Management, 2003", 
         year    = "2003", 
-        month   = "Oct.", 
-        volume  = {}, 
-        number  = {}, 
-        pages   = "119--126", 
         url     = "http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=1251233",
-        note    = "Last checked 2008/08/20",
+        checked  = "2008/08/20",
     },
 
     "hash-functions" = {
@@ -417,7 +412,7 @@
         title   = "Performance in Practice of String Hashing Functions",
         year    = 1997,
         journal = "Proceedings of the 5th International Conference on Database Systems for Advanced Applications",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "sqlite-guis" = {
@@ -426,7 +421,7 @@
         title   = "sqlite --- Management Tools",
         year    = 2007,
         journal = "SQLite Website",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "atns" = {
@@ -437,10 +432,9 @@
         volume  = "13",
         number  = "10",
         year    = "1970",
-        issn    = "0001--0782",
+        note    = "ISSN 0001--0782",
         pages   = "591--606",
-        publisher = "ACM",
-        note    = "Last checked 2008/08/20",
+        checked  = "2008/08/20",
     },
 
     "nlpip" = {
@@ -449,6 +443,7 @@
         year    = "1989",
         journal = "An Introduction to Computational Linguistics",
         publisher = "Addison Wesley",
+        address = "address unknown",
         pages   = "63--98",
         note    = "ISBN-10: 0201180537",
     },
@@ -459,7 +454,7 @@
         title   = "Natural language processing",
         year    = 2008,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "Wikipedia-DNSBL" = {
@@ -468,7 +463,7 @@
         title   = "DNSBL\\@",
         year    = 2008,
         journal = "Wikipedia, the free encyclopedia",
-        note    = "Last checked 2008/05/29",
+        checked  = "2008/05/29",
     },
 
     "stepwise-refinement" = {
@@ -478,13 +473,13 @@
         volume    = "14",
         number    = "4",
         year      = "1971",
-        issn      = "0001--0782",
+        note      = "ISSN 0001--0782",
         pages     = "221--227",
         doi       = "10.1145/362575.362577",
         publisher = "ACM",
-        address   = "New York, NY, USA",
+        address   = "New York, NY, USA\\@",
         url       = "http://portal.acm.org/citation.cfm?doid=362575.362577",
-        note      = "Last checked 2008/08/20",
+        checked    = "2008/08/20",
     },
 
     "cascaded-parsing" = {
@@ -494,13 +489,13 @@
         volume    = "2",
         number    = "4",
         year      = "1996",
-        issn      = "1351--3249",
+        note      = "ISSN 1351--3249",
         pages     = "337--344",
         doi       = "10.1017/S1351324997001599",
         publisher = "Cambridge University Press",
-        address   = "New York, NY, USA",
+        address   = "New York, NY, USA\\@",
         url       = "http://portal.acm.org/citation.cfm?coll=GUIDE&dl=GUIDE&id=974705",
-        note      = "Last checked 2008/08/20",
+        checked    = "2008/08/20",
     },
 
     "word-stemming" = {
@@ -509,7 +504,7 @@
         title   = "Word Stemming to Enhance Spam Filtering",
         year    = 2004,
         journal = "First Conference on Email and Anti-Spam CEAS 2004",
-        note    = "Last checked 2008/08/20",
+        checked  = "2008/08/20",
     },
 
     "relaxed-online-svms" = {
@@ -518,7 +513,7 @@
         title   = "Relaxed Online SVMs in the TREC Spam Filtering Track",
         year    = 2007,
         journal = "Text REtrieval Conference (TREC)",
-        note    = "Last checked 2008/08/20",
+        checked  = "2008/08/20",
     },
 
     "black-box-error-reporting" = {
@@ -528,13 +523,13 @@
         volume      = "42",
         number      = "6",
         year        = "2007",
-        issn        = "0362--1340",
+        note        = "ISSN 0362--1340",
         pages       = "101--111",
         doi         = "10.1145/1273442.1250747",
         publisher   = "ACM",
-        address     = "New York, NY, USA",
+        address     = "New York, NY, USA\\@",
         url         = "http://portal.acm.org/citation.cfm?id=1250747",
-        note        = "Last checked 2008/08/20",
+        checked      = "2008/08/20",
     },
 
     "instance-based-learning" = {
@@ -544,13 +539,13 @@
         volume      = "6",
         number      = "1",
         year        = "1991",
-        issn        = "0885--6125",
+        note        = "ISSN 0885--6125",
         pages       = "37--66",
         doi         = "10.1023/A:1022689900470",
         publisher   = "Kluwer Academic Publishers",
-        address     = "Hingham, MA, USA",
+        address     = "Hingham, MA, USA\\@",
         url         = "http://portal.acm.org/citation.cfm?id=104717",
-        note        = "Last checked 2008/07/29",
+        checked      = "2008/07/29",
     },
 
     "mastering-regular-expressions" = {
@@ -559,20 +554,20 @@
         year        = "2006",
         note        = "ISBN-10: 0596528124",
         publisher   = "O'Reilly \\& Associates, Inc.",
-        address     = "Sebastopol, CA, USA",
+        address     = "Sebastopol, CA, USA\\@",
         title       = "Crafting an Efficient Expression",
         pages       = "185--222",
     },
 
     "intersection-of-NFA-using-Z" = {
         author  = "Nazir Ahmad Zafar and Nabeel Sabir and Amir Ali",
-        Xurl     = "http://www.waset.org/pwaset/v30/v30-101.pdf",
+        url     = "http://www.waset.org/pwaset/v30/v30-101.pdf",
         title   = "Construction of Intersection of Nondeterministic Finite Automata using Z Notation",
         year    = 2008,
         journal = "Proceedings of World Academy of Science, Engineering and Technology",
-        Xnote    = "Last checked 2008/08/16",
+        checked  = "2008/08/16",
         volume  = 30,
-        issn    = "1307--6884",
+        note    = "ISSN 1307--6884",
         pages   = "591--596",
     },
 
@@ -582,7 +577,7 @@
         year        = "1992",
         note        = "ISBN-10: 1--56592--000--7",
         publisher   = "O'Reilly \\& Associates, Inc.",
-        address     = "Sebastopol, CA, USA",
+        address     = "Sebastopol, CA, USA\\@",
     },
 }
 

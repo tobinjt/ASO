@@ -17,20 +17,37 @@
 [% PROCESS "logparser-bibliography.tt2" -%]
 [% PROCESS "citations.tt2" -%]
 [% FOREACH citation IN citations -%]
-\bibitem{[% citation %]}
-[% bibliography.$citation.author %].
-[% bibliography.$citation.title %].
-[% IF bibliography.$citation.exists("journal") -%]
-\emph{[% bibliography.$citation.journal %]} ([% bibliography.$citation.year %]).\newline{}
-[% ELSE -%]
-No journal for [% citation %]
-[% END -%]
-[% IF bibliography.$citation.exists("url") -%]
-\url{[% bibliography.$citation.url %]} \hfill{} \newline{}
-[% ELSE -%]
-No url for [% citation %]
-[% END -%]
-[% bibliography.$citation.note %].
+    \bibitem{[% citation %]}
+    [%# XXX IMPROVE AUTHOR FORMATTING -%]
+    [% bibliography.$citation.author %].
+    [% bibliography.$citation.title %].
+    [%# XXX USE THE OTHER ATTRIBUTES TOO -%]
+    [% IF bibliography.$citation.exists("journal") -%]
+        \emph{[% bibliography.$citation.journal %]}
+        [%# Assume that if volume exists, the other attributes do too. -%]
+        [% IF bibliography.$citation.exists("volume") -%]
+            [% bibliography.$citation.volume %]([% bibliography.$citation.number %])
+            pages [% bibliography.$citation.pages -%],
+        [% END -%]
+        ([% bibliography.$citation.year %]).
+    [% END -%]
+    [% IF bibliography.$citation.exists("publisher") -%]
+        [% bibliography.$citation.publisher -%], [% bibliography.$citation.address -%].
+    [% END -%]
+    [% IF bibliography.$citation.exists("note") -%]
+        [% bibliography.$citation.note %].
+    [% END -%]
+    [% IF bibliography.$citation.exists("doi")
+        or bibliography.$citation.exists("url") -%]
+        \newline{}
+    [% END -%]
+    [% IF bibliography.$citation.exists("doi") -%]
+        DOI\@: [% bibliography.$citation.doi %] \hfill{} \newline{}
+    [% END -%]
+    [% IF bibliography.$citation.exists("url") -%]
+        \url{[% bibliography.$citation.url %]} \hfill{} \newline{}
+        Last checked [% bibliography.$citation.checked %].
+    [% END -%]
 
 [% END -%]
 
