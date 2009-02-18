@@ -100,7 +100,7 @@ logparser.bbl: bibtex.tt2 logparser-bibliography.tt2 citations.tt2
 .PRECIOUS: citations.tt2
 .PHONY: citations.tt2
 citations.tt2:
-	perl -w -Mstrict -E 'my @citations; while (<>) { if (m/^\\citation\{(.*)\}/) { push @citations, split /,/, $$1; }} my %seen; map { $$seen{$$_}++; } @citations; my $$citations = join q{, }, map { qq{"$$_"}; } keys %seen; say qq{[% citations = [ }, $$citations, q{ ] -%]};' *.aux > "$@.new"
+	perl -w -Mstrict -E 'my @citations; while (<>) { if (m/^\\citation\{(.*)\}/) { push @citations, split /,/, $$1; }} my %seen; map { $$seen{$$_}++; } @citations; my $$citations = join q{ = 1, }, map { qq{"$$_"}; } keys %seen; say qq([% citations = { ), $$citations, q( = 1 } -%]);' *.aux > "$@.new"
 	if ! cmp -s "$@" "$@.new"; then \
 		mv -f "$@.new" "$@"; \
 	else \

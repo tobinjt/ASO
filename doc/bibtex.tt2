@@ -16,37 +16,43 @@
 
 [% PROCESS "logparser-bibliography.tt2" -%]
 [% PROCESS "citations.tt2" -%]
-[% FOREACH citation IN citations -%]
-    \bibitem{[% citation %]}
+[% FOREACH citation IN citations.keys -%]
+    [% bibliography.$citation.citation_name = citation -%]
+[% END -%]
+[% sorted_bibliography = bibliography.values.sort("title") -%]
+[% FOREACH entry IN sorted_bibliography -%]
+    [% IF not entry.exists("citation_name") -%]
+        [% NEXT -%]
+    [% END -%]
+    \bibitem{[% entry.citation_name %]}
+    [% entry.title %].
     [%# XXX IMPROVE AUTHOR FORMATTING -%]
-    [% bibliography.$citation.author %].
-    [% bibliography.$citation.title %].
-    [%# XXX USE THE OTHER ATTRIBUTES TOO -%]
-    [% IF bibliography.$citation.exists("journal") -%]
-        \emph{[% bibliography.$citation.journal %]}
+    [% entry.author %].
+    [% IF entry.exists("journal") -%]
+        \emph{[% entry.journal %]}
         [%# Assume that if volume exists, the other attributes do too. -%]
-        [% IF bibliography.$citation.exists("volume") -%]
-            [% bibliography.$citation.volume %]([% bibliography.$citation.number %])
-            pages [% bibliography.$citation.pages -%],
+        [% IF entry.exists("volume") -%]
+            [% entry.volume %]([% entry.number %])
+            pages [% entry.pages -%],
         [% END -%]
-        ([% bibliography.$citation.year %]).
+        ([% entry.year %]).
     [% END -%]
-    [% IF bibliography.$citation.exists("publisher") -%]
-        [% bibliography.$citation.publisher -%], [% bibliography.$citation.address -%].
+    [% IF entry.exists("publisher") -%]
+        [% entry.publisher -%], [% entry.address -%].
     [% END -%]
-    [% IF bibliography.$citation.exists("note") -%]
-        [% bibliography.$citation.note %].
+    [% IF entry.exists("note") -%]
+        [% entry.note %].
     [% END -%]
-    [% IF bibliography.$citation.exists("doi")
-        or bibliography.$citation.exists("url") -%]
+    [% IF entry.exists("doi")
+        or entry.exists("url") -%]
         \newline{}
     [% END -%]
-    [% IF bibliography.$citation.exists("doi") -%]
-        DOI\@: [% bibliography.$citation.doi %] \hfill{} \newline{}
+    [% IF entry.exists("doi") -%]
+        DOI\@: [% entry.doi %] \hfill{} \newline{}
     [% END -%]
-    [% IF bibliography.$citation.exists("url") -%]
-        \url{[% bibliography.$citation.url %]} \hfill{} \newline{}
-        Last checked [% bibliography.$citation.checked %].
+    [% IF entry.exists("url") -%]
+        \url{[% entry.url %]} \hfill{} \newline{}
+        Last checked [% entry.checked %].
     [% END -%]
 
 [% END -%]
