@@ -144,7 +144,7 @@ storing the data is a write-once operation, whereas utilising the data
 requires frequent searching, sorting, and manipulation of the data to
 produce customised reports or statistics.
 
-\subsection{Using a Database as an Application Programming Interface}
+\subsection{Using A Database To Provide An Application Programming Interface}
 
 \label{database as API}
 
@@ -448,6 +448,54 @@ connection, and there may be many results per connection.
 \label{rules in implementation}
 
 XXX NEED AN INTRODUCTION\@.
+
+
+\subsection{Overlapping Rules}
+
+\label{overlapping rules in architecture}
+
+XXX IS THERE ANY PREVIOUS RESEARCH IN THIS AREA\@?
+
+XXX DFA COMPARISON\@.
+
+The parser does not try to detect overlapping rules; that responsibility is
+left to the author of the rules.  Unintentionally overlapping rules lead to
+inconsistent parsing and data extraction because the order in which rules
+are tried against each line may change between log files, and the first
+matching rule wins.  Overlapping rules are frequently a requirement,
+allowing a more specific rule to match some log lines and a more general
+rule to match the majority, e.g.\ separating \acronym{SMTP} delivery to
+specific sites from \acronym{SMTP} delivery to the rest of the world.  The
+algorithm provides a mechanism for ordering overlapping rules: the priority
+field in each rule (defaults to zero).  Negative priorities may be useful
+for catchall rules.
+
+Detecting overlapping rules is difficult, but the following approaches may
+be helpful:
+
+\begin{itemize}
+
+    \item Sort by regex and visually inspect the list, e.g.\ with
+        \acronym{SQL} similar to: \textbf{select regex from rules order by
+        regex;}
+
+    \item Compare the results of parsing using sorted, shuffled, and
+        reversed rules (described in \sectionref{rule ordering for
+        efficiency}).  Parse several log files using optimal ordering, then
+        dump a textual representation of the rules, connections, and
+        results tables.  Repeat with shuffled and reversed ordering,
+        starting with a fresh database.  If there are no overlapping rules
+        the tables from each run will be identical; differences indicate
+        overlapping rules.  The rules that overlap can be determined by
+        examining the differences in the tables: each result contains a
+        reference to the rule which created it, if the references differ
+        between runs the two rules referenced in the differing results
+        overlap.  Unfortunately this method cannot prove the absence of
+        overlapping rules; it can detect overlapping rules, but only if
+        there are log lines in the log files that are matched by more than
+        one rule.
+
+\end{itemize}
 
 \subsection{Example Rule}
 

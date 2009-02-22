@@ -31,7 +31,7 @@
         \emph{[% entry.journal %]}
         [%# Assume that if volume exists, the other attributes do too. -%]
         [% IF entry.exists("volume") -%]
-            [% entry.volume %]([% entry.number %])
+            [% entry.volume %]([% entry.number %]),
             pages [% entry.pages -%],
         [% END -%]
         ([% entry.year %]).

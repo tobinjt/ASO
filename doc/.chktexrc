@@ -1,1 +1,3 @@
 CmdLine { --nowarn 35 --nowarn 36 }
+# XXX DUNNO IF I SHOULD IGNORE URL ARGUMENTS
+WipeArg { \url:{} }
