@@ -444,8 +444,8 @@ check:
 	make join-lines | grep -i -E 'underfull|overfull' || true
 	make join-lines | grep -i "LaTeX Warning: " || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' *.log
-	grep ^Warning *.blg || true;
-	grep '!!' *.glg *.alg || true;
+	#grep ^Warning *.blg || true;
+	grep '!!' *.?lg || true;
 	chktex -I0 -q *.tex
 	chktex -q --nowarn 1 --nowarn 15 --nowarn 17 --nowarn 6 *.bbl
 	ack -i 'it'\''s|\w'\''(?!s)\w' *.tex
