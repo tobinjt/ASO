@@ -342,16 +342,15 @@ lines by either queueid or pid or deals with the other difficulties
 documented in \sectionref{complications}.
 
 Sawmill has three different Postfix log file parsers, extracting three
-different sets to data:
+different sets of data:
 
 \begin{enumerate}
 
-    \item
-        \urlLastChecked{http://www.thesawmill.co.uk/formats/postfix.html}{2008/11/23}
-        \newline{} Fields extracted: from, to, server, UID, relay, status,
-        number of recipients, origin hostname, origin \acronym{IP} address,
-        and virus.  It also counts the number of and total size of all
-        mails delivered.  The fields \texttt{server}, \texttt{uid},
+    \item \urlLastChecked[\hfill{}\newline{}]{http://www.thesawmill.co.uk/formats/postfix.html}{2008/11/23}.
+        Fields extracted: from, to, server, UID, relay, status, number of
+        recipients, origin hostname, origin \acronym{IP} address, and
+        virus.  It also counts the number of and total size of all mails
+        delivered.  The fields \texttt{server}, \texttt{uid},
         \texttt{relay}, and \texttt{virus} are not explained in the
         documentation: \texttt{server} is probably the hostname or
         \acronym{IP} address of the server the mail is delivered to;
@@ -361,19 +360,17 @@ different sets to data:
         virus checking (though it has many options for cooperating with an
         external virus scanner), so the \texttt{virus} field is a mystery.
 
-    \item
-        \urlLastChecked{http://www.thesawmill.co.uk/formats/postfix_ii.html}{2008/11/23}
-        \newline{} Fields extracted: from, to, RBL list, client hostname,
-        and client \acronym{IP} address.  It also counts the number and
-        total size of all mails delivered.  
+    \item \urlLastChecked[\hfill{}\newline{}]{http://www.thesawmill.co.uk/formats/postfix_ii.html}{2008/11/23}.
+        Fields extracted: from, to, RBL list, client hostname, and client
+        \acronym{IP} address.  It also counts the number and total size of
+        all mails delivered.  
 
-    \item
-        \urlLastChecked{http://www.thesawmill.co.uk/formats/beta_postfix.html}{2008/11/23}
-        \newline{} Fields extracted: from, to, client hostname, client
-        \acronym{IP} address, relay hostname, relay \acronym{IP} address,
-        status, response code, RBL list, and message id.  It also counts
-        the number and size of all mails delivered, processed, blocked,
-        expired, and bounced.
+    \item \urlLastChecked[\hfill{}\newline{}]{http://www.thesawmill.co.uk/formats/beta_postfix.html}{2008/11/23}.
+        Fields extracted: from, to, client hostname, client \acronym{IP}
+        address, relay hostname, relay \acronym{IP} address, status,
+        response code, RBL list, and message id.  It also counts the number
+        and size of all mails delivered, processed, blocked, expired, and
+        bounced.
 
 \end{enumerate}
 
@@ -654,11 +651,12 @@ date because Postfix has evolved considerably since this tool was last
 updated (2003/11/06).  As it neither ran successfully nor has documentation
 the author can read, a detailed review cannot be provided.
 
-The Debian project (\urlLastChecked{http://www.debian.org/}{2008/11/23})
-provides a manual page with the copy of anteater it distributes, so the
-author was at least able to run anteater with the correct arguments; sadly
-anteater produced zero for every statistic, presumably because it was
-unsuccessful in parsing the log lines.
+The Debian Linux distribution
+(\urlLastChecked{http://www.debian.org/}{2008/11/23}) provides a manual
+page with the copy of anteater it distributes, so the author was at least
+able to run anteater with the correct arguments; sadly anteater produced
+zero for every statistic, presumably because it was unsuccessful in parsing
+the log lines.
 
 \section{Yet Another Advanced Logfile Analyser}
 
