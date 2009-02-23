@@ -29,9 +29,12 @@
     [% entry.author.split(" and ").join(", ") %].
     [% IF entry.exists("journal") -%]
         \emph{[% entry.journal %]}
-        [%# Assume that if volume exists, the other attributes do too. -%]
         [% IF entry.exists("volume") -%]
-            [% entry.volume %]([% entry.number %]),
+            [% IF entry.exists("number") -%]
+                volume [% entry.volume %]([% entry.number %]),
+            [% ELSE -%]
+                volume [% entry.volume %],
+            [% END -%]
             pages [% entry.pages -%],
         [% END -%]
         ([% entry.year %]).

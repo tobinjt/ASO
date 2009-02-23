@@ -449,7 +449,8 @@ check:
 	chktex -I0 -q *.tex
 	chktex -q --nowarn 1 --nowarn 15 --nowarn 17 --nowarn 6 *.bbl
 	ack -i 'it'\''s|\w'\''(?!s)\w' *.tex
-	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? (?!(a|and|is|in|of|the) )[[:lower:]])' logparser*.tex
+	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]])' logparser*.tex
+	ack '(address|author|publisher|title)\s+=\s+.* (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]]' logparser-bibliography.tt2
 	ack '\\url{' logparser-*.tex
 
 # List all acronyms not followed by {}, for visual inspection.
