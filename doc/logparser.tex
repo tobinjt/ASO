@@ -104,7 +104,7 @@
 
 % Acronyms and glossary entries.  Useful options:
 % * nonumberlist disables the list of page numbers after each entry.
-\usepackage[acronym,toc,numberedsection=autolabel,style=list,nonumberlist]{glossaries}
+\usepackage[acronym,toc,numberedsection=nolabel,style=list,nonumberlist]{glossaries}
 \renewcommand{\glspostdescription}[0]{}
 \renewcommand{\glsautoprefix}[1]{glossary:#1}
 \newglossary[plg]{postfix}{pin}{pout}{Postfix Daemons}
@@ -276,15 +276,9 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
     \SVNId{}
 \end{center}
 
-XXX WHY DOES $\backslash{}$ref\{\} NOT WORK PROPERLY FOR CHAPTERS IN THE APPENDIX\@?
-
 XXX CHECK ALL ``UNINTERESTING'' RULES TO SEE IF THEY COULD BE USED\@.
 
 XXX SHOULD I SCRAP postfix\_action?
-
-XXX STANDARDISE ON ``email'' OR ``mail'' EVERYWHERE\@?
-
-XXX INVESTIGATE Doug Lenat.
 
 XXX EXTRACT DELAY AND DEFER WHEN AUTOMATIC EXTRACTION HAS BEEN FINISHED,
 THEN UPDATE FIELDS IN BOTH DATABASE AND REVIEW OF OTHER PARSERS\@.
@@ -320,11 +314,11 @@ XXX POSSIBLY PUBLISH THE STATE OF THE ART REVIEW IN A JOURNAL\@?
 \bibliographystyle{logparser-bibliography-style}
 \bibliography{logparser-bibliography}
 
-\label{Glossary}
+\renewcommand{\glossarypostamble}{\label{Glossary}}
 \printglossary{}
-\label{Acronyms}
+\renewcommand{\glossarypostamble}{\label{Acronyms}}
 \printglossary[type=\acronymtype]{}
-\label{Postfix Daemons}
+\renewcommand{\glossarypostamble}{\label{Postfix Daemons}}
 \printglossary[type=postfix]{}
 
 \end{document}
