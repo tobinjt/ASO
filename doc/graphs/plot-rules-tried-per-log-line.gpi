@@ -1,0 +1,14 @@
+load "plot-defaults-ps.gpi"
+
+set xlabel "Log file"
+set ylabel "Mean number of rules tried per log line"
+set output "../build/graph-rules-tried-per-log-line.ps"
+
+# Put the legend at the top left, Left justified text.
+#set key top left Left reverse
+# Let the X axis continue to the next round number for this graph.
+#set autoscale
+
+#set xtics rotate
+plot "../build/stats-rules-tried-per-log-line" using 1 with lines \
+    title "Mean number of rules tried per log line"

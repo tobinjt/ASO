@@ -28,12 +28,15 @@
     name={DNS Blacklist},
     description={
         A DNS Blacklist~\cite{Wikipedia-DNSBL} is a simple collaborative
-        anti-spam technique used to reject or penalise email sent from mail
-        servers reported to have sent large volumes of spam.  To use a
-        DNSBL the mail server makes a DNS request incorporating the IP
-        address of the client; if the requested hostname exists the client
-        is on the DNSBL, and the mail server can decide what course of
-        action to take.
+        anti-spam technique used to reject or penalise mail sent from mail
+        servers believed to be the source of large volumes of spam.  The
+        criteria used when deciding whether or not to include an IP address
+        on a DNSBL vary widely between DNSBLs, so before using one it is
+        very important to check their listing policies.  To use a DNSBL the
+        mail server makes a DNS request incorporating the IP address of the
+        client; if the requested hostname exists the client is on the
+        DNSBL, and the mail server can decide what course of action to
+        take.
     }
 }
 
@@ -139,8 +142,9 @@
     description={
         The standard language used for database querying, modification, and
         maintenance.  Some information and history can be found at
-        \url{http://en.wikipedia.org/wiki/SQL}; a good introduction can be
-        found at \url{http://philip.greenspun.com/sql/}.
+        \urlLastChecked{http://en.wikipedia.org/wiki/SQL}{XXX}; a good
+        introduction can be found at
+        \urlLastChecked{http://philip.greenspun.com/sql/}{XXX}.
     }
 }
 

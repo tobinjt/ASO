@@ -1,5 +1,4 @@
 % $Id$
-% XXX WOULD A SMALLER FONT BE BETTER?
 \documentclass[a4paper,12pt,draft]{report}
 \pagestyle{headings}
 
@@ -189,6 +188,11 @@
     \texttt{postfix/#1}%
 }
 
+% Add last checked dates to all URLs
+\newcommand{\urlLastChecked}[2]{%
+    \url{#1} (last checked #2)%
+}
+
 \newcommand{\tab}[0]{%
     \hspace*{1em}%
 }
@@ -272,10 +276,7 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
     \SVNId{}
 \end{center}
 
-XXX CONSIDER REPLACING bibtex, BECAUSE IT IS SUCH A PAIN IN THE ARSE TRYING
-TO CHANGE THE FORMAT OF THE PRODUCED BIBLIOGRAPHY\@.
-
-XXX WHY DOES \\ref{} NOT WORK PROPERLY FOR CHAPTERS IN THE APPENDIX\@?
+XXX WHY DOES $\backslash{}$ref\{\} NOT WORK PROPERLY FOR CHAPTERS IN THE APPENDIX\@?
 
 XXX NEED A NAME FOR THE ARCHITECTURE, AND A DIFFERENT NAME FOR THE
 IMPLEMENTATION\@.  Parse::FAR\@???
@@ -291,15 +292,6 @@ XXX SHOULD I SCRAP postfix\_action?
 XXX ANNOTATE ALL URLS WITH LAST CHECKED DATE\@.
 
 XXX STANDARDISE ON ``email'' OR ``mail'' EVERYWHERE\@?
-
-xXX IMPROVE BIBLIOGRAPHY APPEARANCE\@: NAMES LOOK UGLY (E.G.\ P.\
-\empty{}.\ Porters)\@.
-
-XXX CHECK WITH CARL ABOUT CAPITALISATION IN SECTION AND SUBSECTION
-HEADINGS\@.
-
-XXX MAYBE DO SOMETHING ABOUT underfull hboxes IN BIBLIOGRAPHY WHEN URLS
-WRAP\@?
 
 XXX INVESTIGATE Doug Lenat.
 

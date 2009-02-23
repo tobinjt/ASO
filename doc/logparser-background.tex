@@ -160,27 +160,26 @@ are~\cite{RFC821,RFC2821}.
 
 \label{postfix background}
 
-Postfix is a \glsfirst{MTA} with the following design aims
-(in order of importance): security, flexibility of configuration,
-scalability, and high performance.  It features extensive optional
-anti-spam restrictions, allowing an administrator to employ those
-restrictions which they judge suitable for their site's needs, rather than
-a fixed set chosen by Postfix's author.  These restrictions can be
-selectively applied, combined, and bypassed on a per-client, per-recipient,
-or per-sender basis, allowing different levels of stricture and
-permissiveness.  Postfix leverages simple lookup tables to support
-arbitrarily complicated user-defined sequences of restrictions and
-exceptions.  Administrators can supply their own rejection messages to make
-it clear to senders exactly why their mail was rejected.  Policy servers
-(\sectionref{policy servers}) provide a simple way to write new
-restrictions without having to modify Postfix's source code.  Unfortunately
-this flexibility has a cost: complexity in the log files generated.
-Although it is relatively simple in most cases to use standard Unix text
-processing utilities to determine the fate of an individual email,
-following the journey an email takes through Postfix can be quite
-difficult.  For most mails the journey is simple and brief, but the
-remaining minority can have quite complex journeys (see
-\sectionref{complications} for details).
+Postfix is a \glsfirst{MTA} with the following design aims (in order of
+importance): security, flexibility of configuration, scalability, and high
+performance.  It features extensive optional anti-spam restrictions,
+allowing an administrator to employ those restrictions which they judge
+suitable for their site's needs, rather than a fixed set chosen by
+Postfix's author.  These restrictions can be selectively applied, combined,
+and bypassed on a per-client, per-recipient, or per-sender basis, allowing
+different levels of stricture and permissiveness.  Postfix leverages simple
+lookup tables to support arbitrarily complicated user-defined sequences of
+restrictions and exceptions.  Administrators can supply their own rejection
+messages to make it clear to senders exactly why their mail was rejected.
+Policy servers (\sectionref{policy servers}) provide a simple way to write
+new restrictions without having to modify Postfix's source code.
+Unfortunately this flexibility has a cost: complexity in the log files
+generated.  Although it is relatively simple in most cases to use standard
+Unix text processing utilities to determine the fate of an individual mail,
+following the journey a mail takes through Postfix can in some cases be
+quite difficult.  For most mails the journey is simple and brief, but the
+remainder can have quite complex journeys (see \sectionref{complications}
+for details).
 
 Postfix's design follows the Unix philosophy of \textit{``Write programs
 that do one thing and do it well''\/}~\cite{unix-philosophy}, and it is
@@ -189,9 +188,9 @@ required of an \acronym{MTA}\@: receive mail, send mail, local delivery of
 mail, etc.\ (full details can be found in~\cite{postfix-overview}).  Each
 log line contains the name of the Postfix component that produced it, and
 this information is used when determining which rules should be used to
-parse each log line (see \sectionref{rule characteristics in architecture}
-for details).  Postfix's design is strongly influenced by security
-concerns: those components that interact with other hosts are not
+parse each log line (see \sectionref{rules in architecture} for details).
+Postfix's design is strongly influenced by security concerns: those
+components that interact with other hosts are not
 privileged,\footnote{Privilege means the power to perform actions that are
 limited to the administrator, and not available to ordinary users.} so bugs
 in those components will not give an attacker extra privileges; those
@@ -249,17 +248,46 @@ in~\cite{smtpd_access_readme,smtpd_per_user_control,policy-servers}. The
 meaning of \textit{permit\/} and \textit{reject\/} is fairly obvious;
 \textit{dunno\/} means to stop evaluating the current restriction and
 continue processing the remainder of the restriction list, allowing
-exceptions to more general rules.  XXX GIVE AN EXAMPLE\@.  When the result
-is the name of another restriction Postfix will evaluate that restriction,
-allowing restrictions to be chosen based on the client \acronym{IP}
-address, client hostname, HELO hostname, sender address, or recipient
-address.  E.g.\ the administrator may require that all clients on the local
-network have valid DNS entries, to prevent people sending mail from unknown
-machines XXX EXPAND THIS WITH DETAILS\@.
+exceptions to more general rules.  E.g.\ the general rule is that machines
+on the local network must authenticate before sending mail, except for the
+web server, because the legacy applications running on it lack
+authentication support; this configuration example shows how:
+
+\begin{verbatim}
+  main.cf:
+  smtpd_client_restrictions =
+    ...
+    permit_sasl_authenticated,
+    check_client_access /etc/postfix/allow_webserver.cidr,
+    ...
+
+  /etc/postfix/allow_webserver.cidr:
+    192.0.2.80/32   dunno
+    192.0.2.0/24    reject "Please authenticate to send mail"
+\end{verbatim}
+
+That example also shows how easy it is to supply a custom rejection
+message.  When the result is the name of another restriction Postfix will
+evaluate that restriction, allowing restrictions to be chosen based on the
+client \acronym{IP} address, client hostname, HELO hostname, sender
+address, or recipient address.  E.g.\ the administrator may require that
+all clients on the local network have valid DNS entries, to prevent people
+sending mail from unknown machines; one example of how to achieve this is:
+
+\begin{verbatim}
+  main.cf:
+  smtpd_client_restrictions =
+    ...
+    check_client_access /etc/postfix/require_dns_entries.cidr,
+    ...
+
+  /etc/postfix/require_dns_entries.cidr:
+    192.0.2.0/24    reject_unknown_client_hostname
+\end{verbatim}
 
 The administrator can define new restrictions as a list of existing
 restrictions, allowing arbitrarily long and complex sequences of lookups,
-restrictions and exceptions.  Postfix tries to protect the administrator
+restrictions, and exceptions.  Postfix tries to protect the administrator
 from misconfiguration in as far as is reasonable, e.g.\ the restriction
 \texttt{check\_helo\_mx\_access} cannot cause a mail to be accepted,
 because the parameter it checks (the hostname given in the HELO command) is

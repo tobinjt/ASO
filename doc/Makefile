@@ -12,17 +12,17 @@ logparser.pdf: logparser.deps logparser.pdf.deps logparser-*.tex \
 	make build PROGRAM="pdflatex" SOURCE="$<" DEST="$@" BASENAME=$$( basename "$<" .tex )
 
 logparser.dvi: logparser.deps logparser.ps.deps logparser-*.tex \
-		logparser-bibliography.bib logparser-bibliography-style.bst
+		logparser-bibliography.tt2 bibtex.tt2
 
 sgai-2008-elsevier.pdf: sgai-2008.deps sgai-2008.pdf.deps elsarticle-num.bst \
-		logparser-bibliography.bib
+		logparser-bibliography.tt2 bibtex.tt2
 sgai-2008-elsevier.dvi: sgai-2008.deps sgai-2008.ps.deps elsarticle-num.bst \
-		logparser-bibliography.bib
+		logparser-bibliography.tt2 bibtex.tt2
 
 sgai-2008.pdf: sgai-2008.deps sgai-2008.pdf.deps spmpsci.bst \
-		logparser-bibliography.bib
+		logparser-bibliography.tt2 bibtex.tt2
 sgai-2008.dvi: sgai-2008.deps sgai-2008.ps.deps spmpsci.bst \
-		logparser-bibliography.bib
+		logparser-bibliography.tt2 bibtex.tt2
 
 sgai-2008.deps:									\
 			build/include-timing-run-duration.tex			\
@@ -94,18 +94,9 @@ sgai-2008.ps: sgai-2008.dvi
 	dvips -o "$@" "$<"
 
 logparser.bbl: bibtex.tt2 logparser-bibliography.tt2 citations.tt2 
+	ls -l bibtex.tt2 logparser-bibliography.tt2 citations.tt2 
 	tpage --debug=3 bibtex.tt2 > logparser.bbl
 	echo "Ran bibtex.tt2" >> build/run-latex-again
-
-.PRECIOUS: citations.tt2
-.PHONY: citations.tt2
-citations.tt2:
-	perl -w -Mstrict -E 'my @citations; while (<>) { if (m/^\\citation\{(.*)\}/) { push @citations, split /,/, $$1; }} my %seen; map { $$seen{$$_}++; } @citations; my $$citations = join q{ = 1, }, map { qq{"$$_"}; } keys %seen; say qq([% citations = { ), $$citations, q( = 1 } -%]);' *.aux > "$@.new"
-	if ! cmp -s "$@" "$@.new"; then \
-		mv -f "$@.new" "$@"; \
-	else \
-		rm -f "$@.new"; \
-	fi
 
 %.dvi: %.tex
 	make build PROGRAM="latex"    SOURCE="$<" DEST="$@" BASENAME=$$( basename "$<" .tex )
@@ -118,7 +109,17 @@ run_latex:
 	touch "${BASENAME}.cite.old"
 	grep '^\\citation' "${BASENAME}.aux" > "${BASENAME}.cite"
 	rm -f build/run-bibtex
+	perl -w -Mstrict -E 'my @citations; while (<>) { if (m/^\\citation\{(.*)\}/) { push @citations, split /,/, $$1; }} my %seen; map { $$seen{$$_}++; } @citations; my $$citations = join q{ = 1, }, map { qq{"$$_"}; } keys %seen; say qq([% citations = { ), $$citations, q( = 1 } -%]);' *.aux > "citations.tt2.new"
 	set -e; \
+	if [ ! -f citations.tt2 ]; then \
+		touch citations.tt2; \
+	fi; \
+	if ! cmp -s citations.tt2 citations.tt2.new; then \
+		echo "Rebuilt citations" >> build/run-bibtex; \
+		mv -f citations.tt2.new citations.tt2; \
+	else \
+		rm -f citations.tt2.new; \
+	fi; \
 	if grep -q "Warning: Citation .* on page .* undefined" "${BASENAME}.log"; then \
 		echo "Undefined citations" >> build/run-bibtex; \
 	fi; \
@@ -130,6 +131,7 @@ run_latex:
 		cat build/run-bibtex; \
 		rm -f "${BASENAME}.bbl"; \
 		make "${BASENAME}.bbl"; \
+		echo "Ran bibtex" >> build/run-latex-again; \
 	fi
 	cp "${BASENAME}.cite" "${BASENAME}.cite.old"
 	[ -f "${DEST}" ]
@@ -199,6 +201,7 @@ build_loop:
 	# 6 hyperref may need to add stuff (not sure what)
 	# So this loop runs four times, and may need to run more times in future
 	# (e.g. if I added an index).
+	rm -f build/run-latex-again
 	make build_run
 	make "${BASENAME}.bbl"
 	set -e; \
@@ -409,6 +412,9 @@ build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex: build/s
 build/include-top-ten-hits.tex: build/stats-hits
 	awk 'BEGIN { sum = 0; topten = 0 }; { sum += $$2 }; $$1 >= 160 { topten += $$2 }; END { printf "%'\''.3f%\n", topten * 100 / sum };' "$<" > "$@"
 
+build/stats-rules-tried-per-log-line: results/stats-full-run/timing
+	perl -Mstrict -w -E 'my ($$rules_tried, $$lines_parsed); while (<>) { m/^num_lines_parsed:.*: ([^:]+)$$/ and $$lines_parsed = $$1; m/^num_rules_tried:.*: ([^:]+)$$/ and $$rules_tried = $$1; m/^Parsed logfile:/ and say $$rules_tried / $$lines_parsed; }' "$<" > "$@"
+
 # Sample output from an SQL query.
 build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql
 	sqlite3.6.0 -separator ' & ' -bail "$<" < "generate-sample-sql-output.sql" > "$@"
@@ -451,9 +457,9 @@ check-acronyms:
 		| grep -f - -n $$(ls logparser*.tex | grep -v ^logparser-acronyms.tex)
 
 todo:
-	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib || true
-	grep -c -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | grep -v ':0$$'
-	grep -n -E '[T]ODO|[X]XX' Makefile *.tex *.bib | wc -l
+	grep    -n -E '[T]ODO|[X]XX' Makefile *.tex *.tt2 || true
+	grep -c -n -E '[T]ODO|[X]XX' Makefile *.tex *.tt2 | grep -v ':0$$'
+	grep    -n -E '[T]ODO|[X]XX' Makefile *.tex *.tt2 | wc -l
 
 join-lines:
 	perl -p -E 'if (m/LaTeX Warning:/ and not m/\.$$/) { chomp; }' *.log

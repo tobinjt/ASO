@@ -7,17 +7,18 @@ XXX REWRITE\@: MERGE CONTENT FROM ELSEWHERE IN THE THESIS AND PAPER\@.
 XXX WHEN FINISHED, CHECK ALL REFERENCES TO ENSURE THEY POINT AT THE CORRECT
 CHAPTER\@.
 
-To avoid cluttering the explanation of the parser architecture with details
-of the difficulties encountered while parsing Postfix log files, the
-description of the parser architecture has been separated from the
-description of \parsername{}, the implementation developed for this
-project.  This chapter presents the architecture that has been designed and
-developed for this project, beginning with the overall architecture and
-design, followed by the three components of the architecture: Framework,
-Actions, and finally Rules.  The discussion in this chapter centers on the
-theoretical, XXX EXTEND WHEN THE CHAPTER IS FINISHED\@.
-The practical difficulties of writing a parser for Postfix log files are
-covered in detail in \sectionref{Postfix Parser Implementation}.
+To avoid cluttering the explanation of the parser architecture with the
+details involved in parsing Postfix log files and the description of the
+parser implemented for this project, the two have been separated.  This
+chapter presents the architecture designed and developed for this project,
+beginning with the overall architecture and design, followed by the three
+components of the architecture: Framework, Actions, and Rules, and
+finishes by describing the characteristics of this architecture.
+
+This chapter centers on the theoretical, implementation-independent aspects
+of the architecture; the practical difficulties of writing a parser for
+Postfix log files are covered in detail in \sectionref{Postfix Parser
+Implementation}.
 
 \section{Parser Architecture and Design}
 
@@ -301,10 +302,6 @@ $\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
 \text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
 
 
-\subsection{Rule Characteristics}
-
-\label{rule characteristics in architecture}
-
 Rule have certain characteristics that may help in understanding the
 parser architecture:
 
@@ -328,7 +325,7 @@ XXX IMPROVE THIS SECTION\@; SHOULD IT BE A SUBSECTION\@?
 
 \end{itemize}
 
-\subsection{Architecture Characteristics}
+\section{Architecture Characteristics}
 
 \label{Architecture characteristics}
 

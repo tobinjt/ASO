@@ -9,7 +9,8 @@ logparser.ps.deps:								\
 			build/graph-input-size-vs-parsing-time.ps		\
 			build/graph-input-size-vs-parsing-time-ratio.ps		\
 			build/graph-mails-received.ps				\
-			build/graph-optimal-and-reverse-vs-shuffle.ps
+			build/graph-optimal-and-reverse-vs-shuffle.ps		\
+			build/graph-rules-tried-per-log-line.ps
 	touch "$@"
 
 sgai-2008.ps.deps:								\

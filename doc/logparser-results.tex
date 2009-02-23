@@ -162,10 +162,16 @@ not have to deliver the mail to an external system, so mails are delivered,
 bounced, and generated as fast as the disks can keep up, resulting in a
 huge volume of log lines.
 
+XXX EXPAND THIS PARAGRAPH\@; THERE MAY BE CONTENT IN THE PAPER\@.  REFER TO
+THE NEW GRAPH BELOW TOO\@.
+
 The different distribution of log lines caused by a mail forwarding loop
 has unexpected effects on parsing time, described in detail in
 \sectionref{rule ordering for efficiency}, \sectionref{scalability as the
 number of rules rises}, and \sectionref{Caching compiled regexes}.
+
+\showgraph{build/graph-rules-tried-per-log-line}{Mean number of rules tried
+per log line}{Mean number of rules tried per log line}
 
 \subsection{Rule Ordering For Efficiency}
 
