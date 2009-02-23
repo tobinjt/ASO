@@ -3,7 +3,7 @@
 \newglossaryentry{bounce}{name={bounce},type={postfix},description={
     The bounce daemon is responsible for sending bounce notifications in
     Postfix versions later than 2.2.  The definitive documentation is
-    \url{http://www.postfix.org/bounce.8.html}.
+    \urlLastChecked{http://www.postfix.org/bounce.8.html}{2009/02/23}.
 }}
 
 \newglossaryentry{cleanup}{name={cleanup},type={postfix},description={
@@ -11,28 +11,30 @@
     before it is delivered.  It removes duplicate recipient addresses,
     inserts missing headers, and optionally rewrites addresses if
     configured to do so.  The definitive documentation is
-    \url{http://www.postfix.org/cleanup.8.html}.
+    \urlLastChecked{http://www.postfix.org/cleanup.8.html}{2009/02/23}.
 }}
 
 \newglossaryentry{lmtp}{name={lmtp},type={postfix},description={
     Delivery of mail over \acronym{LMTP} is performed by the lmtp
     component.  The definitive documentation is
-    \url{http://www.postfix.org/lmtp.8.html}.
+    \urlLastChecked{http://www.postfix.org/lmtp.8.html}{2009/02/23}.
 }}
 
 \newglossaryentry{local}{name={local},type={postfix},description={
     Local is the Postfix component responsible for local delivery of mail
     (i.e.\ delivered on the server Postfix is running on), whether it be to
     a user's mailbox or a program such as a mailing list manager or
-    procmail (\url{http://www.procmail.org/}).  It also handles aliases and
-    processing of a user's \texttt{.forward} file.  The definitive
-    documentation is \url{http://www.postfix.org/local.8.html}.
+    procmail (\urlLastChecked{http://www.procmail.org/}{2009/02/23}).  It
+    also handles aliases and processing of a user's \texttt{.forward} file.
+    The definitive documentation is
+    \urlLastChecked{http://www.postfix.org/local.8.html}{2009/02/23}.
 }}
 
 \newglossaryentry{pickup}{name={pickup},type={postfix},description={
     Pickup is the service that deals with mail submitted locally via
     postdrop and sendmail; it passes all submitted mail to cleanup.  The
-    definitive documentation is \url{http://www.postfix.org/pickup.8.html}.
+    definitive documentation is
+    \urlLastChecked{http://www.postfix.org/pickup.8.html}{2009/02/23}.
 }}
 
 \newglossaryentry{postdrop}{name={postdrop},type={postfix},description={
@@ -40,7 +42,7 @@
     a new mail in the queue and copies its input into the mail.  Subsequent
     delivery of the mail is the responsibility of other Postfix components.
     The definitive documentation is
-    \url{http://www.postfix.org/postdrop.1.html}.
+    \urlLastChecked{http://www.postfix.org/postdrop.1.html}{2009/02/23}.
 }}
 
 \newglossaryentry{postsuper}{name={postsuper},type={postfix},description={
@@ -48,7 +50,7 @@
     on hold and later releasing it (no further delivery attempts will be
     made until it is released), and consistency checking of the mail queue.
     The definitive documentation is available at
-    \url{http://www.postfix.org/postsuper.1.html}.
+    \urlLastChecked{http://www.postfix.org/postsuper.1.html}{2009/02/23}.
 }}
 
 \newglossaryentry{qmgr}{name={qmgr},type={postfix},description={
@@ -58,27 +60,30 @@
     addresses, ensuring that it balances the aims of achieving maximum
     concurrency while avoiding overwhelming destinations or wasting time
     and resources on non-responsive destinations.  The definitive
-    documentation is \url{http://www.postfix.org/qmgr.8.html}.
+    documentation is
+    \urlLastChecked{http://www.postfix.org/qmgr.8.html}{2009/02/23}.
 }}
 
 \newglossaryentry{sendmail}{name={sendmail},type={postfix},description={
     Postfix provides a command that is compatible with the Sendmail
-    (\url{http://www.sendmail.org/}) mail submission program that all Unix
-    commands that send mail depend on; it executes \daemon{postdrop} to
-    place a new mail in the queue.  The definitive documentation is
-    \url{http://www.postfix.org/sendmail.1.html}.
+    (\urlLastChecked{http://www.sendmail.org/}{2009/02/23}) mail submission
+    program that all Unix commands that send mail depend on; it executes
+    \daemon{postdrop} to place a new mail in the queue.  The definitive
+    documentation is
+    \urlLastChecked{http://www.postfix.org/sendmail.1.html}{2009/02/23}.
 }}
 
 \newglossaryentry{smtp}{name={smtp},type={postfix},description={
     Delivery of mail over \acronym{SMTP} is performed by the smtp
     component.  The definitive documentation is
-    \url{http://www.postfix.org/smtp.8.html}.
+    \urlLastChecked{http://www.postfix.org/smtp.8.html}{2009/02/23}.
 }}
 
 \newglossaryentry{smtpd}{name={smtpd},type={postfix},description={
     Smtpd is the Postfix program that accepts mail via \acronym{SMTP}, and
     implements all the anti-spam restrictions Postfix provides.  The
-    definitive documentation is \url{http://www.postfix.org/smtpd.8.html}.
+    definitive documentation is
+    \urlLastChecked{http://www.postfix.org/smtpd.8.html}{2009/02/23}.
 }}
 
 \newglossaryentry{virtual}{name={virtual},type={postfix},description={
@@ -94,5 +99,5 @@
     delivery is used when a server hosts multiple domains where a username
     may be present in more than one domain but represent different users in
     each.  The definitive documentation is
-    \url{http://www.postfix.org/virtual.8.html}.
+    \urlLastChecked{http://www.postfix.org/virtual.8.html}{2009/02/23}.
 }}

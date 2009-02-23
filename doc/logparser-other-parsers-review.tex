@@ -87,14 +87,15 @@ quite different from \parsername{}: it attempts to present correlated data
 from log files in a form suitable for a systems administrator to search
 using the myriad of standard Unix text processing utilities already
 available.  It produces a \acronym{CSV} file and either a MySQL
-(\url{http://www.mysql.com/}) or Berkeley DB
-(\url{http://www.oracle.com/database/berkeley-db/index.html}) database.
-The decision to support both \acronym{CSV} and Berkeley DB appears to have
-been a serious limitation: both formats have limitations that will be
-explained later.  Hardly any documentation is provided with \acronym{LMA},
-though some documentation is available in~\cite{log-mail-analyser}.
-Studying the source code is informative, though this author had difficulty
-as the authors of \acronym{LMA} wrote in Italian.
+(\urlLastChecked{http://www.mysql.com/}{2008/11/23}) or Berkeley DB
+(\urlLastChecked{http://www.oracle.com/database/berkeley-db/index.html}{2008/11/23})
+database.  The decision to support both \acronym{CSV} and Berkeley DB
+appears to have been a serious limitation: both formats have limitations
+that will be explained later.  Hardly any documentation is provided with
+\acronym{LMA}, though some documentation is available
+in~\cite{log-mail-analyser}.  Studying the source code is informative,
+though this author had difficulty as the authors of \acronym{LMA} wrote in
+Italian.
 
 \acronym{CSV} is a very simple format where each record is stored in a
 single line, with fields separated by a comma or other punctuation symbol.
@@ -345,11 +346,12 @@ different sets to data:
 
 \begin{enumerate}
 
-    \item \url{http://www.thesawmill.co.uk/formats/postfix.html} \newline{}
-        Fields extracted: from, to, server, UID, relay, status, number of
-        recipients, origin hostname, origin \acronym{IP} address, and
-        virus.  It also counts the number of and total size of all mails
-        delivered.  The fields \texttt{server}, \texttt{uid},
+    \item
+        \urlLastChecked{http://www.thesawmill.co.uk/formats/postfix.html}{2008/11/23}
+        \newline{} Fields extracted: from, to, server, UID, relay, status,
+        number of recipients, origin hostname, origin \acronym{IP} address,
+        and virus.  It also counts the number of and total size of all
+        mails delivered.  The fields \texttt{server}, \texttt{uid},
         \texttt{relay}, and \texttt{virus} are not explained in the
         documentation: \texttt{server} is probably the hostname or
         \acronym{IP} address of the server the mail is delivered to;
@@ -359,12 +361,14 @@ different sets to data:
         virus checking (though it has many options for cooperating with an
         external virus scanner), so the \texttt{virus} field is a mystery.
 
-    \item \url{http://www.thesawmill.co.uk/formats/postfix_ii.html}
+    \item
+        \urlLastChecked{http://www.thesawmill.co.uk/formats/postfix_ii.html}{2008/11/23}
         \newline{} Fields extracted: from, to, RBL list, client hostname,
         and client \acronym{IP} address.  It also counts the number and
         total size of all mails delivered.  
 
-    \item \url{http://www.thesawmill.co.uk/formats/beta_postfix.html}
+    \item
+        \urlLastChecked{http://www.thesawmill.co.uk/formats/beta_postfix.html}{2008/11/23}
         \newline{} Fields extracted: from, to, client hostname, client
         \acronym{IP} address, relay hostname, relay \acronym{IP} address,
         status, response code, RBL list, and message id.  It also counts
@@ -444,15 +448,16 @@ utilise it without limit or restriction.  The web interface is optimised
 for interactive use rather than automated queries, and it does not appear
 to be possible to write independent tools to utilise the Splunk database.
 Some additional Postfix reports are supposedly available on
-\url{http://www.splunkbase.com/}, but the author was unable to find any
-Postfix reports, or indeed reports for any other log file types: every
-category was empty, even those that the web site claimed had numerous
-reports available.  Many types of graphs can be generated, though most are
-variations of a bar or pie chart, except the bubble and heatmap graphs.  It
-is easy to drill down through the graphs to select a portion of the data
-(e.g.\ select the hour with the largest number of events, then select a
-particular host, and finally a specific sender address).  All searches
-performed using the indexed data returned reasonable results.
+\urlLastChecked{http://www.splunkbase.com/}{2008/11/23}, but the author was
+unable to find any Postfix reports, or indeed reports for any other log
+file types: every category was empty, even those that the web site claimed
+had numerous reports available.  Many types of graphs can be generated,
+though most are variations of a bar or pie chart, except the bubble and
+heatmap graphs.  It is easy to drill down through the graphs to select a
+portion of the data (e.g.\ select the hour with the largest number of
+events, then select a particular host, and finally a specific sender
+address).  All searches performed using the indexed data returned
+reasonable results.
 
 The web interface is quite attractive and simple to use when searching, but
 as an administrator it seems unnecessarily difficult to perform simple
@@ -484,13 +489,14 @@ indexing the log files, once they had been successfully added to its queue.
 given; periodic parsing of logs is a task an administrator can easily
 achieve with \texttt{cron(8)} and \texttt{logrotate(8)}.
 
-Copious documentation is made available on \url{http://www.splunk.com/},
-but poor organisation and sheer abundance makes it extremely hard to find
-useful information.  Searches confusingly tended to return results from old
-documentation rather than new.  In general the documentation appears to
-have been written by someone intimately acquainted with the software, who
-has difficulty understanding how a newcomer would approach tasks or the
-questions they would ask.
+Copious documentation is made available on
+\urlLastChecked{http://www.splunk.com/}{2008/11/23}, but poor organisation
+and sheer abundance makes it extremely hard to find useful information.
+Searches confusingly tended to return results from old documentation rather
+than new.  In general the documentation appears to have been written by
+someone intimately acquainted with the software, who has difficulty
+understanding how a newcomer would approach tasks or the questions they
+would ask.
 
 Splunk supports reading compressed log files without any configuration by
 the user.  The free version of Splunk limits the volume of data indexed per
@@ -577,22 +583,23 @@ limits its functionality.  The data it can extract from an \acronym{MTA}
 log file is limited in comparison to \parsername{}: time2, email, email\_r,
 host, host\_r, method, url, code, and bytesd.  No explanation for any of
 those fields is provided in the documentation at
-\url{http://awstats.sourceforge.net/docs/awstats_faq.html#MAIL} (in
-contrast \parsername{} fully documents everything it extracts), so the
+\urlLastChecked{http://awstats.sourceforge.net/docs/awstats_faq.html\#MAIL}{2008/11/23}
+(in contrast \parsername{} fully documents everything it extracts), so the
 author could not understand what data is extracted, or determine what data
 is missing in comparison to \parsername{}.  AWStats coerces Postfix log
 files into Apache\footnote{The Apache web server is the most popular HTTP
 server in use over the past 10 years; more information is available at
-\url{http://httpd.apache.org/}.} format log files, for analysis by AWStats'
-HTTP log file parser.  The converting parser only deals with a small
-portion of the log lines generated by Postfix, silently skipping those it
-cannot deal with, and does not distinguish between different types of
-rejection; extending it to parse all log lines would be at least as much
-work as writing a new parser.  It does correlate log lines by queueid (not
-by pid), but it does not deal with any of the other complications described
-in \sectionref{complications}.  AWStats supports saving data, but the
-format of the data store is not documented.  It also supports reading
-compressed log files, but that functionality was not tested.
+\urlLastChecked{http://httpd.apache.org/}{2008/11/23}.} format log files,
+for analysis by AWStats' HTTP log file parser.  The converting parser only
+deals with a small portion of the log lines generated by Postfix, silently
+skipping those it cannot deal with, and does not distinguish between
+different types of rejection; extending it to parse all log lines would be
+at least as much work as writing a new parser.  It does correlate log lines
+by queueid (not by pid), but it does not deal with any of the other
+complications described in \sectionref{complications}.  AWStats supports
+saving data, but the format of the data store is not documented.  It also
+supports reading compressed log files, but that functionality was not
+tested.
 
 When tested with the \numberOFlogFILES{} test log files AWStats' reported
 that it parsed 9,240,075 (88.70\%) of 10,416,129 log lines, skipping
@@ -647,11 +654,11 @@ date because Postfix has evolved considerably since this tool was last
 updated (2003/11/06).  As it neither ran successfully nor has documentation
 the author can read, a detailed review cannot be provided.
 
-The Debian project (\url{http://www.debian.org/}) provides a manual page
-with the copy of anteater it distributes, so the author was at least able
-to run anteater with the correct arguments; sadly anteater produced zero
-for every statistic, presumably because it was unsuccessful in parsing the
-log lines.
+The Debian project (\urlLastChecked{http://www.debian.org/}{2008/11/23})
+provides a manual page with the copy of anteater it distributes, so the
+author was at least able to run anteater with the correct arguments; sadly
+anteater produced zero for every statistic, presumably because it was
+unsuccessful in parsing the log lines.
 
 \section{Yet Another Advanced Logfile Analyser}
 
@@ -706,12 +713,12 @@ Postfix parser does not deal with the complications explained in
 
 YAALA provides a mini-language based on \acronym{SQL} that is used when
 generating reports; sample reports can be seen
-at~\url{http://www.yaala.org/samples.html}.  Example query for HTTP proxy
-servers: \newline{} \tab{} \texttt{requests BY file WHERE host =\~{}
-Google} \newline{} The mini-language is quite limited and cannot be used to
-extract data for external use, merely to create reports.  Only data
-selected by the query will be saved in the data store; other data will be
-discarded, and removed from the data store if already present.
+at~\urlLastChecked{http://www.yaala.org/samples.html}{2008/11/23}.  Example
+query for HTTP proxy servers: \newline{} \tab{} \texttt{requests BY file
+WHERE host =\~{} Google} \newline{} The mini-language is quite limited and
+cannot be used to extract data for external use, merely to create reports.
+Only data selected by the query will be saved in the data store; other data
+will be discarded, and removed from the data store if already present.
 
 Testing YAALA was unsuccessful because all the select clauses tried
 produced a similar error message:
