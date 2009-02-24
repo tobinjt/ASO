@@ -44,6 +44,7 @@ PRELUDE
 #
 # Plus minimum versus maximum rule sets.
 # XXX AT SOME POINT NEED TO TEST AGAINST A RAM DISK.
+# XXX COMPARE PARSING ONLY TO PARSING AND ACTIONS.
 
 my @options = (
     {

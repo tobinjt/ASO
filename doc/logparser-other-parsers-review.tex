@@ -22,7 +22,7 @@ against those already available, to accurately judge what improvements, if
 any, are delivered by the newcomers.  Each of the reviewed parsers was
 tested with the \numberOFlogFILES{} test log files described in
 \sectionref{parser efficiency}.  \Tableref{Summary of parsers' features}
-summarises the results.
+summarises the results of this review.
 
 Some important differences exist between \parsername{} and most or all of
 the parsers reviewed here:
@@ -35,8 +35,7 @@ the parsers reviewed here:
 
     \item Only \parsername{} enables parsing of new log lines without
         extensive and intrusive modifications to the parser; \parsernames{}
-        architecture is described in \sectionref{why separate rules,
-        actions, and framework?}.
+        architecture is described in \sectionref{parser architecture}.
 
     \item The parsers reviewed all produce a report of varying complexity
         and detail, whereas \acronym{PLP} does not; it extracts data and
@@ -74,7 +73,8 @@ The data extracted by \parsername{} is documented in
 \sectionref{connections table} and \sectionref{results table}; for
 convenience that list is repeated here: client and server \acronym{IP}
 address and hostname, HELO hostname, queueid, start time, end time,
-\acronym{SMTP} code, sender, recipient, size, message ID\@.
+\acronym{SMTP} code, \acronym{DSN} code, sender, recipient, size, message
+ID, delay and delays.
 
 \section{Log Mail Analyser}
 
@@ -145,15 +145,15 @@ address, sender and recipient addresses, \acronym{SMTP} code, and size (for
 accepted mails only).  It is unclear what time and date is stored: start
 time, end time, or delivery time?  Unlike \parsername{} it does not store
 the server hostname, HELO hostname, queueid, start and end times,
-timestamps for each log line, or message id (for accepted mails only).
-Handling of multiple recipients, \acronym{SMTP} codes, or remote
-servers\footnote{A single mail may be sent to multiple remote servers if it
-was addressed to recipients in different domains, or Postfix needs to try
-multiple servers for one or more recipients.} is not explained;
-experimental observation shows that multiple records are added when a mail
-had multiple recipients (sadly the records are not associated or linked in
-any way), and presumably the same approach is taken when there were
-multiple destination servers.
+timestamps for each log line, \acronym{DSN} code, delivery delays, or
+message id (for accepted mails only).  Handling of multiple recipients,
+\acronym{SMTP} codes, or remote servers\footnote{A single mail may be sent
+to multiple remote servers if it was addressed to recipients in different
+domains, or Postfix needs to try multiple servers for one or more
+recipients.} is not explained; experimental observation shows that multiple
+records are added when a mail had multiple recipients (sadly the records
+are not associated or linked in any way), and presumably the same approach
+is taken when there were multiple destination servers.
 
 \acronym{LMA} requires major changes to the parser code to parse new log lines
 or to extract additional data.  The code is structured as a long series of
@@ -237,9 +237,9 @@ these differences.
         contents.
 
     \item Some records output by DAILY-REJECT are truncated: they are
-        missing the last | separating fields and the newline following it,
-        so the line containing only a single space is concatenated with the
-        record.
+        missing the last $|$ that separates the fields and the newline
+        following it, so the line containing only a single space is
+        concatenated with the record.
 
 \end{enumerate}
 
@@ -375,10 +375,10 @@ different sets of data:
 \end{enumerate}
 
 Even if the three data sets were combined Sawmill would extract less data
-than \parsername{}: it omits the HELO hostname, queueid, and start and end
-times.  Sawmill does not extract any data about rejections except when the
-rejection is caused by a \acronym{DNSBL} check (\texttt{RBL list} in the
-list of fields).
+than \parsername{}: it omits the HELO hostname, queueid, \acronym{DSN}
+code, delivery delays, and start and end times.  Sawmill does not extract
+any data about rejections except when the rejection is caused by a
+\acronym{DNSBL} check (\texttt{RBL list} in the list of fields).
 
 The source code is available in an obfuscated form, and the product is
 quite expensive, requiring a \euros{100} + VAT licence per report
@@ -511,12 +511,13 @@ any \texttt{key=value} pairs occurring after the standard syslog prologue:
 to and from addresses, HELO hostname, and protocol (\acronym{SMTP} or
 \acronym{ESMTP}).  \parsername{} extracts noticeably more data (client and
 server \acronym{IP} address and hostname, queueid, start and end times,
-timestamps for each log line, \acronym{SMTP} code, and message ID), though
-it does not make the full text of the line available (this could be
-trivially added if desired, but would greatly increase the size of the
-resulting database).  The full power of \acronym{SQL} is available when
-searching the data extracted by \parsername{}, allowing the user to search
-on arbitrarily complicated conditions.
+timestamps for each log line, \acronym{SMTP} and \acronym{DSN} codes,
+delivery delays, and message ID), though it does not make the full text of
+the line available (this could be trivially added if desired, but would
+greatly increase the size of the resulting database).  The full power of
+\acronym{SQL} is available when searching the data extracted by
+\parsername{}, allowing the user to search on arbitrarily complicated
+conditions.
 
 Splunk is a generic tool, so it lacks any Postfix specific support over and
 above extracting the \texttt{key=value} fields from a log line; it makes no
@@ -699,15 +700,16 @@ from specific log lines:
 \noindent{}YAALA's Postfix parser extracts some of the fields \parsername{}
 does: for client and server it stores either the \acronym{IP} address or
 the hostname, not both; it omits the HELO hostname, queueid, \acronym{SMTP}
-code, size of each accepted mail, start and end times, timestamps for each
-log line, and message ID\@.  It extracts some data that \parsername{} does
-not: the delay in delivering each mail, and how many times delivery was
-deferred for each mail; these could easily be extracted by \parsername{} if
-desired.  Unlike \parsername{}, YAALA does not maintain separate counters
-for each restriction; this rules out the possibility of using the collected
-data for optimisation, testing, or understanding of restrictions.  YAALA's
-Postfix parser does not deal with the complications explained in
-\sectionref{complications}, except it does correlate log lines by queueid.
+and \acronym{DSN} codes, size of each accepted mail, start and end times,
+timestamps for each log line, and message ID\@.  It extracts some data that
+\parsername{} does not: how many times delivery was deferred for each mail;
+this information can be determined from the database populated by
+\parsername{} if desired.  Unlike \parsername{}, YAALA does not maintain
+separate counters for each restriction; this rules out the possibility of
+using the collected data for optimisation, testing, or understanding of
+restrictions.  YAALA's Postfix parser does not deal with the complications
+explained in \sectionref{complications}, except it does correlate log lines
+by queueid.
 
 YAALA provides a mini-language based on \acronym{SQL} that is used when
 generating reports; sample reports can be seen
@@ -777,7 +779,8 @@ data: HELO hostname, queueid, \acronym{SMTP} code, sender and recipient
 addresses, and size of accepted mails.  It is unclear if the parser will
 extract any further data.  Lire misses the following fields extracted by
 \parsername{}: client and server \acronym{IP} address and hostname, start
-and end times, timestamps of each log line, and message ID\@. 
+and end times, \acronym{DSN} code, delivery delays, timestamps of each log
+line, and message ID\@. 
 
 Lire supports multiple output formats for generated reports (text, HTML,
 PDF, and Excel 95) but the reports do not appear to be customisable;
@@ -859,15 +862,15 @@ Logrep extracts fewer than half the fields \parsername{} does:
 
 It also counts the number of log lines parsed and skipped.  It omits client
 \acronym{IP} address and hostname, server \acronym{IP} address, HELO
-hostname, queueid, timestamps of each log line, and message ID\@.  It
-extracts the delay for delivered mails, which \parsername{} does not.  Log
-lines are correlated based on the queueid (called sessionname [sic] within
-Logrep), but not by \acronym{pid}.  The parsing is error prone: empty
-fields are saved when the log line does not match the regex, though it
-appears that they will not overwrite existing data.  Most notably
-rejections are completely ignored, making it unsuitable for the purposes of
-this project.  It does not try to address any of the complications in
-\sectionref{complications} except for correlating by queueid.
+hostname, queueid, timestamps of each log line, \acronym{DSN} code, and
+message ID\@.  Log lines are correlated based on the queueid (called
+sessionname [sic] within Logrep), but not by \acronym{pid}.  The parsing is
+error prone: empty fields are saved when the log line does not match the
+regex, though it appears that they will not overwrite existing data.  Most
+notably rejections are completely ignored, making it unsuitable for the
+purposes of this project.  It does not try to address any of the
+complications in \sectionref{complications} except for correlating by
+queueid.
 
 Logrep does not come with any documentation, though some scant
 documentation is available on its website (\parsername{} provides copious

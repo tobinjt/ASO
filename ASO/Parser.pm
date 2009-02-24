@@ -2477,7 +2477,8 @@ separate rules matching lost connections or timeouts after DATA.
 __DATA__ expands to nothing: it B<is> used for automatic data extraction, but
 you'll need to add a pattern yourself - even if it's just .*
 
-__CHILD__ and __PID__ are used by certain actions XXX WHICH ONES?
+__CHILD__ and __PID__ are used by certain actions to figure out which connection
+to operate on.
 
 The other names should be reasonably self-explanatory.
 
@@ -2578,9 +2579,9 @@ sub filter_regex {
     # DATA is deliberately excluded here because there are more specific rules
     # for DATA.
     $regex =~ s/__SHORT_CMD__           /(?:CONNECT|HELO|EHLO|AUTH|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN|XFORWARD|XCLIENT|XVERP)/gmx;
-    $regex =~ s/__DELAYS__              /delays=(?:[\\d.]+\/){3}[\\d.]+, /gmx;
-    $regex =~ s/__DELAY__               /delay=\\d+(?:\\.\\d+)?, /gmx;
-    $regex =~ s/__DSN__                 /\\d\\.\\d\\.\\d/gmx;
+    $regex =~ s/__DELAYS__              /delays=(?<delays>(?:[\\d.]+\/){3}[\\d.]+), /gmx;
+    $regex =~ s/__DELAY__               /delay=(?<delay>\\d+(?:\\.\\d+)?), /gmx;
+    $regex =~ s/__DSN__                 /(?<dsn>\\d\\.\\d\\.\\d)/gmx;
     $regex =~ s/__CONN_USE__            /conn_use=\\d+, /gmx;
     $regex =~ s/__SIZE__                /\\d+/gmx;
     $regex =~ s/__DATA__                //gmx;

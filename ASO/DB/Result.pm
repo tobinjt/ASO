@@ -174,6 +174,24 @@ my %cols = (
         type            => q{integer},
     },
 
+    # Simple delay information; will be NULL for most results.
+    delay           => {
+        result_cols     => 1,
+        sql             => q{},
+        type            => q{text},
+    },
+    # Detailed delay information; will be NULL for most results.
+    delays          => {
+        result_cols     => 1,
+        sql             => q{},
+        type            => q{text},
+    },
+    # DSN; will be NULL for most results.
+    dsn             => {
+        result_cols     => 1,
+        sql             => q{},
+        type            => q{text},
+    },
     # Pseudo-columns which don't exist in the table but are used elsewhere.
 
     # child is used in TRACK and BOUNCE.

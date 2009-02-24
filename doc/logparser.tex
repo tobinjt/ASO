@@ -112,6 +112,15 @@
 \newcommand{\acronym}[1]{%
     \gls{#1}\glsadd{#1 glossary}%
 }
+% Define a new glossary style that uses eqlist, so that acronyms line up
+% nicely.
+\newglossarystyle{eqlist}{%
+    \glossarystyle{list}%
+    \renewenvironment{theglossary}{\begin{eqlist}}{\end{eqlist}}%
+    \renewcommand*{\glossaryentryfield}[5]{%
+        \item [\textbf{##2}] ##3%
+    }%
+}
 
 % Provides commands to distinguish between pdf and dvi output.
 \usepackage{ifpdf}
@@ -280,9 +289,6 @@ XXX CHECK ALL ``UNINTERESTING'' RULES TO SEE IF THEY COULD BE USED\@.
 
 XXX SHOULD I SCRAP postfix\_action?
 
-XXX EXTRACT DELAY AND DEFER WHEN AUTOMATIC EXTRACTION HAS BEEN FINISHED,
-THEN UPDATE FIELDS IN BOTH DATABASE AND REVIEW OF OTHER PARSERS\@.
-
 XXX POSSIBLY PUBLISH THE STATE OF THE ART REVIEW IN A JOURNAL\@?
 
 \newpage
@@ -317,7 +323,7 @@ XXX POSSIBLY PUBLISH THE STATE OF THE ART REVIEW IN A JOURNAL\@?
 \renewcommand{\glossarypostamble}{\label{Glossary}}
 \printglossary{}
 \renewcommand{\glossarypostamble}{\label{Acronyms}}
-\printglossary[type=\acronymtype]{}
+\printglossary[type=\acronymtype,style=eqlist]{}
 \renewcommand{\glossarypostamble}{\label{Postfix Daemons}}
 \printglossary[type=postfix]{}
 
