@@ -2516,7 +2516,7 @@ sub filter_regex {
         }
     }
 
-    $regex =~ s/__RESTRICTION_START__   /(__QUEUEID__): reject(?:_warning)?: (?:RCPT|DATA) from (?>(__CLIENT_HOSTNAME__)\\[)(?>(__CLIENT_IP__)\\]): (__SMTP_CODE__)(?: __DSN__)?/gmx;
+    $regex =~ s/__RESTRICTION_START__   /(__QUEUEID__): reject(?:_warning)?: (?:RCPT|DATA) from (?>(__CLIENT_HOSTNAME__)\\[)(?>(__CLIENT_IP__)\\]): (__SMTP_CODE__)(?: __ENHANCED_STATUS_CODE__)?/gmx;
 
     # Keyword replacement for automatic data extraction.
     # NOTE: the trailing ) is not required, to make __DATA__ work flexibly.
@@ -2581,7 +2581,7 @@ sub filter_regex {
     $regex =~ s/__SHORT_CMD__           /(?:CONNECT|HELO|EHLO|AUTH|MAIL|RCPT|VRFY|STARTTLS|RSET|NOOP|QUIT|END-OF-MESSAGE|UNKNOWN|XFORWARD|XCLIENT|XVERP)/gmx;
     $regex =~ s/__DELAYS__              /delays=(?<delays>(?:[\\d.]+\/){3}[\\d.]+), /gmx;
     $regex =~ s/__DELAY__               /delay=(?<delay>\\d+(?:\\.\\d+)?), /gmx;
-    $regex =~ s/__DSN__                 /(?<dsn>\\d\\.\\d\\.\\d)/gmx;
+    $regex =~ s/__ENHANCED_STATUS_CODE__/(?<enhanced_status_code>\\d\\.\\d\\.\\d)/gmx;
     $regex =~ s/__CONN_USE__            /conn_use=\\d+, /gmx;
     $regex =~ s/__SIZE__                /\\d+/gmx;
     $regex =~ s/__DATA__                //gmx;

@@ -161,6 +161,15 @@
         checked = "2008/05/29",
     },
 
+    "RFC3463" = {
+        author  = "Gregory M. Vaudreuil",
+        url     = "http://www.faqs.org/rfcs/rfc3463.html",
+        title   = "RFC 3463 --- Enhanced Mail System Status Codes",
+        year    = 2003,
+        journal = "The Internet Society Requests for Comment",
+        checked = "2009/02/24",
+    },
+
     "log-mail-analyser" = {
         author  = "Maurizio Aiello and David Avanzini and Davide Chiarella and Gianluca Papaleo",
         url     = "http://www.terena.nl/events/tnc2006/core/getfile.php?file_id=770",

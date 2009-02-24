@@ -104,103 +104,103 @@ use base qw{ASO::DB::Base};
 our ($VERSION) = q{$Id$} =~ m/(\d+)/mx;
 
 my %cols = (
-    id              => {
-        sql             => q{NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE},
-        type            => q{integer},
+    id                      => {
+        sql                     => q{NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE},
+        type                    => q{integer},
     },
     # Reference to connections->id
-    connection_id   => {
-        sql             => q{NOT NULL},
-        type            => q{integer},
+    connection_id           => {
+        sql                     => q{NOT NULL},
+        type                    => q{integer},
     },
     # Reference to rules->id
-    rule_id         => {
-        required        => 1,
-        sql             => q{NOT NULL},
-        type            => q{integer},
+    rule_id                 => {
+        required                => 1,
+        sql                     => q{NOT NULL},
+        type                    => q{integer},
     },
     # True if it was a warning, false if it took effect
-    warning         => {
-        sql             => q{NOT NULL DEFAULT 0},
-        type            => q{integer},
+    warning                 => {
+        sql                     => q{NOT NULL DEFAULT 0},
+        type                    => q{integer},
     },
     # The SMTP code sent to the client
-    smtp_code       => {
-        required        => 1,
-        result_cols     => 1,
-        sql             => q{NOT NULL},
-        type            => q{text},
+    smtp_code               => {
+        required                => 1,
+        result_cols             => 1,
+        sql                     => q{NOT NULL},
+        type                    => q{text},
     },
     # The MAIL FROM: <address>; may be <>, so can be null.
     # sender changes if the connection is reused.
-    sender          => {
-        required        => 1,
-        result_cols     => 1,
-        sql             => q{},
-        type            => q{text},
+    sender                  => {
+        required                => 1,
+        result_cols             => 1,
+        sql                     => q{},
+        type                    => q{text},
     },
     # The size of delivered mails.  Will be null for rejection mails.
-    size            => {
-        result_cols     => 1,
-        sql             => q{},
-        type            => q{integer},
+    size                    => {
+        result_cols             => 1,
+        sql                     => q{},
+        type                    => q{integer},
     },
     # The recipient; checks after DATA won't have a recipient, so allow it to
     # be null.
-    recipient       => {
-        required        => 1,
-        result_cols     => 1,
-        sql             => q{},
-        type            => q{text},
+    recipient               => {
+        required                => 1,
+        result_cols             => 1,
+        sql                     => q{},
+        type                    => q{text},
     },
     # The message-id.  Useful when trying to figure whether the mail is a
     # bounce or not, I dunno if it's of any great use otherwise.  Will be NULL
     # for most results.
-    message_id      => {
-        result_cols    => 1,
-        sql             => q{},
-        type            => q{text},
+    message_id              => {
+        result_cols            => 1,
+        sql                     => q{},
+        type                    => q{text},
     },
     # A place to plop anything not already covered.
-    data            => {
-        result_cols    => 1,
-        sql             => q{},
-        type            => q{text},
+    data                    => {
+        result_cols            => 1,
+        sql                     => q{},
+        type                    => q{text},
     },
     # The timestamp of the result
-    timestamp       => {
-        required        => 1,
-        sql             => q{},
-        type            => q{integer},
+    timestamp               => {
+        required                => 1,
+        sql                     => q{},
+        type                    => q{integer},
     },
 
     # Simple delay information; will be NULL for most results.
-    delay           => {
-        result_cols     => 1,
-        sql             => q{},
-        type            => q{text},
+    delay                   => {
+        result_cols             => 1,
+        sql                     => q{},
+        type                    => q{text},
     },
     # Detailed delay information; will be NULL for most results.
-    delays          => {
-        result_cols     => 1,
-        sql             => q{},
-        type            => q{text},
+    delays                  => {
+        result_cols             => 1,
+        sql                     => q{},
+        type                    => q{text},
     },
     # DSN; will be NULL for most results.
-    dsn             => {
-        result_cols     => 1,
-        sql             => q{},
-        type            => q{text},
+    enhanced_status_code    => {
+        result_cols             => 1,
+        sql                     => q{},
+        type                    => q{text},
     },
     # Pseudo-columns which don't exist in the table but are used elsewhere.
 
     # child is used in TRACK and BOUNCE.
-    child           => {
-        result_cols     => 1,
+    child                   => {
+        result_cols             => 1,
     },
     # used in SMTPD_DIED
-    pid             => {
-        result_cols     => 1,
+    pid                     => {
+        result_cols             => 1,
     },
 );
 

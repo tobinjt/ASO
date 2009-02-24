@@ -73,7 +73,7 @@ The data extracted by \parsername{} is documented in
 \sectionref{connections table} and \sectionref{results table}; for
 convenience that list is repeated here: client and server \acronym{IP}
 address and hostname, HELO hostname, queueid, start time, end time,
-\acronym{SMTP} code, \acronym{DSN} code, sender, recipient, size, message
+\acronym{SMTP} code, enhanced status code, sender, recipient, size, message
 ID, delay and delays.
 
 \section{Log Mail Analyser}
@@ -145,7 +145,7 @@ address, sender and recipient addresses, \acronym{SMTP} code, and size (for
 accepted mails only).  It is unclear what time and date is stored: start
 time, end time, or delivery time?  Unlike \parsername{} it does not store
 the server hostname, HELO hostname, queueid, start and end times,
-timestamps for each log line, \acronym{DSN} code, delivery delays, or
+timestamps for each log line, enhanced status code, delivery delays, or
 message id (for accepted mails only).  Handling of multiple recipients,
 \acronym{SMTP} codes, or remote servers\footnote{A single mail may be sent
 to multiple remote servers if it was addressed to recipients in different
@@ -375,7 +375,7 @@ different sets of data:
 \end{enumerate}
 
 Even if the three data sets were combined Sawmill would extract less data
-than \parsername{}: it omits the HELO hostname, queueid, \acronym{DSN}
+than \parsername{}: it omits the HELO hostname, queueid, enhanced status
 code, delivery delays, and start and end times.  Sawmill does not extract
 any data about rejections except when the rejection is caused by a
 \acronym{DNSBL} check (\texttt{RBL list} in the list of fields).
@@ -511,7 +511,7 @@ any \texttt{key=value} pairs occurring after the standard syslog prologue:
 to and from addresses, HELO hostname, and protocol (\acronym{SMTP} or
 \acronym{ESMTP}).  \parsername{} extracts noticeably more data (client and
 server \acronym{IP} address and hostname, queueid, start and end times,
-timestamps for each log line, \acronym{SMTP} and \acronym{DSN} codes,
+timestamps for each log line, \acronym{SMTP} and enhanced status codes,
 delivery delays, and message ID), though it does not make the full text of
 the line available (this could be trivially added if desired, but would
 greatly increase the size of the resulting database).  The full power of
@@ -700,7 +700,7 @@ from specific log lines:
 \noindent{}YAALA's Postfix parser extracts some of the fields \parsername{}
 does: for client and server it stores either the \acronym{IP} address or
 the hostname, not both; it omits the HELO hostname, queueid, \acronym{SMTP}
-and \acronym{DSN} codes, size of each accepted mail, start and end times,
+and enhanced status codes, size of each accepted mail, start and end times,
 timestamps for each log line, and message ID\@.  It extracts some data that
 \parsername{} does not: how many times delivery was deferred for each mail;
 this information can be determined from the database populated by
@@ -779,8 +779,8 @@ data: HELO hostname, queueid, \acronym{SMTP} code, sender and recipient
 addresses, and size of accepted mails.  It is unclear if the parser will
 extract any further data.  Lire misses the following fields extracted by
 \parsername{}: client and server \acronym{IP} address and hostname, start
-and end times, \acronym{DSN} code, delivery delays, timestamps of each log
-line, and message ID\@. 
+and end times, enhanced status code, delivery delays, timestamps of each
+log line, and message ID\@. 
 
 Lire supports multiple output formats for generated reports (text, HTML,
 PDF, and Excel 95) but the reports do not appear to be customisable;
@@ -862,7 +862,7 @@ Logrep extracts fewer than half the fields \parsername{} does:
 
 It also counts the number of log lines parsed and skipped.  It omits client
 \acronym{IP} address and hostname, server \acronym{IP} address, HELO
-hostname, queueid, timestamps of each log line, \acronym{DSN} code, and
+hostname, queueid, timestamps of each log line, enhanced status code, and
 message ID\@.  Log lines are correlated based on the queueid (called
 sessionname [sic] within Logrep), but not by \acronym{pid}.  The parsing is
 error prone: empty fields are saved when the log line does not match the
