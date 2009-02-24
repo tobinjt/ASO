@@ -120,6 +120,17 @@
     \renewcommand*{\glossaryentryfield}[5]{%
         \item [\textbf{##2}] ##3%
     }%
+    \renewcommand{\glsgroupskip}[0]{}%
+}
+% Define a new glossary style that removes the space between glossary
+% groups.
+\newglossarystyle{nospacelist}{%
+    \glossarystyle{list}%
+%    \renewenvironment{theglossary}{\begin{eqlist}}{\end{eqlist}}%
+%    \renewcommand*{\glossaryentryfield}[5]{%
+%        \item [\textbf{##2}] ##3%
+%    }%
+    \renewcommand{\glsgroupskip}[0]{}%
 }
 
 % Provides commands to distinguish between pdf and dvi output.
@@ -328,10 +339,10 @@ XXX POSSIBLY PUBLISH THE STATE OF THE ART REVIEW IN A JOURNAL\@?
 \bibliography{logparser-bibliography}
 
 \renewcommand{\glossarypostamble}{\label{Glossary}}
-\printglossary{}
+\printglossary[style=nospacelist]{}
 \renewcommand{\glossarypostamble}{\label{Acronyms}}
 \printglossary[type=\acronymtype,style=eqlist]{}
 \renewcommand{\glossarypostamble}{\label{Postfix Daemons}}
-\printglossary[type=postfix]{}
+\printglossary[type=postfix,style=nospacelist]{}
 
 \end{document}
