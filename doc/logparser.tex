@@ -201,6 +201,13 @@
 \newcommand{\urlLastChecked}[3][ ]{%
     \url{#2}#1(last checked #3)%
 }
+\newcommand{\daemonDocURL}[3][]{%
+    \hfill{} \newline{} \url{#2}%
+    \hfill{} #1 Last checked #3%
+}
+\newcommand{\urlLastCheckedNoParens}[3][ ]{%
+    \url{#2}#1last checked #3%
+}
 
 \newcommand{\tab}[0]{%
     \hspace*{1em}%
