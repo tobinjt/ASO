@@ -28,16 +28,18 @@
     [% entry.title %].
     [% entry.author.split(" and ").join(", ") %].
     [% IF entry.exists("journal") -%]
-        \emph{[% entry.journal %]}
         [% IF entry.exists("volume") -%]
+            \emph{[% entry.journal %]}
             [% IF entry.exists("number") -%]
                 volume [% entry.volume %]([% entry.number %]),
             [% ELSE -%]
                 volume [% entry.volume %],
             [% END -%]
             pages [% entry.pages -%],
+            [% entry.year %].
+        [% ELSE -%]
+            \emph{[% entry.journal %]}.
         [% END -%]
-        ([% entry.year %]).
     [% END -%]
     [% IF entry.exists("publisher") -%]
         [% entry.publisher -%], [% entry.address -%].

@@ -1801,8 +1801,8 @@ XXX WOULD IT BE BETTER TO BEGIN THE EXPLANATIONS ON THE FOLLOWING LINE\@?
     \item [\daemon{smtpd}, \daemon{postsuper}:] Mail accepted from a remote
         client, then deleted by the administrator before any delivery
         attempt was made (the unwanted mail is typically due to a mail loop
-        or joe~job).  Notice that \daemon{postsuper} is required, not
-        optional, for this combination.
+        or joe~job\glsadd{Joe-job}).  Notice that \daemon{postsuper} is
+        required, not optional, for this combination.
 
 \end{description}
 
@@ -1850,7 +1850,7 @@ if delivery has yet to be attempted the parser cannot determine the
 recipient address or addresses.  This is a problem when mail is arriving
 faster than Postfix can attempt delivery, and the administrator deletes
 some of the mail (because it is the result of a mail loop\glsadd{mail
-loop}, mail bomb\glsadd{mail bomb}, or joe~job\glsadd{Joe job}) before
+loop}, mail bomb\glsadd{mail bomb}, or joe~job\glsadd{Joe-job}) before
 Postfix has had a chance to try to deliver it.  In this case the recipient
 address will not have been logged, so a dummy recipient address needs to be
 added, as every mail is required by the database schema
