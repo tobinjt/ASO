@@ -57,17 +57,19 @@
     description={Simple Mail Transfer Protocol},
     first={Simple Mail Transfer Protocol (SMTP)}
 }
+\newcommand{\SMTPglossaryDescription}[0]{%
+    \acronym{SMTP} is the protocol used for transferring mail between the
+    sending and receiving \acronym{MTA}\@.  It is a simple, human readable,
+    plain text protocol, making it quite simple to test and debug problems
+    with it.  A detailed description of SMTP is beyond the scope of this
+    thesis: the original protocol definition is in RFC~821~\cite{RFC821},
+    updated in RFC~2821~\cite{RFC2821}; introductory guides can be found
+    at~\cite{smtp-intro-01,smtp-intro-02}.%
+}
 \newglossaryentry{SMTP glossary}{
     name={Simple Mail Transfer Protocol},
     description={
-        SMTP is the protocol that transfers mail from the sender to the
-        recipient across the Internet.  It is a simple, human readable,
-        plain text protocol, making it quite simple to test and debug
-        problems with it.  A detailed description of SMTP is beyond the
-        scope of this thesis: the original protocol definition is
-        RFC~821~\cite{RFC821}, updated in RFC~2821~\cite{RFC2821};
-        introductory guides can be found
-        at~\cite{smtp-intro-01,smtp-intro-02}.
+        \SMTPglossaryDescription{}
     }
 }
 
@@ -332,6 +334,13 @@
         recognise languages of the form $a^{n}b^{n}$, i.e.\ any number of
         one symbol followed by the same number of another symbol.
     }
+}
+
+\newglossaryentry{SPF}{
+    type=\acronymtype,
+    name={SPF},
+    description={Sender Policy Framework},
+    first={Sender Policy Framework (SPF)}
 }
 
 %\newglossaryentry{}{

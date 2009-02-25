@@ -4,50 +4,52 @@
 
 This section provides background information helpful in understanding the
 remainder of this thesis.  It begins with a discussion of the motivation
-underlying the project, followed by a brief introduction to
-\acronym{SMTP}\@.  It finishes with a longer introduction to Postfix,
-concentrating on anti-spam restrictions and policy servers.
+underlying the project, followed by a brief introduction to \acronym{SMTP},
+and finishes with a longer introduction to Postfix, concentrating on
+anti-spam restrictions and policy servers.
 
 \section{Motivation}
 
 \label{motivation}
 
-This thesis and the program it describes are part of a larger project to
-optimise a mail server's Postfix-based anti-spam restrictions, generate
-statistics and graphs, and provide a platform on which new restrictions can
-be evaluated to determine if they are beneficial in the fight against spam.
-The program parses Postfix log files and populates a database with the data
-gleaned from those log files, providing a consistent and simple view of the
-log files that future tools can utilise.  The gathered data can be used to
-optimise current anti-spam measures, to provide a baseline to test new
-anti-spam measures against, or to produce statistics showing how effective
-those measures are.
+This work is part of a larger project to optimise a mail server's
+Postfix-based anti-spam restrictions, generate statistics and graphs, and
+provide a platform on which new restrictions can be evaluated to determine
+if they are beneficial in the fight against spam.  The program written for
+this project, \parsername{}, parses Postfix log files and populates a
+database with the data gleaned from those log files, providing a consistent
+and simple view of the log files that future tools can utilise.  The
+gathered data can be used to optimise current anti-spam measures, to
+provide a baseline to test new anti-spam measures against, or to produce
+statistics showing how effective those measures are.
 
-Determining which Postfix restrictions reject the highest number of mails
-is a short example of the optimisation possible using data from the
-database:
+A short example of the optimisation possible using data from the database
+is determining which Postfix restrictions reject the highest number of
+mails:
 
 \begin{verbatim}
 SELECT name, description, restriction_name, hits_total
     FROM rules
-    WHERE postfix_action = 'REJECTED'
+    WHERE action = 'DELIVERY_REJECTED'
     ORDER BY hits_total DESC;
 \end{verbatim}
 
 If the database supports sub-selects (where the results of one query are
-used in another), percentages can be obtained for the top ten restrictions
-(sample output shown in \tableref{Sample output from SQL query showing
-percentages}):
+used as a parameter in another), percentages can be obtained for the top
+ten restrictions (sample output shown in \tableref{Sample output from SQL
+query}):
+
+XXX db.full-run.sq3 NEEDS TO BE UPDATED AND EVERYTHING REBUILT\@.
 
 \input{build/include-sample-sql-query}
 
 \begin{table}[ht]
-    \caption{Sample output from SQL query showing percentages}
-    \empty{}\label{Sample output from SQL query showing
-    percentages}
+    \caption{Sample output from SQL query}
+    \empty{}\label{Sample output from SQL query}
     \begin{tabular}[]{lrr}
         \tabletopline{}%
-        Restriction & Number of hits & Percentage of hits \\
+        Restriction & Number of  & Percentage of    \\
+                    & rejections & total rejections \\
         \tablemiddleline{}%
         \input{build/include-sample-sql-output}
         \tablebottomline{}%
@@ -65,11 +67,11 @@ SELECT name, description, restriction_name, hits,
         (hits * 100.0 /
             (SELECT SUM(hits)
                 FROM rules
-                WHERE postfix_action = 'REJECTED'
+                WHERE action = 'DELIVERY_REJECTED'
             )
         ) || '%' AS percentage
     FROM rules
-    WHERE postfix_action = 'REJECTED'
+    WHERE action = 'DELIVERY_REJECTED'
         AND hits < 100
     ORDER BY hits ASC;
 \end{verbatim}
@@ -79,29 +81,26 @@ anti-spam techniques.  These statistics are far less feasible to assess
 directly from log files without prior pre-processing into a database in the
 fashion proposed, implemented, and tested herein.
 
-\section{Simple Mail Transfer Protocol}
+\section{Simple Mail Transfer Protocol (SMTP)}
 
 \label{SMTP background}
 
-The \glsfirst{SMTP}, originally defined in \acronym{RFC}~821~\cite{RFC821}
-and updated in \acronym{RFC}~2821~\cite{RFC2821}, is used for transferring
-mail between the sending and receiving \acronym{MTA}\@.  It is a simple,
-human readable, plain text protocol, simplifying testing and debugging
-problems with it.  Despite the simplicity of the protocol many virus and
-spam sending programs fail to implement it properly, so requiring strict
-adherence to the protocol specification is beneficial in protecting against
-spam and viruses.\footnote{\label{footnote:rfc760}Originally all mail
-servers adhered to the principle of \textit{Be liberal in what you accept,
-and conservative in what you send\/} from \acronym{RFC}~760~\cite{rfc760},
-but unfortunately that principle was written in a friendlier time.  Given
-the deluge of spam that mail servers are subjected to daily, a more
-appropriate maxim could be: \textit{Require strict adherence to
-\acronym{RFC}~2821; implement the strongest restrictions you can; relax the
-restrictions and adherence only when legitimate mail is impeded.\/}  It is
-not as friendly, nor as catchy, but it more accurately reflects the current
-situation.} A typical \acronym{SMTP} conversation resembles the following
-(the lines starting with a three digit number are sent by the server, all
-other lines are sent by the client):
+\SMTPglossaryDescription{} Despite the simplicity of the protocol many
+virus and spam sending programs fail to implement it properly, so requiring
+strict adherence to the protocol specification is beneficial in protecting
+against spam and viruses.\footnote{\label{footnote:rfc760}Originally all
+mail servers adhered to the principle of \textit{Be liberal in what you
+accept, and conservative in what you send\/} from
+\acronym{RFC}~760~\cite{rfc760}, but unfortunately that principle was
+written in a friendlier time.  Given the deluge of spam that mail servers
+are subjected to daily, a more appropriate maxim could be: \textit{Require
+strict adherence to relevant \acronyms{RFC}; implement the strongest
+restrictions you can; relax the restrictions and adherence only when
+legitimate mail is impeded.\/}  It is neither as friendly nor as catchy,
+but it more accurately reflects the current situation.} A typical
+\acronym{SMTP} conversation resembles the following (the lines starting
+with a three digit number are sent by the server, all other lines are sent
+by the client):
 
 \begin{verbatim}
 220 smtp.example.com ESMTP
@@ -142,19 +141,14 @@ QUIT
 This example client is so poorly written that not only does it present the
 sender and recipient addresses improperly, it ignores the error messages
 returned by the server and carries on regardless.  Many spam and virus
-sending programs have serious deficiencies; unfortunately others
-(particularly newer programs) were written by competent programmers, or
-send mail using well written programs (e.g.\ Postfix or Sendmail on Unix
-hosts, Microsoft Outlook on Windows hosts).  Traditionally a mail server
-would have done its best to deal with deficient clients, with the intention
-of accepting as much mail destined for its users as possible, e.g.\ by
-ignoring the absence of a HELO command, or by accepting sender or recipient
-addresses that were not enclosed in \texttt{<>}.  
-
-A detailed description of \acronym{SMTP} is beyond the scope of this
-thesis: introductory guides can be found
-at~\cite{smtp-intro-01,smtp-intro-02}, and the definitive references
-are~\cite{RFC821,RFC2821}.
+sending programs have serious deficiencies; unfortunately other programs,
+particularly newer programs, were written by competent programmers or send
+mail using well written programs (e.g.\ Postfix or Sendmail on Unix hosts,
+Microsoft Outlook on Windows hosts).  Traditionally a mail server would
+have done its best to deal with deficient clients, with the intention of
+accepting as much mail sent to its users as possible, e.g.\ by ignoring the
+absence of a HELO command, or by accepting sender or recipient addresses
+that were not enclosed in \texttt{<>}.  
 
 \section{Postfix}
 
@@ -167,28 +161,22 @@ allowing an administrator to employ those restrictions which they judge
 suitable for their site's needs, rather than a fixed set chosen by
 Postfix's author.  These restrictions can be selectively applied, combined,
 and bypassed on a per-client, per-recipient, or per-sender basis, allowing
-different levels of stricture and permissiveness.  Postfix leverages simple
-lookup tables to support arbitrarily complicated user-defined sequences of
-restrictions and exceptions.  Administrators can supply their own rejection
-messages to make it clear to senders exactly why their mail was rejected.
-Policy servers (\sectionref{policy servers}) provide a simple way to write
-new restrictions without having to modify Postfix's source code.
-Unfortunately this flexibility has a cost: complexity in the log files
-generated.  Although it is relatively simple in most cases to use standard
-Unix text processing utilities to determine the fate of an individual mail,
-following the journey a mail takes through Postfix can in some cases be
-quite difficult.  For most mails the journey is simple and brief, but the
-remainder can have quite complex journeys (see \sectionref{complications}
-for details).
+different levels of stricture and permissiveness.  Administrators can
+supply their own rejection messages to make it clear to senders exactly why
+their mail was rejected.  Policy servers (\sectionref{policy servers})
+provide a simple way to write new restrictions without having to modify
+Postfix's source code.  Unfortunately this flexibility has a cost:
+complexity in the log files generated.  Although it is relatively simple in
+most cases to use standard Unix text processing utilities to determine the
+fate of an individual mail, in some cases it can be quite difficult.  For
+most mails the journey is simple and brief, but the remainder can have
+quite complex journeys (see \sectionref{complications} for details).
 
 Postfix's design follows the Unix philosophy of \textit{``Write programs
 that do one thing and do it well''\/}~\cite{unix-philosophy}, and it is
-separated into multiple programs that each perform one of the tasks
+separated into multiple components that each perform one of the tasks
 required of an \acronym{MTA}\@: receive mail, send mail, local delivery of
-mail, etc.\ (full details can be found in~\cite{postfix-overview}).  Each
-log line contains the name of the Postfix component that produced it, and
-this information is used when determining which rules should be used to
-parse each log line (see \sectionref{rules in architecture} for details).
+mail, etc.;\ full details can be found in~\cite{postfix-overview}.
 Postfix's design is strongly influenced by security concerns: those
 components that interact with other hosts are not
 privileged,\footnote{Privilege means the power to perform actions that are
@@ -286,21 +274,18 @@ sending mail from unknown machines; one example of how to achieve this is:
 \end{verbatim}
 
 The administrator can define new restrictions as a list of existing
-restrictions, allowing arbitrarily long and complex sequences of lookups,
-restrictions, and exceptions.  Postfix tries to protect the administrator
-from misconfiguration in as far as is reasonable, e.g.\ the restriction
-\texttt{check\_helo\_mx\_access} cannot cause a mail to be accepted,
-because the parameter it checks (the hostname given in the HELO command) is
-under the control of the remote client.  Despite this, it is possible for
-the administrator to make catastrophic mistakes, e.g.\ rejecting all mail
---- the administrator must be cognisant of the effects their configuration
-changes will have.  This is similar to one of UNIX's design philosophies:
-\textit{``UNIX was not designed to stop its users from doing stupid things,
-as that would also stop them from doing clever
+restrictions, allowing arbitrarily long and complex user-defined sequences
+of lookups, restrictions, and exceptions.  Postfix tries to protect the
+administrator from misconfiguration in as far as is reasonable, e.g.\ the
+restriction \texttt{check\_helo\_mx\_access} cannot cause a mail to be
+accepted, because the parameter it checks (the hostname given in the HELO
+command) is under the control of the remote client.  Despite this, it is
+possible for the administrator to make catastrophic mistakes, e.g.\
+rejecting all mail --- the administrator must be cognisant of the effects
+their configuration changes will have.  This is similar to one of UNIX's
+design philosophies: \textit{``UNIX was not designed to stop its users from
+doing stupid things, as that would also stop them from doing clever
 things''\/}~\cite{unix-philosophy}.
-
-For further information about Postfix restrictions
-see~\cite{smtpd_access_readme,smtpd_per_user_control,policy-servers}.
 
 \subsection{Policy Servers}
 
@@ -315,15 +300,17 @@ a result (reject, permit, dunno, a rejection name) as described in
 perform more complex checks than those provided by Postfix: a trivial
 example is allowing addresses associated with the payroll system to send
 mail on the third Tuesday after pay day only, to help prevent problems from
-phishing mails using faked sender addresses.\footnote{A phishing mail might
+phishing mails using faked sender addresses. E.g.\ a phishing mail might
 claim that the payroll system had a disastrous disk failure, and until the
 server is replaced all salary payments will have to be processed manually,
 so please reply to this mail with your name, address, and bank account
-details.}
+details; the criminal can then use any details sent to him to help with
+identity theft.
 
 \begin{table}[ht]
 
-    \caption{Example attributes sent to policy servers}
+    \caption{Example attributes sent to policy servers, taken
+    from~\cite{policy-servers}}
     \empty{}\label{Example attributes sent to policy servers}
 
     \centering{}
@@ -351,15 +338,15 @@ Some widely deployed policy servers:
 
 \begin{itemize}
 
-    \item Sender Policy Framework (SPF)~\cite{openspf}.  SPF\label{spf
+    \item \acronym{SPF}~\cite{openspf}.  \acronym{SPF}\label{spf
         introduction} records specify which mail servers are allowed to
-        send mail claiming to be from a particular domain.  The intention
-        is to reduce spam from faked sender addresses,
+        send mail using sender addresses from a particular domain.  The
+        intention is to reduce spam from faked sender addresses,
         backscatter~\cite{postfix-backscatter}, and
-        joe~jobs~\glsadd{Joe-job}.  There has been considerable resistance
-        to the proposal because it breaks or vastly complicates some
-        features of \acronym{SMTP}, e.g.\ forwarding mail from one domain
-        to another when a user moves.
+        Joe~jobs~\glsadd{Joe-job}.  There has been considerable resistance
+        to \acronym{SPF} because it breaks or vastly complicates some
+        commonly-used features of \acronym{SMTP}, e.g.\ forwarding mail
+        from one domain to another when a user moves.
 
     \item Greylisting~\cite{greylisting} is a technique that temporarily
         rejects a delivery attempt when the triple of \newline{}
@@ -373,19 +360,20 @@ Some widely deployed policy servers:
         temporarily.  Sadly spam senders are using increasingly complex and
         well written programs to distribute spam, frequently using an ISP
         provided \acronym{SMTP} server from a compromised machine on the
-        ISP's network.  Greylisting will slowly become less useful, but it
-        does block a large percentage of spam mail at the moment; the most
-        effective restrictions from the \numberOFlogFILES{} log files used
-        when generating the results in \sectionref{Results} are shown in
-        \tableref{Summary of rejections}.  The table shows that greylisting
-        is worth using at the moment, particularly when you take into
-        account its position as the final restriction that a mail must
-        overcome in the configuration used on the mail server that
-        generated the log files: on that server greylisting only takes
-        effect for mails that have passed all other restrictions.  Some
-        problems may be encountered when using greylisting: some servers
-        fail to retry after a temporary failure, or legitimate mail may be
-        delayed, particularly when coming from a pool of servers.
+        ISP's network.  Greylisting will slowly become less effective as
+        spam senders adapt, but it does block a large percentage of spam
+        mail at the moment; the most effective restrictions from the
+        \numberOFlogFILES{} log files used when generating the results in
+        \sectionref{Results} are shown in \tableref{Summary of rejections}.
+        The table shows that greylisting is worth using at the moment,
+        particularly when you take into account its position as the final
+        restriction that a mail must overcome in the configuration used on
+        the mail server that generated the log files: on that server
+        greylisting only takes effect for mails that have passed all other
+        restrictions.  Some problems may be encountered when using
+        greylisting: some servers fail to retry after a temporary failure,
+        or legitimate mail may be delayed, particularly when coming from a
+        pool of servers.
 
         \begin{table}[ht]
             \caption{Summary of rejections}\label{Summary of rejections}
@@ -399,8 +387,11 @@ Some widely deployed policy servers:
         a threshold the mail is rejected.  The administrator must manually
         whitelist clients if they are to bypass a Postfix restriction,
         whereas using a threshold that requires a delivery attempt to hit
-        several scored restrictions frees the administrator from
-        whitelisting clients that fall foul of one binary restriction only.
+        several scored restrictions will allow mail from clients that would
+        fall foul of one binary restriction only.
+
+        XXX SHOULD I URLS OR BIBLIOGRAPHY ENTRIES\@?  SHOULD I SCRAP ALL
+        THE URLS AND MOVE EVERYTHING INTO THE BIBLIOGRAPHY\@?  ASK CARL\@.
 
 \end{itemize}
 
