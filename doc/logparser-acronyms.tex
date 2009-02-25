@@ -10,13 +10,6 @@
     description={Postfix Log Parser},
     first={Postfix Log Parser (PLP)}
 }
-\newglossaryentry{PLP glossary}{
-    name={Postfix Log Parser},
-    description={
-        Postfix Log Parser is the parser implementing the algorithm
-        described in this thesis.
-    }
-}
 
 \newglossaryentry{DNSBL}{
     type=\acronymtype,
@@ -50,13 +43,12 @@
     name={Application Programming Interface},
     description={
         One of the fundamental concepts when writing programs is the reuse
-        of existing code, so that each program does not reinvent the wheel.
-        When a body of code is intended to be reused repeatedly, the user
-        of this code needs to be informed of the functionality provided by
-        the code.  An API defines the interface provided to the user, and
-        acts as a contract between the user and the provider: if the user
-        adheres to the API the provider guarantees it will work, but is
-        free to change the implementation provided the API is preserved.
+        of existing code, so that each new program does not reinvent
+        existing wheels.  An API defines the interface provided to the user
+        of the existing code, and acts as a contract between the user and
+        the provider: if the user adheres to the API the provider
+        guarantees it will work, but is free to change the implementation
+        as long as the API is preserved.
     }
 }
 
@@ -73,7 +65,7 @@
         recipient across the Internet.  It is a simple, human readable,
         plain text protocol, making it quite simple to test and debug
         problems with it.  A detailed description of SMTP is beyond the
-        scope of this document: the original protocol definition is
+        scope of this thesis: the original protocol definition is
         RFC~821~\cite{RFC821}, updated in RFC~2821~\cite{RFC2821};
         introductory guides can be found
         at~\cite{smtp-intro-01,smtp-intro-02}.
@@ -125,8 +117,8 @@
     description={
         The Request For Comments series is a series of proposals defining
         various protocols and file formats, e.g.\ SMTP\@.  The name is
-        somewhat misleading: initially the authors were asking for peer
-        review, but these documents are now the de facto standards the
+        somewhat misleading nowadays: initially the authors were asking for
+        peer review, but these documents are now the de facto standards the
         Internet runs on.
     }
 }
@@ -154,14 +146,6 @@
     description={Log Mail Analyzer},
     first={Log Mail Analyzer (LMA)}
 }
-\newglossaryentry{LMA glossary}{
-    name={Log Mail Analyzer},
-    description={
-        One of the other Postfix log file parsers reviewed and the only
-        example of prior published paper~\cite{log-mail-analyser} found
-        that specifically deals with parsing Postfix log files.
-    }
-}
 
 \newglossaryentry{CSV}{
     type=\acronymtype,
@@ -169,15 +153,6 @@
     description={Comma-Separated Value},
     first={Comma-Separated Value (CSV)}
 }
-\newglossaryentry{CSV glossary}{
-    name={Comma-Separated Value},
-    description={
-        The most basic form of database available, each record is a single
-        line in the file and the fields are separated by a special
-        character, typically a comma or colon.
-    }
-}
-
 
 \newglossaryentry{FQDN}{
     type=\acronymtype,
@@ -224,8 +199,8 @@
     description={
         UCE is a more restrictive definition of spam than most people use:
         it only covers mail that is explicitly commercial, thus excluding
-        viruses, Bayesian poisoning mails, backscatter, and those annoying
-        chain letters you get from friends.
+        viruses, Bayesian poisoning mails, backscatter\glsadd{Backscatter},
+        and those annoying chain letters you get from friends.
     }
 }
 
@@ -238,7 +213,12 @@
 \newglossaryentry{ESMTP glossary}{
     name={Extended SMTP},
     description={
-        ESMTP is Extended SMTP, defined in RFC~1869~\cite{RFC1869}.
+        \acronym{ESMTP}~\cite{RFC1869}, provides a flexible mechanism for
+        \acronym{SMTP} to be extended with new functionality, allowing new
+        features to be tested without having to be included in the standard
+        protocol.  \acronym{ESMTP} is backwards compatible with
+        \acronym{SMTP}: \acronym{ESMTP} clients and servers can interact
+        with \acronym{SMTP} clients and servers without difficulty.
     }
 }
 
@@ -248,29 +228,12 @@
     description={Internet Protocol},
     first={Internet Protocol (IP)}
 }
-\newglossaryentry{IP glossary}{
-    name={Internet Protocol},
-    description={
-        The Internet Protocol is the protocol used to communicate between
-        computers on the Internet.  An IP address is a unique address
-        assigned to a computer on the Internet, allowing it to communicate
-        with other computers on the Internet.
-    }
-}
 
 \newglossaryentry{SLCT}{
     type=\acronymtype,
     name={SLCT},
     description={Simple Logfile Clustering Tool},
     first={Simple Logfile Clustering Tool (SLCT)}
-}
-\newglossaryentry{SLCT glossary}{
-    name={Simple Logfile Clustering Tool},
-    description={
-        SLCT~\cite{slct-paper} is a tool implementing an algorithm designed
-        by Risto Vaarandi for identifying, grouping, and producing a regex
-        to match similar log lines.
-    }
 }
 
 \newglossaryentry{ATN}{
@@ -279,27 +242,12 @@
     description={Augmented Transition Networks},
     first={Augmented Transition Networks (ATN)}
 }
-\newglossaryentry{ATN glossary}{
-    name={Augmented Transition Networks},
-    description={
-        Originally described in~\cite{atns} and further in~\cite{nlpip},
-        Augmented Transition Networks are a tool used in Computational
-        Linguistics for creating grammars to parse or generate sentences,
-    }
-}
 
 \newglossaryentry{CLI}{
     type=\acronymtype,
     name={CLI},
     description={Command Line Interface},
     first={Command Line Interface (CLI)}
-}
-\newglossaryentry{CLI glossary}{
-    name={Command Line Interface},
-    description={
-        An computer interface based on typing commands, rather than using a
-        mouse.
-    }
 }
 
 \newglossaryentry{NLP}{
@@ -362,7 +310,9 @@
         \acronym{CFG}.  Every transition in a CFG takes the form
         $L\rightarrow{}R$, where $L$ is a single non-terminal symbol, and
         $R$ is a (possibly empty) string of terminal and/or non-terminal
-        symbols.  Every CFG can be recognised by a \acronym{PDA}.
+        symbols.  Every CFG can be recognised by a \acronym{PDA}, and
+        \acronyms{PDA} cannot recognise more complicated grammars, so
+        \acronyms{CFL}, \acronyms{CFG}, and \acronyms{PDA} are equivalent.
     }
 }
 
@@ -376,13 +326,13 @@
     name={Push-Down Automata},
     description={
         A Push-Down Automation is a computational device similar to a
-        \acronym{FA}, but it can additionally use a stack to store data.
-        A PDA can manipulate the stack during state transitions (adding or
-        removing a single piece of data), and can use 
-        the piece of data on the top of the stack in addition to the input
-        when determining which state transition to take.  PDA can recognise
-        languages of the form $a^{n}b^{n}$, i.e.\ any number of one symbol
-        followed by the same number of another symbol.
+        \acronym{FA}, but it can additionally use a stack to store data.  A
+        \acronym{PDA} can manipulate the stack during state transitions
+        (adding or removing a single piece of data), and when determining
+        which state transition to take it can use the piece of data on the
+        top of the stack in addition to the input.  \acronyms{PDA} can
+        recognise languages of the form $a^{n}b^{n}$, i.e.\ any number of
+        one symbol followed by the same number of another symbol.
     }
 }
 

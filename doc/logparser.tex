@@ -109,8 +109,16 @@
 \renewcommand{\glsautoprefix}[1]{glossary:#1}
 \newglossary[plg]{postfix}{pin}{pout}{Postfix Daemons}
 \makeglossaries{}
-\newcommand{\acronym}[1]{%
-    \gls{#1}\glsadd{#1 glossary}%
+\newcommand{\acronyms}[1]{%
+    \acronym[s]{#1}%
+}
+\newcommand{\acronym}[2][]{%
+    \gls{#2}#1%
+    % If there's a glossary entry for this acronym add it, otherwise 
+    % do nothing.
+    \ifglsentryexists{#2 glossary}%
+        {\glsadd{#2 glossary}}%
+        {}%
 }
 % Define a new glossary style that uses eqlist, so that acronyms line up
 % nicely.
