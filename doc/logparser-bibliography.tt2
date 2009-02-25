@@ -1,4 +1,5 @@
 [%# vim: set filetype=tt2 : -%]
+[%# XXX ARE THERE UNUSED ENTRIES I SHOULD INCLUDE, OR DELETE? -%]
 [% bibliography = {
     "postfix" = {
         author  = "Wietse Venema",
@@ -42,15 +43,6 @@
         title   = "SPF\\@: Project Overview",
         year    = 2007,
         journal = "SPF Website",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-joe-job" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Joe_job",
-        title   = "Joe Job",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
         checked = "2008/05/29",
     },
 
@@ -206,33 +198,6 @@
         checked = "2008/05/29",
     },
 
-    "Wikipedia-phishing" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Phishing",
-        title   = "Phishing",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-sql" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/SQL",
-        title   = "SQL\\@",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-regex" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Regular_expression",
-        title   = "Regular Expressions",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
     "sqlite-features" = {
         author  = "D. Richard Hipp",
         url     = "http://www.sqlite.org/different.html",
@@ -278,15 +243,6 @@
         checked = "2008/05/29",
     },
 
-    "powerlaw" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Power_law",
-        title   = "Power Law",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
     "a-plan-for-spam" = {
         author  = "Paul Graham",
         title   = "A Plan for Spam",
@@ -296,105 +252,6 @@
         pages   = "121-129",
         publisher   = "O'Reilly \\& Associates, Inc.",
         address     = "Sebastopol, CA, USA\\@",
-    },
-
-    "Wikipedia-html" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/HTML",
-        title   = "HTML\\@",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-halting-problem" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Halting_problem",
-        title   = "Halting Problem",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-church-turing-thesis" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Church%E2%80%93Turing_thesis",
-        title   = "Church–Turing Thesis",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "bayesian-filtering" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Bayesian_spam_filtering",
-        title   = "Bayesian Spam Filtering",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-ip" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Internet_Protocol",
-        title   = "Internet Protocol",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-ip-address" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/IP_address",
-        title   = "IP Address",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-ipv4" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Ipv4",
-        title   = "IPv4",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-ipv6" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Ipv6",
-        title   = "IPv6",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-object-orientation" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Object-oriented_programming",
-        title   = "Object-Oriented Programming",
-        year    = 2008,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-Emergence" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Emergence",
-        title   = "Emergence",
-        year    = 2008,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-unix-signals" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Signal_%28computing%29",
-        title   = "Signal",
-        year    = 2007,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
     },
 
     "risto-vaarandi" = {
@@ -455,24 +312,6 @@
         address = "\\empty{}address \\empty{}unknown",
         pages   = "63--98",
         note    = "ISBN-10: 0201180537",
-    },
-
-    "Wikipedia-nlp" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/Natural_language_processing",
-        title   = "Natural Language Processing",
-        year    = 2008,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
-    },
-
-    "Wikipedia-DNSBL" = {
-        author  = "Wikipedia",
-        url     = "http://en.wikipedia.org/wiki/DNSBL",
-        title   = "DNSBL\\@",
-        year    = 2008,
-        journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
     },
 
     "stepwise-refinement" = {
