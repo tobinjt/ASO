@@ -452,6 +452,8 @@ check:
 	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]])' logparser*.tex
 	ack '(address|author|publisher|title)\s+=\s+.* (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]]' logparser-bibliography.tt2
 	ack '\\url{' logparser-*.tex
+	ack '^[ \t]+$$' logparser*.tex
+	perl paragraphs-to-lines logparser-architecture.tex | ack 'log line'
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
