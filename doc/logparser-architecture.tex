@@ -9,11 +9,11 @@ CHAPTER\@.
 
 To avoid cluttering the explanation of the parser architecture with the
 details involved in parsing Postfix log files and the description of the
-parser implemented for this project, the two have been separated.  This
-chapter presents the architecture designed and developed for this project,
-beginning with the overall architecture and design, followed by the three
-components of the architecture: Framework, Actions, and Rules, and
-finishes by describing the characteristics of this architecture.
+parser implemented for this project, the two topics have been separated.
+This chapter presents the architecture designed and developed for this
+project, beginning with the overall architecture and design, followed by
+the three components of the architecture: Framework, Actions, and Rules,
+and finishes by describing the characteristics of this architecture.
 
 This chapter centers on the theoretical, implementation-independent aspects
 of the architecture; the practical difficulties of writing a parser for
@@ -36,20 +36,19 @@ but first an overview:
 \begin{eqlist}
 
     \item [Framework]  The framework is the structure that actions and
-        rules plug into.  It provides the parsing loop, shared data
-        storage, loading and validation of rules, storage of results, and
-        other support functions.
+        rules plug into.  It manages the parsing process, providing shared
+        data storage, loading and validation of rules, storage of results,
+        and other support functions.
 
     \item [Actions] Each action performs the work required to deal with a
-        single category of inputs, e.g.\ processing data from rejections.
-        Actions are invoked to deal with a log line once it has been
-        identified by the rules: actions modify data structures, handle
-        complications, and cause data to be saved to the database.
+        single category of inputs, e.g.\ rejecting a delivery attempt.
+        Actions are invoked to process an input once it has been classified
+        by a rule.
 
     \item [Rules]  The rules are responsible for classifying inputs; they
         specify the action to invoke and the regex that matches the inputs
         and extracts data.  Rules provide an easily extensible method of
-        associating log lines with actions.
+        associating inputs with actions.
 
 \end{eqlist}
 
@@ -66,39 +65,39 @@ attempting to combat and reduce spam; it also allows companies to develop
 user-extensible parsers without divulging their source code.  Decoupling
 the framework, actions, and rules simplifies all three and creates a clear
 separation of functionality: the framework provides services to the
-actions, but does not need to perform any tasks specific to the input being
+actions, but does not need to perform anything specific to the input being
 parsed; actions benefit from having services provided by the framework,
 freeing them to concentrate on the task of accurately and correctly
-processing the information provided by rules; rules handle the low level
-details of classifying inputs and extracting data from those inputs.
+processing the inputs and the information provided by rules; rules handle
+the low level details of classifying inputs and extracting data from those
+inputs, for processing by actions.
 
 Separating the rules from the actions and framework makes it possible to
-parse new log lines without modifying the core parsing algorithm.  Adding a
-new rule with the action to invoke and a regex to match the log lines is
-trivial in comparison to understanding a program's entire parser,
-identifying the correct location to change, and making the appropriate
-changes.  Bear in mind that changes to the parser must be made without
-adversely affecting existing parsing, particularly as there may be edge
-cases that are not immediately obvious ---
-\sectionref{yet-more-aborted-delivery-attempts} describes a complication
-that occurs only four times in \numberOFlogFILES{} log files.  Requiring
-changes to the parser's source code also complicates upgrades, as the
-changes must be preserved during the upgrade, and may clash with changes
-made by the developer.  This architecture allows the user to add new rules
-without changing the parser, unless the new log lines require functionality
-not already provided by the existing actions.  If the new log lines do
+parse new inputs without modifying the core parsing algorithm.  Adding a
+new rule with the action to invoke and a regex to match the inputs is
+trivial in comparison to understanding an entire parser, identifying the
+correct location to change, and making the appropriate changes.  Bear in
+mind that changes to a parser must be made without adversely affecting
+existing parsing, particularly as there may be edge cases that are not
+immediately obvious --- \sectionref{yet-more-aborted-delivery-attempts}
+describes a complication that occurs only four times in \numberOFlogFILES{}
+log files.  Requiring changes to a parser's source code also complicates
+upgrades, as the changes must be preserved during the upgrade, and may
+clash with changes made by the developer.  This architecture allows the
+user to add new rules without editing a parser, unless the new inputs
+require cannot be processed by the existing actions.  If the new inputs do
 require new functionality, new actions can be added to the parser without
-modifying existing actions (\sectionref{adding new actions in
-implementation} describes how to safely add new actions); only in the rare
-event that the new actions require support from other sections of the code
-will more extensive changes be required.
+having to modify existing actions; only in the rare event that the new
+actions require support from other actions will more extensive changes be
+required.
 
-There is some similarity between the parser's design and William Wood's
-\acronym{ATN}~\cite{atns,nlpip}, used in Computational Linguistics for creating
-grammars to parse or generate sentences.  The resemblance between the two
-(shown in \tableref{Similarities between ATN and this architecture}) is
-accidental, but it is obvious that the two different approaches share a
-similar division of responsibilities, despite having different semantics.
+There is some similarity between this architecture and William Wood's
+\acronym{ATN}~\cite{atns,nlpip}, used in Computational Linguistics for
+creating grammars to parse or generate sentences.  The resemblance between
+the two (shown in \tableref{Similarities between ATN and this
+architecture}) is accidental, but it is clear that the two different
+approaches share a similar division of responsibilities, despite having
+different semantics.
 
 % Do Not Reformat!
 
@@ -109,12 +108,12 @@ similar division of responsibilities, despite having different semantics.
         \tabletopline{}%
         \acronym{ATN}   & Architecture  & Similarity                  \\
         \tablemiddleline{}%
-        Networks        & Overall       & Determines the sequence 
+        Networks        & Parser        & Determines the sequence 
                                           of transitions              \\
-                        & Algorithm     & or actions that 
+                        &               & or actions that 
                                           constitutes a valid input.  \\
-        Transitions     & Actions       & Assembles data and
-                                          imposes conditions          \\
+        Transitions     & Actions       & Assemble data and
+                                          impose conditions           \\
                         &               & the input must meet to be
                                           accepted as                 \\
                         &               & valid.                      \\
@@ -131,25 +130,23 @@ THE NEXT PARAGRAPH\@.
 
 \label{framework in architecture}
 
-The framework takes care of miscellaneous support functions and low level
-details of parsing, freeing the programmers writing actions to concentrate
+The framework takes care of miscellaneous support functions and managing
+the parsing process, freeing the programmers writing actions to concentrate
 on writing productive code.  It links actions and rules, allowing either to
 be improved independently of the other.  It provides shared storage to pass
-data between actions, loads and saves state, loads and validates rules,
+data between actions, saves and loads state, loads and validates rules,
 manages parsing, invokes actions, tracks how often each rule matches to
 optimise rule ordering (\sectionref{rule ordering for efficiency}), stores
-results of parsing, and miscellaneous other tasks.
-Most parsers will require the same basic functionality from the framework,
-plus some specialised support functions.  The framework is the core of the
-architecture and is deliberately quite simple: the rules deal with the
+results of parsing, and miscellaneous other tasks.  Most parsers will
+require the same basic functionality from the framework, plus some
+specialised support functions XXX EXPAND\@.  The framework is the core of
+the architecture and is deliberately quite simple: the rules deal with the
 variation in inputs, and the actions deal with the intricacies and
 complications encountered when parsing.
 
 The function that finds the rule matching the input and invokes the
-requested action can be expressed in pseudo-code (indentation denoting flow
-of control) as:
-
-% DO NOT REFORMAT!
+requested action can be expressed in pseudo-code (with indentation denoting
+flow of control) as:
 
 \begin{verbatim}
 for each input:
