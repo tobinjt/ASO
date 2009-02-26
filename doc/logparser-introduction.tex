@@ -41,14 +41,14 @@ base for billing customers on a shared server.  Preserving the raw data
 enables users to develop a multitude of uses far beyond those conceived of
 by the author.
 
-\vspace{1em}\noindent\textbf{Layout:}
+\section{Thesis Layout}
 
 XXX THIS ALL NEEDS TO BE CHECKED AND UPDATED\@.
 
-Section~\ref{background} provides background information useful in
+Chapter~\ref{background} provides background information useful in
 understanding the thesis, parser, and architecture.
 
-Section~\ref{state of the art review} reviews both the previously published
+Chapter~\ref{state of the art review} reviews both the previously published
 research in this area and other available Postfix log file parsers,
 discussing why they were deemed unsuitable for the task, including why they
 could not be improved or expanded upon.
@@ -59,7 +59,7 @@ described in \sectionref{database schema}, explaining in detail the tables
 used for storing the data gleaned from the log files and the table that
 stores the rules.
 
-Section~\ref{rules in architecture} discusses the parsing rules in detail,
+Chapter~\ref{rules in architecture} discusses the parsing rules in detail,
 explaining the purpose and usage of each field in a rule, referring to an
 example rule and sample data it matches successfully against.  The pros and
 cons of overlapping rules are considered, including techniques for
@@ -69,7 +69,7 @@ concludes with a description of using the tools provided with the parser to
 generate new rules (specifically the regex in each rule) from unparsed log
 lines.
 
-Section~\ref{Postfix Parser Implementation} contains the core of the paper,
+Chapter~\ref{Postfix Parser Implementation} contains the core of the paper,
 describing a naive parsing algorithm and the complications initially
 encountered that shaped the full algorithm.  A flow chart and a discussion
 of the emergent behaviour exhibited by the algorithm accompanies a
@@ -80,7 +80,7 @@ the process of adding a new action.  The section concludes with an in-depth
 description of the further complications discovered, and their solutions
 that complete the parser.
 
-Section~\ref{parsing coverage} analyses the coverage the parser achieves
+Chapter~\ref{parsing coverage} analyses the coverage the parser achieves
 over a set of \numberOFlogFILES{} log files taken from a mail server
 handling mail for over 700 users, averaging 8500 mails per day
 (\graphref{Mails received per day}).  Coverage is described both
@@ -91,12 +91,12 @@ false positives is also included.  As part of determining the coverage of
 the parser a random sampling of log lines was parsed, and the correctness
 of the results manually verified.
 
-Section~\ref{limitations and improvements in implementation} lists the
+Chapter~\ref{limitations and improvements in implementation} lists the
 limitations of the algorithm, then suggests some ways of dealing with them,
 with the goal of improving parsing and reproduction of the journey a mail
 takes through Postfix.
 
-Section~\ref{conclusion} contains the conclusion of the thesis, describing
+Chapter~\ref{conclusion} contains the conclusion of the thesis, describing
 the results of the research, design, and implementation of the parser.
 
 The bibliography (appendix~\ref{bibliography}) contains references to the
@@ -112,3 +112,11 @@ Appendix~\ref{Acronyms} provides a list of acronyms used in the thesis.
 Appendix~\ref{Postfix Daemons} gives a brief description of Postfix
 daemons.
 
+\section{XXX NOTES}
+
+Portions of \sectionref{parser architecture}, \sectionref{Postfix Parser
+Implementation}, and \sectionref{Results} have previously been published at
+a conference~\cite{sgai-2008}, and later reprinted in a
+journal~\cite{elsevier-2009}.  Publication of the conference paper and
+journal article above was supported by Science Foundation Ireland
+RFP~05/RF/CMS002.
