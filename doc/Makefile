@@ -441,19 +441,16 @@ veryclean: clean
 check:
 	# Edit the log file to remove stuff I don't want to see.
 	sed -i -e '/.\/.*.bbl$$/,$$s/^Underfull.*//' *.log
-	make join-lines | grep -i -E 'underfull|overfull' || true
-	make join-lines | grep -i "LaTeX Warning: " || true
+	make --silent join-lines | grep -i -E 'underfull|overfull|LaTeX Warning' || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' *.log
-	#grep ^Warning *.blg || true;
 	grep '!!' *.?lg || true;
-	chktex -I0 -q *.tex
-	chktex -q --nowarn 1 --nowarn 15 --nowarn 17 --nowarn 6 *.bbl
+	chktex -I0 -q *.tex *.bbl
 	ack -i 'it'\''s|\w'\''(?!s)\w' *.tex
 	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]])' logparser*.tex
 	ack '(address|author|publisher|title)\s+=\s+.* (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]]' logparser-bibliography.tt2
-	ack '\\url{' logparser-*.tex
-	ack '^[ \t]+$$' logparser*.tex
-	perl paragraphs-to-lines logparser-architecture.tex | ack 'log line'
+	ack '\\url{|^[ \t]+$$' logparser-*.tex
+	perl paragraphs-to-lines logparser-architecture.tex | grep -n 'log line' || true
+	ack 'XX[X]' logparser.bbl || true
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
