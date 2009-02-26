@@ -9,7 +9,7 @@
 
 \begin{thebibliography}{10}
 \expandafter\ifx\csname urlstyle\endcsname\relax
-  \providecommand{\doi}[1]{doi:\discretionary{}{}{}#1}\else
+  \providecommand{\doi}[1]{doi:\discretionary{}{}{}#1}\else{}
   \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup
   \urlstyle{rm}\Url}\fi
 \label{bibliography}
@@ -17,7 +17,12 @@
 [% PROCESS "logparser-bibliography.tt2" -%]
 [% PROCESS "citations.tt2" -%]
 [% FOREACH citation IN citations.keys -%]
-    [% bibliography.$citation.citation_name = citation -%]
+    [% IF NOT bibliography.exists(citation) -%]
+        \bibitem{[% citation %]}
+        \textbf{\Huge XX[%# %]X UNDEFINED BIBLIOGRAPHY ENTRY [% citation %]}
+    [% ELSE %]
+        [% bibliography.$citation.citation_name = citation -%]
+    [% END -%]
 [% END -%]
 [% sorted_bibliography = bibliography.values.sort("title") -%]
 [% FOREACH entry IN sorted_bibliography -%]
@@ -29,7 +34,7 @@
     [% entry.author.split(" and ").join(", ") %].
     [% IF entry.exists("journal") -%]
         [% IF entry.exists("volume") -%]
-            \emph{[% entry.journal %]}
+            \emph{[% entry.journal %]\/}
             [% IF entry.exists("number") -%]
                 volume [% entry.volume %]([% entry.number %]),
             [% ELSE -%]
