@@ -45,7 +45,7 @@ database was disabled for the test runs, as that dominates the run time of
 the program, and the tests are aimed at measuring the speed of the parser
 rather than the speed of the database and the disks the database is stored
 on.  The computer used for test runs was a Dell Optiplex 745, equipped
-with: 
+with:
 
 \begin{tabular}[]{ll}
 
@@ -83,7 +83,7 @@ quite tightly banded, providing empirical evidence that the algorithm
 scales linearly.  The ratio increases (i.e.\ improves) for log files 22 and
 62--68 despite their larger than average size (shown in \graphref{parsing
 time vs file size vs number of log lines graph}); this is explained fully
-in \sectionref{Explaining the peaks in log file size}.  
+in \sectionref{Explaining the peaks in log file size}.
 
 \showtable{build/include-file-size-and-number-of-log-lines-vs-parsing-time}{Ratio
 of file size and number of log lines to parsing time}{parsing time vs file
@@ -195,7 +195,7 @@ rule orderings:
         set.  The rules will be shuffled once before use and will retain
         that ordering until the parser exits.  Note that the ordering will
         change every time the parser is executed, so 10 different rule
-        orderings will be generated for each log file in the test run.  
+        orderings will be generated for each log file in the test run.
 
     \item [Reverse] Hypothetically the worst order: the most frequently
         matching rules will be tried last.
@@ -328,7 +328,7 @@ inputs.  The necessity of caching compiled regexes is attested to by the
 third group of graphs, where the difference between caching and not caching
 is staggering.  The penultimate section contains a breakdown of the rule
 hits accumulated during a single test run of the parser.  Miscellaneous
-graphs expected to be useful are collected in the final section.  
+graphs expected to be useful are collected in the final section.
 
 \section{Coverage}
 

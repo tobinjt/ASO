@@ -108,16 +108,16 @@ different semantics.
         \tabletopline{}%
         \acronym{ATN}   & Architecture  & Similarity                  \\
         \tablemiddleline{}%
-        Networks        & Parser        & Determines the sequence 
+        Networks        & Parser        & Determines the sequence
                                           of transitions              \\
-                        &               & or actions that 
+                        &               & or actions that
                                           constitutes a valid input.  \\
         Transitions     & Actions       & Assemble data and
                                           impose conditions           \\
                         &               & the input must meet to be
                                           accepted as                 \\
                         &               & valid.                      \\
-        Abbreviations   & Rules         & Responsible for 
+        Abbreviations   & Rules         & Responsible for
                                           classifying input.          \\
         \tablebottomline{}%
     \end{tabular}
@@ -150,7 +150,7 @@ flow of control) as:
 
 \begin{verbatim}
 for each input:
-    for each rule defined by the user: 
+    for each rule defined by the user:
         if this rule matches the input:
             perform the action specified by the rule
             skip the remaining rules
@@ -164,48 +164,60 @@ for each input:
 
 XXX TO BE WRITTEN --- CHECK THE IMPLEMENTATION SECTION\@.
 
-Each action is a separate procedure written to deal with a particular
-category of input, e.g.\ rejections.  The actions are parser-specific: each
-parser author will need to write the required actions from scratch unless
-extending an existing parser.  It is anticipated that parsers based on this
-architecture will have a high ratio of rules to actions, with the aim of
-having simpler rules and clearer distinctions between the inputs parsed by
-different rules.  
+Each action is a separate procedure written to process a particular
+category of input, e.g.\ rejections.  There may be many input variants
+within one input category; in general each action will handle one category
+of inputs, with each rule rule recognising one input variant.  It is
+anticipated that parsers based on this architecture will have a high ratio
+of rules to actions, with the aim of having simple rules and clear
+distinctions between the inputs parsed by different rules.  An action may
+process different input variants in slightly different ways, but large
+changes in processing indicate the need for a new action and a new category
+of input; if an action becomes unnecessarily complicated is starts to turn
+into a monolithic parser, with too much logic contained in a single
+procedure.
 
-The ability to add special purpose actions to deal with difficulties and
-new requirements that are discovered during parser development is one of
-the strengths of this architecture.  Instead of writing a single monolithic
-function that must be modified to support new behaviour, with all the
-attendant risks of adversely affecting the existing parser, when a new
-requirement arises an independent action can be written to satisfy it.
-Sometimes the new action will require the cooperation of other actions,
-e.g.\ to set or check a flag.  There is a possibility of introducing
+The ability to easily add special purpose actions to deal with difficulties
+and new requirements that are discovered during parser development is one
+of the strengths of this architecture.  XXX REWRITE, EXPAND, AND CLARIFY UP
+TO THE NEXT XXX\@.  Instead of writing a single monolithic function that
+must be modified to support new behaviour, with all the attendant risks of
+adversely affecting the existing parser, when a new requirement arises an
+independent action can be written to satisfy it.  Sometimes the new action
+will require the cooperation of other actions, e.g.\ to set or check a
+flag, or save some extra data.  There is a possibility of introducing
 failure when modifying existing actions in this way, but the modifications
 will be smaller and occur less frequently than with a monolithic
 architecture, thus failures will be less likely to occur and will be easier
-to test for and diagnose.  The architecture can be implemented in an object
-oriented style, allowing sub-classes to extend or override actions in
-addition to adding new actions; because each action is an independent
-procedure, the sub-class need only modify the action it is overriding,
-rather than reproducing large chunks of functionality.
+to test for and diagnose.  XXX FINISH REWRITING\@.  The architecture can be
+implemented in an object oriented style, allowing sub-classes to extend or
+override actions in addition to adding new actions; because each action is
+an independent procedure, the sub-class need only modify the action it is
+overriding, rather than reproducing large chunks of functionality.
 
 During development of the Postfix log parser it became apparent that in
-addition to the obvious variety in log lines there were many complications
-to be overcome.  Some were the result of deficiencies in Postfix's logging
-(some of which were rectified by later versions of Postfix); others were
+addition to the obvious variety in log \empty{fool check}lines there were
+many complications to be overcome.  Some were the result of deficiencies in
+Postfix's logging (some of which were rectified by later versions of
+Postfix, e.g.\ identifying bounce
+notifications~\sectionref{identifying-bounce-notifications}); others were
 due to the vagaries of process scheduling, client behaviour, and
 administrative actions.  All were successfully accommodated in the Postfix
 log parser: adding new actions was enough to overcome several of the
 complications; others required modifications to a single existing action to
 work around the difficulties; the remainder were resolved by adapting
 existing actions to cooperate and exchange extra data (via the framework),
-changing their behaviour as appropriate based on that extra data.
+changing their behaviour as appropriate based on that extra data.  Every
+architecture should aim to make the hard things possible as well as making
+the easy things easy (XXX MAYBE QUOTE LARRY\@?); the successful
+implementation of the Postfix log parser demonstrates that this
+architecture achieves that aim.
 
 Actions may return a modified input line that will be parsed as if read
 from the input stream, allowing for a simplified version of cascaded
 parsing~\cite{cascaded-parsing}.  This powerful facility allows several
 rules and actions to parse a single input, potentially simplifying both
-rules and actions.
+rules and actions.  XXX EXPAND WITH CHEMICAL FORMULAE EXAMPLE\@.
 
 
 \section{Rules}
@@ -215,28 +227,67 @@ rules and actions.
 XXX TO BE WRITTEN\@.  TAKE CONTENT FROM THE PAPER AND POSSIBLY FROM THE
 IMPLEMENTATION SECTION\@.
 
-Rules categorise inputs, specifying both the regex to match against each
-input and the action to invoke when the match is successful.  Parsing new
-inputs is generally achieved by creating a new rule that pairs an existing
-action with a new regex.  Decoupling the rules from the actions and
-framework enables other rule management approaches to be used, e.g.\
-instead of manually adding new rules, machine learning techniques could be
-used to automatically generate new rules.  If this approach was taken the
-choice of machine learning technique would be constrained by the size of
-typical data sets (see \sectionref{Results} XXX CHECK THIS REFERENCE WHEN
-THE RESULTS SECTION IS FINISHED).  Techniques requiring the full data set
+XXX DO I NEED TO SUBDIVIDE THIS INTO SUBSECTIONS\@?
+
+Rules are responsible for categorising inputs: each rule should recognise
+one and only input variant; an input category with multiple input variants
+should have multiple rules, one for each variant.  Rules will typically use
+a regex when classifying inputs, but other approaches may prove useful for
+some applications, e.g.\ comparing fixed strings to the input, or checking
+the length of the input; for the remainder of this thesis it will be
+assumed that a regex is used.  A rule must specify both the regex to match
+against each input and the action to invoke when the match is successful,
+but implementations are free to add any other attributes they require;
+\sectionref{rule attributes} describes the attributes used in
+\parsername{}, and some potential attributes will be discussed later in
+this section.
+
+The framework issues a warning for each unparsed input, so it is evident
+when the ruleset needs to be augmented.  Parsing new inputs is achieved in
+one of three ways:
+
+\begin{enumerate}
+
+    \item Modify an existing rule's regex, because the new input is part of
+        an existing variant.
+
+    \item Write a new rule that pairs an existing action with a new regex;
+        this adds a new variant to an existing category.
+
+    \item Create a new category of inputs and a new action to process
+        inputs from the new category; write a new rule pairing the new
+        action with a new regex.
+
+\end{enumerate}
+
+Decoupling the rules from the actions and framework enables other rule
+management approaches to be used, e.g.\ instead of manually adding new
+rules, machine learning techniques could be used to automatically generate
+new rules.  If this approach was taken the choice of machine learning
+technique would be constrained by the size of typical data sets (see
+\sectionref{parser efficiency}).  Techniques requiring the full data set
 when training would be impractical; Instance Based
 Learning~\cite{instance-based-learning} techniques that automatically
 determine which inputs from the training set are valuable and which inputs
 can be discarded might reduce the data required to a manageable size.  A
 parser might also dynamically create new rules in response to certain
-inputs, e.g.\ diagnostic messages indicating the program which produced the
-input being parsed had read a new configuration file.  These avenues of
-research and development has not been pursued by the author, but could
-easily be undertaken independently.
+inputs, e.g.\ diagnostic messages indicating that the program which
+produced the input being parsed had read a new configuration file, and had
+changed its behaviour appropriately.  These avenues of research and
+development have not been pursued by the author, but but the architecture
+allows them to easily be undertaken independently.
 
-The architecture does not try to detect overlapping rules: that
-responsibility is left to the author of the rules.  Unintentionally
+XXX ATTACHING CONDITIONS TO RULES\@; GIVE PLP EXAMPLE AND REFER TO
+IMPLEMENTATION AND RESULTS SECTIONS\@?
+
+XXX STATEFUL PARSING ENABLED BY CONDITIONS, E.G\@.  PARSING C COMMENTS\@.
+
+XXX PRIORITY ATTRIBUTE AND RULE ORDERING\@.
+
+When adding new rules, the rule author must be aware that the new rule may
+overlap with an existing rule, i.e.\ some inputs could be parsed by more
+than one rule.  The architecture does not try to detect overlapping rules:
+that responsibility is left to the author of the rules.  Unintentionally
 overlapping rules lead to inconsistent parsing and data extraction because
 the first matching rule wins, and the order in which rules are tried
 against each input might change between parser invocations.  Overlapping
@@ -250,6 +301,9 @@ modification required.  Overlapping rules should have a priority attribute
 to specify their relative ordering; negative priorities may be useful for
 catchall rules.
 
+XXX CHECK WITH CARL WHETHER I SHOULD SAY CFL OR CFG IN THE NEXT
+PARAGRAPH\@.
+
 Decoupling the rules from the actions allows external tools to be written
 to detect overlapping rules.  Traditional regexes are equivalent in
 computational power to \acronym{FA} and can be converted to \acronym{FA},
@@ -257,68 +311,96 @@ so regex overlap can be detected by finding a non-empty intersection of two
 \acronym{FA}\@.  The standard equation for \acronym{FA} intersection (given
 for example in~\cite{intersection-of-NFA-using-Z}) is: $FA1 \cap{} FA2 =
 \overline{(\overline{FA1} \cup{} \overline{FA2})}$, which has considerable
-computation complexity.  Perl 5.10 regexes are more powerful than
+computation complexity XXX MENTION DEMORGAN''S LAW\@?  COMMENT ON THE
+COMPUTATION COMPLEXITY OF INVERSION AND UNION\@; ADD A REFERENCE TO THE
+SPINNING WHEEL BOOK\@.  Perl 5.10 regexes are more powerful than
 traditional regexes: it is possible to match correctly balanced brackets
 nested to an arbitrary depth, e.g.\
 \verb!/^[^<>]*(<(?:(?>[^<>]+)|(?1))*>)[^<>]*$/! matches
-\verb!z<123<pq<>rs>j<r>ml>s!.  Perl 5.10 regexes can maintain an arbitrary
-state stack and are thus equivalent in computational power to \acronym{PDA}
-or \acronym{CFL}, so detecting overlap may require calculating the
-intersection of two \acronym{PDA} or \acronym{CFL}s.  The intersection of
-two \acronym{CFL}s is not closed, i.e.\ the resulting language cannot
-always be parsed by a \acronym{CFL}, so intersection may be intractable in
-some cases e.g.:
+\verb!z<123<pq<>rs>j<r>ml>s!.  Matching balanced brackets requires the
+regex engine to maintain state on a stack, so Perl 5.10 regexes are thus
+equivalent in computational power to \acronym{PDA} or a \acronym{CFL};
+detecting overlap may require calculating the intersection of two
+\acronym{PDA} or \acronyms{CFL} instead of two \acronym{FA}.  The
+intersection of two \acronyms{CFL} is not closed, i.e.\ the resulting
+language cannot always be parsed by a \acronym{CFL}, so intersection may be
+intractable in some cases, e.g.:
 $a^{*}b^{n}c^{n}~\cap~a^{n}b^{n}c^{*}~\rightarrow~a^{n}b^{n}c^{n}$.
 Detecting overlap amongst $n$ regexes requires calculating $n(n-1)/2$
 intersections, resulting in $O(n^2x)$ complexity, where $O(x)$ is the
-complexity of calculating intersection.  This is certainly not a task to be
-performed every time the parser is used: detecting overlap amongst the
-Postfix log parser's \numberOFrules{} rules would require calculating
-\numberOFruleINTERSECTIONS{} intersections.
+complexity of calculating \acronym{FA} or \acronym{PDA} intersection.
+This is certainly not a task to be performed every time the parser runs:
+naive detection of overlap amongst the Postfix log parser's
+\numberOFrules{} rules would require calculating
+\numberOFruleINTERSECTIONS{} intersections.  When detecting overlap any
+conditions attached to rules must be taken into account, because two rules
+whose regexes overlap may have conditions attached which prevent the
+overlap in practice.  A less naive approach to overlap detection would
+first check for overlapping conditions amongst rules, and then check for
+overlapping regexes amongst the rules in each group.  Depending on the
+conditions employed a rule may fall into more than one group, e.g.\ given
+three conditions:
 
-The framework requires each rule to have \texttt{action} and \texttt{regex}
-attributes; each implementation is free to add any additional attributes it
-requires.
+\begin{enumerate}
+
+    \item $total < 10$
+
+    \item $total > 20$
+
+    \item $total < 30$
+
+\end{enumerate}
+
+\noindent{}The first and second conditions do not overlap, but the third
+condition does overlap with both the first and second conditions.  If the
+rules are divided into sets based on how their conditions overlap, the
+complexity of detecting overlap amongst $n$ rules is:
+
+$$O(n^{2}y)~+~\sum{O(|s|^{2}x)~\forall{}~s~\in{}~overlaps}$$
+
+where:
+
+\begin{tabular}[]{rcl}
+
+            y & = & cost of checking for overlap between two conditions \\
+            x & = & cost of checking for overlap between two regexes    \\
+     overlaps & = & set of sets of rules with overlapping conditions    \\
+
+\end{tabular}
 
 It is possible to define pathological regexes which fall into two main
 categories: regexes that match every input, and regexes that consume
 excessive amounts of CPU time during matching.  Defining a regex to match
-all inputs is trivial: \verb!/^/! matches the start of every input.
-Usually excessive CPU time is consumed when a regex with a lot of
-alteration and variable quantifiers fails to match, but successful
-matching is generally quite fast (see~\cite{mastering-regular-expressions}
-for in-depth discussion).
-
-XXX RULES CAN HAVE CONDITIONS ATTACHED
-
-\label{comparison against context-free grammars}
-
-In context-free grammar terms the parser rules could be described as:
-
-$\text{\textless{}log-line\textgreater{}} \mapsto \text{rule-1} |
-\text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
-
+all inputs is trivial: \verb!/^/! matches the start of every input.  This
+regex would be highlighted by a tool that detects overlapping rules, and
+would easily be noticed by visual inspection, but more complex regexes
+would be harder to spot.  XXX MAYBE GIVE AN EXAMPLE REGEX\@?  Usually
+excessive CPU time is consumed when a regex with a lot of alteration and
+variable quantifiers fails to match, but successful matching is generally
+quite fast (see~\cite{mastering-regular-expressions} for in-depth
+discussion).  XXX THIS NEEDS TO BE EXPANDED, OR MOVED TO FIT IN
+ELSEWHERE\@.
 
 Rule have certain characteristics that may help in understanding the
 parser architecture:
 
-XXX IMPROVE THIS SECTION\@; SHOULD IT BE A SUBSECTION\@?
+XXX IMPROVE THIS\@; SHOULD IT BE A SUBSECTION\@?  EXPAND ON ALL THESE, OR
+MOVE THEM TO FIT IN ELSEWHERE\@.  ADD MORE IF POSSIBLE\@.
 
 \begin{itemize}
 
-    \item Rules are annotated with the name of a Postfix program, and will
-        only be used when parsing log lines produced by that
-        program.
-
     \item The first matching rule wins: no further rules are tried against
-        that log line, but there is a mechanism for prioritising the rules
-        so that more specific rules can be tried first.
+        that input, but there is a mechanism for prioritising the rules so
+        that more specific rules can be tried first.  XXX MOVE THIS TO THE
+        PRIORITY SECTION\@.
 
     \item Rules are completely self-contained and can be understood in
-        isolation, without reference to any other rules.
+        isolation, without reference to any other rules.  This is similar
+        to a \acronym{CFG}; in \acronym{CFG} terms the parser rules could
+        be described as:
 
-    \item Rule processing time is a linear function of the number of rules.
-        XXX IMPROVE THIS\@.
+        $\text{\textless{}input\textgreater{}} \mapsto \text{rule-1} |
+        \text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
 
 \end{itemize}
 
@@ -326,47 +408,47 @@ XXX IMPROVE THIS SECTION\@; SHOULD IT BE A SUBSECTION\@?
 
 \label{Architecture characteristics}
 
+XXX EXPAND ON ALL THESE\@.
+
 \begin{description}
 
     \item [Matching rules against inputs is simple:]  The first matching
         rule determines the action that will be invoked: there is no
-        backtracking to try alternate rules, no attempt is made to pick a
+        backtracking to try alternate rules; no attempt is made to pick a
         \textit{best\/} rule.
 
     \item [Line oriented:]  The architecture is line oriented at present:
         there is no facility for rules to consume more input or push unused
-        input back onto the input stream.  This was not a deliberate design
-        decision, rather a consequence of the line oriented nature of
-        Postfix log files; more flexible approaches could be pursued.
+        input back onto the input stream.  The current input can be
+        manipulated by actions, using the cascaded parsing feature.  This
+        was not a deliberate design decision, rather a consequence of the
+        line oriented nature of Postfix log files; more flexible approaches
+        could be pursued.
 
     \item [Context-free rules:]  Rules can not take into account past or
-        future inputs.  In context-free grammar terms the parser rules
-        could be described as:
-        \newline{}$\text{\textless{}input\textgreater{}} \mapsto
-        \text{rule-1} | \text{rule-2} | \text{rule-3} | \dots |
-        \text{rule-n}$.
+        future inputs when classifying the current input, though conditions
+        can affect which rules will be used to classify each input.
 
     \item [Context-aware actions:] Actions can consult the results (or lack
         of results) of previous actions during execution, providing some
-        context sensitivity.  
+        context sensitivity.
 
     \item [Cascaded parsing:] Actions can return a modified input to be
         parsed as if read from the input stream, allowing for a simplified
         version of cascaded parsing~\cite{cascaded-parsing}.
 
     \item [Transduction:]  The architecture can be thought of as
-        implementing transduction: it takes data in one form (log files)
-        and transforms it to another form (a database); other formats may
-        be more suitable for other implementations.
+        implementing transduction: it takes data in one form
+        and transforms it to another form; \parsername{} transforms log
+        files to a database.
 
-    \item [Similarity to \acronym{NLP}:] \hfill{} \newline{}
-        Unlike traditional parsers such as those used when compiling a
-        programming language, this architecture does not require a fixed
-        grammar specification that inputs must adhere to.  The architecture
-        is capable of dealing with interleaved inputs, out of order inputs,
-        and ambiguous inputs where heuristics must be applied --- all have
-        arisen and been successfully accommodated in the Postfix log
-        parser.
+    \item [Similarity to Natural Language Processing:] Unlike traditional
+        parsers such as those used when compiling a programming language,
+        this architecture does not require a fixed grammar specification
+        that inputs must adhere to.  The architecture is capable of dealing
+        with interleaved inputs, out of order inputs, and ambiguous inputs
+        where heuristics must be applied --- all have arisen and been
+        successfully accommodated in the Postfix log file parser.
 
 \end{description}
 

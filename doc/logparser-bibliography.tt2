@@ -1,5 +1,6 @@
 [%# vim: set filetype=tt2 : -%]
 [%# XXX ARE THERE UNUSED ENTRIES I SHOULD INCLUDE, OR DELETE? -%]
+[%# XXX ADD AN ISBN FIELD -%]
 [% bibliography = {
     "postfix" = {
         author  = "Wietse Venema",
@@ -428,6 +429,36 @@
         publisher   = "O'Reilly \\& Associates, Inc.",
         address     = "Sebastopol, CA, USA\\@",
     },
+
+    "elsevier-2009" => {
+        author      = "John Tobin and Carl Vogel",
+        title       = "A User-Extensible and Adaptable Parser Architecture",
+        journal     = "Knowledge-Based Systems",
+        year        = "2009",
+        doi         = "10.1016/j.knosys.2008.10.011",
+        url         = "http://xrl.us/behoe4",
+        checked     = "2009/02/26",
+        #volume      = "",
+        #number      = "",
+        #pages       = "",
+    },
+
+    "sgai-2008"     => {
+        author      = "John Tobin and Carl Vogel",
+        title       = "A User-Extensible and Adaptable Parser Architecture",
+        journal     = "Research and Development in Intelligent Systems",
+        year        = "2008",
+        note        = "Proceedings of AI-2008, the Twenty-eight SGAI International Conference on Innovative Techniques and Applications of Artificial Intelligence",
+        isbn        = "978--1--84882--170--5",
+        #url         = "http://xrl.us/behoe4",
+        #checked     = "2009/02/26",
+        volume      = "25",
+        #number      = "",
+        pages       = "191--204",
+        publisher   = "Springer",
+        address     = "233 Spring Street, New York, NY 10013, USA\\@",
+    },
+
 }
 
 -%]

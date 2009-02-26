@@ -81,7 +81,7 @@ advantages to treating Postfix as a black box during parser development:
 
     \item Reading and understanding the source code would require a
         significant investment of time: Postfix 2.5.5 has 17MB of source
-        code.  
+        code.
 
     \item The parser is developed using real world log files rather than
         the idealised log files someone would naturally envisage reading
@@ -803,7 +803,7 @@ Each action saves all data extracted by the rule's regex, if there is
 enough information in the log line to identify the correct connection to
 save the data to.
 
-XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.  
+XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
 
 \begin{description}
 
@@ -837,7 +837,7 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
         address if required, then invokes the COMMIT action to handle
         adding the mail to the database.  The complication this action
         deals with is described fully in \sectionref{Mail deleted before
-        delivery is attempted}.  
+        delivery is attempted}.
 
     \item [DELIVERY\_REJECTED] Deals with Postfix rejecting an
         \acronym{SMTP} command from the remote client: log the rejection
@@ -1490,7 +1490,7 @@ clear, so once again heuristics are required to identify when this
 behaviour occurs.  In this case a list of all mails accepted during a
 connection is saved in the connection state, and the accepted mails are
 examined when the disconnection action is executed.  Each mail is checked
-for the following: 
+for the following:
 
 \begin{itemize}
 
@@ -1505,7 +1505,7 @@ for the following:
         line for this mail?  Every mail which passes normally through
         Postfix will have a \daemon{cleanup} line, and later a
         \daemon{qmgr} log line; lack of a \daemon{cleanup} line is a sure
-        sign the mail did not make it too far.  
+        sign the mail did not make it too far.
 
     \item Does the queueid exist in the state tables?  If not it cannot be
         an aborted delivery attempt.
@@ -1594,7 +1594,7 @@ following in the TIMEOUT action:
         results.
 
     \item If no mails have been accepted yet nothing needs to be done; the
-        TIMEOUT action ends.  
+        TIMEOUT action ends.
 
     \item If one or more recipients have been accepted Postfix will have
         allocated a queueid for the incoming mail, and there will be a mail
@@ -1693,7 +1693,7 @@ conditions are met it is assumed that the log lines were out of order:
 As always with heuristics there may be circumstances in which these
 heuristics match incorrectly, but none have been identified so far.  This
 complication seems to occur during periods of particularly heavy load, so
-is most likely caused by process scheduling vagaries.  
+is most likely caused by process scheduling vagaries.
 
 This complication is dealt with during the PICKUP action.
 
@@ -1910,7 +1910,7 @@ following conditions are met:
 
 \begin{enumerate}
 
-    \item The queueid is not found in the state tables. 
+    \item The queueid is not found in the state tables.
 
     \item The queueid is found in the cache of deleted mails.
 

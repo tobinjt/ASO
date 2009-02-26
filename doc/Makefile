@@ -448,8 +448,8 @@ check:
 	ack -i 'it'\''s|\w'\''(?!s)\w' *.tex
 	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]])' logparser*.tex
 	ack '(address|author|publisher|title)\s+=\s+.* (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]]' logparser-bibliography.tt2
-	ack '\\url{|^[ \t]+$$' logparser-*.tex
-	perl paragraphs-to-lines logparser-architecture.tex | grep -n 'log line' || true
+	ack '\\url{|[ \t]+$$' logparser-*.tex
+	perl paragraphs-to-lines logparser-architecture.tex | grep -n -E 'log line' || true
 	ack 'XX[X]' logparser.bbl || true
 
 # List all acronyms not followed by {}, for visual inspection.

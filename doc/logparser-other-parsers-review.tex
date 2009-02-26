@@ -199,7 +199,7 @@ merely:
 
 \begin{verbatim}
 awk -F\| 'BEGIN { previous = "" };
-    $1 ~ /2007-01-26/ && $7 != "250" && $0 != previous 
+    $1 ~ /2007-01-26/ && $7 != "250" && $0 != previous
     { print $0; print " "; previous = $0; }' lma_output.txt
 \end{verbatim}
 
@@ -363,7 +363,7 @@ different sets of data:
     \item \urlLastChecked[\hfill{}\newline{}]{http://www.thesawmill.co.uk/formats/postfix_ii.html}{2008/11/23}.
         Fields extracted: from, to, RBL list, client hostname, and client
         \acronym{IP} address.  It also counts the number and total size of
-        all mails delivered.  
+        all mails delivered.
 
     \item \urlLastChecked[\hfill{}\newline{}]{http://www.thesawmill.co.uk/formats/beta_postfix.html}{2008/11/23}.
         Fields extracted: from, to, client hostname, client \acronym{IP}
@@ -397,7 +397,7 @@ it extracts, and all searches produced accurate results.  The interface for
 searching is neither as simple to use nor as informative as the interface
 provided by Splunk.  The administrative interface is much easier to use
 than Splunk's: it took only five minutes to start parsing a whole directory
-of log files.  
+of log files.
 
 When tested with the \numberOFlogFILES{} test log files it performed
 adequately, though the rate it processed log files at did slow down
@@ -780,7 +780,7 @@ addresses, and size of accepted mails.  It is unclear if the parser will
 extract any further data.  Lire misses the following fields extracted by
 \parsername{}: client and server \acronym{IP} address and hostname, start
 and end times, enhanced status code, delivery delays, timestamps of each
-log line, and message ID\@. 
+log line, and message ID\@.
 
 Lire supports multiple output formats for generated reports (text, HTML,
 PDF, and Excel 95) but the reports do not appear to be customisable;
@@ -800,7 +800,7 @@ data and makes no attempt to deal with the other complications described in
 \sectionref{complications}.  When testing Lire on the \numberOFlogFILES{}
 test log files it performed reasonably well: the numbers it reports appear
 reasonable, and the subset verified by the author were correct.  Its report
-provided summaries of: 
+provided summaries of:
 
 \begin{itemize}
 
@@ -921,7 +921,7 @@ understanding of Postfix log files achieved by \parsername{}.
         Parser          & Parsed test   & Data              & Custom            & Documentation  & Source       \\
                         & log files?    & store?            & reports?          & quality?       & code?        \\
         \tablemiddleline{}%
-        \acronym{LMA}       & No            & Yes               & No                & Poor           & Yes          \\ 
+        \acronym{LMA}       & No            & Yes               & No                & Poor           & Yes          \\
         Pflogsumm       & Yes           & No                & Partial \dag{}    & Good           & Yes          \\
         Sawmill         & Yes           & Yes               & Searches          & Very good      & \nialpha{}   \\
         Splunk          & Yes           & Yes               & Searches          & Abundant       & No           \\
