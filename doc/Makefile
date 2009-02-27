@@ -438,7 +438,7 @@ veryclean: clean
 		build/plot-* build/logparser*.tex
 
 .PHONY: check
-check:
+check: lines-from-paragraphs
 	# Edit the log file to remove stuff I don't want to see.
 	sed -i -e '/.\/.*.bbl$$/,$$s/^Underfull.*//' *.log
 	make --silent join-lines | grep -i -E 'underfull|overfull|LaTeX Warning' || true
@@ -449,8 +449,9 @@ check:
 	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]])' logparser*.tex
 	ack '(address|author|publisher|title)\s+=\s+.* (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]]' logparser-bibliography.tt2
 	ack '\\url{|[ \t]+$$' logparser-*.tex
-	perl paragraphs-to-lines logparser-architecture.tex | grep -n -E 'log line' || true
+	grep -n -E 'log line' build/logparser-architecture.tex || true
 	ack 'XX[X]' logparser.bbl || true
+	ack '\b(\w+)\b\s+\b\1\b' build/logparser*.tex
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
@@ -491,13 +492,13 @@ xpdf: all
 spellcheck:
 	for file in *.tex; do aspell -t -c "$$file"; done
 
-.PHONY: paragraphs-to-lines
-paragraphs-to-lines:
-	for file in logparser*.tex; do \
-		perl paragraphs-to-lines "$$file" > "build/$$file"; \
-	done
+# I deliberately leave out the "r" from logparser below, because if it's 
+# included then the rule won't work for logparser.tex.
+build/logparse%.tex: logparse%.tex
+	perl paragraphs-to-lines "$<" > "$@"
+lines-from-paragraphs: $(patsubst %,build/%,$(wildcard logparser*.tex))
 
-log-files-lines: paragraphs-to-lines
+log-files-lines: lines-from-paragraphs
 	ACK_PAGER="$$PAGER" ack -i '(?<!log[- ])(lines|files)\b(?!\{)' build/logparser*.tex
 
 diction:
