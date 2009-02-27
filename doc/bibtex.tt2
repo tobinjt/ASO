@@ -27,6 +27,10 @@
 [% sorted_bibliography = bibliography.values.sort("title") -%]
 [% FOREACH entry IN sorted_bibliography -%]
     [% IF not entry.exists("citation_name") -%]
+        [% IF 1 == 0 -%]
+            \bibitem{[% entry.title %]}
+            \textbf{\Huge XX[%# %]X UNUSED BIBLIOGRAPHY ENTRY [% entry.title %]}
+        [% END -%]
         [% NEXT -%]
     [% END -%]
     \bibitem{[% entry.citation_name %]}
@@ -48,6 +52,9 @@
     [% END -%]
     [% IF entry.exists("publisher") -%]
         [% entry.publisher -%], [% entry.address -%].
+    [% END -%]
+    [% IF entry.exists("isbn") -%]
+        ISBN\@: [% entry.isbn %].
     [% END -%]
     [% IF entry.exists("note") -%]
         [% entry.note %].

@@ -1,24 +1,5 @@
 [%# vim: set filetype=tt2 : -%]
-[%# XXX ARE THERE UNUSED ENTRIES I SHOULD INCLUDE, OR DELETE? -%]
-[%# XXX ADD AN ISBN FIELD -%]
 [% bibliography = {
-    "postfix" = {
-        author  = "Wietse Venema",
-        url     = "http://www.postfix.org/",
-        title   = "Postfix Home Page",
-        year    = 2008,
-        journal = "Postfix documentation",
-        checked = "2008/08/20",
-    },
-
-    "postfix-cleanup" = {
-        author  = "Wietse Venema",
-        url     = "http://www.postfix.org/cleanup.8.html",
-        title   = "Cleanup --- Canonicalize and Enqueue Postfix Message",
-        year    = 2008,
-        journal = "Postfix documentation",
-        checked = "2008/05/29",
-    },
 
     "postfix-backscatter" = {
         author  = "Wietse Venema",
@@ -65,15 +46,6 @@
         checked = "2008/05/29",
     },
 
-    "policyd" = {
-        author  = "Cami",
-        url     = "http://www.policyd.org/",
-        title   = "Policy Daemon",
-        year    = 2006,
-        journal = "Policy Daemon documentation",
-        checked = "2009/02/16",
-    },
-
     "policy-servers" = {
         author  = "Wietse Venema",
         url     = "http://www.postfix.org/SMTPD_POLICY_README.html",
@@ -104,15 +76,6 @@
         author  = "Wietse Venema",
         url     = "http://www.postfix.org/RESTRICTION_CLASS_README.html",
         title   = "Postfix Per-Client/User/etc. Access Control",
-        year    = 2007,
-        journal = "Postfix documentation",
-        checked = "2008/05/29",
-    },
-
-    "cidr_table" = {
-        author  = "Wietse Venema",
-        url     = "http://www.postfix.org/cidr_table.5.html",
-        title   = "CIDR Table --- Format of Postfix CIDR Tables",
         year    = 2007,
         journal = "Postfix documentation",
         checked = "2008/05/29",
@@ -199,30 +162,12 @@
         checked = "2008/05/29",
     },
 
-    "sqlite-features" = {
-        author  = "D. Richard Hipp",
-        url     = "http://www.sqlite.org/different.html",
-        title   = "Distinctive Features of SQLite",
-        year    = 2006,
-        journal = "SQLite Documentation",
-        checked = "2008/05/29",
-    },
-
     "perlre" = {
         author  = "Perl 5 Porters",
         url     = "http://perldoc.perl.org/perlre.html",
         title   = "perlre",
         year    = 2006,
         journal = "Perl 5 Documentation",
-        checked = "2008/05/29",
-    },
-
-    "perl-storable" = {
-        author  = "Abhijit Menon-Sen",
-        url     = "http://search.cpan.org/author/AMS/Storable-2.18/Storable.pm",
-        title   = "Storable --- Persistence for Perl Data Structures",
-        year    = 2007,
-        journal = "Perl 5 Module Documentation",
         checked = "2008/05/29",
     },
 
@@ -249,19 +194,10 @@
         title   = "A Plan for Spam",
         year    = 2004,
         journal = "Hackers \\& Painters",
-        note    = "ISBN-10: 0--596--00662--4",
+        isbn    = "0--596--00662--4",
         pages   = "121-129",
         publisher   = "O'Reilly \\& Associates, Inc.",
         address     = "Sebastopol, CA, USA\\@",
-    },
-
-    "risto-vaarandi" = {
-        author  = "Risto Vaarandi",
-        url     = "http://kodu.neti.ee/~risto/",
-        title   = "Risto Vaarandi",
-        year    = 2007,
-        journal = "Risto Vaarandi's Website",
-        checked = "2008/05/29",
     },
 
     "slct-paper" = {
@@ -279,15 +215,6 @@
         title   = "Performance in Practice of String Hashing Functions",
         year    = 1997,
         journal = "Proceedings of the 5th International Conference on Database Systems for Advanced Applications",
-        checked = "2008/05/29",
-    },
-
-    "sqlite-guis" = {
-        author  = "Anonymous",
-        url     = "http://www.sqlite.org/cvstrac/wiki?p=ManagementTools",
-        title   = "sqlite --- Management Tools",
-        year    = 2007,
-        journal = "SQLite Website",
         checked = "2008/05/29",
     },
 
@@ -312,7 +239,7 @@
         publisher = "Addison Wesley",
         address = "\\empty{}address \\empty{}unknown",
         pages   = "63--98",
-        note    = "ISBN-10: 0201180537",
+        isbn    = "0201180537",
     },
 
     "stepwise-refinement" = {
@@ -401,7 +328,7 @@
         author      = "Jeffrey E. F. Friedl",
         journal     = "Mastering regular expressions",
         year        = "2006",
-        note        = "ISBN-10: 0596528124",
+        isbn        = "0596528124",
         publisher   = "O'Reilly \\& Associates, Inc.",
         address     = "Sebastopol, CA, USA\\@",
         title       = "Crafting an Efficient Expression",
@@ -425,7 +352,7 @@
         # Adding \empty{} fools my check for lowercase words in titles.
         title       = "\\empty{}lex \\& \\empty{}yacc",
         year        = "1992",
-        note        = "ISBN-10: 1--56592--000--7",
+        isbn        = "1--56592--000--7",
         publisher   = "O'Reilly \\& Associates, Inc.",
         address     = "Sebastopol, CA, USA\\@",
     },
@@ -436,7 +363,8 @@
         journal     = "Knowledge-Based Systems",
         year        = "2009",
         doi         = "10.1016/j.knosys.2008.10.011",
-        url         = "http://xrl.us/behoe4",
+        #url         = "http://xrl.us/behoe4",
+        url         = "http://dx.doi.org/10.1016/j.knosys.2008.10.011",
         checked     = "2009/02/26",
         #volume      = "",
         #number      = "",
