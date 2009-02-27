@@ -2,8 +2,6 @@
 
 \label{parser architecture}
 
-XXX REWRITE\@: MERGE CONTENT FROM ELSEWHERE IN THE THESIS AND PAPER\@.
-
 XXX WHEN FINISHED, CHECK ALL REFERENCES TO ENSURE THEY POINT AT THE CORRECT
 CHAPTER\@.
 
@@ -162,20 +160,17 @@ for each input:
 
 \label{actions in architecture}
 
-XXX TO BE WRITTEN --- CHECK THE IMPLEMENTATION SECTION\@.
-
 Each action is a separate procedure written to process a particular
 category of input, e.g.\ rejections.  There may be many input variants
 within one input category; in general each action will handle one category
-of inputs, with each rule rule recognising one input variant.  It is
-anticipated that parsers based on this architecture will have a high ratio
-of rules to actions, with the aim of having simple rules and clear
-distinctions between the inputs parsed by different rules.  An action may
-process different input variants in slightly different ways, but large
-changes in processing indicate the need for a new action and a new category
-of input; if an action becomes unnecessarily complicated is starts to turn
-into a monolithic parser, with too much logic contained in a single
-procedure.
+of inputs, with each rule recognising one input variant.  It is anticipated
+that parsers based on this architecture will have a high ratio of rules to
+actions, with the aim of having simple rules and clear distinctions between
+the inputs parsed by different rules.  An action may process different
+input variants in slightly different ways, but large changes in processing
+indicate the need for a new action and a new category of input; if an
+action becomes unnecessarily complicated is starts to turn into a
+monolithic parser, with too much logic contained in a single procedure.
 
 The ability to easily add special purpose actions to deal with difficulties
 and new requirements that are discovered during parser development is one
@@ -209,9 +204,8 @@ work around the difficulties; the remainder were resolved by adapting
 existing actions to cooperate and exchange extra data (via the framework),
 changing their behaviour as appropriate based on that extra data.  Every
 architecture should aim to make the hard things possible as well as making
-the easy things easy (XXX MAYBE QUOTE LARRY\@?); the successful
-implementation of the Postfix log parser demonstrates that this
-architecture achieves that aim.
+the easy things easy; the successful implementation of the Postfix log
+parser demonstrates that this architecture achieves that aim.
 
 Actions may return a modified input line that will be parsed as if read
 from the input stream, allowing for a simplified version of cascaded
@@ -219,15 +213,12 @@ parsing~\cite{cascaded-parsing}.  This powerful facility allows several
 rules and actions to parse a single input, potentially simplifying both
 rules and actions.  XXX EXPAND WITH CHEMICAL FORMULAE EXAMPLE\@.
 
+Glucose: $C_{6}H_{12}O_{6}$
+Hydrocarbon: $CH_{3}{(CH_{2})}_{50}CH_{3}$
 
 \section{Rules}
 
 \label{rules in architecture}
-
-XXX TO BE WRITTEN\@.  TAKE CONTENT FROM THE PAPER AND POSSIBLY FROM THE
-IMPLEMENTATION SECTION\@.
-
-XXX DO I NEED TO SUBDIVIDE THIS INTO SUBSECTIONS\@?
 
 Rules are responsible for categorising inputs: each rule should recognise
 one and only input variant; an input category with multiple input variants
@@ -241,6 +232,8 @@ but implementations are free to add any other attributes they require;
 \sectionref{rule attributes} describes the attributes used in
 \parsername{}, and some potential attributes will be discussed later in
 this section.
+
+\subsection{Adding New Rules}
 
 The framework issues a warning for each unparsed input, so it is evident
 when the ruleset needs to be augmented.  Parsing new inputs is achieved in
@@ -274,15 +267,25 @@ parser might also dynamically create new rules in response to certain
 inputs, e.g.\ diagnostic messages indicating that the program which
 produced the input being parsed had read a new configuration file, and had
 changed its behaviour appropriately.  These avenues of research and
-development have not been pursued by the author, but but the architecture
+development have not been pursued by the author, but the architecture
 allows them to easily be undertaken independently.
+
+\subsection{Attaching Conditions To Rules}
 
 XXX ATTACHING CONDITIONS TO RULES\@; GIVE PLP EXAMPLE AND REFER TO
 IMPLEMENTATION AND RESULTS SECTIONS\@?
 
 XXX STATEFUL PARSING ENABLED BY CONDITIONS, E.G\@.  PARSING C COMMENTS\@.
 
+\subsection{Prioritisation and Rule Ordering}
+
 XXX PRIORITY ATTRIBUTE AND RULE ORDERING\@.
+
+The first matching rule wins: no further rules are tried against that
+input, but there is a mechanism for prioritising the rules so that more
+specific rules can be tried first.
+
+\subsection{Overlapping Rules}
 
 When adding new rules, the rule author must be aware that the new rule may
 overlap with an existing rule, i.e.\ some inputs could be parsed by more
@@ -368,6 +371,8 @@ where:
 
 \end{tabular}
 
+\subsection{Pathological Rules}
+
 It is possible to define pathological regexes which fall into two main
 categories: regexes that match every input, and regexes that consume
 excessive amounts of CPU time during matching.  Defining a regex to match
@@ -381,28 +386,13 @@ quite fast (see~\cite{mastering-regular-expressions} for in-depth
 discussion).  XXX THIS NEEDS TO BE EXPANDED, OR MOVED TO FIT IN
 ELSEWHERE\@.
 
-Rule have certain characteristics that may help in understanding the
-parser architecture:
-
-XXX IMPROVE THIS\@; SHOULD IT BE A SUBSECTION\@?  EXPAND ON ALL THESE, OR
-MOVE THEM TO FIT IN ELSEWHERE\@.  ADD MORE IF POSSIBLE\@.
-
-\begin{itemize}
-
-    \item The first matching rule wins: no further rules are tried against
-        that input, but there is a mechanism for prioritising the rules so
-        that more specific rules can be tried first.  XXX MOVE THIS TO THE
-        PRIORITY SECTION\@.
-
-    \item Rules are completely self-contained and can be understood in
+    Rules are completely self-contained and can be understood in
         isolation, without reference to any other rules.  This is similar
         to a \acronym{CFG}; in \acronym{CFG} terms the parser rules could
         be described as:
 
         $\text{\textless{}input\textgreater{}} \mapsto \text{rule-1} |
         \text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
-
-\end{itemize}
 
 \section{Architecture Characteristics}
 
