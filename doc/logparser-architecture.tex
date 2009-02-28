@@ -5,6 +5,25 @@
 XXX WHEN FINISHED, CHECK ALL REFERENCES TO ENSURE THEY POINT AT THE CORRECT
 CHAPTER\@.
 
+XXX INTEGRATE THE NEXT PARAGRAPH INTO THIS SECTION\@.
+
+The solution developed is conceptually simple: provide a few generic
+functions (\textit{actions\/}), each capable of dealing with an entire
+category of inputs (e.g.\ rejecting a mail delivery attempt), accompanied
+by a multitude of precise patterns (\textit{rules\/}), each of which
+matches all inputs of a specific type and only that type (e.g.\ rejection
+by a specific \acronym{DNSBL}).  It is an accepted standard to separate the
+parsing procedure from the declarative grammar it operates with; part of
+the novelty here is in the way that the grammar is itself partially
+procedural (each action is a separate procedure).  This architecture is
+ideally suited to parsing inputs where the input is not fully understood or
+does not conform to a fixed grammar: the architecture warns about unparsed
+inputs and other errors, but continues parsing as best it can, allowing the
+developer of a new parser to decide which deficiencies are most important
+and require attention first, rather than being forced to fix the first
+error that arises.
+
+
 To avoid cluttering the explanation of the parser architecture with the
 details involved in implementing a parser for Postfix log files, the two
 topics have been separated.  This chapter presents the architecture
@@ -350,11 +369,11 @@ for example in~\cite{intersection-of-NFA-using-Z}) uses DeMorgan's law:
 $FA1~\cap{}~FA2~=~\overline{(\overline{FA1}~\cup{}~\overline{FA2})}$, which
 has considerable computation complexity.  XXX COMMENT ON THE COMPUTATIONAL
 COMPLEXITY OF INVERSION AND UNION\@; ADD A REFERENCE TO THE SPINNING WHEEL
-BOOK\@.  Perl 5.10 regexes are more powerful than traditional regexes: it
-is possible to match correctly balanced brackets nested to an arbitrary
-depth, e.g.\ \verb!/^[^<>]*(<(?:(?>[^<>]+)|(?1))*>)[^<>]*$/! matches
-\verb!z<123<pq<>rs>j<r>ml>s!.  Matching balanced brackets requires the
-regex engine to maintain state on a stack, so Perl 5.10 regexes are
+BOOK\@.  Perl 5.10 regexes~\cite{perlre} are more powerful than traditional
+regexes: it is possible to match correctly balanced brackets nested to an
+arbitrary depth, e.g.\ \verb!/^[^<>]*(<(?:(?>[^<>]+)|(?1))*>)[^<>]*$/!
+matches \verb!z<123<pq<>rs>j<r>ml>s!.  Matching balanced brackets requires
+the regex engine to maintain state on a stack, so Perl 5.10 regexes are
 equivalent in computational power to \acronym{PDA} or a \acronym{CFL};
 detecting overlap may require calculating the intersection of two
 \acronym{PDA} or \acronyms{CFL} instead of two \acronym{FA}.  The

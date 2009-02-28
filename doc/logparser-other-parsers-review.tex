@@ -7,22 +7,28 @@ the hope of finding a suitable parser to build upon, rather than starting
 from scratch.  It was quite difficult to find ten parsers to review for
 this project, and the functionality offered by those parsers ranges from
 quite basic to much more mature, depending on the needs of the author of
-the parser.  None of those parsers were suitable for this project, so the
-decision was taken to write a new parser.  The first parser reviewed is the
-only previously published research in this area that the author is aware
-of; it parses Postfix log files, but aim of the research is to show that
-presenting extracted data in a more easily accessible format is useful to
-systems administrators, rather than to improve anti-spam techniques.
+the parser.
 
-The same ten parsers have been reviewed and compared with \parsername{},
-this project's finished parser, to show how much effort would have been
-required to fulfil the aims and requirements of this project.  It is
+It was hoped to reuse an existing parser rather than writing one from
+scratch, but the existing parsers considered were rejected for one or more
+reasons.  The effort required to adapt and improve an existing parser was
+judged to be greater than the effort to write a new one, because the
+techniques used by the existing parsers severely limited their potential:
+some ignored the majority of log lines, parsing specific log lines
+accurately, but without any provision for parsing new or similar log lines;
+others sloppily parsed the majority of log lines, but were incapable of
+distinguishing between log lines of the same category, e.g.\ rejecting a
+mail delivery attempt.  The first parser reviewed~\cite{log-mail-analyser}
+is the only previously published research in this area that the author is
+aware of; their research aims to show that providing the data from log
+files in a more accessible form is helpful to systems administrators.
+
+The ten parsers have been reviewed and compared with \parsername{}, this
+project's finished parser, to show how much effort would have been required
+to use those to fulfil the aims and requirements of this project.  It is
 important to compare and contrast newly developed algorithms and parsers
 against those already available, to accurately judge what improvements, if
-any, are delivered by the newcomers.  Each of the reviewed parsers was
-tested with the \numberOFlogFILES{} test log files described in
-\sectionref{parser efficiency}.  \Tableref{Summary of parsers' features}
-summarises the results of this review.
+any, are delivered by the newcomers.
 
 Some important differences exist between \parsername{} and most or all of
 the parsers reviewed here:
@@ -68,6 +74,10 @@ the parsers reviewed here:
         were rejected.
 
 \end{enumerate}
+
+Each of the reviewed parsers was tested with the \numberOFlogFILES{} test
+log files described in \sectionref{parser efficiency}; \tableref{Summary of
+parsers' features} summarises the results of this review.
 
 The data extracted by \parsername{} is documented in
 \sectionref{connections table} and \sectionref{results table}; for

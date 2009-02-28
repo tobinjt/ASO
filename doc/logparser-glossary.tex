@@ -1,6 +1,5 @@
 % vim: set filetype=tex :
 % The contents of the glossary.
-% XXX CHECK FOR ENTRIES THAT SHOULD BE INCLUDED.
 \newglossaryentry{SQLite}{name={SQLite},description={
     \textit{SQLite is a small C library that implements a self-contained,
     embeddable, zero-configuration SQL database engine.\/} SQLite is an
@@ -54,13 +53,13 @@
     reused later.
 }}
 
-%\newglossaryentry{hash}{name={hash},description={
-%    A hashing function transforms a string of characters to a number.
-%    There are many possible uses for the resulting number: a common usage
-%    is to maintain a data structure indexed by strings in an efficient
-%    manner.  A full description is beyond the scope of this paper, further
-%    information can be found at~\cite{hash-functions}.
-%}}
+\newglossaryentry{hash}{name={hash},description={
+    A hashing function transforms a string of characters to a number.
+    There are many possible uses for the resulting number: a common usage
+    is to maintain a data structure indexed by strings in an efficient
+    manner.  A full description is beyond the scope of this paper, further
+    information can be found at~\cite{hash-functions}.
+}}
 
 \newglossaryentry{awk}{name={AWK},description={
     AWK is a general purpose programming language that is designed for
@@ -80,7 +79,7 @@
     deluge of mail can be severe enough to interrupt service for the victim
     and/or other users, by causing mail to be delayed or rejected because
     the victim or the server has reached a limit, e.g.\ too many mails in
-    their mailbox, too much disk space consumed.
+    their mailbox, or too much disk space consumed by the mail queue.
 }}
 
 \newglossaryentry{mail loop}{name={Mail Loop},description={
@@ -90,6 +89,8 @@
     directed graph; the simplest example is when mail for
     \texttt{alice@example.net} is delivered to \texttt{bob@example.com},
     and mail for \texttt{bob@example.com} is delivered to
-    \texttt{alice@example.net}.  XXX EXPLAIN WHY THIS IS NOT AUTOMATICLLY
-    DETECTED SOMETIMES\@.
+    \texttt{alice@example.net}.  Postfix adds a \texttt{Delivered-To:}
+    header to all mails it delivers locally to detect mail loops, but in
+    some cases this header is removed by the program that forwards the
+    mail.
 }}

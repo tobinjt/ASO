@@ -72,6 +72,7 @@
         journal = "Postfix documentation",
         checked = "2008/05/29",
     },
+
     "smtpd_per_user_control" = {
         author  = "Wietse Venema",
         url     = "http://www.postfix.org/RESTRICTION_CLASS_README.html",

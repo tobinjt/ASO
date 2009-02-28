@@ -635,10 +635,10 @@ There are 4 steps in the algorithm:
 
         In the original algorithm the purpose of the preprocessing stage
         was to reduce the memory consumption of the program.  In the first
-        pass it generated a hash~\cite{hash-functions} from a small range
-        of values for each word of each log line, incrementing a counter
-        for each hash.  The counters will be used in the next pass to
-        filter out words: if the word's hash does not have a high
+        pass it generated a hash~\cite{hash-functions}\glsadd{hash} from a
+        small range of values for each word of each log line, incrementing
+        a counter for each hash.  The counters will be used in the next
+        pass to filter out words: if the word's hash does not have a high
         frequency, the word itself cannot have a high frequency, so there
         is no need to maintain a counter for it, reducing the number of
         counters required and thus the program's memory consumption.

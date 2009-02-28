@@ -2,6 +2,31 @@
 
 \label{introduction}
 
+The architecture described herein was developed as part of a larger project
+to improve anti-spam defences by analysing the performance of the set of
+filters currently in use, optimising the order and membership of the set
+based on that analysis, and developing supplemental filters where
+deficiencies are identified.  Most anti-spam techniques are content-based
+(e.g.~\cite{a-plan-for-spam, word-stemming, relaxed-online-svms}) and
+require the mail to be accepted before determining if it is spam, but
+rejecting mail during the delivery attempt is preferable: senders of
+non-spam mail that is mistakenly rejected will receive an immediate
+non-delivery notice; resource usage is reduced on the accepting mail server
+(allowing more intensive content-based techniques to be used on the mail
+that is accepted); users have less spam mail to wade through.  Improving
+the performance of anti-spam techniques that are applied when mail is being
+transferred via \acronym{SMTP} is the goal of this project, by providing a
+platform for reasoning about anti-spam filters.  The approach chosen to
+measure performance is to analyse the log files produced by the
+\acronym{SMTP} server in use, Postfix
+(\urlLastCheckedNoParens{http://www.postfix.org/}{2009/02/28}), rather than
+modifying its source code to generate statistics: this approach improves
+the chances of other Postfix users testing and using the software developed
+for this project.  The need arose for a parser capable of dealing with the
+great number and variety of log lines produced by Postfix: the parser must
+be designed so that adding support for parsing new inputs is a simple task,
+because the log lines to be parsed will change over time.
+
 Most mail server administrators will have performed some basic processing
 of the log files produced by their mail server at one time or another,
 whether it was to debug a problem, explain to a user why their mail is
@@ -18,40 +43,47 @@ unstructured nature of Postfix log files, where each log line was added on
 an ad hoc basis as a requirement was discovered or new functionality was
 added.\footnote{A history of all changes made to Postfix is distributed
 with the source code, available from
-\urlLastChecked{http://www.postfix.org/}{2009/02/23}} Further complication
-arises because the set of rejection messages is not fixed: new messages can
-be added by the administrator with custom checks; every
-\acronym{DNSBL}\footnote{This document is supplied with a glossary, see
-\textsection\ref{Glossary}.} returns a different explanatory message;
+\urlLastChecked{http://www.postfix.org/}{2009/02/23}.}  Further
+complication arises because the set of rejection messages is not fixed: new
+messages can be added by the administrator with custom checks; every
+\acronym{DNSBL}\footnote{This thesis is supplied with a glossary
+(\textsection\ref{Glossary}) and a list of acronyms
+(\textsection\ref{Acronyms}).} returns a different explanatory message;
 policy servers may log different messages depending on the characteristics
 of the connection.  There are many ways in which the log lines may differ
 between servers, even within the same organisation: servers may be
-configured differently, or running different versions of Postfix.  This
-paper documents the difficult process of parsing Postfix log files,
-presenting \parsername{}, a program that parses Postfix log files and
-places the resulting data into a database for later use.  The gathered data
-can then be used to optimise current anti-spam measures, provide a baseline
-to test new anti-spam measures against, or to produce statistics showing
-how effective those measures are.  Numerous other uses are possible for
-such data: improving server performance by identifying troublesome
-destinations and reconfiguring appropriately; identifying regular high
-volume uses (e.g.\ customer newsletters) and restricting those uses to
-off-peak times; detecting virus outbreaks that propagate via mail; as a
-base for billing customers on a shared server.  Preserving the raw data
-enables users to develop a multitude of uses far beyond those conceived of
-by the author.
+configured differently, or running different versions of Postfix.
+
+This thesis documents the difficult process of parsing Postfix log files,
+presenting an architecture designed to enable the users of a parser to
+easily extend it to parse their particular inputs, without requiring a lot
+of work or a high level of understanding of the parsing process and the
+parser's internal workings.  This architecture is the basis of
+\parsername{}, a program that parses Postfix log files and places the
+resulting data into a database for later analysis.  The gathered data can
+be used to optimise current anti-spam measures, provide a baseline to test
+new anti-spam measures against, or to produce statistics showing how
+effective those measures are.  Numerous other uses are possible for such
+data: improving server performance by identifying troublesome destinations
+and reconfiguring appropriately; identifying regular high volume uses
+(e.g.\ customer newsletters) and restricting those uses to off-peak times
+or providing a dedicated service for them; detecting virus outbreaks that
+propagate via mail; as a base for billing customers on a shared server.
+Preserving the raw data enables users to develop a multitude of uses far
+beyond those conceived of by the author.
 
 \section{Thesis Layout}
 
-XXX THIS ALL NEEDS TO BE CHECKED AND UPDATED\@.
-
 Chapter~\ref{background} provides background information useful in
-understanding the thesis, parser, and architecture.
+understanding the motivation behind the project, \acronym{SMTP}, and
+Postfix.
 
 Chapter~\ref{state of the art review} reviews both the previously published
-research in this area and other available Postfix log file parsers,
-discussing why they were deemed unsuitable for the task, including why they
-could not be improved or expanded upon.
+research in this area and other Postfix log file parsers, discussing why
+they were deemed unsuitable for the task, including why they could not be
+improved or expanded upon.
+
+XXX THIS ALL NEEDS TO BE CHECKED AND UPDATED\@.
 
 This algorithm requires a database for storing both the rules used when
 parsing and the results gleaned from parsing.  The database schema used is
@@ -112,11 +144,12 @@ Appendix~\ref{Acronyms} provides a list of acronyms used in the thesis.
 Appendix~\ref{Postfix Daemons} gives a brief description of Postfix
 daemons.
 
-\section{XXX NOTES}
+\section{Previously Published Work}
 
-Portions of \sectionref{parser architecture}, \sectionref{Postfix Parser
-Implementation}, and \sectionref{Results} have previously been published at
-a conference~\cite{sgai-2008}, and later reprinted in a
+Portions of \textsection\ref{introduction}, \textsection\ref{parser
+architecture}, \textsection\ref{Postfix Parser Implementation}, and
+\textsection\ref{Results} have previously been published at a
+conference~\cite{sgai-2008}, and later reprinted in a
 journal~\cite{elsevier-2009}.  Publication of the conference paper and
-journal article above was supported by Science Foundation Ireland
+journal article was supported by Science Foundation Ireland
 RFP~05/RF/CMS002.
