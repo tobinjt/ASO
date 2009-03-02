@@ -439,18 +439,22 @@ veryclean: clean
 
 .PHONY: check
 check: lines-from-paragraphs
-	# Edit the log file to remove stuff I don't want to see.
+	# Edit the log file to remove underfull hbox warnings I can't fix.
 	sed -i -e '/.\/.*.bbl$$/,$$s/^Underfull.*//' *.log
 	make --silent join-lines | grep -i -E 'underfull|overfull|LaTeX Warning' || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' *.log
 	grep '!!' *.?lg || true;
 	chktex -I0 -q *.tex *.bbl
-	ack -i 'it'\''s|\w'\''(?!s)\w' *.tex
+	# Check for contractions.
+	ack -i 'it'\''s|\w'\''(?!s)\w|\. [^ ]' logparser*.tex
+	# Check for uncapitalised words in section headings, and then in bibliography entries.
 	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]])' logparser*.tex
 	ack '(address|author|publisher|title)\s+=\s+.* (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]]' logparser-bibliography.tt2
+	# Check for using a bare \url{} command.
 	ack '\\url{|[ \t]+$$' logparser-*.tex
 	grep -n -E 'log line' build/logparser-architecture.tex || true
 	ack 'XX[X]' logparser.bbl || true
+	# Check for repeated works
 	ack '\b(\w+)\b\s+\b\1\b' build/logparser*.tex
 
 # List all acronyms not followed by {}, for visual inspection.

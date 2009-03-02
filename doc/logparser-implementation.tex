@@ -665,7 +665,7 @@ There are 4 steps in the algorithm:
         As time goes on the amount of memory typically available increases
         and the requirement to reduce memory requirements decreases, hence
         the modified algorithm omits the hashing step and maintains
-        counters for all tokens. In addition most of the infrequently
+        counters for all tokens.  In addition most of the infrequently
         occurring words will have been substituted with keywords during the
         first step, vastly reducing the number of tuples to maintain
         counters for.
@@ -818,7 +818,7 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
         the original data structure was used then second and subsequent
         mails would overwrite one another's data.
 
-    \item [COMMIT] Enter the data from the mail into the database. Entry
+    \item [COMMIT] Enter the data from the mail into the database.  Entry
         will be postponed if the mail is a child waiting to be tracked.
         Once entered, the mail will be deleted from the state tables.
         Deletion will be postponed if the mail is the parent of re-injected
@@ -856,7 +856,7 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
         skipped, so the mail will be committed.
 
     \item [MAIL\_QUEUED] This action represents Postfix picking a mail from
-        the queue to deliver. This action is used for both \daemon{qmgr}
+        the queue to deliver.  This action is used for both \daemon{qmgr}
         and \daemon{cleanup} as it needs to deal with out of order log
         lines; see \sectionref{discarding cleanup log lines} for details.
         XXX EXPLAIN THIS BETTER\@.
@@ -903,7 +903,7 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
         deleted from the state tables.
 
     \item [TIMEOUT] The connection timed out so the mail currently being
-        transferred must be discarded. The mail may have been accepted, in
+        transferred must be discarded.  The mail may have been accepted, in
         which case there's a data structure to dispose of, or it may not in
         which case there is not.  See
         \sectionref{timeouts-during-data-phase} for the gory details.
@@ -911,7 +911,7 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
     \item [TRACK] Track a mail when it is re-injected for forwarding to
         another mail server; this happens when a local address is aliased
         to a remote address.  TRACK will be called when dealing with the
-        parent mail, and will create the child mail if necessary. TRACK
+        parent mail, and will create the child mail if necessary.  TRACK
         checks if the child has already been tracked, either by this parent
         or by another parent, and issues appropriate warnings in either
         case.
@@ -1872,7 +1872,7 @@ mails are created, delivered, and deleted from the queue, \textit{before\/}
 the log line from \daemon{bounce} that explains their source is logged.  To
 deal with this the COMMIT action maintains a cache of recently committed
 bounce notification mails, which the BOUNCE action subsequently checks if
-the bounce mail is not already in the state tables. If the queueid exists
+the bounce mail is not already in the state tables.  If the queueid exists
 in the cache, and its start time is less than ten seconds before the
 timestamp of the bounce log line, it is assumed that the bounce
 notification mail has already been processed and the BOUNCE action does not
@@ -1942,9 +1942,10 @@ improvements that have been identified in the parser.
 
     \item The hostname used in the HELO command is not logged if the mail
         is accepted.\footnote{Tested with Postfix 2.2.10, 2.3.11, and
-        2.4.7; this may possibly have changed in Postfix 2.5. XXX TEST THIS
-        AGAIN.}  Rectifying this is relatively simple: create a restriction
-        that is guaranteed to warn for every accepted mail, as follows:
+        2.4.7; this may possibly have changed in Postfix 2.5.  XXX TEST
+        THIS AGAIN.}  Rectifying this is relatively simple: create a
+        restriction that is guaranteed to warn for every accepted mail, as
+        follows:
 
         \begin{enumerate}
 

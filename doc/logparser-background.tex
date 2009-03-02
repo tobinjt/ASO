@@ -123,7 +123,7 @@ An example deviation from the protocol:
 220 smtp.example.com ESMTP
 HELO client.example.com
 250 smtp.example.com
-MAIL FROM: Alice N. Other alice@example.com
+MAIL FROM: Alice in Distribution alice@example.com
 501 5.1.7 Bad sender address syntax
 RCPT TO: Bob in Sales/Marketing bob@example.com
 503 5.5.1 Error: need MAIL command
@@ -230,7 +230,7 @@ client's \acronym{IP} address is listed.
 Each restriction is evaluated to produce a result of \textit{reject},
 \textit{permit}, \textit{dunno}, or the name of another restriction to be
 evaluated; other less commonly used results are possible as described
-in~\cite{smtpd_access_readme,smtpd_per_user_control,policy-servers}. The
+in~\cite{smtpd_access_readme,smtpd_per_user_control,policy-servers}.  The
 meaning of \textit{permit\/} and \textit{reject\/} is fairly obvious;
 \textit{dunno\/} means to stop evaluating the current restriction and
 continue processing the remainder of the restriction list, allowing
@@ -298,7 +298,7 @@ a result (reject, permit, dunno, a rejection name) as described in
 perform more complex checks than those provided by Postfix: a trivial
 example is allowing addresses associated with the payroll system to send
 mail on the third Tuesday after pay day only, to help prevent problems from
-phishing mails using faked sender addresses. E.g.\ a phishing mail might
+phishing mails using faked sender addresses.  E.g.\ a phishing mail might
 claim that the payroll system had a disastrous disk failure, and until the
 server is replaced all salary payments will have to be processed manually,
 so please reply to this mail with your name, address, and bank account
