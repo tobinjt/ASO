@@ -167,7 +167,7 @@
 %\setlength{\intextsep}{0pt}
 %\setlength{\textfloatsep}{0pt}
 
-% Show the citation key (e.g. slct-paper) in the margin beside the
+% Show the citation key (e.g.\ slct-paper) in the margin beside the
 % reference.
 %\usepackage[nomsgs]{refcheck}
 % Show where references are used.
@@ -175,6 +175,15 @@
 %\usepackage{citeref}
 %\usepackage{backref}
 %\renewcommand{\refname}{Bibliography}
+
+% Reduce the space between items in a list; this is useful when each item
+% is a single line, because then the defaul spacing makes the list look
+% very sparse.  This command needs to be the first thing in a list to take
+% effect.
+\newcommand{\squeezeitems}[0]{%
+    \setlength{\itemsep}{0pt}%
+}
+
 % Put each URL in the bibliography on a new line.
 \newcommand{\urlprefix}[0]{\newline{}}
 % New formatting commands.

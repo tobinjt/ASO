@@ -5,25 +5,6 @@
 XXX WHEN FINISHED, CHECK ALL REFERENCES TO ENSURE THEY POINT AT THE CORRECT
 CHAPTER\@.
 
-XXX INTEGRATE THE NEXT PARAGRAPH INTO THIS SECTION\@.
-
-The solution developed is conceptually simple: provide a few generic
-functions (\textit{actions\/}), each capable of dealing with an entire
-category of inputs (e.g.\ rejecting a mail delivery attempt), accompanied
-by a multitude of precise patterns (\textit{rules\/}), each of which
-matches all inputs of a specific type and only that type (e.g.\ rejection
-by a specific \acronym{DNSBL}).  It is an accepted standard to separate the
-parsing procedure from the declarative grammar it operates with; part of
-the novelty here is in the way that the grammar is itself partially
-procedural (each action is a separate procedure).  This architecture is
-ideally suited to parsing inputs where the input is not fully understood or
-does not conform to a fixed grammar: the architecture warns about unparsed
-inputs and other errors, but continues parsing as best it can, allowing the
-developer of a new parser to decide which deficiencies are most important
-and require attention first, rather than being forced to fix the first
-error that arises.
-
-
 To avoid cluttering the explanation of the parser architecture with the
 details involved in implementing a parser for Postfix log files, the two
 topics have been separated.  This chapter presents the architecture
@@ -43,11 +24,11 @@ background}) that log files produced by Postfix may vary widely from host
 to host, depending on the set of restrictions chosen by the administrator.
 With this in mind, one of the architecture's design aims was to make adding
 new rules to parse new inputs as easy as possible, to enable administrators
-to properly parse their own log files.  To enable this the architecture is
-divided into three parts: Framework, Actions, and Rules.  Each will be
-discussed separately, but first an overview:
+to properly parse their own log files.  The solution developed is to divide
+the architecture into three parts: Framework, Actions, and Rules.  Each
+will be discussed separately, but first an overview:
 
-\begin{eqlist}
+\begin{eqlist}[\def\makelabel#1{\bfseries#1}]
 
     \item [Framework]  The framework is the structure that actions and
         rules plug into.  It manages the parsing process, providing shared
@@ -55,13 +36,14 @@ discussed separately, but first an overview:
         and other support functions.
 
     \item [Actions] Each action performs the work required to deal with a
-        single category of inputs, e.g.\ rejecting a delivery attempt.
-        Actions are invoked to process an input once it has been classified
-        by a rule.
+        single \textit{category\/} of inputs, e.g.\ rejecting a delivery
+        attempt.  Actions are invoked to process an input once it has been
+        classified by a rule.
 
     \item [Rules]  The rules are responsible for classifying inputs; each
-        rule recognises one input variant, and specifies the action that
-        will be invoked to process the input. Rules provide an easily
+        rule recognises one input \textit{variant}, and specifies the
+        action that will be invoked to process the input.  Each input
+        category may have many input variants.  Rules provide an easily
         extensible method of associating inputs with actions.
 
 \end{eqlist}
@@ -149,13 +131,15 @@ language, this architecture does not require a fixed grammar specification
 that inputs must adhere to.  The architecture is capable of dealing with
 interleaved inputs, out of order inputs, and ambiguous inputs where
 heuristics must be applied --- all have arisen and been successfully
-accommodated in the Postfix log file parser.
-
+accommodated in the Postfix log file parser.  This architecture is ideally
+suited to parsing inputs where the input is not fully understood or does
+not conform to a fixed grammar: the architecture warns about unparsed
+inputs and other errors, but continues parsing as best it can, allowing the
+developer of a new parser to decide which deficiencies are most important
+and the order to address them in, rather than being forced to fix the first
+error that arises.
 
 \section{Framework}
-
-XXX EXTEND FRAMEWORK SECTION\@: EXPAND ON ALL OF THE POINTS IN THE LIST IN
-THE NEXT PARAGRAPH\@.
 
 \label{framework in architecture}
 
@@ -166,16 +150,15 @@ improved independently of the other, and allows new rules to be written
 without needing changes to the source code of a parser.  The framework is
 the core of the architecture and is deliberately quite simple: the rules
 deal with the variation in inputs, and the actions deal with the
-intricacies and complications encountered during parsing.
-
-The function that finds the rule matching the input and invokes the
-requested action can be expressed in pseudo-code as:
+intricacies and complications encountered during parsing.  The function
+that finds the rule matching the input and invokes the requested action can
+be expressed in pseudo-code as:
 
 \begin{verbatim}
 INPUT:
 for each input {
     for each rule defined by the user {
-        if this rule matches the input {
+        if this rule recognises the input {
             perform the action specified by the rule
             next INPUT
         }
@@ -184,13 +167,78 @@ for each input {
 }
 \end{verbatim}
 
-Most parsers will require the same basic functionality from the framework,
-plus some specialised support functions.  XXX EXPAND THIS\@.
+Most parsers will require the same basic functionality from the framework;
+it is responsible for managing the parsing process from start to finish,
+which generally will involve the following steps:
 
-XXX TURN THIS INTO A LIST AND EXPAND THE ITEMS\@.  It provides shared
-storage to pass data between actions, saves and loads state, loads and
-validates rules, manages parsing, invokes actions, stores results of
-parsing, and miscellaneous other tasks.
+\begin{description}
+
+    \item [Register actions]  Each action needs to be registered with the
+        framework so that the framework knows about it; the list of
+        registered actions will alsobe used when validating rules.
+
+    \item [Load and validate rules]  The framework loads the rules from
+        wherever they are stored: a simple file, a database, or possibly
+        even a web server or other network service --- though that would
+        have serious security implications.  It validates each rule to
+        hopefully catch problems as early in the parsing process as
+        possible; the checks will be implementation-specific to some
+        extent, but will generally include some of the following:
+
+        \begin{itemize}
+
+            \squeezeitems{}
+
+            \item Ensuring the specified action has been registered.
+
+            \item Checking for conflict in the data to be extracted, e.g.\
+                setting the same variable twice.
+
+            \item Checking that the regex used in the rule is valid.
+
+            \item Some optimisation steps may also be performed during
+                loading of rules, as discussed in \sectionref{parser
+                efficiency}.
+
+        \end{itemize}
+
+    \item [Classify the input]  The pseudo-code above shows how rules are
+        successively tried until one is found that recognises the current
+        input.  That pseudo-code is very simple: there may be efficiency
+        concerns, (\sectionref{parser efficiency}), rule conditions
+        (\sectionref{attaching conditions to rules}), or prioritisations
+        (\sectionref{prioritisation and rule ordering}) that complicate the
+        process.
+
+    \item [Invoke actions]  Once a rule has been found that recognises the
+        current input, the specified action must be invoked.  The framework
+        marshals the data extracted by the rule, invokes the action, and
+        repeats the parsing process if cascaded parsing
+        (\sectionref{cascaded parsing}) is used.
+
+    \item [Shared storage]  Parsers generally need to save some state
+        information about the input being parsed, e.g.\ a compiler tracking
+        which variables are in lexical scope as it moves from one lexical
+        block to another.  The framework provides shared storage to deal
+        with this and any other storage needs the actions have.  Actions
+        may need to exchange data to correctly parse the input, e.g.\
+        setting or clearing flags, maintaining a list of previously used
+        identifiers, or ensuring at a higher level that the input being
+        parsed meets a list of requirements.
+
+    \item [Save and load state]  The architecture can save current state,
+        viz the shared storage it provides for actions, and reload it
+        later, so that information is not lost between parsing runs.
+
+    \item [Specialised support functions]  Actions may need support or
+        utility functions, and in general those functions should be
+        available to all action.  Depending on the implementation the
+        framework may be a good location for support functions; if there is
+        another way to make those functions available to all actions it may
+        be preferable to use it, maintaining a clear separation of
+        concerns.
+
+\end{description}
 
 \section{Actions}
 
@@ -250,6 +298,10 @@ Actions are not context-sensitive, but they can consult the results (or
 lack of results) of previous actions during execution, providing some
 context sensitivity.  XXX EXPAND\@.
 
+\subsection{Cascaded Parsing}
+
+\label{cascaded parsing}
+
 Actions may return a modified input line that will be parsed as if read
 from the input stream, allowing for a simplified version of cascaded
 parsing~\cite{cascaded-parsing}.  This powerful facility allows several
@@ -257,7 +309,7 @@ rules and actions to parse a single input, potentially simplifying both
 rules and actions.  XXX EXPAND WITH CHEMICAL FORMULAE EXAMPLE\@.
 
 Glucose: $C_{6}H_{12}O_{6}$
-Hydrocarbon: $CH_{3}{(CH_{2})}_{50}CH_{3}$
+Hydrocarbon (polymer): $CH_{3}{(CH_{2})}_{50}CH_{3}$
 
 \section{Rules}
 
@@ -399,7 +451,7 @@ conditions:
 \begin{enumerate}
 
     % Reduce inter-item spacing because each item is a single line.
-    \setlength{\itemsep}{0pt}
+    \squeezeitems{}
 
     \item $total < 10$
 
