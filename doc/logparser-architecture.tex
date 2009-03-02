@@ -248,68 +248,176 @@ Each action is a separate procedure written to process a particular
 category of input, e.g.\ rejecting a delivery attempt.  There may be many
 input variants within one input category; in general each action will
 handle one category of inputs, with each rule recognising one input
-variant.  XXX EXPAND AND CLARIFY\@; THE MESSAGE IS HERE, IT JUST NEEDS TO
-BE CLEARER\@.  It is anticipated that parsers based on this architecture
-will have a high ratio of rules to actions, with the aim of having simple
-rules and clear distinctions between the inputs parsed by different rules.
-An action may process different input variants in slightly different ways,
-but large changes in processing indicate the need for a new action and a
-new category of input; if an action becomes unnecessarily complicated it
-starts to turn into a monolithic parser, with too much logic contained in a
-single procedure.
+variant.  It is anticipated that parsers based on this architecture will
+have a high ratio of rules to actions, with the aim of having simple rules
+and tightly focused actions.  An action may need to process different input
+variants in slightly different ways, but large changes in processing
+indicate the need for a new action and a new category of input; if an
+action becomes overly complicated it starts to turn into a monolithic
+parser, with too much logic contained in a single procedure.
 
 The ability to easily add special purpose actions to deal with difficulties
 and new requirements that are discovered during parser development is one
-of the strengths of this architecture.  XXX REWRITE, EXPAND, AND CLARIFY UP
-TO THE NEXT XXX\@.  Instead of writing a single monolithic function that
-must be modified to support new behaviour, with all the attendant risks of
-adversely affecting the existing parser, when a new requirement arises an
-independent action can be written to satisfy it.  Sometimes the new action
-will require the cooperation of other actions, e.g.\ to set or check a
-flag, or save some extra data.  There is a possibility of introducing
-failure when modifying existing actions in this way, but the modifications
-will be smaller and occur less frequently than with a monolithic
-architecture, thus failures will be less likely to occur and will be easier
-to test for and diagnose.  XXX FINISH REWRITING\@.  The architecture can be
-implemented in an object oriented style, allowing sub-classes to extend or
-override actions in addition to adding new actions; because each action is
-an independent procedure, the sub-class need only modify the action it is
-overriding, and can inherit the others rather than reproducing large chunks
-of functionality.
+of the strengths of this architecture.  Instead of writing a single
+monolithic function that processes every input and must be modified to
+support new behaviour, with all the attendant risks of adversely affecting
+the existing parsing, when a new requirement arises an independent action
+can be written to satisfy it.  Sometimes the new action will require the
+cooperation of other actions, e.g.\ to set or check a flag, so actions are
+not always self-contained, but there will still be a far lower degree of
+coupling and interdependency than in a monolithic parser.
 
 During development of the Postfix log parser it became apparent that in
-addition to the obvious variety in log~lines there were
-many complications to be overcome.  Some were the result of deficiencies in
-Postfix's logging (some of which were rectified by later versions of
-Postfix, e.g.\ identifying bounce
-notifications~\sectionref{identifying-bounce-notifications}); others were
-due to the vagaries of process scheduling, client behaviour, and
-administrative actions.  All were successfully accommodated in the Postfix
-log parser: adding new actions was enough to overcome several of the
-complications; others required modifications to a single existing action to
-work around the difficulties; the remainder were resolved by adapting
-existing actions to cooperate and exchange extra data (via the framework),
-changing their behaviour as appropriate based on that extra data.  Every
-architecture should aim to make the hard things possible as well as making
-the easy things easy; the successful implementation of the Postfix log
-parser demonstrates that this architecture achieves that aim.
-
-Actions are not context-sensitive, but they can consult the results (or
-lack of results) of previous actions during execution, providing some
-context sensitivity.  XXX EXPAND\@.
+addition to the obvious variety in log~lines there were many complications
+to be overcome.  Some were the result of deficiencies in Postfix's logging,
+and some of those were rectified by later versions of Postfix, e.g.\
+identifying bounce notifications
+(\sectionref{identifying-bounce-notifications}); others were due to the
+vagaries of process scheduling, client behaviour, and administrative
+actions.  All were successfully accommodated in the Postfix log parser:
+adding new actions was enough to overcome several of the complications;
+others required modifications to a single existing action to work around a
+difficulty; the remainder were resolved by adapting existing actions to
+cooperate and exchange extra data (via the framework), changing their
+behaviour as appropriate based on that extra data.  Every architecture
+should aim to make the hard things possible as well as making the easy
+things easy; the successful implementation of the Postfix log parser
+demonstrates that this architecture achieves that aim.
 
 \subsection{Cascaded Parsing}
 
 \label{cascaded parsing}
 
-Actions may return a modified input line that will be parsed as if read
-from the input stream, allowing for a simplified version of cascaded
-parsing~\cite{cascaded-parsing}.  This powerful facility allows several
-rules and actions to parse a single input, potentially simplifying both
-rules and actions.  XXX EXPAND WITH CHEMICAL FORMULAE EXAMPLE\@.
+Actions may return a modified input line to the framework that will be
+parsed as if read from the input stream, allowing for a simplified version
+of cascaded parsing~\cite{cascaded-parsing}.  This powerful facility allows
+several rules and actions to parse a single input, potentially simplifying
+both rules and actions.  XXX EXPAND WITH CHEMICAL FORMULAE EXAMPLE\@.
 
-Glucose: $C_{6}H_{12}O_{6}$
-Hydrocarbon (polymer): $CH_{3}{(CH_{2})}_{50}CH_{3}$
+A simple example is to have one rule and action removing comments from
+input lines, so that other rules and actions do not have to handle comments
+at all; obviously if comment characters can be escaped or embedded in
+quoted strings the implementation needs to be more complex, but for some
+inputs this can greatly simplify subsequent parsing.
+
+XXX IS WEIGHT THE CORRECT WORD HERE\@?  SHOULD IT BE xxx WEIGHT\@?  GET
+GREG TO PROOFREAD THIS SECTION\@.
+
+A more complicated example is determining the weight of a compound given
+its chemical formula.  A chemical formula is a sequence of one or two
+character chemical element abbreviations, each optionally followed by a
+number indicating how many of that element are present in the formula (if
+omitted the number is assumed to be one).  Some parts of a formula may be
+repeated: they are enclosed in parentheses, and the closing parenthesis is
+followed by a number indicating how many are present in the formula.  A
+monomer is a simple compound, i.e.\ it does not have any repeated portions;
+compounds with repeated portions are called polymers.  E.g.\ glucose (a
+monomer) has the chemical formula $C_{6}H_{12}O_{6}$ and hydrocarbon (a
+polymer) is $CH_{3}{(CH_{2})}_{50}CH_{3}$.  The atomic weight of an
+individual element is given in periodic tables, but one element in
+particular will be important in the later explanation: Hydrogen,
+abbreviated H, has an atomic weight of 1.  The weight of a given compound
+is the sum of the atomic weights of each of the elements multiplied by the
+number of times they occur; this is simple to calculate for a monomer, but
+it is harder for a polymer because the weight of the repeated monomer must
+be multiplied by the number of times the monomer is present in the compound
+(e.g.\ for hydrocarbon the weight of $CH_{2}$ must be multiplied by $50$).
+Calculating the weight of a monomer requires a single rule and action: the
+action separates each element in the monomer, looks up its weight,
+multiplies it by the number of times it is present (one if unspecified),
+and adds up the results.  The rule's regex is \verb!^([A-Z]([a-z])?\d*)+$!,
+which matches:
+
+\begin{enumerate}
+
+    \squeezeitems{}
+
+    \item The start of the input.
+
+    \item One or more of: an uppercase character, optionally followed by a
+        lowercase character, followed by zero or more digits.
+
+    \item The end of the input.
+
+\end{enumerate}
+
+The regex does not guarantee that the chemical element abbreviations in the
+formula are correct; the regex could be modified to check that by replacing
+\verb![A-Z]([a-z])?! with all the valid abbreviations, simplifying the
+action at the cost of complicating the regex (which could be automatically
+generated).
+
+Parsing a polymer is more difficult because of the repeated monomers: each
+monomer's weight needs to be calculated, multiplied by the number of times
+it is present in the compound, and that figure added to the sum.  XXX CAN
+POLYMERS BE NESTED\@?  Without cascaded parsing the action would need to
+maintain state when recursively parsing the monomers embedded in the
+polymer.  With cascaded parsing available three rules and actions could be
+used as shown in \tableref{Regexes and Actions to calculate the weight of a
+chemical compound}:
+
+\newlength{\regexwidth}
+% This figure from experimentation; set the length to 0pt, see how big a
+% hbox latex complains about, and then set the length.  Stupid latex cannot
+% do \settowidth{\verb}.  Poo.
+\setlength{\regexwidth}{130pt}
+\newlength{\actionwidth}
+\setlength{\actionwidth}{\textwidth}
+\addtolength{\actionwidth}{-\regexwidth}
+% This is the width of the number column, roughly.
+\addtolength{\actionwidth}{-30pt}
+% This figure also from experimentation.
+\addtolength{\actionwidth}{-24pt}
+\begin{table}[ht]
+    \caption{Regexes and Actions to calculate the weight of a chemical
+    compound}
+    \empty{}\label{Regexes and Actions to calculate the weight of a
+    chemical compound}
+    \begin{tabular}{lp{\regexwidth}p{\actionwidth}}
+
+        \tabletopline{}%
+        No.   & Regex                       & Action \\
+        \tablemiddleline{}%
+        1     & \verb'((?!H\d+([()]|$))'    & Parse a monomer as described above,  \\
+              & \verb' ([A-Z]([a-z])?\d*)+)'& returning \verb!Hnnn!, where \verb!nnn! is
+                                              the weight of the monomer.  The first part
+                                              of the regex prevents it from parsing what
+                                              it returns (\verb!Hnnn!) and the parsing
+                                              process getting stuck in a loop.  \\
+        2     & \verb!\(H(\d+)\)(\d+)!      & Parse a repeated monomer that has been
+                                              rewritten by the first rule and action,
+                                              returning \verb!Hnnn!, where \verb!nnn! is
+                                              the product of the first and second numbers
+                                              captured by the regex.  \\
+        3     & \verb!^H(\d+)+$!            & Repeated applications of rules and
+                                              actions one and two will have rewritten the
+                                              input to a sequence of one or more
+                                              \verb!Hnnn!, where \verb!nnn! is the weight
+                                              of the compound.  This action should do
+                                              whatever is required with the calculated
+                                              weight.  \\
+        \tablebottomline{}%
+
+    \end{tabular}
+\end{table}
+
+Applying the rules and actions above to the hydrocarbon formula results in
+this sequence:
+
+\begin{tabular}{lrl}
+
+    1 & Start with              & $CH_{3}{(CH_{2})}_{50}CH_{3}$ \\
+    2 & Apply rule and action 1 & $H_{15}{(CH_{2})}_{50}CH_{3}$ \\
+    3 & Apply rule and action 1 & $H_{15}{(H_{14})}_{50}CH_{3}$ \\
+    3 & Apply rule and action 1 & $H_{15}{(H_{14})}_{50}H_{15}$ \\
+    5 & Apply rule and action 2 & $H_{15}H_{700}H_{15}$ \\
+    6 & Apply rule and action 1 & $H_{730}$ \\
+    7 & Apply rule and action 3 & 730 \\
+
+\end{tabular}
+
+XXX ARE THERE ANY PROBLEMS TO BE ADDRESSED HERE\@?  I DO NOT THINK THAT I
+NEED TO WORRY ABOUT ORDERING OR PRIORITY, BUT I SHOULD REVIEW TO BE SURE\@.
 
 \section{Rules}
 
