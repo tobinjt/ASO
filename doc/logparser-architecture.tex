@@ -207,8 +207,7 @@ which generally will involve the following steps:
         input.  That pseudo-code is very simple: there may be efficiency
         concerns, (\sectionref{parser efficiency}), rule conditions
         (\sectionref{attaching conditions to rules}), or prioritisations
-        (\sectionref{prioritisation and rule ordering}) that complicate the
-        process.
+        (\sectionref{rules in architecture}) that complicate the process.
 
     \item [Invoke actions]  Once a rule has been found that recognises the
         current input, the specified action must be invoked.  The framework
@@ -432,11 +431,23 @@ recognise inputs and the action to invoke when classification is
 successful, but implementations are free to add any other attributes they
 require; \sectionref{rule attributes} describes the attributes used in
 \parsername{}, and some potential attributes will be discussed later in
-this section (\sectionref{attaching conditions to rules} and
-\sectionref{prioritisation and rule ordering}).  Classifying inputs using
-the rules is simple: the first rule to recognise the input determines the
-action that will be invoked: there is no backtracking to try alternate
-rules; no attempt is made to pick a \textit{best\/} rule.
+\sectionref{attaching conditions to rules}.
+
+Classifying inputs using the rules is simple: the first rule to recognise
+the input determines the action that will be invoked: there is no
+backtracking to try alternate rules; no attempt is made to pick a
+\textit{best\/} rule.  \sectionref{attaching conditions to rules} contains
+an example which requires that the rules are used in a specific order to
+correctly parse the input, so a mechanism is needed to allow the author of
+the rules to specify that ordering.  The framework should be written so
+that it sorts the rules according to a priority attribute specified by the
+rule author, allowing fine-grained control over the order that rules are
+used in.  The priority attribute may be implemented as a number, or as a
+range of values, e.g.\ low, medium, and high, or in a different fashion
+entirely if it suits the implementation.  Rule ordering for efficiency is a
+separate topic that is covered in \sectionref{rule ordering for
+efficiency}; overlapping rules are discussed in \sectionref{overlapping
+rules in architecture}.
 
 \subsection{Adding New Rules}
 
@@ -524,8 +535,8 @@ rule three recognises the end of a comment and switches parsing state back
 to parsing code; rule four recognises a comment line without an end token
 and keeps the parser's unchanged.  It is important that the rules are
 applied in the order listed in \tableref{Rules to parse C-style comments};
-\sectionref{prioritisation and rule ordering} explains how this is
-achieved.
+\sectionref{rules in architecture} has explained how this is achieved, and
+\sectionref{overlapping rules in architecture} discusses overlapping rules.
 
 \begin{table}[ht]
     \caption{Rules to parse C-style comments}
@@ -555,15 +566,6 @@ obviously use complex code if they are setting variables); however, if the
 framework allows complex conditions, that code can probably be easily
 extended to support complex variable assignments too.
 
-\subsection{Prioritisation and Rule Ordering}
-
-\label{prioritisation and rule ordering}
-
-XXX PRIORITY ATTRIBUTE AND RULE ORDERING\@.
-
-The first matching rule wins: no further rules are tried against that
-input, but there is a mechanism for prioritising the rules so that more
-specific rules can be tried first.
 
 \subsection{Overlapping Rules}
 
