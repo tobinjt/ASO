@@ -357,25 +357,24 @@ polymer.  With cascaded parsing available three rules and actions could be
 used as shown in \tableref{Regexes and Actions to calculate the weight of a
 chemical compound}:
 
-\newlength{\regexwidth}
 % These figures come from experimentation; set the length to 0pt, see how
 % big a hbox latex complains about, and then set the length.  Stupid latex
 % cannot do \settowidth{\verb}.  Poo.
-\setlength{\regexwidth}{130pt}
-\newlength{\actionwidth}
-\setlength{\actionwidth}{\textwidth}
-\addtolength{\actionwidth}{-\regexwidth}
+\newlength{\chemicalactionwidth}
+\setlength{\chemicalactionwidth}{\textwidth}
 % This is the width of the number column, roughly.
-\addtolength{\actionwidth}{-30pt}
+\addtolength{\chemicalactionwidth}{-30pt}
+% The width of the regex column.
+\addtolength{\chemicalactionwidth}{-130pt}
 % This is the overhead of space around columns, on either side, etc.
-\addtolength{\actionwidth}{-24pt}
+\addtolength{\chemicalactionwidth}{-24pt}
 
 \begin{table}[ht]
     \caption{Regexes and Actions to calculate the weight of a chemical
     compound}
     \empty{}\label{Regexes and Actions to calculate the weight of a
     chemical compound}
-    \begin{tabular}{lp{\regexwidth}p{\actionwidth}}
+    \begin{tabular}{llp{\chemicalactionwidth}}
 
         \tabletopline{}%
         No.   & Regex                       & Action \\
@@ -509,6 +508,40 @@ whose log \empty{}lines it recognises as a condition, reducing the number
 of rules that will be used when classifying an input (see \sectionref{rules
 in implementation} for details).
 
+An example of how rule conditions can be useful is parsing C-style
+comments, which start with \texttt{/*} and end with \texttt{*/}; the start
+and end tokens can be on one line, or may have many lines between them.
+\Tableref{Rules to parse C-style comments} shows the regexes, conditions,
+and state changes of the four rules required to parse C-style comments.
+These rules are somewhat simplified, e.g.\ rules one and two will recognise
+the comment start token even if it is within a quoted string, which is
+incorrect.  Rules one and two will only be used when the parser is parsing
+code, not comments: rule one recognises a comment that is contained within
+one line and leaves the parser's state unchanged; rule two recognises the
+start of a command and changes the parser's state to parsing comments.
+Rules three and four will be used when the parser is parsing a comment:
+rule three recognises the end of a comment and switches parsing state back
+to parsing code; rule four recognises a comment line without an end token
+and keeps the parser's unchanged.  It is important that the rules are
+applied in the order listed in \tableref{Rules to parse C-style comments};
+\sectionref{prioritisation and rule ordering} explains how this is
+achieved.
+
+\begin{table}[ht]
+    \caption{Rules to parse C-style comments}
+    \empty{}\label{Rules to parse C-style comments}
+    \begin{tabular}{llll}
+        \tabletopline{}%
+        No.   & Regex             & Condition         & New State         \\
+        \tablemiddleline{}%
+        1     & \verb!/\*.*?\*/!  & state == code     & state = code      \\
+        2     & \verb!/\*.*!      & state == code     & state = comment   \\
+        3     & \verb!.*\*/!      & state == comment  & state = code      \\
+        4     & \verb!.*!         & state == comment  & state = comment   \\
+        \tablebottomline{}%
+    \end{tabular}
+\end{table}
+
 Conditions can also check the value of variables that have been set by
 either actions or rules; it will probably be easier to understand how a
 variable's value will be used and changed if it is set by rules only rather
@@ -521,8 +554,6 @@ complexity and flexibility when setting variables from rules (actions can
 obviously use complex code if they are setting variables); however, if the
 framework allows complex conditions, that code can probably be easily
 extended to support complex variable assignments too.
-
-XXX STATEFUL PARSING ENABLED BY CONDITIONS, E.G\@.  PARSING C COMMENTS\@.
 
 \subsection{Prioritisation and Rule Ordering}
 
