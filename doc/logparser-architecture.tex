@@ -299,11 +299,10 @@ at all; obviously if comment characters can be escaped or embedded in
 quoted strings the implementation needs to be more complex, but for some
 inputs this can greatly simplify subsequent parsing.
 
-XXX IS WEIGHT THE CORRECT WORD HERE\@?  SHOULD IT BE xxx WEIGHT\@?  GET
-GREG TO PROOFREAD THIS SECTION\@.
+XXX GET GREG TO PROOFREAD THIS SECTION\@.
 
-A more complicated example is determining the weight of a compound given
-its chemical formula.  A chemical formula is a sequence of one or two
+A more complicated example is determining the atomic weight of a compound
+given its chemical formula.  A chemical formula is a sequence of one or two
 character chemical element abbreviations, each optionally followed by a
 number indicating how many of that element are present in the formula (if
 omitted the number is assumed to be one).  Some parts of a formula may be
@@ -315,18 +314,19 @@ monomer) has the chemical formula $C_{6}H_{12}O_{6}$ and hydrocarbon (a
 polymer) is $CH_{3}{(CH_{2})}_{50}CH_{3}$.  The atomic weight of an
 individual element is given in periodic tables, but one element in
 particular will be important in the later explanation: Hydrogen,
-abbreviated H, has an atomic weight of 1.  The weight of a given compound
-is the sum of the atomic weights of each of the elements multiplied by the
-number of times they occur; this is simple to calculate for a monomer, but
-it is harder for a polymer because the weight of the repeated monomer must
-be multiplied by the number of times the monomer is present in the compound
-(e.g.\ for hydrocarbon the weight of $CH_{2}$ must be multiplied by $50$).
+abbreviated H, has an atomic weight of 1.  The atomic weight of a given
+compound is the sum of the atomic weights of each of the elements
+multiplied by the number of times they occur; this is simple to calculate
+for a monomer, but it is harder for a polymer because the atomic weight of
+the repeated monomer must be multiplied by the number of times the monomer
+is present in the compound (e.g.\ for hydrocarbon the atomic weight of
+$CH_{2}$ must be multiplied by $50$).
 
-Calculating the weight of a monomer requires a single rule and action: the
-action separates each element in the monomer, looks up its weight,
-multiplies it by the number of times it is present (one if unspecified),
-and adds up the results.  The rule's regex is \verb!^([A-Z]([a-z])?\d*)+$!,
-which matches:
+Calculating the atomic weight of a monomer requires a single rule and
+action: the action separates each element in the monomer, looks up its
+atomic weight, multiplies it by the number of times it is present (one if
+unspecified), and adds up the results.  The rule's regex is
+\verb!^([A-Z]([a-z])?\d*)+$!, which matches:
 
 \begin{enumerate}
 
@@ -348,13 +348,13 @@ the action at the cost of complicating the regex (which could be
 automatically generated).
 
 Parsing a polymer is more difficult because of the repeated monomers: each
-monomer's weight needs to be calculated, multiplied by the number of times
-it is present in the compound, and that figure added to the sum.  XXX CAN
-POLYMERS BE NESTED\@?  Without cascaded parsing the action would need to
-maintain state while recursively parsing the monomers embedded in the
-polymer.  With cascaded parsing available three rules and actions could be
-used as shown in \tableref{Regexes and Actions to calculate the weight of a
-chemical compound}:
+monomer's atomic weight needs to be calculated, multiplied by the number of
+times it is present in the compound, and that figure added to the sum.
+Without cascaded parsing the action would need to maintain state while
+recursively parsing the monomers embedded in the polymer.  With cascaded
+parsing available three rules and actions could be used as shown in
+\tableref{Regexes and Actions to calculate the atomic weight of a chemical
+compound}:
 
 % These figures come from experimentation; set the length to 0pt, see how
 % big a hbox latex complains about, and then set the length.  Stupid latex
@@ -369,9 +369,9 @@ chemical compound}:
 \addtolength{\chemicalactionwidth}{-24pt}
 
 \begin{table}[ht]
-    \caption{Regexes and Actions to calculate the weight of a chemical
-    compound}
-    \empty{}\label{Regexes and Actions to calculate the weight of a
+    \caption{Regexes and Actions to calculate the atomic weight of a
+    chemical compound}
+    \empty{}\label{Regexes and Actions to calculate the atomic weight of a
     chemical compound}
     \begin{tabular}{llp{\chemicalactionwidth}}
 
@@ -380,11 +380,11 @@ chemical compound}:
         \tablemiddleline{}%
         1     & \verb'((?!H\d+([()]|$))'    & Parse a monomer as described above,  \\
               & \verb' ([A-Z]([a-z])?\d*)+)'& returning \verb!Hnnn!, where \verb!nnn! is
-                                              the weight of the monomer.  The first part
-                                              of the regex prevents it from parsing the
-                                              return value of this action (\verb!Hnnn!),
-                                              so the parsing process does not get stuck in
-                                              a loop.  \\
+                                              the atomic weight of the monomer.  The first
+                                              part of the regex prevents it from parsing
+                                              the return value of this action
+                                              (\verb!Hnnn!), ensuring the parsing process
+                                              does not get stuck in a loop.  \\
         2     & \verb!\(H(\d+)\)(\d+)!      & Parse a repeated monomer that has been
                                               rewritten by the first rule and action,
                                               returning \verb!Hnnn!, where \verb!nnn! is
@@ -393,9 +393,9 @@ chemical compound}:
         3     & \verb!^H(\d+)+$!            & Repeated applications of rules and
                                               actions one and two will have rewritten the
                                               input to \verb!Hnnn!, where \verb!nnn! is
-                                              the weight of the compound.  This action
-                                              should do whatever is required with the
-                                              calculated weight.  \\
+                                              the atomic weight of the compound.  This
+                                              action should do whatever is required with
+                                              the calculated atomic weight.  \\
         \tablebottomline{}%
 
     \end{tabular}
@@ -590,9 +590,6 @@ prior cooperation or modification required.  Overlapping rules should have
 a priority attribute to specify their relative ordering; negative
 priorities may be useful for catchall rules.
 
-XXX CHECK WITH CARL WHETHER I SHOULD SAY CFL OR CFG IN THE NEXT
-PARAGRAPH\@.  XXX DO I NEED TO MENTION CFG/CFL AT ALL\@?
-
 Decoupling the rules from the actions allows external tools to be written
 to detect overlapping rules.  Traditional regexes are equivalent in
 computational power to \acronym{FA} and can be converted to \acronym{FA},
@@ -607,20 +604,19 @@ regexes: it is possible to match correctly balanced brackets nested to an
 arbitrary depth, e.g.\ \verb!/^[^<>]*(<(?:(?>[^<>]+)|(?1))*>)[^<>]*$/!
 matches \verb!z<123<pq<>rs>j<r>ml>s!.  Matching balanced brackets requires
 the regex engine to maintain state on a stack, so Perl 5.10 regexes are
-equivalent in computational power to \acronym{PDA} or a \acronym{CFL};
-detecting overlap may require calculating the intersection of two
-\acronym{PDA} or \acronyms{CFL} instead of two \acronym{FA}.  The
-intersection of two \acronyms{CFL} is not closed, i.e.\ the resulting
-language cannot always be parsed by a \acronym{CFL}, so intersection may be
-intractable in some cases, e.g.:
+equivalent in computational power to \acronym{PDA}; detecting overlap may
+require calculating the intersection of two \acronym{PDA} instead of two
+\acronym{FA}.  The intersection of two \acronym{PDA} is not closed, i.e.\
+the result cannot always be implemented using a \acronym{PDA}, so
+intersection may be intractable in some cases, e.g.:
 $a^{*}b^{n}c^{n}~\cap~a^{n}b^{n}c^{*}~\rightarrow~a^{n}b^{n}c^{n}$.
 Detecting overlap amongst $n$ regexes requires calculating $n(n-1)/2$
 intersections, resulting in $O(n^2x)$ complexity, where $O(x)$ is the
 complexity of calculating \acronym{FA} or \acronym{PDA} intersection.  This
 is certainly not a task to be performed every time the parser runs: naive
-detection of overlap amongst the Postfix log parser's \numberOFrules{}
-rules would require calculating \numberOFruleINTERSECTIONS{} intersections.
-When detecting overlap any conditions attached to rules must be taken into
+detection of overlap amongst \parsernames{} \numberOFrules{} rules would
+require calculating \numberOFruleINTERSECTIONS{} intersections.  When
+detecting overlap any conditions attached to rules must be taken into
 account, because two rules whose regexes overlap may have conditions
 attached which prevent the overlap in practice.  A less naive approach to
 overlap detection would first check for overlapping conditions amongst
@@ -665,16 +661,46 @@ It is possible to define pathological regexes which fall into two main
 categories: regexes that match inputs they should not, and regexes that
 consume excessive amounts of CPU time during matching.  Defining a regex
 that matches inputs it should not is trivial: \verb!/^/! matches the start
-of every input.  This regex would be highlighted by a tool that detects
+of every input.  This regex would be found by a tool that detects
 overlapping rules, and would easily be noticed by visual inspection, but
-more complex regexes would be harder to spot.  Usually excessive CPU time
-is consumed when a regex with a lot of alteration and variable quantifiers
-fails to match, but successful matching is generally quite fast
-(see~\cite{mastering-regular-expressions} for in-depth discussion).  XXX
-THIS NEEDS TO BE EXPANDED, AND GIVE AN EXAMPLE\@.
+more complex regexes would be harder to spot.  Regexes that match more than
+they should are a problem not because of excessive resource usage, but
+because they may prevent the correct rule from recognising the input.  If
+an adaptive ordering system is used (see \sectionref{rule ordering for
+efficiency}) then a rule with a regex that matches too much may be promoted
+up through the list, displacing an increasing number of correct rules as it
+moves.
+
+Usually excessive CPU time is consumed when a regex with a lot of
+backtracking, caused by alteration and/or nested quantifiers, fails to
+match; successful matching is generally quite fast with such regexes, so
+problematic regexes may go unnoticed for some time.  E.g.\ with most regex
+engines matching double quoted strings with \verb!"([^"\\]+|\\.)*"! is very
+fast when there is a match, but when the match fails its computational
+complexity is $O(2^{n})$; see~\cite{mastering-regular-expressions} for
+in-depth discussion of nested quantifiers, backtracking, alteration, and
+capturing groups.  Pathological regexes which consume excessive CPU time
+can be difficult to detect, both by visual inspection and by machine
+inspection, but if a regex is converted to a \acronym{FA} or the internal
+representation used by the regex engine, it may be possible to determine if
+there are nested quantifiers or other troublesome constructs present.
+Modern regex engines have addressed many of these problems, e.g.\ the regex
+to match double quoted strings given above fails immediately with Perl
+5.10, regardless of the input length, because the regex engine looks for
+the required double quotes first.  Similarly Perl 5.10's regex engine
+optimises alterations starting with literal text into a trie, which has
+constant matching time, whereas the matching time for alteration is
+proportional to the number of alternatives.  Perl 5.10 regexes can use
+\verb!(?>pattern)!, which matches \verb!pattern! the first time the regex
+engine passes over it, and does not change what it originally matched if
+the regex engine backtracks over it, so troublesome regexes can be modified
+to use this to reduce the impact of backtracking; Prolog
+(\urlLastCheckedNoParens{http://en.wikipedia.org/wiki/Prolog}{2009/03/03})
+users will notice a similarity to the \verb'!' (cut) operator.  A
+presentation showing some of Perl 5.10's regex features is available at
+\urlLastChecked{http://www.regex-engineer.org/slides/perl510_regex.html}{2009/03/03}.
 
 XXX PATHOLOGICAL CONDITIONS\@.
-
 
 \subsection{XXX TO BE DEALT WITH}
 
@@ -685,7 +711,7 @@ Rules are self-contained and can be understood in isolation, without
 reference to other rules.  This is similar to a \acronym{CFG}; in
 \acronym{CFG} terms the parser rules could be described as:
 
-$\text{\textless{}input\textgreater{}} \mapsto \text{rule-1} |
+$\text{\textless{}input\textgreater{}} \mapsto{} \text{rule-1} |
 \text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
 
 Rules can not take into account past or future inputs when classifying the
