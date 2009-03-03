@@ -292,7 +292,7 @@ Actions may return a modified input line to the framework that will be
 parsed as if read from the input stream, allowing for a simplified version
 of cascaded parsing~\cite{cascaded-parsing}.  This powerful facility allows
 several rules and actions to parse a single input, potentially simplifying
-both rules and actions.  XXX EXPAND WITH CHEMICAL FORMULAE EXAMPLE\@.
+both rules and actions.
 
 A simple example is to have one rule and action removing comments from
 input lines, so that other rules and actions do not have to handle comments
@@ -322,6 +322,7 @@ number of times they occur; this is simple to calculate for a monomer, but
 it is harder for a polymer because the weight of the repeated monomer must
 be multiplied by the number of times the monomer is present in the compound
 (e.g.\ for hydrocarbon the weight of $CH_{2}$ must be multiplied by $50$).
+
 Calculating the weight of a monomer requires a single rule and action: the
 action separates each element in the monomer, looks up its weight,
 multiplies it by the number of times it is present (one if unspecified),
@@ -343,31 +344,32 @@ which matches:
 
 The regex does not guarantee that the chemical element abbreviations in the
 formula are correct; the regex could be modified to check that by replacing
-\verb![A-Z]([a-z])?! with all the valid abbreviations, simplifying the
-action at the cost of complicating the regex (which could be automatically
-generated).
+\verb![A-Z]([a-z])?! with all the valid abbreviations, slightly simplifying
+the action at the cost of complicating the regex (which could be
+automatically generated).
 
 Parsing a polymer is more difficult because of the repeated monomers: each
 monomer's weight needs to be calculated, multiplied by the number of times
 it is present in the compound, and that figure added to the sum.  XXX CAN
 POLYMERS BE NESTED\@?  Without cascaded parsing the action would need to
-maintain state when recursively parsing the monomers embedded in the
+maintain state while recursively parsing the monomers embedded in the
 polymer.  With cascaded parsing available three rules and actions could be
 used as shown in \tableref{Regexes and Actions to calculate the weight of a
 chemical compound}:
 
 \newlength{\regexwidth}
-% This figure from experimentation; set the length to 0pt, see how big a
-% hbox latex complains about, and then set the length.  Stupid latex cannot
-% do \settowidth{\verb}.  Poo.
+% These figures come from experimentation; set the length to 0pt, see how
+% big a hbox latex complains about, and then set the length.  Stupid latex
+% cannot do \settowidth{\verb}.  Poo.
 \setlength{\regexwidth}{130pt}
 \newlength{\actionwidth}
 \setlength{\actionwidth}{\textwidth}
 \addtolength{\actionwidth}{-\regexwidth}
 % This is the width of the number column, roughly.
 \addtolength{\actionwidth}{-30pt}
-% This figure also from experimentation.
+% This is the overhead of space around columns, on either side, etc.
 \addtolength{\actionwidth}{-24pt}
+
 \begin{table}[ht]
     \caption{Regexes and Actions to calculate the weight of a chemical
     compound}
@@ -381,9 +383,10 @@ chemical compound}:
         1     & \verb'((?!H\d+([()]|$))'    & Parse a monomer as described above,  \\
               & \verb' ([A-Z]([a-z])?\d*)+)'& returning \verb!Hnnn!, where \verb!nnn! is
                                               the weight of the monomer.  The first part
-                                              of the regex prevents it from parsing what
-                                              it returns (\verb!Hnnn!) and the parsing
-                                              process getting stuck in a loop.  \\
+                                              of the regex prevents it from parsing the
+                                              return value of this action (\verb!Hnnn!),
+                                              so the parsing process does not get stuck in
+                                              a loop.  \\
         2     & \verb!\(H(\d+)\)(\d+)!      & Parse a repeated monomer that has been
                                               rewritten by the first rule and action,
                                               returning \verb!Hnnn!, where \verb!nnn! is
@@ -391,11 +394,10 @@ chemical compound}:
                                               captured by the regex.  \\
         3     & \verb!^H(\d+)+$!            & Repeated applications of rules and
                                               actions one and two will have rewritten the
-                                              input to a sequence of one or more
-                                              \verb!Hnnn!, where \verb!nnn! is the weight
-                                              of the compound.  This action should do
-                                              whatever is required with the calculated
-                                              weight.  \\
+                                              input to \verb!Hnnn!, where \verb!nnn! is
+                                              the weight of the compound.  This action
+                                              should do whatever is required with the
+                                              calculated weight.  \\
         \tablebottomline{}%
 
     \end{tabular}
@@ -415,9 +417,6 @@ this sequence:
     7 & Apply rule and action 3 & 730 \\
 
 \end{tabular}
-
-XXX ARE THERE ANY PROBLEMS TO BE ADDRESSED HERE\@?  I DO NOT THINK THAT I
-NEED TO WORRY ABOUT ORDERING OR PRIORITY, BUT I SHOULD REVIEW TO BE SURE\@.
 
 \section{Rules}
 
@@ -471,16 +470,57 @@ Learning~\cite{instance-based-learning} techniques that automatically
 determine which inputs from the training set are valuable and which inputs
 can be discarded might reduce the data required to a manageable size.  A
 parser could also dynamically create new rules in response to certain
-inputs, e.g.\ XXX GIVE A GOOD EXAMPLE\@.  These avenues of research and
-development have not been pursued by the author, but the architecture
-allows them to easily be undertaken independently.
+inputs, e.g.\ parsing a subroutine declaration could cause a rule to be
+created that parses calls to that subroutine, checking that the arguments
+used agree with the subroutine's signature.
+
+These avenues of research and development have not been pursued by the
+author, but the architecture allows them to easily be undertaken
+independently.
 
 \subsection{Attaching Conditions To Rules}
 
 \label{attaching conditions to rules}
 
-XXX ATTACHING CONDITIONS TO RULES\@; GIVE PLP EXAMPLE AND REFER TO
-IMPLEMENTATION AND RESULTS SECTIONS\@?
+Rules can specify conditions that will be evaluated by the framework before
+attempting to use a rule to recognise an input: if the condition evaluates
+to true the rule will be used, if not the rule will be skipped.  Conditions
+can be as simple or complex as the parser requires, though naturally as the
+complexity rises so does the difficulty in understanding how everything
+interacts.  The framework has to evaluate each condition, so as the
+complexity of conditions increases so does the complexity of the code
+required to evaluate them; beyond a certain level of complexity conditions
+should probably be written in a proper programming language, e.g.\ taking
+advantage of dynamic languages' support for evaluating code at run-time, or
+embedding a language like Lua
+(\urlLastCheckedNoParens{http://ww.lua.org/}{2009/03/03}).  If an
+implementation is going to use conditions so complex that they will require
+a full programming language to implement them, the design may need to be
+re-thought, including the choice to use this architecture --- there may be
+other architectures more suitable.
+
+Conditions that examine the input will be the easiest to understand,
+because they can be understood in isolation --- they do not depend on
+variables set by actions or other rules.  Conditions that examine the input
+may be complex, but simple conditions can be quite useful too, e.g.\ every
+Postfix log \empty{}line contains the name of the Postfix component that
+produced it, so every rule used in \parsername{} specifies the component
+whose log \empty{}lines it recognises as a condition, reducing the number
+of rules that will be used when classifying an input (see \sectionref{rules
+in implementation} for details).
+
+Conditions can also check the value of variables that have been set by
+either actions or rules; it will probably be easier to understand how a
+variable's value will be used and changed if it is set by rules only rather
+than by actions, because the chain of checking and setting can be followed
+from rule to rule.  The downside to actions setting variables used in rule
+conditions is action at a distance: to understand when a rule's condition
+will be true requires understanding not just every rule but also every
+action.  The framework probably does not need to support the same level of
+complexity and flexibility when setting variables from rules (actions can
+obviously use complex code if they are setting variables); however, if the
+framework allows complex conditions, that code can probably be easily
+extended to support complex variable assignments too.
 
 XXX STATEFUL PARSING ENABLED BY CONDITIONS, E.G\@.  PARSING C COMMENTS\@.
 
