@@ -2,9 +2,6 @@
 
 \label{parser architecture}
 
-XXX WHEN FINISHED, CHECK ALL REFERENCES TO ENSURE THEY POINT AT THE CORRECT
-CHAPTER\@.
-
 To avoid cluttering the explanation of the parser architecture with the
 details involved in implementing a parser for Postfix log files, the two
 topics have been separated.  This chapter presents the architecture
@@ -431,10 +428,16 @@ recognise inputs and the action to invoke when classification is
 successful, but implementations are free to add any other attributes they
 require; \sectionref{rule attributes} describes the attributes used in
 \parsername{}, and some potential attributes will be discussed later in
-\sectionref{attaching conditions to rules}.
+this section.
+
+The architecture is line oriented at present: there is no facility for
+rules to consume more input or push unused input back onto the input
+stream.  This was not a deliberate design decision, rather a consequence of
+the line oriented nature of Postfix log files; more flexible approaches
+could be pursued.
 
 Classifying inputs using the rules is simple: the first rule to recognise
-the input determines the action that will be invoked: there is no
+the input determines the action that will be invoked; there is no
 backtracking to try alternate rules; no attempt is made to pick a
 \textit{best\/} rule.  \sectionref{attaching conditions to rules} contains
 an example which requires that the rules are used in a specific order to
@@ -448,6 +451,15 @@ entirely if it suits the implementation.  Rule ordering for efficiency is a
 separate topic that is covered in \sectionref{rule ordering for
 efficiency}; overlapping rules are discussed in \sectionref{overlapping
 rules in architecture}.
+
+In \acronym{CFG} terms the rules could be described as:
+
+$\text{\textless{}input\textgreater{}}~\mapsto{}~\text{rule-1}~|~\text{rule-2}~|~\text{rule-3}~|~\dots~|~\text{rule-n}$
+
+This is not entirely correct because the rules are not truly context free:
+rule conditions (described in \sectionref{attaching conditions to rules})
+restrict which rules will be used to recognise each input, imposing a
+context of sorts.
 
 \subsection{Adding New Rules}
 
@@ -533,10 +545,11 @@ start of a command and changes the parser's state to parsing comments.
 Rules three and four will be used when the parser is parsing a comment:
 rule three recognises the end of a comment and switches parsing state back
 to parsing code; rule four recognises a comment line without an end token
-and keeps the parser's unchanged.  It is important that the rules are
+and keeps the parser's state unchanged.  It is important that the rules are
 applied in the order listed in \tableref{Rules to parse C-style comments};
 \sectionref{rules in architecture} has explained how this is achieved, and
-\sectionref{overlapping rules in architecture} discusses overlapping rules.
+\sectionref{overlapping rules in architecture} will discuss overlapping
+rules.
 
 \begin{table}[ht]
     \caption{Rules to parse C-style comments}
@@ -554,10 +567,10 @@ applied in the order listed in \tableref{Rules to parse C-style comments};
 \end{table}
 
 Conditions can also check the value of variables that have been set by
-either actions or rules; it will probably be easier to understand how a
-variable's value will be used and changed if it is set by rules only rather
-than by actions, because the chain of checking and setting can be followed
-from rule to rule.  The downside to actions setting variables used in rule
+either actions or rules; it will be easier to understand how a variable's
+value will be used and changed if it is set by rules only rather than by
+actions, because the chain of checking and setting can be followed from
+rule to rule.  The downside to actions setting variables used in rule
 conditions is action at a distance: to understand when a rule's condition
 will be true requires understanding not just every rule but also every
 action.  The framework probably does not need to support the same level of
@@ -565,7 +578,6 @@ complexity and flexibility when setting variables from rules (actions can
 obviously use complex code if they are setting variables); however, if the
 framework allows complex conditions, that code can probably be easily
 extended to support complex variable assignments too.
-
 
 \subsection{Overlapping Rules}
 
@@ -655,6 +667,17 @@ where:
 
 \end{tabular}
 
+Once conditions pass a certain level of complexity determining whether two
+conditions overlap becomes intractable, because it requires so much
+knowledge of other rules and possibly even actions.  E.g.\ given two rules
+with conditions \verb!verbose == true! and \verb!silent == true!, it
+appears that these rules cannot overlap, yet there is nothing to stop both
+variables being set to true by one or more other rules or actions.  If
+variables used in conditions can be set by actions, determining whether two
+conditions overlap is impossible, because understanding how an action will
+change the variables is impossible; the Church-Turing Thesis XXX NEED A BIB
+ENTRY FOR CHURCH-TURING explains why.
+
 \subsection{Pathological Rules}
 
 It is possible to define pathological regexes which fall into two main
@@ -700,29 +723,17 @@ users will notice a similarity to the \verb'!' (cut) operator.  A
 presentation showing some of Perl 5.10's regex features is available at
 \urlLastChecked{http://www.regex-engineer.org/slides/perl510_regex.html}{2009/03/03}.
 
-XXX PATHOLOGICAL CONDITIONS\@.
+Conditions can vary in complexity from simple equality through to a
+Turing-equivalent language, so enumerating pathological conditions is
+difficult if not pointless.  Conditions that examine the input using
+regexes can suffer from the same problems as rule regexes; conditions that
+check variables in uncomplicated ways may exhibit unexpected or incorrect
+behaviour, but are unlikely to exhibit pathological behaviour.  Deciding
+whether a more complex condition's behaviour is pathological or simply a
+bug is difficult and to some extent is a matter of opinion.  The author has
+not experimented with more complex conditions, so this thesis will not
+address this point any further.
 
-\subsection{XXX TO BE DEALT WITH}
-
-XXX DUNNO WHERE TO PUT THIS\@; IT SHOULD PROBABLY GO IN THE RULES SECTION,
-BUT WHERE\@?
-
-Rules are self-contained and can be understood in isolation, without
-reference to other rules.  This is similar to a \acronym{CFG}; in
-\acronym{CFG} terms the parser rules could be described as:
-
-$\text{\textless{}input\textgreater{}} \mapsto{} \text{rule-1} |
-\text{rule-2} | \text{rule-3} | \dots | \text{rule-n}$
-
-Rules can not take into account past or future inputs when classifying the
-current input, though conditions can affect which rules will be used to
-classify each input.  The architecture is line oriented at present: there
-is no facility for rules to consume more input or push unused input back
-onto the input stream.  The current input can be manipulated by actions,
-using the cascaded parsing feature.  This was not a deliberate design
-decision, rather a consequence of the line oriented nature of Postfix log
-files; more flexible approaches could be pursued.
-
-\section{Conclusion}
+\section{Summary}
 
 XXX TO BE WRITTEN\@.
