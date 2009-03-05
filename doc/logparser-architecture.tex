@@ -599,12 +599,13 @@ require calculating the intersection of two \acronym{PDA} instead of two
 cannot always be implemented using a \acronym{PDA}, so intersection may be
 intractable in some cases, e.g.:
 $a^{*}b^{n}c^{n}~\cap~a^{n}b^{n}c^{*}~\rightarrow~a^{n}b^{n}c^{n}$.
-Detecting overlap amongst $n$ regexes requires calculating $n(n-1)/2$
-intersections, resulting in $O(n^2x)$ complexity, where $O(x)$ is the
-complexity of calculating \acronym{FA} or \acronym{PDA} intersection.  This
-is certainly not a task to be performed every time a parser runs: naive
-detection of overlap amongst \parsernames{} \numberOFrules{} rules would
-require calculating \numberOFruleINTERSECTIONS{} intersections.
+Detecting overlap amongst $n$ regexes requires calculating
+$\frac{n\left(n-1\right)}{2}$ intersections, resulting in
+$O\left(n^{2}x\right)$ complexity, where $x$ is the cost of calculating
+\acronym{FA} or \acronym{PDA} intersection.  This is certainly not a task
+to be performed every time a parser runs: naive detection of overlap
+amongst \parsernames{} \numberOFrules{} rules would require calculating
+\numberOFruleINTERSECTIONS{} intersections.
 
 When detecting overlap any conditions attached to rules must be taken into
 account, because two rules whose regexes overlap may have conditions
@@ -628,31 +629,23 @@ given these three conditions:
 
 \end{enumerate}
 
-XXX CARL SUGGESTS COMPARING THIS TO THE POWERSET\@; IS THAT REASONABLE\@?
-
 \noindent{}The first and second conditions do not overlap, but the third
 condition overlaps with both the first and second conditions.  When rules
-are divided into sets based on how their conditions overlap, the complexity
-of detecting overlap amongst $n$ rules is:
-
-XXX IN THE FORMULA BELOW $s \in{} overlaps$ SHOULD BE UNDER $\sum$
-
-$$O(n^{2}y) + O\left(\sum{|s|^{2}x \forall{} s \in{} overlaps}\right)$$
-
-where:
+are paired based on how their conditions overlap, the complexity of
+detecting overlap amongst $n$ rules is $O\left(n^{2}y+|o|x\right)$, where:
 
 \begin{tabular}[]{rcl}
 
-            $x$ & = & cost of checking for overlap between two regexes    \\
-            $y$ & = & cost of checking for overlap between two conditions \\
-     $overlaps$ & = & set of sets of rules with overlapping conditions    \\
+    $x$ & = & cost of checking for overlap between two regexes    \\
+    $y$ & = & cost of checking for overlap between two conditions \\
+    $o$ & = & set of pairs of rules with overlapping conditions   \\
 
 \end{tabular}
 
 For this approach to be more efficient than the naive approach $y$ must be
 significantly lower than $x$.  If $y$ is higher than $x$ then the opposite
 approach should be taken: check for regex overlap first, then check
-for condition overlap only between rules that have overlapping regexes.
+for condition overlap only between pairs of rules with overlapping regexes.
 
 Once conditions pass a certain level of complexity determining whether two
 conditions overlap becomes intractable, because it requires so much
