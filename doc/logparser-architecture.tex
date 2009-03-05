@@ -514,12 +514,11 @@ complexity of conditions increases so does the complexity of the code
 required to evaluate them; beyond a certain level of complexity conditions
 should probably be written in a proper programming language, e.g.\ taking
 advantage of dynamic languages' support for evaluating code at run-time, or
-embedding a language like Lua
-(\urlLastCheckedNoParens{http://ww.lua.org/}{2009/03/03}).  If an
-implementation is going to use conditions so complex that they will require
-a full programming language to implement them, the design may need to be
-re-thought, including the choice to use this architecture --- there may be
-other architectures more suitable.
+embedding a language like Lua.  If an implementation is going to use
+conditions so complex that they will require a full programming language to
+implement them, the design may need to be re-thought, including the choice
+to use this architecture --- there may be other architectures more
+suitable.
 
 Conditions that examine the input will be the easiest to understand,
 because they can be understood in isolation --- they do not depend on
@@ -717,10 +716,9 @@ proportional to the number of alternatives.  Perl 5.10 regexes can use
 \verb!(?>pattern)!, which matches \verb!pattern! the first time the regex
 engine passes over it, and does not change what it originally matched if
 the regex engine backtracks over it, so troublesome regexes can be modified
-to use this to reduce the impact of backtracking; Prolog
-(\urlLastCheckedNoParens{http://en.wikipedia.org/wiki/Prolog}{2009/03/03})
-users will notice a similarity to the \verb'!' (cut) operator.  A
-presentation showing some of Perl 5.10's regex features is available at
+to use this to reduce the impact of backtracking; Prolog users will notice
+a similarity to the \verb'!' (cut) operator.  A presentation showing some
+of Perl 5.10's regex features is available at
 \urlLastChecked{http://www.regex-engineer.org/slides/perl510_regex.html}{2009/03/03}.
 
 Conditions can vary in complexity from simple equality through to a

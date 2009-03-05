@@ -18,14 +18,13 @@ the performance of anti-spam techniques that are applied when mail is being
 transferred via \acronym{SMTP} is the goal of this project, by providing a
 platform for reasoning about anti-spam filters.  The approach chosen to
 measure performance is to analyse the log files produced by the
-\acronym{SMTP} server in use, Postfix
-(\urlLastCheckedNoParens{http://www.postfix.org/}{2009/02/28}), rather than
-modifying its source code to generate statistics: this approach improves
-the chances of other Postfix users testing and using the software developed
-for this project.  The need arose for a parser capable of dealing with the
-great number and variety of log lines produced by Postfix: the parser must
-be designed so that adding support for parsing new inputs is a simple task,
-because the log lines to be parsed will change over time.
+\acronym{SMTP} server in use, Postfix, rather than modifying its source
+code to generate statistics: this approach improves the chances of other
+Postfix users testing and using the software developed for this project.
+The need arose for a parser capable of dealing with the great number and
+variety of log lines produced by Postfix: the parser must be designed so
+that adding support for parsing new inputs is a simple task, because the
+log lines to be parsed will change over time.
 
 Most mail server administrators will have performed some basic processing
 of the log files produced by their mail server at one time or another,
