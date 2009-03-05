@@ -158,7 +158,7 @@ run_makeindex:
 build:
 	make build_loop
 	# Finally done.
-	make check
+	make -s check
 
 build_run:
 	make run_latex
