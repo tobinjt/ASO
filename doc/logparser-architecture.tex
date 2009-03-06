@@ -119,8 +119,7 @@ different semantics.
 
 The architecture can be thought of as implementing transduction: it takes
 data in one form and transforms it to another form; \parsername{}
-transforms log files to a database.  XXX NEED A REFERENCE FOR
-TRANSDUCTION\@.
+transforms log files to a database.
 
 Unlike traditional parsers such as those used when compiling a programming
 language, this architecture does not require a fixed grammar specification
@@ -526,7 +525,9 @@ extended to support complex variable assignments too.  The level of
 complexity the framework supports when evaluating conditions and setting
 variables has two costs that must be taken into account when designing a
 parser: the difficulty of implementation, and the difficulty of
-understanding rules and writing correct rules.  XXX NEEDS TO BE IMPROVED\@.
+understanding writing correct rules; the flexibility provided by complex
+conditions may be outweighed by the difficulty in understanding the
+interactions between rules that use complex conditions.
 
 An example of how rule conditions can be useful is parsing C-style
 comments, which start with \texttt{/*} and end with \texttt{*/}; the start
@@ -553,13 +554,12 @@ rules.
     \empty{}\label{Rules to parse C-style comments}
     \begin{tabular}{llll}
         \tabletopline{}%
-        No.   & Regex             & Condition           & Variable Changes    \\
+        No.   & Regex             & Condition             & Variable Changes    \\
         \tablemiddleline{}%
-        % XXX WHAT SHOULD THE VARIABLE BE CALLED?
-        1     & \verb!/\*.*?\*/!  & parsing == code     & parsing = code      \\
-        2     & \verb!/\*.*!      & parsing == code     & parsing = comment   \\
-        3     & \verb!.*\*/!      & parsing == comment  & parsing = code      \\
-        4     & \verb!.*!         & parsing == comment  & parsing = comment   \\
+        1     & \verb!/\*.*?\*/!  & expecting == code     & expecting = code      \\
+        2     & \verb!/\*.*!      & expecting == code     & expecting = comment   \\
+        3     & \verb!.*\*/!      & expecting == comment  & expecting = code      \\
+        4     & \verb!.*!         & expecting == comment  & expecting = comment   \\
         \tablebottomline{}%
     \end{tabular}
 \end{table}
@@ -567,8 +567,6 @@ rules.
 \subsection{Overlapping Rules}
 
 \label{overlapping rules in architecture}
-
-XXX IS THERE ANY PREVIOUS RESEARCH IN THIS AREA\@?
 
 When adding new rules, the rule author must be aware that the new rule may
 overlap with one or more existing rules, i.e.\ some inputs could be parsed
@@ -657,10 +655,11 @@ knowledge of other rules and possibly even actions.  E.g.\ given two rules
 with conditions \verb!verbose == true! and \verb!silent == true!, logically
 these rules should not overlap, yet there is nothing to stop both variables
 being set to true by one or more rules or actions.  If variables used in
-conditions can be set by actions, determining whether two conditions
-overlap is impossible, because understanding how an action will change the
-variables is impossible.  XXX DO I NEED TO MENTION CHURCH-TURING OR
-ANYTHING\@?
+conditions can be set by actions, determining whether or not two conditions
+overlap is impossible: the Halting Problem show that it is impossible for
+one program to answer questions about another program's behaviour if the
+inquiring program is implemented on a compuational machine of the equal or
+lesser power to the program being inquired into.
 
 \subsection{Pathological Rules}
 
