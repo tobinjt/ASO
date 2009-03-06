@@ -292,6 +292,10 @@ removing comments from input lines, so that other rules and actions do not
 have to handle comments at all; obviously if comment characters can be
 escaped or embedded in quoted strings the implementation needs to be more
 complex, but for some inputs this can greatly simplify subsequent parsing.
+Actions do not need to be specially registered with the framework or be
+declared in a particular way to use cascaded parsing: actions that do not
+use cascaded parsing will return nothing, those that do will simply return
+a string to be parsed.
 
 XXX GET GREG TO PROOFREAD THIS SECTION\@.
 
@@ -716,4 +720,36 @@ on the topic of pathological conditions.
 
 \section{Summary}
 
-XXX TO BE WRITTEN\@.
+This chapter has presented the parser architecture developed for this
+project.  It started with a high level view of the architecture, describing
+how it achieves its design aim of being easily extensible for users, and
+the advantages that being easily extensible brings to parser authors too.
+The three main components of the architecture were documented in detail,
+explaining each component's responsibilities and the functionality it
+provides, plus any difficulties associated with the components.  The
+framework, unsurprisingly, was quite quick to document, because it is the
+simplest of the three components.  The actions are also quite easy to
+understand, because the architecture does not impose any structure or
+requirements upon them: parser authors are free to do anything they want
+within an action.  The architecture's support for cascaded parsing was
+described in the actions section, with an example to illustrate how it can
+be useful.  The rules section was the longest, because although the rules
+appear conceptually simple --- recognise an input and specify the action
+that handles that input --- they have subtle behaviour that needs to be
+clearly explained.  When extending a ruleset a decision needs to be taken
+about whether the input should be recognised by extending an existing rule,
+by adding a new rule to an existing rule category, or by adding a new rule
+category, rule, and action.  Rules can have conditions attached to them,
+restricting the set of rules used to recognise an input; the complexity of
+the conditions used greatly influences the difficulty of writing a correct
+ruleset or understanding and extending an existing ruleset.  Overlapping
+rules are frequently a requirement in a parser, and their use can greatly
+simplify some rules, but they can be a source of bugs because they can
+recognise inputs unexpectedly.  The framework does not try to detect
+overlapping rules, because overlap amongst rules may be valid and is quite
+often intentional; that responsibility falls to the author of the rules.
+The difficulty involved in detecting overlap is proportional to the
+complexity of a ruleset's regexes and conditions, and may be possible for a
+human yet intractable or impossible for a program.  The rules section
+finishes with a discussion of pathological rules, concentrating on
+pathological regexes.
