@@ -42,7 +42,8 @@ query}):
 \input{build/include-sample-sql-query}
 
 \begin{table}[ht]
-    \caption{Sample output from SQL query}
+    \caption{Sample output from SQL query showing percentage of delivery
+    attempts rejected by each restriction}
     \empty{}\label{Sample output from SQL query}
     \begin{tabular}[]{lrr}
         \tabletopline{}%
@@ -52,6 +53,11 @@ query}):
         \input{build/include-sample-sql-output}
         \tablebottomline{}%
     \end{tabular}
+
+    All percentages above are exclusive, i.e.\ the first restriction's
+    number of rejections does not include the second restriction's number
+    of rejections.
+
 \end{table}
 
 
@@ -139,7 +145,7 @@ QUIT
 This example client is so poorly written that not only does it present the
 sender and recipient addresses improperly, it ignores the error messages
 returned by the server and carries on regardless.  Many spam and virus
-sending programs have serious deficiencies; unfortunately other programs,
+sending programs have serious deficiencies; unfortunately, other programs,
 particularly newer programs, were written by competent programmers or send
 mail using well written programs (e.g.\ Postfix or Sendmail on Unix hosts,
 Microsoft Outlook on Windows hosts).  Traditionally a mail server would

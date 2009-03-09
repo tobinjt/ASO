@@ -33,15 +33,16 @@ being rejected, or check if new anti-spam measures are working.  The more
 adventurous will have generated statistics to show how successful each of
 their anti-spam measures has been in the last week, and possibly even
 generated some graphs to clearly illustrate these statistics to management
-or users.\footnote{This was the author's first real foray into processing
-Postfix log files.}  Very few will have performed in-depth parsing and
-analysis of their log files, where the parsing must correlate the log lines
-per-connection or per-queueid rather than processing log lines
-independently.  One of the barriers to this kind of processing is the
-unstructured nature of Postfix log files, where each log line was added on
-an ad hoc basis as a requirement was discovered or new functionality was
-added.\footnote{A history of all changes made to Postfix is distributed
-with the source code, available from
+or users.\footnote{This was the first real foray the author, a Systems
+Administrator for a network of over 2,000 computers and over 1,800 users,
+took into processing Postfix log files.}  Very few will have performed
+in-depth parsing and analysis of their log files, where the parsing must
+correlate the log lines per-connection or per-queueid rather than
+processing log lines independently.  One of the barriers to this kind of
+processing is the unstructured nature of Postfix log files, where each log
+line was added on an ad hoc basis as a requirement was discovered or new
+functionality was added.\footnote{A history of all changes made to Postfix
+is distributed with the source code, available from
 \urlLastChecked{http://www.postfix.org/}{2009/02/23}.}  Further
 complication arises because the set of rejection messages is not fixed: new
 messages can be added by the administrator with custom checks; every
@@ -82,34 +83,34 @@ research in this area and other Postfix log file parsers, discussing why
 they were deemed unsuitable for the task, including why they could not be
 improved or expanded upon.
 
+Chapter~\ref{parser architecture} describes the parser architecture
+developed for this project, beginning with an overview of the architecture,
+then describing the components of the architecture in detail.
+
 XXX THIS ALL NEEDS TO BE CHECKED AND UPDATED\@.
 
+Chapter~\ref{Postfix Parser Implementation} discusses the parsing rules in
+detail, explaining the purpose and usage of each field in a rule, referring
+to an example rule and sample data it matches successfully against.  The
+pros and cons of overlapping rules are considered, including techniques for
+detecting unintentional overlaps.  Rule efficiency concerns are discussed,
+in particular the optimisations used by the algorithm.  The section
+concludes with a description of using the tools provided with the parser to
+generate new rules (specifically the regex in each rule) from unparsed log
+lines.  It contains the core of the paper, describing a naive parsing
+algorithm and the complications initially encountered that shaped the full
+algorithm.  A flow chart and a discussion of the emergent behaviour
+exhibited by the algorithm accompanies a comprehensive explanation of the
+different stages of the initial algorithm.  The framework that actions and
+rules fit into is documented, then the actions taken during execution of
+the algorithm are described, followed by the process of adding a new
+action.  The section concludes with an in-depth description of the further
+complications discovered, and their solutions that complete the parser.
 This algorithm requires a database for storing both the rules used when
 parsing and the results gleaned from parsing.  The database schema used is
 described in \sectionref{database schema}, explaining in detail the tables
 used for storing the data gleaned from the log files and the table that
 stores the rules.
-
-Chapter~\ref{rules in architecture} discusses the parsing rules in detail,
-explaining the purpose and usage of each field in a rule, referring to an
-example rule and sample data it matches successfully against.  The pros and
-cons of overlapping rules are considered, including techniques for
-detecting unintentional overlaps.  Rule efficiency concerns are discussed,
-in particular the optimisations used by the algorithm.  The section
-concludes with a description of using the tools provided with the parser to
-generate new rules (specifically the regex in each rule) from unparsed log
-lines.
-
-Chapter~\ref{Postfix Parser Implementation} contains the core of the paper,
-describing a naive parsing algorithm and the complications initially
-encountered that shaped the full algorithm.  A flow chart and a discussion
-of the emergent behaviour exhibited by the algorithm accompanies a
-comprehensive explanation of the different stages of the initial algorithm.
-The framework that actions and rules fit into is documented, then the
-actions taken during execution of the algorithm are described, followed by
-the process of adding a new action.  The section concludes with an in-depth
-description of the further complications discovered, and their solutions
-that complete the parser.
 
 Chapter~\ref{parsing coverage} analyses the coverage the parser achieves
 over a set of \numberOFlogFILES{} log files taken from a mail server
@@ -122,19 +123,12 @@ false positives is also included.  As part of determining the coverage of
 the parser a random sampling of log lines was parsed, and the correctness
 of the results manually verified.
 
-Chapter~\ref{limitations and improvements in implementation} lists the
-limitations of the algorithm, then suggests some ways of dealing with them,
-with the goal of improving parsing and reproduction of the journey a mail
-takes through Postfix.
-
 Chapter~\ref{conclusion} contains the conclusion of the thesis, describing
 the results of the research, design, and implementation of the parser.
 
 The bibliography (appendix~\ref{bibliography}) contains references to the
 resources used in developing the algorithm, writing the program, and
-preparing this thesis.  Also listed are some additional resources expected
-to be helpful in understanding \acronym{SMTP}, Postfix, anti-spam
-techniques, or the thesis.
+preparing this thesis.
 
 Appendix~\ref{Glossary} provides a glossary of terms used in the thesis.
 

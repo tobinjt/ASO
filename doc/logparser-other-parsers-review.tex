@@ -148,10 +148,9 @@ schema required is not documented.
 
 Whether a MySQL database or Berkeley DB table is chosen in addition to the
 \acronym{CSV} output, \acronym{LMA} stores the following data: time and
-date, client hostname and \acronym{IP} address, server \acronym{IP}
-address, sender and recipient addresses, \acronym{SMTP} code, and size (for
-accepted mails only).  It is unclear what time and date is stored: start
-time, end time, or delivery time?  Unlike \parsername{} it does not store
+date of the log line, client hostname and \acronym{IP} address, server
+\acronym{IP} address, sender and recipient addresses, \acronym{SMTP} code,
+and size (for accepted mails only).  Unlike \parsername{} it does not store
 the server hostname, HELO hostname, queueid, start and end times,
 timestamps for each log line, enhanced status code, delivery delays, or
 message id (for accepted mails only).  Handling of multiple recipients,
@@ -185,8 +184,8 @@ preprocessing before parsing by \acronym{LMA}.  The \numberOFlogFILES{}
 preprocessed test log files were parsed without complaint by \acronym{LMA},
 although it produced 32 entries in the output \acronym{CSV} file for every
 rejection in the input log file; it also missed some 40\% of delivered
-mail.  Once these glaring deficiencies were discovered the author did not
-waste any more time checking the results.
+mail.  Once these deficiencies were discovered the author did not spend any
+more time checking the results.
 
 \acronym{LMA} does provide some simple reports: IP-STORY, FROM-STORY,
 DAILY-EMAIL and DAILY-REJECT\@.  These reports search the Berkeley DB files
@@ -196,7 +195,7 @@ respectively.  DAILY-REJECT initially failed with an error message from the
 Perl interpreter;\footnote{The error messages were:
 \newline{}\texttt{Undefined subroutine \&main::LIST called at queryDB.pl
 line 372.}\newline{}\texttt{Undefined subroutine \&main::EXTRACT\_FROM\_DB
-called at queryDB.pl line 379.}} after making corrections to the code it
+called at queryDB.pl line 379.}} after correcting the errors in the code it
 worked, extracting the \acronym{CSV} lines for the specified day where the
 \acronym{SMTP} code signifies a rejection.  All of these reports are
 trivially simple to produce from the \acronym{CSV} file using the standard
@@ -219,11 +218,11 @@ Notes about the command above:
         matching record, to accurately replicate the output of
         DAILY-REJECT\@.
 
-    \item DAILY-REJECT considers all \acronym{SMTP} codes except
-        \texttt{250} to be rejections; this includes invalid \acronym{SMTP}
-        codes such as \texttt{0} and \texttt{deferred}, so the awk command
-        does too.  These invalid \acronym{SMTP} codes are most likely
-        present because of incorrect parsing by \acronym{LMA}.
+    \item DAILY-REJECT considers all \acronym{SMTP} codes except ``250'' to
+        be rejections; this includes invalid \acronym{SMTP} codes such as
+        \texttt{0} and \texttt{deferred}, so the awk command does too.
+        These invalid \acronym{SMTP} codes are most likely present because
+        of incorrect parsing by \acronym{LMA}.
 
     \item \acronym{LMA} produces 32 lines in its \acronym{CSV} file for
         every single line it should have produced; the command above
@@ -288,7 +287,7 @@ program designed to be useful in a production environment.
 
 Pflogsumm produces a report designed for troubleshooting rather than
 in-depth analysis.  It does not support saving any data, and it does not
-extract any data that it does not require to produce its report, e.g.\ it
+extract any data that it does not require to produce its report; e.g.\ it
 does not extract the HELO hostname, queueid, start and end times,
 timestamps for each log line, or message id.  Both the parsing and
 reporting are difficult to extend because it is a specialised tool, unlike
@@ -334,8 +333,8 @@ rejections.
     can parse Postfix logs, import them into a SQL database (or its own
     built-in database), aggregate them, and generate dynamically filtered
     reports, all through a web interface.  Sawmill can perform Postfix
-    analysis on any platform, including Window, Linux, FreeBSD, OpenBSD,
-    Mac OS, Solaris, other UNIX, and more.
+    analysis on any platform, including Window~[sic], Linux, FreeBSD,
+    OpenBSD, Mac OS, Solaris, other UNIX, and more.
 }
 {http://www.thesawmill.co.uk/formats/postfix.html}
 {2008/11/23}
@@ -388,9 +387,11 @@ code, delivery delays, and start and end times.  Sawmill does not extract
 any data about rejections except when the rejection is caused by a
 \acronym{DNSBL} check (\texttt{RBL list} in the list of fields).
 
-The source code is available in an obfuscated form, and the product is
-quite expensive, requiring a \euros{100} + VAT licence per report
-(discounts are available when buying multiple licences); in contrast
+The source code is only available in an encrypted form, to support people
+who wish to use Sawmill on operating systems or machine architectures the
+company do not provide executables for.  Sawmill is quite expensive,
+requiring a \euros{100} + VAT licence per report, with discounts available
+when buying multiple licences (correct as of 2008/11/23); in contrast,
 \parsername{} is free to use and the code is freely available.  Sawmill is
 supplied with thorough and well written documentation; everything the
 author searched for was documented, except the MySQL database schema and
@@ -403,9 +404,9 @@ attempted during the review process).
 Sawmill's web interface supports searching on any combination of the fields
 it extracts, and all searches produced accurate results.  The interface for
 searching is neither as simple to use nor as informative as the interface
-provided by Splunk.  The administrative interface is much easier to use
-than Splunk's: it took only five minutes to start parsing a whole directory
-of log files.
+provided by Splunk (see \sectionref{Splunk review}).  The administrative
+interface is much easier to use than Splunk's: it took only five minutes to
+start parsing a whole directory of log files.
 
 When tested with the \numberOFlogFILES{} test log files it performed
 adequately, though the rate it processed log files at did slow down
@@ -416,8 +417,9 @@ third; after twenty four hours parsing the remaining sixth it crashed due
 to lack of disk space.  On the second parsing attempt the log files were
 uncompressed beforehand and parsing took eight hours.
 
-In summary Sawmill suffers from being a general purpose product; it is
-probably much more useful when parsing log files where each log line is
+In summary, Sawmill suffers from supporting so many types of log files: it
+parses many types of log files, but none of them very well; it is probably
+much more useful when parsing log files where each log line is
 self-contained (e.g.\ web server log files), rather than log files
 containing interlinked log lines.  It is not suitable as a base for this
 parser, as the source code made available is obfuscated and not intended
@@ -425,6 +427,8 @@ for modification; in addition the architecture would probably need to be
 overhauled or replaced to deal with correlating log lines.
 
 \section{Splunk}
+
+\label{Splunk review}
 
 \parserblurb{%
     Splunk is IT Search.  Search and navigate IT data from applications,
@@ -472,41 +476,42 @@ downside that the log file was copied into a spool directory before
 indexing, doubling the disk space usage.  The next test was to index all
 the log files in a particular directory, but after three hours, numerous
 futile attempts, and reading all the available documentation, the author
-admitted defeat.  Using the \acronym{CLI} rather than the web interface was
-partially successful: the command \newline{} \tab{} \texttt{splunk find
-logs }\textit{log-directory\/}\newline{} added 40 of the
-\numberOFlogFILES{} log files to the queue for indexing.  Further attempts
-enqueued the same 40 log files, without explaining why the others were
-excluded.\footnote{The log files appear to have been indexed once only;
-presumably Splunk keeps track of the log files it has indexed and discards
-requests to index log files for a second time.  This may or may not be a
-useful feature for \parsername{}.} There did not appear to be an option to
-ensure the log files would be processed in the order they were created,
-though this may be neither necessary nor beneficial with Splunk.
-Subsequently the author was successful in adding a single file at a time
-using the \acronym{CLI}:\newline{} \tab{} \texttt{splunk add tail
-}\textit{filename\/}\newline{} A simple loop was then enough to add all the
-desired log files.  Splunk will periodically check all indexed log files
-for updates unless they are manually removed from its list; this may or may
-not be useful behaviour.  Splunk did not appear to have any difficulty in
-indexing the log files, once they had been successfully added to its queue.
+was still unable to index all the log files in a directory using the web
+interface.  Using the \acronym{CLI} rather than the web interface was
+partially successful: the command ``\texttt{splunk find logs
+}\textit{log-directory\/}'' added 40 of the \numberOFlogFILES{} log files
+to the queue for indexing.  Further attempts enqueued the same 40 log
+files, without explaining why the others were excluded.\footnote{The log
+files appear to have been indexed once only; presumably Splunk keeps track
+of the log files it has indexed and discards requests to index log files
+for a second time.  This may or may not be a useful feature for
+\parsername{}.} There did not appear to be an option to ensure the log
+files would be processed in the order they were created, though this may be
+neither necessary nor beneficial with Splunk.  Subsequently the author was
+successful in adding a single file at a time using the \acronym{CLI} and
+the command ``\texttt{splunk add tail }\textit{filename\/}''.  A simple
+loop using that command was enough to add all the desired log files.
+Splunk will periodically check all indexed log files for updates unless
+they are manually removed from its list; this may or may not be useful
+behaviour.  Splunk did not appear to have any difficulty in indexing the
+log files, once they had been successfully added to its queue.
 \parsername{} parses the logs it is instructed to parse, in the order
 given; periodic parsing of logs is a task an administrator can easily
 achieve with \texttt{cron(8)} and \texttt{logrotate(8)}.
 
 Copious documentation is made available on
-\urlLastChecked{http://www.splunk.com/}{2008/11/23}, but poor organisation
-and sheer abundance makes it extremely hard to find useful information.
-Searches confusingly tended to return results from old documentation rather
-than new.  In general the documentation appears to have been written by
-someone intimately acquainted with the software, who has difficulty
-understanding how a newcomer would approach tasks or the questions they
-would ask.
+\urlLastChecked{http://www.splunk.com/}{2008/11/23}, but the organisation
+and abundance of material does not support easy identification of useful
+information.  Searches confusingly tended to return results from old
+documentation rather than new.  In general the documentation appears to
+have been written by someone intimately acquainted with the software, who
+has difficulty understanding how a newcomer would approach tasks or the
+questions they would ask.
 
 Splunk supports reading compressed log files without any configuration by
 the user.  The free version of Splunk limits the volume of data indexed per
 day to 500MB, though a trial Enterprise licence is available that allows
-indexing of up to 5GB of data per day.  In 2007 the cheapest licenced
+indexing of up to 5GB of data per day.  In 2007, the cheapest licenced
 version cost \$5000 plus \$1000 support, and limited the volume of data
 indexed per day to 500MB\@.  Prices were removed from the Splunk website
 during 2008; now Splunk's sales team must be asked for a quote.  Typical
@@ -589,30 +594,28 @@ limits its functionality.  The data it can extract from an \acronym{MTA}
 log file is limited in comparison to \parsername{}: time2, email, email\_r,
 host, host\_r, method, url, code, and bytesd.  No explanation for any of
 those fields is provided in the documentation at
-\urlLastChecked{http://awstats.sourceforge.net/docs/awstats_faq.html\#MAIL}{2008/11/23}
-(in contrast \parsername{} fully documents everything it extracts), so the
-author could not understand what data is extracted, or determine what data
-is missing in comparison to \parsername{}.  AWStats coerces Postfix log
-files into Apache\footnote{The Apache web server is the most popular HTTP
-server in use over the past 10 years; more information is available at
-\urlLastChecked{http://httpd.apache.org/}{2008/11/23}.} format log files,
-for analysis by AWStats' HTTP log file parser.  The converting parser only
-deals with a small portion of the log lines generated by Postfix, silently
-skipping those it cannot deal with, and does not distinguish between
-different types of rejection; extending it to parse all log lines would be
-at least as much work as writing a new parser.  It does correlate log lines
-by queueid (not by pid), but it does not deal with any of the other
-complications described in \sectionref{complications}.  AWStats supports
-saving data, but the format of the data store is not documented.  It also
-supports reading compressed log files, but that functionality was not
-tested.
+\urlLastChecked{http://awstats.sourceforge.net/docs/awstats_faq.html\#MAIL}{2008/11/23},
+so the author could neither understand what data is extracted, nor
+determine what data is missing in comparison to \parsername{} (which fully
+documents everything it extracts).  AWStats coerces Postfix log files into
+the log file format used by the Apache web server, for analysis by AWStats'
+HTTP log file parser.  The converting parser only deals with a small
+portion of the log lines generated by Postfix, silently skipping those it
+cannot deal with, and does not distinguish between different types of
+rejection; extending it to parse all log lines would be at least as much
+work as writing a new parser.  It does correlate log lines by queueid (not
+by pid), but it does not deal with any of the other complications described
+in \sectionref{complications}.  AWStats supports saving data, but the
+format of the data store is not documented.  It also supports reading
+compressed log files, but that functionality was not tested.
 
 When tested with the \numberOFlogFILES{} test log files AWStats' reported
 that it parsed 9,240,075 (88.70\%) of 10,416,129 log lines, skipping
 1,176,050 (11.29\%) corrupt log lines; the \numberOFlogFILES{} log files
 contain \numberOFlogLINES{} log lines, so AWStats parsed only 15.21\% of
 the log lines, declared 1.93\% were corrupt, and ignored the remaining
-82.85\%.
+82.85\%.  The author did not verify the correctness of the parsing of those
+log lines AWStats did parse.
 
 The graphs it produces give an overview of mails received for the last
 calendar month, showing:
@@ -653,19 +656,18 @@ extracted by \parsername{}.
 {http://anteater.drzoom.ch/}
 {2009/01/11}
 
-Anteater does not have any English documentation so it is impossible for
-this author to accurately comment on the analysis it performs.  It did not
-run successfully when tested, and its parsing would certainly be out of
-date because Postfix has evolved considerably since this tool was last
-updated (2003/11/06).  As it neither ran successfully nor has documentation
-the author can read, a detailed review cannot be provided.
+Anteater does not have any English documentation except for the quote above
+so it is impossible for this author to accurately comment on the analysis
+it performs.  It did not run successfully when tested, and its parsing
+would certainly be out of date because Postfix has evolved considerably
+since this tool was last updated (2003/11/06).  As it neither ran
+successfully nor has documentation the author can read, a detailed review
+cannot be provided.
 
-The Debian Linux distribution
-(\urlLastChecked{http://www.debian.org/}{2008/11/23}) provides a manual
-page with the copy of anteater it distributes, so the author was at least
-able to run anteater with the correct arguments; sadly anteater produced
-zero for every statistic, presumably because it was unsuccessful in parsing
-the log lines.
+The Debian Linux distribution provides a translated manual page with the
+copy of anteater it distributes, so the author was at least able to run
+anteater with the correct arguments; sadly anteater produced zero for every
+statistic, presumably because it was unsuccessful in parsing the log lines.
 
 \section{Yet Another Advanced Logfile Analyser}
 
@@ -680,18 +682,18 @@ the log lines.
 
 YAALA uses a plugin-based system to analyse log files and produce reports
 in HTML format, with all the parsing and report generation handled by
-plugins.  Using YAALA as a base for this project would be only slightly
-less work than starting from scratch, as both the input and output modules
-would need to be written specially; it might be more work to implement a
-parser within the constraints of YAALA\@.  YAALA supports storing
-previously gathered data using Perl's Storable module, so other Perl
-programs can use Storable to load, examine, and optionally modify the data;
-\parsername{} uses a well documented database that is accessible from most
-common programming languages.  This information was gleaned from the source
-code, as the documentation is sadly lacking.
+plugins.  Using YAALA as a base for this project would have been as much
+work as starting from scratch, as both the input and output modules would
+need to be written specially; it might be more work to implement a parser
+within the constraints of YAALA\@.  YAALA supports storing previously
+gathered data using Perl's Storable module, so other Perl programs can use
+Storable to load, examine, and optionally modify the data; \parsername{}
+uses a well documented database that is accessible from most common
+programming languages.  Information about how YAALA stores data was gleaned
+from the source code, as the documentation is sadly lacking.
 
-YAALA provides a Postfix parser that extracts the following types of fields
-from specific log lines:
+YAALA provides a Postfix parser that extracts the following of fields from
+specific log lines:
 
 \begin{eqlist}
 
@@ -744,7 +746,7 @@ structure; YAALA's querying mini-language might not deal successfully with
 data in separate structures.  This approach has not been attempted by the
 author.
 
-In summary YAALA provides a Postfix parser that tries to parse the most
+In summary, YAALA provides a Postfix parser that tries to parse the most
 common Postfix log lines only, provides reasonably flexible report
 generation from the limited data extracted, but has no facilities to
 extract data for use in other tools.
@@ -798,7 +800,7 @@ supports saving extracted data for later report generation, but the format
 of this data store is undocumented; given the source code it should be
 possible, with enough time and effort, to understand the format.
 \parsername{} uses an \acronym{SQL} database to make accessing the
-extracted data as easy as possible.  In general Lire has poor
+extracted data as easy as possible.  In general, Lire has poor
 documentation.
 
 Similar to AWStats and Logrep, Lire attempts to correlate log lines by
