@@ -497,7 +497,7 @@ xpdf: all
 	xpdf logparser.pdf &
 
 spellcheck:
-	for file in *.tex; do aspell -t -c "$$file"; done
+	for file in logparser*.tex; do aspell -t -c "$$file"; done
 
 # I deliberately leave out the "r" from logparser below, because if it's 
 # included then the rule won't work for logparser.tex.

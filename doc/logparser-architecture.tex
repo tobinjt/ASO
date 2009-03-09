@@ -226,7 +226,7 @@ which will generally involve the following:
         successively tried until one is found that recognises the current
         input.  That pseudo-code is very simple: there may be efficiency
         concerns (\sectionref{parser efficiency}), rule conditions
-        (\sectionref{attaching conditions to rules}), or prioritisations
+        (\sectionref{attaching conditions to rules}), or rule priorities
         (\sectionref{rules in architecture}) that complicate the process.
 
     \item [Invoke actions]  Once a rule has been found that recognises the
@@ -590,7 +590,7 @@ being set to true by one or more rules or actions.  If variables used in
 conditions can be set by actions, determining whether or not two conditions
 overlap is impossible: the Halting Problem show that it is impossible for
 one program to answer questions about another program's behaviour if the
-inquiring program is implemented on a compuational machine of the equal or
+inquiring program is implemented on a computational machine of the equal or
 lesser power to the program being inquired into.
 
 \subsection{Pathological Rules}

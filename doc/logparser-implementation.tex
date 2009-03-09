@@ -632,7 +632,7 @@ There are 4 steps in the algorithm:
         variable.  The new log lines are written to a temporary file, which
         all subsequent stages use instead of the original input file.
 
-        In the original algorithm the purpose of the preprocessing stage
+        In the original algorithm the purpose of the pre-processing stage
         was to reduce the memory consumption of the program.  In the first
         pass it generated a hash~\cite{hash-functions}\glsadd{hash} from a
         small range of values for each word of each log line, incrementing
@@ -1024,19 +1024,19 @@ XXX HALF OF THIS CONTENT IS IN FOOTNOTES, WHICH SHOULD BE INLINED\@.
 
 Adding new actions is not as easy as adding new rules, though care has been
 taken in the parser's design and implementation to make adding new actions
-as painless as possible.  The implementor writes a subroutine that accepts
+as painless as possible.  The implementer writes a subroutine that accepts
 the standard arguments given to actions, and registers it as an action by
 calling the framework subroutine add\_actions() with the name of the new
 action as a parameter.  The new action must be registered before the rules
 are loaded, because it is an error for a rule to specify an unregistered
 action; this helps catch mistakes made when adding new rules.  No other
-work is required from the implementor to integrate the action into the
+work is required from the implementer to integrate the action into the
 parser; all of their attention and effort can be focused on correctly
 implementing their action.  The only negative aspect is that the process
 involves editing the parser source code, which makes upgrading to a later
 version of the parser more difficult, though by no means impossible.  If
 the author of the new action wishes, they can take advantage of the
-parser's object oriented implementation by subclassing it and implementing
+parser's object oriented implementation by sub-classing it and implementing
 their changes in the derived class, allowing future upgrades of the parser
 with greatly reduced chance of conflicts.\footnote{The real difference
 between the two approaches is where the new code is placed.  The simpler
@@ -1430,8 +1430,8 @@ occur the following conditions would have to be met:
 
 \end{enumerate}
 
-If a mail is mis-classified as a bounce message it will almost certainly
-have been generated internally by Postfix; arguably mis-classification in
+If a mail is misclassified as a bounce message it will almost certainly
+have been generated internally by Postfix; arguably misclassification in
 this case is a benefit rather than a drawback, as other mails generated
 internally by Postfix will be handled correctly.  Postfix 2.3 (and
 hopefully subsequent versions) log the creation of a bounce message.

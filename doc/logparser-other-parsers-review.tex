@@ -180,12 +180,12 @@ anti-spam techniques.  \acronym{LMA} fails to parse Postfix log files
 generated on Solaris hosts because the fields automatically prepended to
 each log line differ from those added on Linux hosts; log files from
 Solaris hosts (and possibly other operating systems) thus require
-preprocessing before parsing by \acronym{LMA}.  The \numberOFlogFILES{}
-preprocessed test log files were parsed without complaint by \acronym{LMA},
-although it produced 32 entries in the output \acronym{CSV} file for every
-rejection in the input log file; it also missed some 40\% of delivered
-mail.  Once these deficiencies were discovered the author did not spend any
-more time checking the results.
+pre-processing before parsing by \acronym{LMA}.  The \numberOFlogFILES{}
+pre-processed test log files were parsed without complaint by
+\acronym{LMA}, although it produced 32 entries in the output \acronym{CSV}
+file for every rejection in the input log file; it also missed some 40\% of
+delivered mail.  Once these deficiencies were discovered the author did not
+spend any more time checking the results.
 
 \acronym{LMA} does provide some simple reports: IP-STORY, FROM-STORY,
 DAILY-EMAIL and DAILY-REJECT\@.  These reports search the Berkeley DB files
@@ -422,7 +422,7 @@ parses many types of log files, but none of them very well; it is probably
 much more useful when parsing log files where each log line is
 self-contained (e.g.\ web server log files), rather than log files
 containing interlinked log lines.  It is not suitable as a base for this
-parser, as the source code made available is obfuscated and not intended
+parser, as the source code made available is encrypted and not intended
 for modification; in addition the architecture would probably need to be
 overhauled or replaced to deal with correlating log lines.
 
@@ -957,7 +957,7 @@ understanding of Postfix log files achieved by \parsername{}.
             latest report; other data will be discarded.
 
         \item [\nialpha{}] Sawmill's source code is available in an
-            obfuscated form, so that customers can compile it on platforms
+            encrypted form, so that customers can compile it on platforms
             that pre-compiled binaries are not available for.
 
         \item [\nibeta{}] \parsername{} is the only parser with
