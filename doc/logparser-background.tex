@@ -248,10 +248,10 @@ authentication support; this configuration example shows how:
 \begin{verbatim}
   main.cf:
   smtpd_client_restrictions =
-    ...
+    <other restrictions>
     permit_sasl_authenticated,
     check_client_access /etc/postfix/allow_webserver.cidr,
-    ...
+    <other restrictions>
 
   /etc/postfix/allow_webserver.cidr:
     192.0.2.80/32   dunno
@@ -269,9 +269,9 @@ sending mail from unknown machines; one example of how to achieve this is:
 \begin{verbatim}
   main.cf:
   smtpd_client_restrictions =
-    ...
+    <other restrictions>
     check_client_access /etc/postfix/require_dns_entries.cidr,
-    ...
+    <other restrictions>
 
   /etc/postfix/require_dns_entries.cidr:
     192.0.2.0/24    reject_unknown_client_hostname
