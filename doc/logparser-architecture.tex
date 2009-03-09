@@ -203,23 +203,24 @@ which will generally involve the following:
     \item [Convert physical inputs to logical inputs] Each rule recognises
         a single input at a time: there is no facility for rules to consume
         more input or push unused input back onto the input stream,
-        although actions may use cascaded parsing (\sectionref{cascaded
-        parsing}) to effectively push input back onto the input stream.  A
-        physical input (i.e.\ a single line read from the input stream) may
-        contain multiple or partial logical inputs, and the framework must
-        pre-process these to provide a logical input for the rules to
-        recognise.  This simplifies the rules and actions considerably, at
-        the cost of added complexity in the framework; during the design
-        phase it was decided that it was easier to deal with the problem of
-        parsing multiple or partial inputs once, rather than dealing with
-        it in every rule and action.  This is easy in the case of Postfix
-        log files because there is a one-to-one mapping between physical
-        and logical inputs; mapping between physical and logical inputs may
-        be more difficult for other types of input.  Some input types may
-        require pre-processing equivalent to parsing the physical inputs;
-        in those cases the framework should behave similarly to other
-        architectures: present the entire input stream at once, and discard
-        the portion recognised by the successful rule.
+        although actions may use cascaded parsing (explained in
+        \sectionref{actions in architecture}) to effectively push input
+        back onto the input stream.  A physical input (i.e.\ a single line
+        read from the input stream) may contain multiple or partial logical
+        inputs, and the framework must pre-process these to provide a
+        logical input for the rules to recognise.  This simplifies the
+        rules and actions considerably, at the cost of added complexity in
+        the framework; during the design phase it was decided that it was
+        easier to deal with the problem of parsing multiple or partial
+        inputs once, rather than dealing with it in every rule and action.
+        This is easy in the case of Postfix log files because there is a
+        one-to-one mapping between physical and logical inputs; mapping
+        between physical and logical inputs may be more difficult for other
+        types of input.  Some input types may require pre-processing
+        equivalent to parsing the physical inputs; in those cases the
+        framework should behave similarly to other architectures: present
+        the entire input stream at once, and discard the portion recognised
+        by the successful rule.
 
     \item [Classify the input]  The pseudo-code above shows how rules are
         successively tried until one is found that recognises the current
@@ -231,8 +232,8 @@ which will generally involve the following:
     \item [Invoke actions]  Once a rule has been found that recognises the
         current input, the specified action must be invoked.  The framework
         marshals the data extracted by the rule, invokes the action, and
-        repeats the parsing process if cascaded parsing
-        (\sectionref{cascaded parsing}) is used.
+        repeats the parsing process if cascaded parsing (see
+        \sectionref{actions in architecture}) is used.
 
     \item [Shared storage]  Parsers commonly need to save some state
         information about the input being parsed, e.g.\ a compiler tracking
@@ -305,10 +306,6 @@ should aim to make the easy things easy and the hard things possible; the
 successful implementation of \parsername{} demonstrates that this
 architecture achieves that aim.
 
-\subsection{Cascaded Parsing}
-
-\label{cascaded parsing}
-
 Actions may return a modified input line to the framework that will be
 parsed as if read from the input stream, allowing for a simplified version
 of cascaded parsing~\cite{cascaded-parsing}.  This powerful facility allows
@@ -316,120 +313,18 @@ several rules and actions to parse a single input, potentially simplifying
 both rules and actions.  A simple example is to have one rule and action
 removing comments from input lines, so that other rules and actions do not
 have to handle comments at all; obviously if comment characters can be
-escaped or embedded in quoted strings the implementation needs to be more
-complex, but for some inputs this can greatly simplify subsequent parsing.
-A more complex example is evaluating simple arithmetic expressions, where
-sub-expressions enclosed in parentheses must be evaluated first; cascaded
-parsing can be used to parse and evaluate sub-expressions, substituting the
-result into the original expression.  Actions do not need to be specially
-registered with the framework or be declared in a particular way to use
-cascaded parsing: actions that do not use cascaded parsing will return
-nothing, those that do will simply return a string to be parsed.
-
-XXX MAYBE MOVE THIS EXAMPLE TO AN APPENDIX\@?  DO I EVEN NEED IT\@?  ASK
-CARL ABOUT IT\@.
-
-XXX GET GREG TO PROOFREAD THIS SECTION\@.
-
-A more complicated example is determining the atomic weight of a compound
-given its chemical formula.  A chemical formula is a sequence of chemical
-element abbreviations, each optionally followed by a number indicating how
-many of that element are present in the formula (if omitted the number is
-assumed to be one).  Some parts of a formula may be repeated: they are
-enclosed in parentheses, and the closing parenthesis is followed by a
-number indicating how many are present in the formula.  A monomer is a
-simple compound, i.e.\ it does not have any repeated portions; compounds
-with repeated portions are called polymers.  E.g.\ glucose, a monomer, has
-the chemical formula $C_{6}H_{12}O_{6}$, and hydrocarbon, a polymer, is
-$CH_{3}{(CH_{2})}_{50}CH_{3}$.  The atomic weight of an individual element
-is given in periodic tables, but one element in particular will be
-important in the later explanation: Hydrogen, abbreviated H, has an atomic
-weight of 1.  The atomic weight of a given compound is the sum of the
-atomic weights of each of its elements multiplied by the number of times
-they occur; this is simple to calculate for a monomer, but it is harder for
-a polymer because the atomic weight of the repeated monomer must be
-multiplied by the number of times the monomer is present in the compound
-(e.g.\ for hydrocarbon the atomic weight of $CH_{2}$ must be multiplied by
-$50$).
-
-Calculating the atomic weight of a monomer requires a single rule and
-action.  The action separates each element in the monomer, looks up its
-atomic weight, multiplies it by the number of times it is present (one if
-unspecified), and adds up the results.  The rule's regex is
-\verb!^([A-Z]([a-z])?\d*)+$!, which does not guarantee that the chemical
-element abbreviations in the formula are correct; it could be modified to
-check that by replacing \verb![A-Z]([a-z])?! with all the valid
-abbreviations, slightly simplifying the action at the cost of complicating
-the regex, which could be automatically generated.
-
-Parsing a polymer is more difficult because of the repeated monomers: each
-monomer's atomic weight needs to be calculated separately, multiplied by
-the number of times it is present in the compound, and that figure added to
-the sum.  Without cascaded parsing the action would need to maintain state
-while recursively parsing the monomers embedded in the polymer.  Using
-cascaded parsing, three rules and actions can be used instead as shown in
-\tableref{Regexes and Actions to calculate the atomic weight of a chemical
-compound}.
-
-% These figures come from experimentation; set the length to 0pt, see how
-% big a hbox latex complains about, and then set the length.  Stupid latex
-% cannot do \settowidth{\verb}.  Poo.
-\newlength{\chemicalactionwidth}
-\setlength{\chemicalactionwidth}{\textwidth}
-% This is the width of the number column, roughly.
-\addtolength{\chemicalactionwidth}{-30pt}
-% The width of the regex column.
-\addtolength{\chemicalactionwidth}{-130pt}
-% This is the overhead of space around columns, on either side, etc.
-\addtolength{\chemicalactionwidth}{-24pt}
-
-\begin{table}[ht]
-    \caption{Regexes and Actions to calculate the atomic weight of a
-    chemical compound}
-    \empty{}\label{Regexes and Actions to calculate the atomic weight of a
-    chemical compound}
-    \begin{tabular}{llp{\chemicalactionwidth}}
-
-        \tabletopline{}%
-        No.   & Regex                       & Action \\
-        \tablemiddleline{}%
-        1     & \verb'((?!H\d+([()]|$))'    & Parse a monomer as described above,  \\
-              & \verb' ([A-Z]([a-z])?\d*)+)'& returning \verb!Hnnn!, where \verb!nnn! is
-                                              the atomic weight of the monomer.  The first
-                                              part of the regex prevents it from parsing
-                                              the return value of this action
-                                              (\verb!Hnnn!), ensuring the parsing process
-                                              does not get stuck in a loop.  \\
-        2     & \verb!\(H(\d+)\)(\d+)!      & Parse a repeated monomer that has been
-                                              rewritten by the first rule and action,
-                                              returning \verb!Hnnn!, where \verb!nnn! is
-                                              the product of the first and second numbers
-                                              captured by the regex.  \\
-        3     & \verb!^H(\d+)+$!            & Repeated applications of rules and
-                                              actions one and two will have rewritten the
-                                              input to \verb!Hnnn!, where \verb!nnn! is
-                                              the atomic weight of the compound.  This
-                                              action should do whatever is required with
-                                              the calculated atomic weight.  \\
-        \tablebottomline{}%
-
-    \end{tabular}
-\end{table}
-
-Applying the rules and actions above to the hydrocarbon formula results in
-this sequence:
-
-\begin{tabular}{lrl}
-
-    1 & Start with              & $CH_{3}{(CH_{2})}_{50}CH_{3}$ \\
-    2 & Apply rule and action 1 & $H_{15}{(CH_{2})}_{50}CH_{3}$ \\
-    3 & Apply rule and action 1 & $H_{15}{(H_{14})}_{50}CH_{3}$ \\
-    3 & Apply rule and action 1 & $H_{15}{(H_{14})}_{50}H_{15}$ \\
-    5 & Apply rule and action 2 & $H_{15}H_{700}H_{15}$ \\
-    6 & Apply rule and action 1 & $H_{730}$ \\
-    7 & Apply rule and action 3 & 730 \\
-
-\end{tabular}
+escaped or embedded in quoted strings the implementation must be careful
+not to remove those.  For some inputs this type of pre-processing can
+greatly simplify parsing, echoing the simplification provided by the
+framework presenting rules and actions with logical inputs rather than
+physical inputs.  A more complex example use of cascaded parsing is
+evaluating simple arithmetic expressions, where sub-expressions enclosed in
+parentheses must be evaluated first; cascaded parsing can be used to parse
+and evaluate the sub-expressions, substituting the result into the original
+expression for subsequent re-evaluation.  Actions do not need to be
+specially registered with the framework or be declared in a particular way
+to use cascaded parsing: actions that do not use cascaded parsing will
+return nothing, those that do will simply return a string to be parsed.
 
 \section{Rules}
 
@@ -509,7 +404,6 @@ used agree with the subroutine's signature.  These avenues of research and
 development have not been pursued by the author, but the architecture
 allows them to easily be undertaken independently.
 
-\newpage{} % XXX
 \subsection{Attaching Conditions To Rules}
 
 \label{attaching conditions to rules}
