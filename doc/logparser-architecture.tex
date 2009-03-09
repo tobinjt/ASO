@@ -45,7 +45,7 @@ will be discussed separately, but first an overview:
 
 \end{eqlist}
 
-For each input the framework tries each rule in turn until it finds a rule
+For each input, the framework tries each rule in turn until it finds a rule
 that recognises the input, then invokes the action specified by that rule.
 If the input is not recognised by any of the rules, the framework issues a
 warning; the framework can continue parsing after this, although for some
@@ -71,20 +71,22 @@ Separating the rules from the actions and framework makes it possible to
 parse new inputs without modifying the core parsing algorithm.  Adding a
 new rule with the action to invoke and a regex to recognise the inputs is
 trivial in comparison to understanding an entire parser, identifying the
-correct location to change, and making the appropriate changes.  Bear in
-mind that changes to a parser must be made without adversely affecting
-existing parsing, including any edge cases that are not immediately obvious
---- \sectionref{yet-more-aborted-delivery-attempts} describes a
-complication that occurs only four times in \numberOFlogFILES{} log files.
-Requiring changes to a parser's source code also complicates upgrades of
-the parser, because the changes must be preserved during the upgrade, and
-they may clash with changes made by the developer.  This architecture
-allows the user to add new rules without having to edit a parser, unless
-the new inputs cannot be processed by the existing actions.  If the new
-inputs do require new functionality, new actions can be added to the parser
-without having to modify existing actions; only in the rare event that the
-new actions need to cooperate with existing actions will more extensive
-changes be required.
+correct location to change, and making the appropriate changes.  Additions
+to a parser must be made without adversely affecting existing parsing,
+including any edge cases that are not immediately obvious; an edge case
+that occurs only four times in \numberOFlogFILES{} log files is described
+in Yet More Aborted Delivery Attempts
+(\sectionref{yet-more-aborted-delivery-attempts}).  More intrusive changes
+are more likely to introduce a bug, so reducing the extent of the changes
+is important.  Requiring changes to a parser's source code also complicates
+upgrades of the parser, because the changes must be preserved during the
+upgrade, and they may clash with changes made by the developer.  This
+architecture allows the user to add new rules without having to edit a
+parser, unless the new inputs cannot be processed by the existing actions.
+If the new inputs do require new functionality, new actions can be added to
+the parser without having to modify existing actions; only in the rare
+event that the new actions need to cooperate with existing actions will
+more extensive changes be required.
 
 There is some similarity between this architecture and William Wood's
 \acronym{ATN}~\cite{atns,nlpip}, used in Computational Linguistics for
@@ -198,6 +200,27 @@ which will generally involve the following:
 
         \end{itemize}
 
+    \item [Convert physical inputs to logical inputs] Each rule recognises
+        a single input at a time: there is no facility for rules to consume
+        more input or push unused input back onto the input stream,
+        although actions may use cascaded parsing (\sectionref{cascaded
+        parsing}) to effectively push input back onto the input stream.  A
+        physical input (i.e.\ a single line read from the input stream) may
+        contain multiple or partial logical inputs, and the framework must
+        pre-process these to provide a logical input for the rules to
+        recognise.  This simplifies the rules and actions considerably, at
+        the cost of added complexity in the framework; during the design
+        phase it was decided that it was easier to deal with the problem of
+        parsing multiple or partial inputs once, rather than dealing with
+        it in every rule and action.  This is easy in the case of Postfix
+        log files because there is a one-to-one mapping between physical
+        and logical inputs; mapping between physical and logical inputs may
+        be more difficult for other types of input.  Some input types may
+        require pre-processing equivalent to parsing the physical inputs;
+        in those cases the framework should behave similarly to other
+        architectures: present the entire input stream at once, and discard
+        the portion recognised by the successful rule.
+
     \item [Classify the input]  The pseudo-code above shows how rules are
         successively tried until one is found that recognises the current
         input.  That pseudo-code is very simple: there may be efficiency
@@ -224,6 +247,10 @@ which will generally involve the following:
     \item [Save and load state]  The architecture can save its current
         state, i.e.\ the shared storage it provides for actions, and reload
         it later, so that information is not lost between parsing runs.
+        \parsername{} uses this functionality because mails may take some
+        time to deliver and thus have their log lines split between log
+        files; a compiler might store data structures it builds as it
+        parses different files.
 
     \item [Specialised support functions]  Actions may need support or
         utility functions; the framework may be a good location for support
@@ -241,13 +268,13 @@ Each action is a separate procedure written to process a particular
 category of input, e.g.\ rejecting a delivery attempt.  There may be many
 input variants within one input category; in general each action will
 handle one input category, with each rule recognising one input variant.
-It is anticipated that parsers based on this architecture will have a high
-ratio of rules to actions, with the aim of having simple rules and tightly
-focused actions.  An action may need to process different input variants in
-slightly different ways, but large changes in processing indicate the need
-for a new action and a new category of input; if an action becomes overly
-complicated it starts to turn into a monolithic parser, with too much logic
-contained in a single procedure.
+It is expected that parsers based on this architecture will have many
+actions, and each action may be specified by many rules, with the aim of
+having simple rules and tightly focused actions.  An action may need to
+process different input variants in slightly different ways, but large
+changes in processing indicate the need for a new action and a new category
+of input; if an action becomes overly complicated it starts to turn into a
+monolithic parser, with too much logic contained in a single procedure.
 
 The ability to easily add special purpose actions to deal with difficulties
 and new requirements that are discovered during parser development is one
@@ -291,10 +318,16 @@ removing comments from input lines, so that other rules and actions do not
 have to handle comments at all; obviously if comment characters can be
 escaped or embedded in quoted strings the implementation needs to be more
 complex, but for some inputs this can greatly simplify subsequent parsing.
-Actions do not need to be specially registered with the framework or be
-declared in a particular way to use cascaded parsing: actions that do not
-use cascaded parsing will return nothing, those that do will simply return
-a string to be parsed.
+A more complex example is evaluating simple arithmetic expressions, where
+sub-expressions enclosed in parentheses must be evaluated first; cascaded
+parsing can be used to parse and evaluate sub-expressions, substituting the
+result into the original expression.  Actions do not need to be specially
+registered with the framework or be declared in a particular way to use
+cascaded parsing: actions that do not use cascaded parsing will return
+nothing, those that do will simply return a string to be parsed.
+
+XXX MAYBE MOVE THIS EXAMPLE TO AN APPENDIX\@?  DO I EVEN NEED IT\@?  ASK
+CARL ABOUT IT\@.
 
 XXX GET GREG TO PROOFREAD THIS SECTION\@.
 
@@ -415,11 +448,7 @@ attributes they require; \sectionref{rule attributes} describes the
 attributes used in \parsername{}, and some generally useful attributes will
 be discussed later in this section.
 
-The architecture is line oriented at present: there is no facility for
-rules to consume more input or push unused input back onto the input
-stream.  This was not a deliberate design decision, rather a consequence of
-the line oriented nature of Postfix log files; more flexible approaches
-could be pursued.  Classifying inputs using the rules is simple: the first
+Classifying inputs using the rules is simple: the first
 rule to recognise the input determines the action that will be invoked;
 there is no backtracking to try alternate rules; no attempt is made to pick
 a \textit{best\/} rule.  \sectionref{attaching conditions to rules}
@@ -504,12 +533,12 @@ Conditions that examine the input will be the easiest to understand,
 because they can be understood in isolation; they do not depend on
 variables set by actions or other rules.  Conditions that examine the input
 can be complex if required, but simple conditions can be quite useful too,
-e.g.\ every Postfix log \empty{}line contains the name of the Postfix
-component that produced it, so every rule used in \parsername{} has a
-condition specifying the component whose log \empty{}lines it recognises,
-reducing the number of rules that will be used when classifying an input
-(see \sectionref{rules in implementation} for details) and increasing the
-chance that the input will be correctly recognised..
+e.g.\ every Postfix log line contains the name of the Postfix component
+that produced it, so every rule used in \parsername{} has a condition
+specifying the component whose log lines it recognises, reducing the number
+of rules that will be used when classifying an input (see \sectionref{rules
+in implementation} for details) and increasing the chance that the input
+will be correctly recognised.
 
 Conditions can also check the value of variables that have been set by
 either actions or rules; it is easier to understand how a variable's value
