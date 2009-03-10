@@ -678,7 +678,7 @@ There are 4 steps in the algorithm:
         will be misclassified as a fixed term, but that should be noticed
         by the user when reviewing the new regexes.  Variable terms are
         replaced by \texttt{.+}, which means to match zero or more of any
-        character.  XXX SHOULD I USE \verb![\S]+! INSTEAD\@?
+        character.
 
     \item [Build regexes]  The words are reassembled to produce a regex
         matching the log line, and a counter is maintained for each
@@ -764,11 +764,19 @@ Each action is passed the same arguments:
 
 XXX IMPROVE HOW THIS LOOKS
 
-\begin{eqlist}
+\begin{eqlist}[\def\makelabel#1{\bfseries#1:}]
+
+    \squeezeitems{}
+
+    \item [rule] The matching rule.
+
+    \item [matches] The data extracted from the line by the rule's regex.
 
     \item [line] The log line, separated into fields:
 
-        \begin{eqlist}
+        \begin{eqlist}[\def\makelabel#1{\bfseries#1:}]
+
+            \squeezeitems{}
 
             \item [timestamp] The time the line was logged at.
 
@@ -782,10 +790,6 @@ XXX IMPROVE HOW THIS LOOKS
             \item [text] The remainder of the line.
 
         \end{eqlist}
-
-    \item [rule] The matching rule.
-
-    \item [matches] The data extracted from the line by the rule's regex.
 
 \end{eqlist}
 
@@ -1531,17 +1535,14 @@ This check is performed in the DISCONNECT action; it requires support in
 the CLONE action where a list of cloned connections is maintained.
 
 
-\newpage{} % XXX
-
 \subsection{Further Aborted Delivery Attempts}
 
-XXX MAYBE FIND OUT WHAT CLIENTS DISCONNECT\@?  Some mail clients disconnect
-abruptly if a second or subsequent recipient is rejected; they may also
-disconnect after other errors, but such disconnections are either
-unimportant or are handled elsewhere in the parser
-(\sectionref{timeouts-during-data-phase}).  Sadly, Postfix does not log a
-message saying the mail has been discarded, as should be expected by now.
-The checks to identify this happening are:
+Some mail clients disconnect abruptly if a second or subsequent recipient
+is rejected; they may also disconnect after other errors, but such
+disconnections are either unimportant or are handled elsewhere in the
+parser (\sectionref{timeouts-during-data-phase}).  Sadly, Postfix does not
+log a message saying the mail has been discarded, as should be expected by
+now.  The checks to identify this happening are:
 
 \begin{itemize}
 
@@ -1940,9 +1941,7 @@ improvements that have been identified in the parser.
         administrator-defined rejection messages require new rules.
 
     \item The hostname used in the HELO command is not logged if the mail
-        is accepted.\footnote{Tested with Postfix 2.2.10, 2.3.11, and
-        2.4.7; this may possibly have changed in Postfix 2.5.  XXX TEST
-        THIS AGAIN.}  Rectifying this is relatively simple: create a
+        is accepted.  Rectifying this is relatively simple: create a
         restriction that is guaranteed to warn for every accepted mail, as
         follows:
 

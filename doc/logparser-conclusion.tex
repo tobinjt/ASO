@@ -59,9 +59,7 @@ any other input causing parsing to fail (comments will already have been
 removed by the preprocessor).  This parser is different: the rule which
 matches the next log line for a mail dictates the action that will be
 invoked, which is equivalent to the next state in other parsers; thus the
-next log line for a mail dictates the next state for that mail.  XXX THINK
-ABOUT HOW TO MAKE THE PARSER MORE STATEFUL IF REQUIRED\@; ADD IT TO THE
-ARCHITECTURE SECTION\@.
+next log line for a mail dictates the next state for that mail.
 
 The real difficulties arise once the parser is successfully dealing with
 90\% of the log lines, as the irregularities and complications explained in
