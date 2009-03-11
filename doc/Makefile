@@ -174,11 +174,14 @@ build_run:
 		set -- `echo "$$line" | sed -e 's/\\\\@newglossary{.\+}{\(.\+\)}{\(.\+\)}{\(.\+\)}/\1 \2 \3/'`; \
 		make run_makeindex STYLE="${BASENAME}.ist" LOG="${BASENAME}.$$1" OUTPUT="${BASENAME}.$$2" INPUT="${BASENAME}.$$3"; \
 	done
-	touch "${BASENAME}.toc.old"
-	if ! cmp -s "${BASENAME}.toc.old" "${BASENAME}.toc"; then \
-		echo "Table of contents updated" >> build/run-latex-again; \
-	fi
-	cp "${BASENAME}.toc" "${BASENAME}.toc.old"
+	set -e; \
+	for contents in toc lof lot; do \
+		touch "${BASENAME}.$${contents}.old"; \
+		if ! cmp -s "${BASENAME}.$${contents}.old" "${BASENAME}.$${contents}"; then \
+			echo "Table of contents updated ($$contents)" >> build/run-latex-again; \
+		fi; \
+		cp "${BASENAME}.$${contents}" "${BASENAME}.$${contents}.old"; \
+	done
 	# The next time latex is run it will include the new glossary and acronyms 
 	# if they've changed.
 

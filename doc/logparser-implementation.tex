@@ -331,7 +331,7 @@ XXX ADD A DIAGRAM OF THE DATABASE SCHEMA\@.
 
 \subsection{Rules Table}
 
-\label{rule attributes}
+\label{rules table}
 
 Rules are discussed in detail in \sectionref{rules in implementation}, but
 the structure of the rules table is covered here with the other tables in
@@ -600,11 +600,7 @@ structure, plus the log line that has just been parsed.
 
 Each action is passed the same arguments:
 
-%\begin{eqlist}[\def\makelabel#1{\bfseries#1:}]
-
-XXX IMPROVE HOW THIS LOOKS
-
-\begin{eqlist}[\def\makelabel#1{\bfseries#1:}]
+\begin{boldeqlist}
 
     \squeezeitems{}
 
@@ -631,10 +627,10 @@ XXX IMPROVE HOW THIS LOOKS
 
         \end{eqlist}
 
-\end{eqlist}
+\end{boldeqlist}
 
 
-\subsection{Actions in Detail}
+\subsection{Actions in the \parsernamelong{}}
 
 \label{actions in detail in implementation}
 
@@ -919,103 +915,80 @@ component is not an option.}
 
 XXX NEED AN INTRODUCTION\@.
 
-XXX ONCE THIS PARAGRAPH HAS BEEN INTEGRATED AND EXPANDED UPDATE THE
-REFERENCE IN ARCHITECTURE->RULES->ATTACHING CONDITIONS TO RULES\@.
-Each log line contains the name of the Postfix component that produced it,
-and this information is used when determining which rules should be used to
-parse each log line (see \sectionref{rules in implementation} for details).
+The rules are responsible for classifying each log line and specifying the
+correct action to be invoked.  For any parser implemented using this
+architecture, the rules are the most visible component and most likely to
+be modified by users.  Rules need to be as simple as possible so that users
+can easily modify or add to them, but the implementation must balance that
+simplicity with the need to provide enough flexibility and power to
+successfully parse the inputs.
 
-\subsection{Overlapping Rules}
-
-\label{overlapping rules in implementation}
-
-The parser does not try to detect overlapping rules; that responsibility is
-left to the author of the rules.  Unintentionally overlapping rules lead to
-inconsistent parsing and data extraction because the order in which rules
-are tried against each line may change between log files, and the first
-matching rule wins.  Overlapping rules are frequently a requirement,
-allowing a more specific rule to match some log lines and a more general
-rule to match the majority, e.g.\ separating \acronym{SMTP} delivery to
-specific sites from \acronym{SMTP} delivery to the rest of the world.  The
-algorithm provides a mechanism for ordering overlapping rules: the priority
-field in each rule (defaults to zero).  Negative priorities may be useful
-for catchall rules.
-
-Detecting overlapping rules is difficult, but the following approaches may
-be helpful:
-
-\begin{itemize}
-
-    \item Sort by regex and visually inspect the list, e.g.\ with
-        \acronym{SQL} similar to: \textbf{select regex from rules order by
-        regex;}
-
-    \item Compare the results of parsing using sorted, shuffled, and
-        reversed rules (described in \sectionref{rule ordering for
-        efficiency}).  Parse several log files using optimal ordering, then
-        dump a textual representation of the rules, connections, and
-        results tables.  Repeat with shuffled and reversed ordering,
-        starting with a fresh database.  If there are no overlapping rules
-        the tables from each run will be identical; differences indicate
-        overlapping rules.  The rules that overlap can be determined by
-        examining the differences in the tables: each result contains a
-        reference to the rule which created it, if the references differ
-        between runs the two rules referenced in the differing results
-        overlap.  Unfortunately this method cannot prove the absence of
-        overlapping rules; it can detect overlapping rules, but only if
-        there are log lines in the log files that are matched by more than
-        one rule.
-
-\end{itemize}
+The theoretical aspects of this component are covered in detail in
+\sectionref{rules in architecture}; this section is concerned with the
+practical aspects of how rules are implemented and used in \parsername{}.
+The structure of the rules table has already been documented in
+\sectionref{rules table}; that abstract description will not be repeated
+here, but should be fleshed out by the concrete example rule in
+\sectionref{example rule in implementation}.  The process of creating new
+rules from unparsed log lines is dealt with in \sectionref{creating new
+rules in implementation}; the implementation of the utility supplied with
+\parsername{} to create regexes from unparsed log lines is also described
+in that section.  The final portion of this section provides some
+suggestions for how to detect overlapping rules.
 
 \subsection{Example Rule}
 
 \label{example rule in implementation}
 
-This example rule matches the message logged by Postfix when it rejects
-mail from a sender address because the domain in the sender address does
-not have an A, AAAA, or MX DNS entry, i.e.\ mail could not be delivered
-to the sender's address (for full details
-see~\cite{reject-unknown-sender-domain}).
+The example rule in \tableref{Example rule in implementation table}
+recognises the log line resulting from Postfix rejecting a delivery attempt
+because the domain in the sender address does not have an A, AAAA,
+or MX DNS entry, i.e.\ mail could not be delivered to the sender's address
+(for full details see~\cite{reject-unknown-sender-domain}).
 
-Example log line matched by this rule:
+Example log line recognised by this rule:
 
 % RFC 3330 says that 192.0.2.0/24 is reserved for example use.
 
 \begin{verbatim}
-NOQUEUE: reject: RCPT from example.com[192.0.2.1]: 550 5.1.8
-  <foo@example.com>: Sender address rejected: Domain not found;
+NOQUEUE: reject: RCPT from smtp.example.com[192.0.2.1]:
+  550 5.1.8 <foo@example.com>:
+  Sender address rejected: Domain not found;
   from=<foo@example.com> to=<info@example.net>
   proto=SMTP helo=<smtp.example.com>
 \end{verbatim}
 
 % do not reformat this!
-\begin{tabular}[]{ll}
+\begin{table}[ht]
 
-\textbf{Field}      & \textbf{Value}                                    \\
-name                & Unknown sender domain                             \\
-description         & We do not accept mail from unknown domains        \\
-restriction\_name   & reject\_unknown\_sender\_domain                   \\
-postfix\_action     & REJECTED                                          \\
-program             & \daemon{smtpd}                                    \\
-regex               & \verb!^__RESTRICTION_START__ <(__SENDER__)>: !    \\
-                    & \verb!Sender address rejected: Domain not found;! \\
-                    & \verb!from=<\k<sender>> to=<(__RECIPIENT__)> !    \\
-                    & \verb!proto=E?SMTP helo=<(__HELO__)>$!            \\
-result\_data        &                                                   \\
-connection\_data    &                                                   \\
-action              & DELIVERY\_REJECTED                                \\
-hits                & 0                                                 \\
-hits\_total         & 0                                                 \\
-priority            & 0                                                 \\
-%cluster\_group      & 400                                               \\
+    \caption{Example rule}
+    \empty{}\label{Example rule in implementation table}
+    \begin{tabular}{ll}
 
-\end{tabular}
+    \textbf{Field}      & \textbf{Value}                                    \\
+    name                & Unknown sender domain                             \\
+    description         & We do not accept mail from unknown domains        \\
+    restriction\_name   & reject\_unknown\_sender\_domain                   \\
+    postfix\_action     & REJECTED                                          \\
+    program             & \daemon{smtpd}                                    \\
+    regex               & \verb!^__RESTRICTION_START__ <(__SENDER__)>: !    \\
+                        & \verb!Sender address rejected: Domain not found;! \\
+                        & \verb!from=<\k<sender>> to=<(__RECIPIENT__)> !    \\
+                        & \verb!proto=E?SMTP helo=<(__HELO__)>$!            \\
+    result\_data        &                                                   \\
+    connection\_data    &                                                   \\
+    action              & DELIVERY\_REJECTED                                \\
+    hits                & 0                                                 \\
+    hits\_total         & 0                                                 \\
+    priority            & 0                                                 \\
+    %cluster\_group      & 400                                               \\
 
-\vspace{1em}
+    \end{tabular}
 
-Fields matched by the regex will be automatically saved to the results and
-connections tables.
+\end{table}
+
+The fields in \tableref{Example rule in implementation table} are used as
+follows:
 
 \begin{description}
 
@@ -1029,28 +1002,27 @@ connections tables.
         action will be executed, if not the next rule will be tried.  If
         the program-specific rules do not match the log line, the parser
         will fall back to generic rules; if those rules are unsuccessful a
-        warning will be issued.
+        warning will be issued.  Data captured by the regex (sender,
+        recipient, etc.) will be automatically saved to the results and
+        connections tables.
 
-    \item [action:] The action to be executed if the regex matches
-        successfully.  See \sectionref{actions in detail in implementation}
-        for details of the actions implemented by the parser,
+    \item [action:] The action to be invoked when the rule recognises a log
+        line.  See \sectionref{actions in detail in implementation} for
+        details of the actions implemented by \parsername{}, and
         \sectionref{actions in architecture} for the role of actions in the
         parser architecture.
 
-    \item [result\_data and connection\_data:] are used to provide XXX
+    \item [result\_data and connection\_data:] are used to provide data not
+        present in the log line, and are unused in this rule.
 
-    \item [hits, hits\_total, and priority:] hits and priority are used in
-        ordering the rules (see \sectionref{rule ordering for efficiency});
-        hits is set to the number of successful matches at the end of the
-        parsing run; hits\_total is the sum of hits over every parsing run,
+    \item [hits, hits\_total, and priority:] hits and priority are used
+        when ordering the rules for more efficient parsing (see
+        \sectionref{rule ordering for efficiency}).  At the end of each
+        parsing run hits is set to the number of log lines recognised by
+        the rule.  Hits\_total is the sum of hits over every parsing run,
         but is otherwise unused by the parser.
 
-%    \item [cluster\_group] The cluster\_group attribute is used by the
-%        Decision Tree algorithm described in a separate document; the
-%        parser does not use it in any way.
-
 \end{description}
-
 
 \subsection{Creating New Rules}
 
@@ -1060,104 +1032,103 @@ The log files produced by Postfix differ from installation to installation,
 because administrators have the freedom to choose the subset of available
 restrictions which suits their needs, including using different
 \acronym{DNSBL} services, policy servers, or custom rejection messages.  To
-facilitate parsing new log lines, the parser's design separates parsing
-rules from parsing actions: adding new actions can be difficult, but adding
-new rules to parse new rejection messages is trivial, and occurs much more
-frequently.  A program is provided to ease the process of creating new
-rules from unparsed log lines, based on the algorithm developed by Risto
-Vaarandi for his \acronym{SLCT}~\cite{slct-paper}.  The differences between
-the two algorithms will be outlined as part of the general explanation
-below.
+facilitate parsing new log lines, the architecture separates rules from
+actions: adding new actions can be difficult, but adding new rules to
+recognise new log lines is trivial, and occurs much more frequently.
 
-The core of the \acronym{SLCT} algorithm is quite simple: log lines are
-generally created by substituting variable words into a fixed pattern, and
-analysis of the frequency with which each word occurs can be used to
-determine whether the word is variable or part of the fixed pattern.  This
-classification can be used to group similar log lines and generate a regex
-to match each group of log lines.
+XXX DESCRIBE HOW TO GO ABOUT ADDING A NEW RULE\@.
 
-There are 4 steps in the algorithm:
+
+A program is provided with \parsername{} to ease the process of creating
+new rules from unrecognised log lines, based on the algorithm developed by
+Risto Vaarandi for his \acronym{SLCT}~\cite{slct-paper}.  The differences
+between the two algorithms will be outlined as part of the general
+explanation below.  The core of the \acronym{SLCT} algorithm is quite
+simple: log lines are generally created by substituting variable words into
+a fixed pattern, and analysis of the frequency with which each word occurs
+can be used to determine whether the word is variable or part of the fixed
+pattern.  This classification can be used to group similar log lines and
+generate a regex to match each group of log lines.  There are 4 steps in
+the algorithm:
 
 \begin{description}
 
-    \item [Pre-process the file]  The new algorithm leverages the knowledge
-        gained when writing rules and performs a large number of
-        substitutions on the input log lines, replacing commonly occurring
-        variable terms (e.g.\ email addresses, \acronym{IP} addresses, the
-        standard start of rejection messages, etc.) with regex keywords
-        that the parser will expand when it loads the rule (see the
-        regex entry in \sectionref{rule attributes}).  The purpose of
-        this step is to utilise existing knowledge to create more accurate
-        regexes; it replaces a large number of variable words with fixed
-        words, improving the subsequent classification of words as fixed or
-        variable.  The new log lines are written to a temporary file, which
-        all subsequent stages use instead of the original input file.
+    \item [Pre-process the file.]  The new algorithm leverages the
+        knowledge gained when writing rules and developing \parsername{};
+        it performs a large number of substitutions on the input log lines,
+        replacing commonly occurring variable terms (e.g.\ email addresses,
+        \acronym{IP} addresses, the standard start of rejection messages)
+        with keywords that \parsername{} will expand when it loads the new
+        rule.  The purpose of this step is to utilise existing knowledge to
+        create more accurate regexes; it replaces a large number of
+        variable words with fixed words, improving the subsequent
+        classification of words as fixed or variable.  The altered log
+        lines are written to a temporary file, which subsequent stages will
+        use instead of the original input file.
 
         In the original algorithm the purpose of the pre-processing stage
         was to reduce the memory consumption of the program.  In the first
-        pass it generated a hash~\cite{hash-functions}\glsadd{hash} from a
-        small range of values for each word of each log line, incrementing
+        pass it generates a hash~\cite{hash-functions}\glsadd{hash} (from a
+        small range of values) for each word of each log line, incrementing
         a counter for each hash.  The counters will be used in the next
         pass to filter out words: if the word's hash does not have a high
         frequency, the word itself cannot have a high frequency, so there
         is no need to maintain a counter for it, reducing the number of
         counters required and thus the program's memory consumption.
 
-    \item [Calculate word frequencies]  The position of words within a log
+    \item [Calculate word frequencies.]  The position of words within a log
         line is important: a word occurring in two log lines does not
-        indicate similarity unless it occupies the same position within
-        both log lines.\footnote{If a variable term within a line contains
-        spaces, it will appear to the algorithm as two or more words rather
-        than one.  This will alter the position of subsequent words, so a
-        word occurring in different positions in two log lines
-        \textit{may\/} indicate similarity, but the algorithm does not
-        attempt to deal with this possibility.}  The algorithm maintains a
-        counter for each \texttt{(word, word's position within the log
-        line)} tuple, incrementing it each time that word occurs in that
-        position.
+        indicate similarity unless it occupies the same position in both
+        log lines.  If a variable term within a line contains
+        spaces, it will appear to the algorithm as more than one word.
+        This will alter the position of subsequent words, so a word
+        occurring in different positions in two log lines \textit{may\/}
+        indicate similarity, but the algorithm does not attempt to deal
+        with this possibility.  The algorithm maintains a counter for each
+        \texttt{(word, word's position within the log line)} tuple,
+        incrementing it each time that word occurs in that position.
 
-        The original algorithm only maintains counters for words whose hash
-        result from the previous step has a high frequency; this reduces
-        the number of counters maintained by the algorithm, reducing the
-        memory requirements of the algorithm at a cost of increased CPU
-        usage.
+        The original algorithm hashes each word and checks that result's
+        counter from the previous pass; if that counter has a high
+        frequency a separate counter will be maintained for this word in
+        this position.  This reduces the number of counters maintained by
+        the algorithm in this step, reducing the memory requirements of the
+        algorithm at a cost of increased CPU usage.
 
         As time goes on the amount of memory typically available increases
-        and the requirement to reduce memory requirements decreases, hence
-        the modified algorithm omits the hashing step and maintains
-        counters for all tokens.  In addition most of the infrequently
-        occurring words will have been substituted with keywords during the
-        first step, vastly reducing the number of tuples to maintain
-        counters for.
+        and the need to reduce memory requirements decreases, so the
+        modified algorithm omits the hashing step and maintains counters
+        for all tokens.  In addition most of the infrequently occurring
+        words will have been substituted with keywords during the first
+        step, vastly reducing the number of tuples to maintain counters
+        for.
 
-    \item [Classify words based on their frequency]  The frequency of every
-        tuple \texttt{(word, word's position within the log line)} is
+    \item [Classify words based on their frequency.]  The frequency of
+        every tuple \texttt{(word, word's position within the log line)} is
         checked: if its frequency is greater than the threshold supplied by
-        the user (1\% of all log lines is generally a good starting point)
+        the user (1\% of all log lines is generally a good starting point),
         it is classified as a fixed word, otherwise it is classified as a
         variable term.  If a variable term appears sufficiently often it
         will be misclassified as a fixed term, but that should be noticed
         by the user when reviewing the new regexes.  Variable terms are
-        replaced by \texttt{.+}, which means to match zero or more of any
-        character.
+        replaced by \texttt{.+} to match one or more of any character.
 
-    \item [Build regexes]  The words are reassembled to produce a regex
-        matching the log line, and a counter is maintained for each
-        regex.  Contiguous sequences of \texttt{.+} in the newly
-        reassembled regexes are collapsed to a single \texttt{.+}; any
-        resulting duplicate regexes are combined, and their counters
-        added together.  If a regex's counter is lower than the
-        threshold supplied by the user the regex is discarded; this
-        second threshold is independent of the threshold used to
-        differentiate between fixed and variable words, but once again 1\%
-        of log lines is a good starting point.  The new regexes are
-        displayed for the user to add to the database, either as new rules
-        or merged into the regexes of existing rules; the counter for
-        each regex is also displayed, giving the user an indication of
-        how many of the log lines that regex should match.  Discarding
-        regexes will result in some of the log lines not being matched;
-        when the rules have been augmented with the new regexes, the
-        original log files should be parsed again, and any remaining
+    \item [Build regexes.]  The words are reassembled to produce a regex
+        matching the log line, and a counter is maintained for each regex.
+        Contiguous sequences of \texttt{.+} in the newly reassembled
+        regexes are collapsed to a single \texttt{.+}; any resulting
+        duplicate regexes are combined, and their counters added together.
+        If a regex's counter is lower than the threshold supplied by the
+        user the regex is discarded; this second threshold is independent
+        of the threshold used to differentiate between fixed and variable
+        words, but once again 1\% of log lines is a good starting point.
+        The new regexes are displayed for the user to add to the database,
+        either as new rules or merged into the regexes of existing rules;
+        the counter for each regex is also displayed, giving the user an
+        indication of how many of the log lines that regex should match.
+        Discarding regexes will result in some of the log lines not being
+        matched; when the rules have been augmented with the new regexes,
+        the original log files should be parsed again, and any remaining
         unparsed log lines used as input to this utility.
 
 \end{description}
@@ -1173,12 +1144,54 @@ matched by any regex.  It displays a summary of how many input log lines
 each regex matched, comparing it to the expected number of matches; this
 provides the user with an easy method of checking if the regexes
 produced by the first utility are correctly matching the input log lines
-they are based upon.  A future version of this utility will also group
-input log lines by regex, so the user can tweak the regexes if
-required.
+they are based upon.
 
 These utilities are not intended to create perfect regexes, but they
 greatly reduce the effort required to parse new or different log lines.
+
+\subsection{Overlapping Rules}
+
+\label{overlapping rules in implementation}
+
+\parsername{} does not try to detect overlapping rules; that responsibility
+is left to the author of the rules.  The advantages and difficulties of
+overlapping rules have already been addressed in \sectionref{overlapping
+rules in architecture} and will not be repeated here.  \parsername{}
+provides a mechanism for ordering overlapping rules: the priority field in
+each rule (defaulting to zero); negative priorities may be useful for
+catchall rules.
+
+Detecting overlapping rules is difficult, but the following approaches may
+be helpful:
+
+\begin{itemize}
+
+    \item Sort by program and regex, then visually inspect the list, e.g.\
+        with \acronym{SQL} similar to:      \newline{}
+        \verb!SELECT program, regex!        \newline{}
+        \verb!    FROM rules!               \newline{}
+        \verb!    ORDER BY program, regex;! \newline{}
+        The rules are sorted first by program, then by regex, because rules
+        with overlapping regexes will not overlap if their programs are
+        different.  Note that this does not properly deal with rules whose
+        program is \texttt{*}; those rules will be used on all log lines
+        that have not been recognised by program-specific rules.
+
+    \item Compare the results of parsing using different rule orderings
+        (described in \sectionref{rule ordering for efficiency}).  Parse
+        several log files using optimal ordering, then dump a textual
+        representation of the rules, connections, and results tables.
+        Repeat with shuffled and reversed ordering, starting with a fresh
+        database.  If there are no overlapping rules the tables from each
+        run will be identical; differences indicate overlapping rules.  The
+        rules that overlap can be determined by examining the differences
+        in the tables: each result contains a reference to the rule which
+        created it, which will change if that rule overlaps with another.
+        Unfortunately this method cannot prove the absence of overlapping
+        rules; it can detect overlapping rules, but only if there are log
+        lines in the log files that are recognised by more than one rule.
+
+\end{itemize}
 
 \section{Complications Encountered}
 

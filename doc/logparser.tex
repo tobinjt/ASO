@@ -292,7 +292,8 @@
 
 % The name of the program, so I only have to change it in one place.
 \newcommand{\parsername}{\acronym{PLP}}
-\newcommand{\parsernames}{\acronym{PLP}'s}
+\newcommand{\parsernames}{\acronyms{PLP}}
+\newcommand{\parsernamelong}{Postfix Log Parser}
 
 \begin{document}
 
@@ -330,18 +331,18 @@ XXX CHECK ALL ``UNINTERESTING'' RULES TO SEE IF THEY COULD BE USED\@.
 
 XXX SHOULD I SCRAP postfix\_action?
 
+% Pull in the acronyms early, so they can be used throughout the text.
+\input{logparser-acronyms}
+\input{logparser-glossary}
+\input{logparser-postfix-daemons}
+\glsaddall[types={postfix}]
+
 \newpage
 \tableofcontents
 \listoffigures
 \listoftables
 
 \newpage
-
-% Pull in the acronyms early, so they can be used throughout the text.
-\input{logparser-acronyms}
-\input{logparser-glossary}
-\input{logparser-postfix-daemons}
-\glsaddall[types={postfix}]
 
 % WSUIPA fonts.
 \input{ipamacs}
