@@ -21,6 +21,13 @@
 
 % Aligned list environments.
 \usepackage{eqlist}
+% This voodoo below gives us an eqlist environment with bold items.
+\newcommand{\bolditem}[1]{%
+    \bfseries#1%
+}
+\newenvironment{boldeqlist}
+    {\begin{eqlist}[\renewcommand{\makelabel}{\bolditem}]}
+    {\end{eqlist}}
 
 % Tell Latex to use scalable fonts
 \usepackage{type1cm}

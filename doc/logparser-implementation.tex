@@ -8,21 +8,15 @@ XXX UPDATE REFERENCES WHEN ARCHITECTURE AND IMPLEMENTATION ARE MORE FLESHED
 OUT\@.  XXX WHEN FINISHED, CHECK ALL REFERENCES TO ENSURE THEY POINT AT THE
 CORRECT CHAPTER\@.
 
-XXX FIGURE OUT WHEN TO USE ACTIONS AND WHEN TO USE ALGORITHM, ETC\@.
+XXX FIGURE OUT WHEN TO USE ACTIONS AND WHEN TO USE ALGORITHM, PARSER,
+ETC\@.
 
-XXX THIS MIGHT BE USEFUL SOMEWHERE\@:
-
-XXX SHOULD I SAY ``cleaned up'' EVERYWHERE OR NOT\@?
-
-Whereas the rules are quite simple and each rule is completely independent
-of the other rules, the algorithm is significantly more complicated and
-highly internally interdependent.  The algorithm deals with all the
-complications of parsing, the eccentricities and oddities of Postfix log
-files, presenting the resulting data in a normalised, simple to use
-representation.  The algorithm's task is to follow the journey each mail
-takes through Postfix, combining the data extracted by rules into a
-coherent whole, saving it in a useful and consistent form, and performing
-housekeeping duties.
+The parser deals with all the complications of parsing, the eccentricities
+and oddities of Postfix log files, presenting the resulting data in a
+normalised, simple to use representation.  The parser's task is to follow
+the journey each mail takes through Postfix, combining the data extracted
+by rules into a coherent whole, saving it in a useful and consistent form,
+and performing housekeeping duties.
 
 Please refer to \sectionref{parser design} for a discussion of why the
 rules, actions, and framework have been separated in the parser's design.
@@ -56,14 +50,14 @@ assumptions:
         awry, file system filling up, logging system unable to cope with
         the volume of log messages).  On a well run system it is extremely
         unlikely that any of these problems will arise, though it is of
-        course possible, particularly when suffering a deluge of spam or a
-        mail loop.
+        course possible, particularly when suffering from a deluge of spam
+        or a mail loop.
 
     \item Postfix logs enough information to make it possible to accurately
         reconstruct the actions it has taken.  There are several heuristics
         used when parsing; see
         \sectionref{identifying-bounce-notifications},
-        \sectionref{aborted-delivery-attempts} and \sectionref{pickup
+        \sectionref{aborted-delivery-attempts}, and \sectionref{pickup
         logging after cleanup} for details.
 
     \item The Postfix queue has not been tampered with, causing unexplained
@@ -74,8 +68,9 @@ assumptions:
 \end{itemize}
 
 In some ways this task is similar to reverse engineering or replicating a
-black box program based solely on its inputs and outputs.  There are
-advantages to treating Postfix as a black box during parser development:
+black box program based solely on its inputs and outputs.  XXX REFER TO
+BLACK BOX PAPER\@?  There are some advantages to treating Postfix as a
+black box during parser development:
 
 \begin{itemize}
 
@@ -85,18 +80,16 @@ advantages to treating Postfix as a black box during parser development:
 
     \item The parser is developed using real world log files rather than
         the idealised log files someone would naturally envisage reading
-        the source code.
-
-    \item The source code cannot accurately communicate the variety of
-        orderings in which log lines are written to the log file, as
-        process scheduling independently interferes with logging and other
-        processing.
+        the source code.  The source code cannot accurately communicate the
+        variety of orderings in which log lines are written to the log
+        file, as process scheduling independently interferes with logging
+        and other processing.
 
     \item The parser acts as a second source of information about Postfix's
         operation, using information gathered from empirical evidence.  A
         separate project could compare the empirical knowledge inherent in
-        the parsing algorithm with the documentation and source code of
-        Postfix to see how closely the two agree.
+        the parsing algorithm with Postfix's documentation and source code
+        to see how closely the two agree.
 
 \end{itemize}
 
@@ -205,39 +198,42 @@ deleted by the administrator, \textit{unless\/} the mail is either parent
 or child of re-injection, as explained in \sectionref{tracking re-injected
 mail}.
 
-\section{Database Schema}
-\label{database schema}
+\section{Database}
 
-XXX ADD A DIAGRAM OF THE DATABASE SCHEMA\@.
+\label{database}
 
 The database is an integral part of the parser presented here: it stores
-the rules and the data gleaned by applying those rules to Postfix log
+the rules and the data gleaned by using those rules to parse Postfix log
 files.  Understanding the database schema is important in understanding the
 actions of the parser, and essential to developing further applications
-which utilise the data gathered.
+which utilise the data gathered; \sectionref{database as API} describes
+how the database schema functions as an \acronym{API}.
 
 The database schema can be conceptually divided in two: the rules used to
-parse log files, and the data saved from the parsing of log files.  Rules
-have the fields required to parse the log lines, extract data to be saved,
-and specify the action to be executed; they also have several fields that
-aid the user in understanding the meaning of the log lines parsed by each
-rule.  The rules are described in detail in \sectionref{rules in
-implementation} but the fields are covered in \sectionref{rule attributes}.
+recognise log lines, and the data saved from the parsing of log files.
+Rules have the fields required to recognise log lines, extract data to be
+saved, and specify the action to be invoked; they also have several fields
+that aid the user in understanding the meaning of the log lines recognised
+by each rule.  The rules are described in detail in \sectionref{rules in
+implementation}, but the fields are covered with the rest of the database
+schema in this section.
 
-The data saved from parsing the log files is also divided into two tables
-as described below: connections and results.  The connections table
-contains a row for every mail accepted and every connection where there was
-a rejection; the individual fields will be described in
-\sectionref{connections table}.  There will be at least one row in the
-results table for each row in the connections table; the fields will be
-covered in detail in \sectionref{results table}.
+The data saved from parsing the log files is also divided into two tables:
+connections and results.  The connections table contains an entry for every
+mail accepted and every connection where there was a rejection; the
+individual fields will be described in \sectionref{connections table}.
+There will be at least one entry in the results table for each entry in the
+connections table; the result table's fields will be covered in detail in
+\sectionref{results table}.  A diagram of the database schema is provided
+in \sectionref{Diagram of the Database Schema} before the in-depth
+descriptions of each table.
 
 An important but easily overlooked benefit of storing the rules in the
 database is the link between rules and results: if more information is
 required when examining a result, the rule that produced the result is
-available for inspection: each result references the rule that created it.
-There is no ambiguity about which rule resulted in a particular result,
-eliminating one potential source of confusion.
+available for inspection because each result references the rule that
+created it.  There is no ambiguity about which rule resulted in a
+particular result, eliminating one potential source of confusion.
 
 A clear, comprehensible schema is essential when using the extracted data;
 it is more important when using the data than when storing it, because
@@ -249,31 +245,26 @@ produce customised reports or statistics.
 
 \label{database as API}
 
-The database populated by this program provides a simple interface to
+The database populated by \parsername{} provides a simple interface to
 Postfix log files.  Although the interface is a database schema rather than
-a set of functions provided by a library, it performs the same function as
-any other \acronym{API}: it provides a stable interface, allowing code on
-either side of the interface to be changed without adverse effects, as long
-as the interface is maintained.  The parser can be improved to handle
-additional complications, support earlier or later releases of Postfix,
-bugs can be fixed or limitations removed.  Programs that use the database
-can range from the simple examples in \sectionref{motivation} to far more
-complex data mining tools.
+a set of functions in a library, it has the same benefits as any other
+\acronym{API}: it provides a stable interface, allowing code on either side
+of the interface to be changed without adverse effects, as long as the
+interface is adhered to.  Programs that use the database can range from the
+simple examples in \sectionref{motivation} to far more complex data mining
+tools.
 
 Using a database simplifies writing programs that need to interact with the
 data in several ways:
 
 \begin{enumerate}
 
-    \item Facilities are provided to access databases from most programming
-        languages, allowing a developer to access the data gathered using
-        their preferred programming language, rather than being restricted
-        to the language the parser is written in.  It is often possible to
-        write an interface layer allowing code written in one language to
-        be used in another language, but this greatly increases the effort
-        required to use the parser.
+    \item Most programming languages have facilities for database access,
+        allowing a developer to write programs that use the gathered data
+        in their preferred programming language, rather than being
+        restricted to the language the parser is written in.
 
-    \item Databases provide complex querying and sorting functionality to
+    \item Databases provide complex querying and sorting functionality for
         the user without requiring large amounts of programming.  All
         databases provide a program, of varying complexity and
         sophistication, that can be used for ad hoc queries with minimal
@@ -290,11 +281,11 @@ data in several ways:
             \item A VIEW gives a custom arrangement of data with minimal
                 effort.
 
-            \item If the database supports it, access can be granted on a
-                fine-grained basis, e.g.\ allowing the finance department
-                to produce invoices, the helpdesk to run limited queries as
-                part of dealing with support calls, and the administrators
-                to have full access to the data.
+            \item Some databases support granting access on a fine-grained
+                basis, e.g.\ allowing the finance department to produce
+                invoices, the helpdesk to run limited queries as part of
+                dealing with support calls, and the administrators to have
+                full access to the data.
 
             \item Triggers can be written to perform actions when certain
                 events occur.  In pseudo-\acronym{SQL}\@:
@@ -302,11 +293,11 @@ data in several ways:
 \begin{verbatim}
 CREATE TRIGGER ON INSERT INTO results
     WHERE sender = 'boss@example.com'
-        AND postfix_action = 'REJECTED'
+        AND action = 'DELIVERY_REJECTED'
     SEND PANIC EMAIL TO 'postmaster@example.com';
 \end{verbatim}
 
-            \item Other tables can be added to the database, e.g.\ to cache
+            \item Other tables can be added to the database, to cache
                 historical, summary, or computed data.
 
         \end{itemize}
@@ -314,17 +305,16 @@ CREATE TRIGGER ON INSERT INTO results
 
     \item \acronym{SQL} is reasonably standard and many people will already
         be familiar with it; for those unfamiliar with it there are lots of
-        readily available resources from which to learn: a good
-        introduction to \acronym{SQL} can be found at
+        readily available resources from which to learn, e.g.\
         \urlLastChecked{http://philip.greenspun.com/sql/}{2009/02/23}.
         Although every vendor implements a different dialect of
-        \acronym{SQL}, the basics are the same everywhere (analogous to the
+        \acronym{SQL}, the basics are the same everywhere, analogous to the
         overall similarities and minor differences amongst Irish English,
-        British English, American English, and Australian English).
+        British English, American English, and Australian English.
         Depending on the database in use there may be tools available that
         reduce or remove the requirement to know \acronym{SQL}; several are
-        available for \gls{SQLite}, the default database used by the parser
-        implementation.
+        available for \gls{SQLite}, the default database used by
+        \parsername{}.
 
 \end{enumerate}
 
@@ -333,20 +323,27 @@ using those results, because the log files need only be parsed once rather
 than each time the data is used; indeed the results may be used by someone
 with no access to the original log files.
 
+\subsection{Diagram of the Database Schema}
+
+\label{Diagram of the Database Schema}
+
+XXX ADD A DIAGRAM OF THE DATABASE SCHEMA\@.
+
 \subsection{Rules Table}
 
 \label{rule attributes}
 
 Rules are discussed in detail in \sectionref{rules in implementation}, but
-the structure of the rules table is covered here.  Rules are created by the
-user, not the parser, and will not be modified by the parser (except for
-the hits and hits\_total fields).  Rules parse the individual log lines,
-extracting data to be saved in the connections and results tables, and
-specifying the action to take for that log line.
+the structure of the rules table is covered here with the other tables in
+the database.  Rules are created by the user, not the parser, and will not
+be modified by the parser (except for the hits and hits\_total fields).
+Rules classify the individual log lines, extracting data to be saved in the
+connections and results tables, and specifying the action to take for that
+log line.
 
 The following attributes are defined for each rule:
 
-\begin{eqlist}
+\begin{boldeqlist}
 
     \item [id] A unique identifier for each rule that other tables can use
         when referring to a specific rule.
@@ -359,65 +356,65 @@ The following attributes are defined for each rule:
         lines this rule matches.
 
     \item [restriction\_name] The restriction that caused the mail to be
-        rejected.  Only applicable to rules that have an action of
-        \texttt{REJECTION}, other rules should have an empty string.
+        rejected.  Only applicable to rules that recognise rejection log
+        lines, i.e.\ rules that have an action of
+        \texttt{DELIVERY\_REJECTED}, other rules should have an empty
+        string.
 
     \item [postfix\_action] The action Postfix must have taken to generate
         this log line; the possible actions are described later in
         \sectionref{list of postfix actions in implementation}.
 
-    \item [program] The program (\daemon{smtpd}, \daemon{qmgr}, etc.) whose
-        log lines the rule applies to.  This avoids needlessly trying rules
+    \item [program] The Postfix component (e.g.\ \daemon{smtpd}) whose log
+        lines the rule applies to.  This avoids needlessly trying rules
         that will not match the log line, or worse, might match
         unintentionally.  Rules whose program is \texttt{*} will be tried
         against any log lines that are not parsed by program specific
-        rules.
+        rules.  This is a simple example of the rule conditions described
+        in \sectionref{attaching conditions to rules}.
 
-    \item [regex] The regex to match the log line against.  The regex will
+    \item [regex] The regex to recognise log lines with.  The regex will
         have several keywords expanded when the rules are loaded: this
         simplifies reading and writing rules; avoids needless repetition of
         complex regex components; allows the components to be corrected
         and/or improved in one location; enables automatic extraction and
         saving of data; and makes each regex largely self-documenting.  For
         efficiency the keywords are expanded and every rule's regex is
-        compiled before attempting to parse the log file --- otherwise each
+        compiled before attempting to parse the log file; otherwise every
         regex would be recompiled each time it was used, resulting in a
-        large, data dependent slowdown.  Efficiency concerns are discussed
-        in \sectionref{parser efficiency}, with caching compiled regexes
-        covered in \sectionref{Caching compiled regexes}.
+        large, data dependent slowdown, as shown in \sectionref{Caching
+        compiled regexes}.
 
     \item [connection\_data] Sometimes rules need to save data that is not
         present in the log line: e.g.\ setting \texttt{client\_ip} when a
         mail is being delivered to another server.  The format is:
         \newline{} \tab{} \texttt{ client\_hostname = localhost,}
-        \newline{} \tab{} \tab{} \texttt{client\_ip
-        = 127.0.0.1} \newline{} i.e.\ semi-colon or comma separated
-        assignment statements, with the variable name on the left and the
-        value on the right hand side.\footnote{Commas and semi-colons
-        cannot be escaped and thus cannot be used.  This feature is
-        intended for use with small amounts of data rather than large
-        amounts in any one rule, so dealing with escape sequences was
-        deemed unnecessary.}  Any field in the connections table can be set
-        in this way.
+        \newline{} \tab{} \tab{} \texttt{client\_ip = 127.0.0.1} \newline{}
+        i.e.\ semi-colon or comma separated assignment statements, with the
+        variable name on the left and the value on the right hand
+        side.\footnote{Commas and semi-colons cannot be escaped and thus
+        cannot be included in data.  This feature is intended for use with
+        small amounts of data, so dealing with escape sequences was deemed
+        unnecessary.}  Any field in the connections table can be set in
+        this way.
 
     \item [result\_data] The result table equivalent of
         \texttt{connection\_data}.
 
-    \item [action] The action that will be invoked when this rule matches a
-        log line; a full list of actions and the parameters they are
-        invoked with can be found in \sectionref{actions in detail in
-        implementation}.
+    \item [action] The action that will be invoked when this rule
+        recognises a log line; a full list of actions and the parameters
+        they are invoked with can be found in \sectionref{actions in detail
+        in implementation}.
 
     \item [hits] This counter is maintained for every rule and incremented
-        each time the rule successfully matches.  At the start of each run
-        the parser sorts the rules in descending order of hits, and at the
-        end of the run it updates every rule's hits field in the database.
-        Assuming that the distribution of log lines is reasonably
-        consistent across log files, rules matching more commonly occurring
-        log lines will be tried before rules matching less commonly
-        occurring log lines, reducing the parser's execution time.  Rule
-        ordering for efficiency is discussed in \sectionref{rule ordering
-        for efficiency}.
+        each time the rule successfully recognises a log line.  At the
+        start of each run the parser sorts the rules by how frequently each
+        rule recognised log lines, and at the end of the run it updates
+        every rule's hits field in the database.  Assuming that the
+        distribution of log lines is reasonably consistent across log
+        files, ordering rules by their recognition frequency will reduce
+        the parser's execution time.  Rule ordering for efficiency is
+        discussed in \sectionref{rule ordering for efficiency}.
 
     \item [hits\_total] The total number of hits for this rule over all
         runs of the parser.
@@ -425,13 +422,9 @@ The following attributes are defined for each rule:
     \item [priority] This is the user-configurable companion to hits: when
         the list of rules is sorted, priority overrides hits.  This allows
         more specific rules to take precedence over more general rules
-        (described in \sectionref{overlapping rules in architecture}).
+        (described in \sectionref{rules in architecture}).
 
-%    \item [cluster\_group] A reference to the \texttt{cluster\_group}
-%        table.  That table is used by the Decision Tree algorithm
-%        described in a separate document.
-
-\end{eqlist}
+\end{boldeqlist}
 
 \subsection{Connections Table}
 
@@ -441,7 +434,7 @@ Every accepted mail and every connection where there was a rejection will
 have a single entry in the connections table containing the following
 fields:
 
-\begin{eqlist}
+\begin{boldeqlist}
 
     \item [id] This field uniquely identifies the row.
 
@@ -477,23 +470,27 @@ fields:
     \item [end] The timestamp of the last log line, in seconds since the
         epoch.
 
-\end{eqlist}
+\end{boldeqlist}
 
 \subsection{Results Table}
 
 \label{results table}
 
-Every log line a row in the results table, unless the
+XXX REWRITE THIS PARAGRAPH\@; FIGURE OUT WHAT THE HELL IS HAPPENING WITH
+POSTFIX\_ACTION\@.
+
+Every log line will have a row in the results table, unless the \newline{}
 \texttt{postfix\_action} field of the rule which parsed it was INFO or
 IGNORE\@.  Each row in the results table is associated with a single
-connection, and there may be many results per connection.
+connection; a single connection will have at least one result associated
+with it, but will usually have several more, and may have hundreds.
 
-\begin{eqlist}
+\begin{boldeqlist}
 
     \item [connection\_id] The id of the row in the connections table this
         result is associated with.
 
-    \item [rule\_id] The id of the entry in the rules table that matched
+    \item [rule\_id] The id of the rule in the rules table that recognised
         the log line and created this result.
 
     \item [id] A unique identifier for this result.
@@ -501,19 +498,21 @@ connection, and there may be many results per connection.
     \item [warning] Postfix can be configured to log a warning instead of
         enforcing a restriction that would reject an \acronym{SMTP} command
         --- a mechanism that is quite useful for testing new restrictions.
-        This field will be 1 if the log line parsed was a warning rather
-        than a real rejection, or 0 for a real rejection.  This field
+        This field will be set to 1 if the log line parsed was a warning rather
+        than a real rejection, or to 0 for a real rejection.  This field
         should be ignored if the result is not a rejection, i.e.\ the
-        action field of the associated rule is not \texttt{REJECTION}.
+        action field of the associated rule is not
+        \texttt{DELIVERY\_REJECTED}.
 
     \item [smtp\_code] The \acronym{SMTP} code associated with the log
         line.  In general an \acronym{SMTP} code is only present in a log
-        line for a rejection or final delivery; results initially missing
-        an \acronym{SMTP} code will duplicate the \acronym{SMTP} code of
-        other results in that connection.  Some final delivery log lines do
-        not contain an \acronym{SMTP} code: in those cases the code is
-        specified by the rule, based on the success or failure represented
-        by the log line.
+        line for a rejection or final delivery; results whose log line did
+        not contain an \acronym{SMTP} code will duplicate the
+        \acronym{SMTP} code of other results in that connection.  Some
+        final delivery log lines do not contain an \acronym{SMTP} code: in
+        those cases the \acronym{SMTP} code is specified by the rule's
+        \texttt{result\_data} field, based on the success or failure
+        represented by the log line.
 
     \item [enhanced\_status\_code] The enhanced status code~\cite{RFC3463}
         is similar to the \acronym{SMTP} code, but is intended to be parsed
@@ -527,7 +526,7 @@ connection, and there may be many results per connection.
         addresses in the results for one connection; however there should
         not be different sender addresses in the results for one mail.
         Mails sent over the same connection can be distinguished by their
-        queueid.
+        queueids.
 
     \item [recipient] The recipient address; there may be multiple
         recipient addresses per mail or connection.
@@ -535,12 +534,12 @@ connection, and there may be many results per connection.
     \item [size] The size of the mail; it will only be present for
         delivered mails.
 
-    \item [delay] How long the mail was delayed for while it was being
+    \item [delay] How long the mail was delayed while it was being
         delivered.  This will only be present for delivered mails.
 
-    \item [delays] More details information about how long the mail was
-        delayed for while it was being delivered  This will only be present
-        for delivered mails.
+    \item [delays] More detailed information about how long the mail was
+        delayed while it was being delivered, again only present for
+        delivered mails.
 
     \item [message\_id] The message-id of the accepted mail, or
         \texttt{NULL} if no mail was accepted.
@@ -551,7 +550,7 @@ connection, and there may be many results per connection.
     \item [timestamp] The time at which the log line was logged, in seconds
         since the epoch.\glsadd{Epoch}
 
-\end{eqlist}
+\end{boldeqlist}
 
 
 
