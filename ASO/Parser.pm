@@ -342,7 +342,10 @@ sub init_globals {
         UNINTERESTING
         CONNECT
         DISCONNECT
+        MAIL_BOUNCED
+        MAIL_SENT
         SAVE_DATA
+        MAIL_DISCARDED
         COMMIT
         TRACK
         DELIVERY_REJECTED
@@ -355,7 +358,7 @@ sub init_globals {
         POSTFIX_RELOAD
         SMTPD_DIED
         SMTPD_WATCHDOG
-        BOUNCE
+        BOUNCE_CREATED
         DELETE
     ));
 
@@ -945,6 +948,38 @@ sub DISCONNECT {
 
 =over  4
 
+=item MAIL_SENT
+
+Processes a mail being successfully sent, either to a remote server or local
+delivery.  Really just invokes $self->SAVE_DATA().
+
+=back
+
+=cut
+
+sub MAIL_SENT {
+    my ($self, $rule, $line, $matches) = @_;
+    return $self->SAVE_DATA($rule, $line, $matches);
+}
+
+=over  4
+
+=item MAIL_BOUNCED
+
+Processes a mail being successfully sent, either to a remote server or local
+delivery.  Really just invokes $self->SAVE_DATA().
+
+=back
+
+=cut
+
+sub MAIL_BOUNCED {
+    my ($self, $rule, $line, $matches) = @_;
+    return $self->SAVE_DATA($rule, $line, $matches);
+}
+
+=over  4
+
 =item SAVE_DATA
 
 Use the queueid from $matches to find the correct connection and call
@@ -981,6 +1016,22 @@ sub SAVE_DATA {
 
     $self->save($connection, $line, $rule, $matches);
     return;
+}
+
+=over  4
+
+=item MAIL_DISCARDED
+
+This action processes mail discarded by postfix/cleanup for one reason or
+another.  It just invokes $self->COMMIT() to do the real work.
+
+=back
+
+=cut
+
+sub MAIL_DISCARDED {
+    my ($self, $rule, $line, $matches) = @_;
+    return $self->COMMIT($rule, $line, $matches);
 }
 
 =over  4
@@ -1504,7 +1555,7 @@ action.
 
 =cut
 
-sub BOUNCE {
+sub BOUNCE_CREATED {
     my ($self, $rule, $line, $matches) = @_;
 
     my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
@@ -2380,7 +2431,7 @@ sub prune_bounce_queueids {
     my ($self) = @_;
     my $count = 0;
 
-    # 10 seconds is used in BOUNCE.
+    # 10 seconds is used in BOUNCE_CREATED.
     foreach my $queueid (keys %{$self->{bounce_queueids}}) {
         my $connection = $self->{bounce_queueids}->{$queueid};
         if ($connection->{results}->[-1]->{timestamp}

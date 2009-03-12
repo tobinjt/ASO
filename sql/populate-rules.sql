@@ -1077,7 +1077,7 @@ INSERT INTO rules(name, description, program, regex, connection_data, action, po
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=sent \((__SMTP_CODE__)(__DATA__.*)\)$',
         'client_ip = 127.0.0.1, client_hostname = localhost',
-        'SAVE_DATA',
+        'MAIL_SENT',
         'SENT'
 );
 
@@ -1090,7 +1090,7 @@ INSERT INTO rules(name, description, program, regex, result_data, action, priori
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=127.0.0.1\[127.0.0.1\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=sent \((__DATA__.*)\)$',
         'smtp_code = 250',
-        'SAVE_DATA',
+        'MAIL_SENT',
         5,
         'SENT'
 );
@@ -1146,7 +1146,7 @@ INSERT INTO rules(name, description, program, regex, result_data, connection_dat
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=bounced \(Host or domain name not found. Name service error for name=(__SERVER_HOSTNAME__) type=(?:MX|A|AAAA): Host not found\)$',
         'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1180,7 +1180,7 @@ INSERT INTO rules(name, description, program, regex, connection_data, action, po
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?>(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=bounced) \(host \k<server_hostname>\[\k<server_ip>\] said: (__SMTP_CODE__)(__DATA__.*) \(in reply to __COMMAND__ command\)\)$',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1322,7 +1322,7 @@ INSERT INTO rules(name, description, program, regex, result_data, connection_dat
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=bounced \(mail for __SERVER_HOSTNAME__ loops back to myself\)$',
         'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_hostname = localhost, server_ip = 127.0.0.1',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1345,7 +1345,7 @@ INSERT INTO rules(name, description, program, regex, result_data, connection_dat
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=(__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=bounced \((__DATA__message size \d+ exceeds size limit \d+ of server) \k<server_hostname>\[\k<server_ip>\]\)$',
         'smtp_code = 552',
         'client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1438,7 +1438,7 @@ INSERT INTO rules(name, description, program, regex, result_data, connection_dat
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=bounced \((__DATA__(?:Host or domain name not found. )?Name service error for name=.* type=(?:A|AAAA|MX): (?:Malformed name server reply|Host found but no data record of requested type))\)$',
         'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1449,7 +1449,7 @@ INSERT INTO rules(name, description, program, regex, result_data, connection_dat
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=deferred \((__DATA__(?:Host or domain name not found. )?Name service error for name=(__SERVER_HOSTNAME__) type=(?:A|AAAA|MX): (?:Malformed name server reply|Host found but no data record of requested type))\)$',
         'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1486,8 +1486,8 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action, res
     VALUES('Mail loop detected (3)', 'This host is the MX for the addresses domain, but is not final destination for that domain (3)',
         'postfix/smtp',
     	 '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__,\s)?status=undeliverable \(mail for __SERVER_HOSTNAME__ loops back to myself\)$',
-        'SAVE_DATA',
-        'REJECTED',
+        'MAIL_BOUNCED',
+        'BOUNCED',
         'Mail loop detection',
         10
 );
@@ -1497,7 +1497,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
     VALUES('Mail bounced because the connection was refused/timed out', 'Mail bounced because the smtp connection was refused/timed out',
         'postfix/smtp',
 	    '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__,\s)?status=undeliverable \(connect to (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]:25: Connection (?:refused|timed out)\)$',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1506,7 +1506,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
     VALUES('Mail bounced because of a DNS loop', 'Mail bounced because there was a loop when looking up MX/A/AAAA records for the recipient domain',
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__,\s)?status=bounced \(Name server loop for (__SERVER_HOSTNAME__)\)$',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1515,7 +1515,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
     VALUES('Mail rejected by T-ONLINE.DE', 'Mail rejected by T-ONLINE.DE with an enormous error message in English and German.',
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=(__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]:25, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__,\s)?status=bounced \(host (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\] said: 550-5.7.0 Message considered as spam or virus, rejected 550-5.7.0 Message rejected because it was considered as spam. If you feel this 550-5.7.0 to be an error, please forward the wrong classified e-mail to our 550-5.7.0 abuse department at FPR@RX.T-ONLINE.DE with all the header lines! 550-5.7.0 We will analyse the problem and solve it. We are sorry for any 550-5.7.0 inconvenience and thank you very much in advance for your support!.*$',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1563,7 +1563,7 @@ INSERT INTO rules(name, description, program, regex, result_data, connection_dat
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=sent \((__DATA__delivered to command: .*)\)$',
         'smtp_code = 250',
         'server_hostname = localhost, server_ip = 127.0.0.1, client_ip = 127.0.0.1, client_hostname = localhost',
-        'SAVE_DATA',
+        'MAIL_SENT',
         'SENT'
 );
 
@@ -1601,7 +1601,7 @@ INSERT INTO rules(name, description, program, regex, result_data, action, postfi
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=bounced \(mail forwarding loop for \k<recipient>\)$',
         'smtp_code = 554',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1632,7 +1632,7 @@ INSERT INTO rules(name, description, program, regex, result_data, connection_dat
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=bounced \((__DATA__unknown user: ".*")\)$',
         'smtp_code = 550',
         'client_ip = 127.0.0.1, client_hostname = localhost, server_ip = 127.0.0.1, server_hostname = localhost',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1642,7 +1642,7 @@ INSERT INTO rules(name, description, program, regex, result_data, action, postfi
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=sent \(delivered to file: (__DATA__.*)\)$',
         'smtp_code = 250',
-        'SAVE_DATA',
+        'MAIL_SENT',
         'SENT'
 );
 
@@ -1653,7 +1653,7 @@ INSERT INTO rules(name, description, program, regex, result_data, action, postfi
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=sent \(discarded\)$',
         'smtp_code = 250',
-        'SAVE_DATA',
+        'MAIL_SENT',
         'SENT'
 );
 
@@ -1693,7 +1693,7 @@ INSERT INTO rules(name, description, program, regex, result_data, connection_dat
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=local, __DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=bounced \((__DATA__Command died with status \d+: .* Command output: .* )\)$',
         'smtp_code = 550',
         'server_hostname = localhost, server_ip = 127.0.0.1, client_hostname = localhost, client_ip = 127.0.0.1',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1729,7 +1729,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
     VALUES('Local delivery agent took too long', 'Local delivery agent took too long, so Postfix killed it',
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(?:__RECIPIENT__)>,)? relay=local, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__,\s)?status=bounced \((__DATA__Command time limit exceeded: .+)\)$',
-        'SAVE_DATA',
+        'MAIL_BOUNCED',
         'BOUNCED'
 );
 
@@ -1889,7 +1889,7 @@ INSERT INTO rules(name, description, program, regex, result_data, action, postfi
         'postfix/cleanup',
         '^warning: (__QUEUEID__): queue file size limit exceeded$',
         'sender = unknown, recipient = unknown, smtp_code = unknown',
-        'COMMIT',
+        'MAIL_DISCARDED',
         'DISCARDED'
 );
 
@@ -1898,7 +1898,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
     VALUES('Rejecting backscatter mail (1)', 'Rejecting backscatter mail: THIS IS A WARNING ONLY. YOU DO NOT NEED TO RESEND YOUR MESSAGE.',
         'postfix/cleanup',
         '^(__QUEUEID__): reject: body # THIS IS A WARNING ONLY.  YOU DO NOT NEED TO RESEND YOUR MESSAGE. # from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>: 5.7.1 Rejecting backscatter mail$',
-        'COMMIT',
+        'MAIL_DISCARDED',
         'DISCARDED'
 );
 
@@ -1907,7 +1907,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
     VALUES('Rejecting backscatter mail (2)', 'Rejecting backscatter mail: relay.iol.cz',
         'postfix/cleanup',
         '^(__QUEUEID__): reject: body This is the mail system at host relay.iol.cz. from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>: 5.7.1 Rejecting backscatter mail$',
-        'COMMIT',
+        'MAIL_DISCARDED',
         'DISCARDED'
 );
 
@@ -1921,7 +1921,7 @@ INSERT INTO rules(name, description, program, regex, action, postfix_action)
     VALUES('Postfix created a bounce or delivery status message', 'Postfix created a bounce or delivery status message',
         'postfix/bounce',
         '^(__QUEUEID__): sender (?:delivery status|non-delivery) notification: (__CHILD__)$',
-        'BOUNCE',
+        'BOUNCE_CREATED',
         'BOUNCED'
 );
 
