@@ -76,7 +76,7 @@ to a parser must be made without adversely affecting existing parsing,
 including any edge cases that are not immediately obvious; an edge case
 that occurs only four times in \numberOFlogFILES{} log files is described
 in Yet More Aborted Delivery Attempts
-(\sectionref{yet-more-aborted-delivery-attempts}).  More intrusive changes
+(\sectionref{yet more aborted delivery attempts}).  More intrusive changes
 are more likely to introduce a bug, so reducing the extent of the changes
 is important.  Requiring changes to a parser's source code also complicates
 upgrades of the parser, because the changes must be preserved during the
@@ -293,18 +293,17 @@ During development of \parsername{} it became apparent that in addition to
 the obvious variety in log~lines there were many complications to be
 overcome.  Some were the result of deficiencies in Postfix's logging, and
 some of those deficiencies were rectified by later versions of Postfix,
-e.g.\ identifying bounce notifications
-(\sectionref{identifying-bounce-notifications}); others were due to the
-vagaries of process scheduling, client behaviour, and administrative
-actions.  All were successfully accommodated in \parsername{}: adding new
-actions was enough to overcome several of the complications; others
-required modifications to a single existing action to work around a
-difficulty; the remainder were resolved by adapting existing actions to
-cooperate and exchange extra data (via the framework), changing their
-behaviour as appropriate based on that extra data.  Every architecture
-should aim to make the easy things easy and the hard things possible; the
-successful implementation of \parsername{} demonstrates that this
-architecture achieves that aim.
+e.g.\ identifying bounce notifications (\sectionref{identifying bounce
+notifications}); others were due to the vagaries of process scheduling,
+client behaviour, and administrative actions.  All were successfully
+accommodated in \parsername{}: adding new actions was enough to overcome
+several of the complications; others required modifications to a single
+existing action to work around a difficulty; the remainder were resolved by
+adapting existing actions to cooperate and exchange extra data (via the
+framework), changing their behaviour as appropriate based on that extra
+data.  Every architecture should aim to make the easy things easy and the
+hard things possible; the successful implementation of \parsername{}
+demonstrates that this architecture achieves that aim.
 
 Actions may return a modified input line to the framework that will be
 parsed as if read from the input stream, allowing for a simplified version

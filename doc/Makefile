@@ -480,7 +480,7 @@ underfull: overfull
 
 overfull: all
 	if grep -q -E -i 'underfull|overfull' *.log; then \
-		grep -E -i '[<(]\./[^) ]*( |$$)|\]\)$$|overfull|underfull' *.log; \
+		make join-lines | grep -E -i '[<(]\./[^) ]*( |$$)|\]\)$$|overfull|underfull'; \
 	fi
 
 undefined-references: all
