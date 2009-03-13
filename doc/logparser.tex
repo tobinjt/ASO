@@ -44,13 +44,6 @@
 % Embed SVN Id etc.
 \usepackage{svn}
 
-% Sort numbers where there are multiple citations.  Does not appear to have
-% the expected effect (probably clashes with varioref or hyperref), though
-% it does reduce the space between numbers.
-\usepackage{cite}
-% Check for unused references.
-% \usepackage{refcheck}
-
 \newcommand{\parserblurb}[3]{%
     \begin{quotation}
         \noindent{}\textit{#1\/}
@@ -170,15 +163,14 @@
     pdfborder   = {0, 0, 0},
 }
 
-%\setlength{\floatsep}{0pt}
-%\setlength{\intextsep}{0pt}
-%\setlength{\textfloatsep}{0pt}
-
-% Show the citation key (e.g.\ slct-paper) in the margin beside the
-% reference.
+% Sort numbers where there are multiple citations.  Does not appear to have
+% the expected effect (probably clashes with varioref or hyperref), though
+% it does reduce the space between numbers.
+\usepackage{cite}
+% Check for unused references, and how the citation key (e.g.\ slct-paper)
+% in the margin beside the reference.
 %\usepackage[nomsgs]{refcheck}
-% Show where references are used.
-% Neither work.
+% Show where references are used; neither work.
 %\usepackage{citeref}
 %\usepackage{backref}
 %\renewcommand{\refname}{Bibliography}
@@ -234,6 +226,10 @@
     \texttt{postfix/#1}%
 }
 
+\newcommand{\flowchart}[2]{%
+    (action: #1\@; flowchart:~#2)%
+}
+
 % Add last checked dates to all URLs
 \newcommand{\urlLastChecked}[3][ ]{%
     \url{#2}#1(last checked #3)%
@@ -283,7 +279,7 @@
 }
 
 \newcommand{\numberOFactions}[0]{%
-    18%
+    21%
 }
 
 \newcommand{\numberOFruleINTERSECTIONS}[0]{%

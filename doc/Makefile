@@ -373,7 +373,7 @@ build/include-mails-received-table.tex:				\
 
 # Distribution of actions to rules.
 build/stats-action-distribution: db.full-run.sq3
-	sqlite3 -separator ' ' "$<" 'SELECT action, count(action) FROM rules GROUP BY action ORDER BY count(action);' > "$@.tmp"
+	sqlite3 -separator ' ' "$<" 'SELECT action, count(action) FROM rules GROUP BY action ORDER BY count(action), action;' > "$@.tmp"
 	nl "$@.tmp" > "$@"
 	rm -f "$@.tmp"
 	# Turn everything to lowercase.
