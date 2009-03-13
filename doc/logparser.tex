@@ -300,6 +300,7 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
 \begin{abstract}
 
+    \setcounter{page}{2}
     \phantomsection{}
     \addcontentsline{toc}{chapter}{Abstract}
 
@@ -316,16 +317,16 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
     anti-spam measures against, or to produce statistics showing how
     effective those measures are.
 
+    \SVN$Id$
+    \begin{center}
+        \SVNId{}
+    \end{center}
+
+    XXX CHECK ALL ``UNINTERESTING'' RULES TO SEE IF THEY COULD BE USED\@.
+
+    XXX SHOULD I SCRAP postfix\_action?
+
 \end{abstract}
-
-\SVN$Id$
-\begin{center}
-    \SVNId{}
-\end{center}
-
-XXX CHECK ALL ``UNINTERESTING'' RULES TO SEE IF THEY COULD BE USED\@.
-
-XXX SHOULD I SCRAP postfix\_action?
 
 % Pull in the acronyms early, so they can be used throughout the text.
 \input{logparser-acronyms}
@@ -333,7 +334,7 @@ XXX SHOULD I SCRAP postfix\_action?
 \input{logparser-postfix-daemons}
 \glsaddall[types={postfix}]
 
-\newpage
+\setcounter{page}{3}
 \tableofcontents
 \listoffigures
 \listoftables
