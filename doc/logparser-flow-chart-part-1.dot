@@ -6,7 +6,7 @@ digraph logparser {
         /* This seems to be width, height - but they interact strangely, so 
          * I'm never sure.
          */
-        size = "5.2, 8.4"
+        size = "5.3, 8.4"
         margin = "0"
         center = true
     ]
@@ -55,14 +55,14 @@ digraph logparser {
     expiry                          -> { commit } [weight = 0]
 
     /* NODE LABELS */
-    rejection                       [label = "4: Postfix rejects SMTP command."]
+    rejection                       [label = "4: Postfix rejects an\nSMTP command."]
     connect                         [label = "1: Connection from remote host."]
     clone                           [label = "5: Clone when multiple mails\n(not recipients) are delivered\nduring one connection."]
 
     /* Disconnect without queueid */
-    disconnect                      [label = "6: Normal disconnection, error\ndisconnection or timeout by client."]
+    disconnect                      [label = "6: Normal disconnection, error\ndisconnection, or timeout by client."]
     if_no_queueid                   [label = "7: If no queueid:", shape = diamond]
-    fixup_enter_in_db_disconnect    [label = "8: Clean up, enter in database\nDelete from state tables by pid."]
+    fixup_enter_in_db_disconnect    [label = "8: Clean up, enter in database.\nDelete from state tables by pid."]
 
     /* Disconnect with queueid - already covered */
 
@@ -79,7 +79,7 @@ digraph logparser {
 
     /* Commit is complicated */
     /* Neither parent nor child. */
-    commit                          [label = "12: Mail has been delivered,\nbounced or deleted."]
+    commit                          [label = "12: Mail has been delivered,\nbounced, or deleted."]
 
     /* SUB-GRAPHS */
     subgraph sources {
