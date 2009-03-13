@@ -9,9 +9,6 @@ XXX UPDATE REFERENCES WHEN ARCHITECTURE AND IMPLEMENTATION ARE MORE FLESHED
 OUT\@.  XXX WHEN FINISHED, CHECK ALL REFERENCES TO ENSURE THEY POINT AT THE
 CORRECT CHAPTER\@.
 
-XXX FIGURE OUT WHEN TO USE ACTIONS AND WHEN TO USE ALGORITHM, PARSER,
-ETC\@.
-
 The parser deals with all the complications of parsing, the eccentricities
 and oddities of Postfix log files, presenting the resulting data in a
 normalised, simple to use representation.  The parser's task is to follow
@@ -119,15 +116,13 @@ experience could be summarised as:
 
 \end{enumerate}
 
+\showgraph{build/logparser-flow-chart-part-1}{Parser flow chart}{flow chart
+image}
+
 \Figureref{flow chart image} shows the most common paths the data
 representing a mail can take through the parser; the complications
 described in \sectionref{complications} are excluded for the sake of
 clarity.
-
-\showgraph{build/logparser-flow-chart-part-1}{Parser flow chart}{flow chart
-image}
-
-\label{mail enters the system}
 
 Everything starts off with a mail entering the system, whether by local
 submission via \daemon{postdrop}, by \acronym{SMTP}, by re-injection due to

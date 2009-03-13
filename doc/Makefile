@@ -488,6 +488,11 @@ undefined-references: all
 		make join-lines | grep -E -i '[<(]\./[^) ]*( |$$)|\]\)$$|reference.*undefined.*'; \
 	fi
 
+unused-references: all
+	if make join-lines | grep -q -E -i 'Unused label'; then \
+		make join-lines | grep -E -i '[<(]\./[^) ]*( |$$)|\]\)$$|Unused label'; \
+	fi
+
 2up: logparser-2up.ps logparser-2up.pdf
 
 logparser-2up.ps: logparser.ps
