@@ -653,11 +653,11 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
 
     \item [CONNECT] Handle a remote client connecting: create a new
         connection indexed by \daemon{smtpd} \acronym{pid}, and save the
-        data captured by the rule (\acronym{IP} address and hostname of the
-        client).  If a connection already exists it is treated as a symptom
-        of a bug, and the action issues a warning containing the full
-        contents of the existing connection plus the log line that has
-        just been parsed.
+        data captured by the rule's regex (\acronym{IP} address and
+        hostname of the client).  If a connection already exists it is
+        treated as a symptom of a bug in \parsername{}, and the action will
+        issue a warning containing the full contents of the existing
+        connection plus the log line that has just been parsed.
 
     \item [DELETE] Deals with mail deleted using Postfix's administrative
         command \daemon{postsuper}.  This action adds a dummy recipient
@@ -961,8 +961,34 @@ facilitate parsing new log lines, the architecture separates rules from
 actions: adding new actions can be difficult, but adding new rules to
 recognise new log lines is trivial, and occurs much more frequently.
 
-XXX DESCRIBE HOW TO GO ABOUT ADDING A NEW RULE\@.
+To add a new rule a new row must be added to the rules table in the
+database, containing all the required attributes: action, name,
+description, program, and regex.  The name and description fields should be
+set based on the meaning of the log line, to help others understand which
+log lines this rule will recognise; the program will be obvious from the
+unrecognised log lines.  The action depends on the what the log line
+represents, e.g.\ a delivery rejection, a mail being delivered, some useful
+information, or something else; examine the list of actions in
+\sectionref{actions in detail in implementation} to determine the correct
+one.  The regex will be constructed based on the log line, but see below
+for a tool to ease the process.
 
+There are other attributes that may be required in a rule:
+connection\_data, result\_data, priority, or restriction\_name.  In general
+it will only become clear that connection\_data or result\_data are
+required when \parsername{} warns about an entry in the connections or
+results tables that is missing some required fields, because values for the
+missing fields are not present in any of the log lines.  E.g.\ the rule
+recognising the \daemon{pickup} component processing a mail sets the
+client\_hostname to \texttt{localhost} and the client\_ip to
+\texttt{127.0.0.1}, because the mail originates on the local server.  If
+the new rule deliberately uses the architecture's overlapping rules feature
+it will be obvious that the priority field needs to be set, on this rule and
+possibly others; the priority field may be needed on unintentionally
+overlapping rules too, but that is more difficult to determine.  Finally
+the restriction\_name field should be set when the rule's action is
+\texttt{DELIVERY\_REJECTED}; hopefully the restriction in question will be
+clear from the content of the log line.
 
 A program is provided with \parsername{} to ease the process of creating
 new rules from unrecognised log lines, based on the algorithm developed by
@@ -1123,9 +1149,6 @@ be helpful:
 \label{complications}
 
 XXX IMPROVE THE INTRO\@: ``needs more of a lead-in''.
-
-XXX SHOULD I HAVE A LIST OF HOW MANY COMPLICATIONS ARE HANDLED BY EACH
-ACTION\@?
 
 The complications described in this section are listed in the order in
 which they were encountered during development of the parser.  Each of
@@ -1501,6 +1524,8 @@ clashes if the queueid is reused.
 
 These checks are made during the DISCONNECT action.
 
+\newpage{} % XXX ADDED BECAUSE OF FLIP-FLOPPING LAYOUT.
+
 \subsection{Timeouts During DATA Phase}
 
 \label{timeouts during data phase}
@@ -1700,8 +1725,9 @@ additionally have log line from \daemon{cleanup} and \daemon{qmgr}; any
 mail may also have log line from \daemon{bounce}, \daemon{postsuper}, or
 both.
 
-XXX WOULD IT BE BETTER TO BEGIN THE EXPLANATIONS ON THE FOLLOWING LINE\@?
-
+% This will put the text on the line following the item name, if the
+% enumitem package is loaded.
+%\begin{description}[style=nextline]
 \begin{description}
 
     \item [\daemon{local}:] Local delivery of a bounce notification, or
@@ -1762,8 +1788,7 @@ displaying the following characteristics:
         or more earlier than the last log line parsed from the current log
         file.
 
-    \item XXX IS THIS CORRECT NOW\@?  CAN THERE BE MORE smtpd LOG LINES\@?
-        There must be exactly two \daemon{smtpd} and one \daemon{cleanup}
+    \item There must be exactly two \daemon{smtpd} and one \daemon{cleanup}
         log lines for the mail, with no additional log lines.
 
 \end{itemize}
@@ -1789,8 +1814,19 @@ address will not have been logged, so a dummy recipient address needs to be
 added, as every mail is required by the database schema
 (\sectionref{results table}) to have at least one recipient.  This
 complication has been observed in XXX/\numberOFlogFILES{} log files, but
-typically when it does occur there will be many instances of it, closely
+typically when it does occur there were many instances of it, closely
 grouped.
+
+This lack of information cannot easily be overcome: it is trivial to log a
+warning for every recipient accepted, but when the warning for the first
+recipient is logged Postfix will not yet have allocated a queue file and
+queueid for the mail, so the warning will be associated with the connection
+rather than the accepted mail.  A queue file and queueid will be allocated
+after Postfix accepts the MAIL FROM command if
+\texttt{smtpd\_delay\_open\_until\_valid\_rcpt} is set to ``no'', but that
+setting will cause disk IO for almost every delivery attempt, instead of
+just for delivery attempts where recipients are accepted, and consequently
+a drastic reduction in the performance of the mail server.
 
 The DELETE action is responsible for handling this complication.
 
@@ -1815,15 +1851,15 @@ has either just been used or it is too old to use in future.  Whether the
 BOUNCE action creates a mail or finds an existing mail in the state tables,
 it flags the mail as having been seen by the BOUNCE action; if this flag is
 present the COMMIT action will not add the mail to the cache of recent
-bounce notification mails.\footnote{This is not required to correctly deal
+bounce notification mails.  This is not required to correctly deal
 with the complication, but is an optimisation to reduce the parser's memory
 usage; on the occasions the author has observed this complication occurring
 there have been a huge number of bounce notification mails generated --- if
 every bounce notification mail was cached it would dramatically increase
-the memory requirements of the parser.}  The cache of bounce notification
+the memory requirements of the parser.  The cache of bounce notification
 mails will be pruned whenever the parser's state is saved, though if the
 size of the cache ever becomes a problem it could be pruned periodically to
-keep the size in check.  XXX EXPLAIN PRUNING\@.
+keep the size in check.
 
 \subsection{Mails Deleted During Delivery}
 
@@ -1872,7 +1908,7 @@ improvements that have been identified in the parser.
     \item Each new Postfix release requires new rules to be written or
         existing rules modified to cope with the new or changed log lines.
         Similarly using a new \acronym{DNSBL}, a new policy server, or new
-        administrator-defined rejection messages require new rules.
+        administrator-defined rejection messages requires new rules.
 
     \item The hostname used in the HELO command is not logged if the mail
         is accepted.  Rectifying this is relatively simple: create a
@@ -1898,7 +1934,8 @@ improvements that have been identified in the parser.
         associated with the correct mail.  There is guaranteed to be a
         queueid when the DATA command has been reached, and thus the
         queueid will be logged by any restrictions taking effect in
-        \texttt{smtpd\_data\_restrictions}.  There is no difficulty in
+        \texttt{smtpd\_data\_restrictions}, and the log line can be
+        associated with the correct mail.  There is no difficulty in
         specifying a HELO-based restriction in
         \texttt{smtpd\_data\_restrictions}, Postfix will perform the check
         correctly.
@@ -1908,10 +1945,7 @@ improvements that have been identified in the parser.
         delivery is attempted} from occurring, but only when there is a
         single recipient; in that case the recipient address will be logged
         also, but when there are multiple recipients no addresses are
-        logged.  It is also possible to warn for every recipient,
-        preventing the complication in \sectionref{Mail deleted before
-        delivery is attempted} entirely.  XXX ADD A PARAGRAPH EXPLAINING
-        HOW\@.
+        logged.
 
     \item The parser does not separate mails where one or more mails are
         rejected and a subsequent mail is accepted; it will appear in the
@@ -1932,7 +1966,7 @@ improvements that have been identified in the parser.
         distinguish between log files from different sources in the same
         database.  If the results of parsing log files from different
         sources must remain separate, the parser can easily be instructed
-        to use a different database to store the results in.
+        to store the results in a different database.
 
     \item The solution to complication \sectionref{Mails deleted during
         delivery} involves discarding data.
