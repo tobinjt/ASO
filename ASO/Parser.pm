@@ -899,15 +899,16 @@ sub DISCONNECT {
         # * smtpd is the only program
         # * 2 or more smtpd entries
         # * Queueid exists
-        # * Second result is ACCEPTED
-        # * Subsequent results, if any, are INFO.
+        # * Second result's action is CLONE
+        # * Subsequent result's actions, if any, are SAVE_DATA.
         if (exists $mail->{programs}->{q{postfix/smtpd}}
                 and $mail->{programs}->{q{postfix/smtpd}} >= 2
                 and scalar keys %{$mail->{programs}} == 1
                 and $self->queueid_exists($mail->{queueid})
-                and $mail->{results}->[1]->{postfix_action} eq q{ACCEPTED}
-                and not grep { $_->{postfix_action} ne q{INFO} }
-                        @{$mail->{results}}[2 .. $#{$mail->{results}}]
+                and $self->{rule_by_id}->[$mail->{results}->[1]->{rule_id}]->{action} eq q{CLONE}
+                and not grep {
+                        $self->{rule_by_id}->[$_->{rule_id}]->{action} ne q{SAVE_DATA}
+                    } @{$mail->{results}}[2 .. $#{$mail->{results}}]
                 ) {
             my $mail_by_queueid = $self->get_connection_by_queueid(
                     $mail->{queueid});
@@ -928,7 +929,8 @@ sub DISCONNECT {
         # rejection.
         if (not exists $mail->{programs}->{q{postfix/cleanup}}
                 and $mail->{programs}->{q{postfix/smtpd}} > 2
-                and $mail->{results}->[-1]->{postfix_action} eq q{REJECTED}
+                and $self->{rule_by_id}->[$mail->{results}->[-1]->{rule_id}]
+                        eq q{DELIVERY_REJECTED}
                 and $self->queueid_exists($mail->{queueid})
                 ) {
             $mail->{connection}->{end} = $line->{timestamp};
@@ -1947,7 +1949,6 @@ sub load_rules {
             description      => $rule->description(),
             hits             => $rule->hits(),
             priority         => $rule->priority(),
-            postfix_action   => $rule->postfix_action(),
             action           => $rule->action(),
             program          => $rule->program(),
             regex_orig       => $rule->regex(),
@@ -2837,6 +2838,12 @@ sub fixup_connection {
         return;
     }
 
+    # Skip connections where a mail was accepted and there is no more useful
+    # information.
+    if ($self->smtpd_accepted_only($connection)) {
+        return;
+    }
+
     my $failure = 0;
     my $error_message = q{};
     my %data;
@@ -2861,9 +2868,6 @@ DIFFERENT
     # Check that we have everything we need
     RESULT:
     foreach my $result (@{$results}) {
-        if (uc $result->{postfix_action} eq q{INFO}) {
-            next RESULT;
-        }
         foreach my $rcol (keys %{$self->{required_result_cols}}) {
             if (not exists $result->{$rcol}) {
                 if (exists $data{$rcol}) {
@@ -2950,10 +2954,10 @@ Save data extracted from $line, using $rule and $matches, to $connection.
 $connection->{connection} will be updated according to connection_data and the
 regex - see update_hash() for full discussion.  The start time will be saved if
 it is unset.  A new result will be created, containing the attributes from
-result_data and those extracted by the rule's regex, plus the rule_id,
-postfix_action, and timestamp.  If the rule matches a queueid (and the result is
-not NOQUEUE), the queueid will be saved as $connection->{queueid}; if the
-queueid changes a warning will be logged.
+result_data and those extracted by the rule's regex, plus the rule_id and
+timestamp.  If the rule matches a queueid (and the result is not NOQUEUE), the
+queueid will be saved as $connection->{queueid}; if the queueid changes a
+warning will be logged.
 
 =back
 
@@ -2969,9 +2973,6 @@ sub save {
     # NOTE: every time a new attribute is added here it needs to be stripped 
     # out in commit_connection().
     my %result = (
-        # postfix_action isn't saved in the database, but it is used elsewhere
-        # to classify results, so we need to save it.
-        postfix_action  => $rule->{postfix_action},
         rule_id         => $rule->{id},
         timestamp       => $line->{timestamp},
         # Sneakily in-line result_data here
@@ -3070,7 +3071,7 @@ fixup_connection(), or has already been committed an appropriate error message
 will be logged and commit_connection() will abort.  If skip_inserting_results
 was specified commit_connection() will finish at this point.  A new row will be
 entered in the connections table, and a new row in the results table for each
-result where postfix_action is not INFO.
+result.
 
 Database insertions are wrapped in transactions, and each transaction is
 committed once there have been 1000 rows added to the connections table.  This
@@ -3090,6 +3091,12 @@ sub commit_connection {
         );
         return;
     }
+    # Skip connections where a mail was accepted and there is no more useful
+    # information.
+    if ($self->smtpd_accepted_only($connection)) {
+        return;
+    }
+
     if (not exists $connection->{fixuped}) {
         $self->my_warn(qq{commit_connection: non-fixuped connection\n});
         return;
@@ -3128,13 +3135,8 @@ sub commit_connection {
     my $connection_id = $connection_in_db->id();
     RESULT:
     foreach my $result (@{$connection->{results}}) {
-        if (uc $result->{postfix_action} eq q{INFO}) {
-            next RESULT;
-        }
-
         $result->{connection_id} = $connection_id;
-        my @unwanted_attrs = qw(child date line line_number logfile
-            postfix_action);
+        my @unwanted_attrs = qw(child date line line_number logfile);
         delete @{$result}{@unwanted_attrs};
         my $result_in_db =
             $self->{dbix}->resultset(q{Result})->new_result($result);
@@ -3225,6 +3227,28 @@ sub maybe_remove_faked {
             return;
         }
     }
+}
+
+=over 4
+
+=item $self->smtpd_accepted_only($connection)
+
+Returns true if $connection represents an smtpd accepting a mail and nothing
+else, false otherwise; these are connections without any useful information,
+because the cloned/accepted mails will have all the data.  Used in
+commit_connection() and fixup_connection() to skip processing these mails and
+generating lots of warnings.
+
+=back
+
+=cut
+
+sub smtpd_accepted_only {
+    my ($self, $connection) = @_;
+
+    return (exists $connection->{programs}
+        and exists $connection->{programs}->{q{postfix/smtpd}}
+        and keys %{$connection->{programs}} == 1);
 }
 
 =over 4
