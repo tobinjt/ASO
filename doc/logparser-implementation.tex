@@ -452,14 +452,10 @@ fields:
 
 \label{results table}
 
-XXX REWRITE THIS PARAGRAPH\@; FIGURE OUT WHAT THE HELL IS HAPPENING WITH
-POSTFIX\_ACTION\@.
-
-Every log line will have a row in the results table, unless the \newline{}
-\texttt{postfix\_action} field of the rule which parsed it was INFO or
-IGNORE\@.  Each row in the results table is associated with a single
-connection; a single connection will have at least one result associated
-with it, but will usually have several more, and may have hundreds.
+Every recognised log line will have a row in the results table, associated
+with a single connection; a single connection will have at least one result
+associated with it, but will usually have several more, and may have
+hundreds.
 
 \begin{boldeqlist}
 
@@ -900,7 +896,6 @@ NOQUEUE: reject: RCPT from smtp.example.com[192.0.2.1]:
     name                & Unknown sender domain                             \\
     description         & We do not accept mail from unknown domains        \\
     restriction\_name   & reject\_unknown\_sender\_domain                   \\
-    postfix\_action     & REJECTED                                          \\
     program             & \daemon{smtpd}                                    \\
     regex               & \verb!^__RESTRICTION_START__ <(__SENDER__)>: !    \\
                         & \verb!Sender address rejected: Domain not found;! \\
@@ -923,9 +918,8 @@ follows:
 
 \begin{description}
 
-    \item [name, description, restriction\_name, and postfix\_action:] are
-        not \newline{} used by the parser, they serve to document the rule
-        for the user's benefit.
+    \item [name, description, and restriction\_name:] are not used by the
+        parser, they serve to document the rule for the user's benefit.
 
     \item [program and regex:] If the program in the rule equals the
         program in the log line, a match using the rule's regex will be
@@ -1435,12 +1429,10 @@ for the following:
 
 \begin{itemize}
 
-    \item XXX IS THIS CORRECT NOW\@?\newline{}  Are there two or more
-        \daemon{smtpd} log lines?  Does the second result have a
-        postfix\_action attribute of ACCEPTED\@?  The first two
-        \daemon{smtpd} log lines will be a connection log line and a mail
-        acceptance log line (Postfix logs acceptance as soon as the first
-        recipient has been accepted).
+    \item Was the second result processed by the \texttt{CLONE} action?
+        The first two \daemon{smtpd} log lines will be a connection log
+        line and a mail acceptance log line; Postfix logs acceptance as
+        soon as the first recipient has been accepted.
 
     \item Is \daemon{smtpd} the only Postfix component that produced a log
         line for this mail?  Every mail which passes normally through
@@ -1451,8 +1443,8 @@ for the following:
     \item Does the queueid exist in the state tables?  If not it cannot be
         an aborted delivery attempt.
 
-    \item If there are third and subsequent results, are all their
-        postfix\_action attributes equal to INFO\@?  If there are any log
+    \item If there are third and subsequent results, were those log lines
+        processed by the \texttt{SAVE\_DATA} action?  If there are any log
         lines after the first two they should be informational only.
 
 \end{itemize}
@@ -1663,7 +1655,7 @@ several reasons have been found for this infrequent occurrence:
         it is not reset for a considerable period of time (five hours by
         default).  This safeguard prevents Postfix processes from running
         indefinitely and consuming resources if a failure causes them to
-        enter a stuck state.  XXX IMPROVE THIS SOMEHOW\@.
+        enter a stuck state.
 
 \end{enumerate}
 
