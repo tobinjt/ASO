@@ -124,26 +124,6 @@ See result_cols above.
 
 See result_cols above.
 
-=item postfix_action
-
-A single word giving the action Postfix must have taken to generate this line,
-with two exceptions:
-
-=over 8
-
-=item info
-
-Represents an unspecified intermediate action that the parser is not interested
-in per se, but which does log useful information, supplementing other log lines.
-
-=item ignored
-
-An action which is not only uninteresting in itself, but which also provides no
-useful data.  Uninteresting lines are parsed so that any lines the parser isn't
-capable of handling become immediately obvious errors.
-
-=back
-
 =item action
 
 The action for the parser to take.  See ACTIONS in L<ASO::Parser> for the full
@@ -219,12 +199,6 @@ my %cols = (
     priority            => {
         sql                 => q{NOT NULL DEFAULT 0},
         type                => q{integer},
-    },
-    # Specifies one of IGNORED, INFO, BOUNCED, EXPIRED, SENT, ACCEPTED or
-    # REJECTED, giving the action Postfix performed to generate the log line.
-    postfix_action      => {
-        sql                 => q{NOT NULL},
-        type                => q{text},
     },
     # additional data to be saved; same format as result_cols, for now.
     result_data         => {
