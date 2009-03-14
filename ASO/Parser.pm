@@ -929,7 +929,7 @@ sub DISCONNECT {
         # rejection.
         if (not exists $mail->{programs}->{q{postfix/cleanup}}
                 and $mail->{programs}->{q{postfix/smtpd}} > 2
-                and $self->{rule_by_id}->[$mail->{results}->[-1]->{rule_id}]
+                and $self->{rule_by_id}->[$mail->{results}->[-1]->{rule_id}]->{action}
                         eq q{DELIVERY_REJECTED}
                 and $self->queueid_exists($mail->{queueid})
                 ) {
