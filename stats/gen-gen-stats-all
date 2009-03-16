@@ -38,18 +38,16 @@ cp -f "$full_run_dir/"rule-order* "$rule_order_dir"
 PRELUDE
 
 # Options:
-# * Discarding of results.
+# * Always discard results: we're testing the parser, not the database and hard
+#   disk.
 # * Caching of regexes
 # * Rule ordering, including perfect best and perfect worst.
 #
 # Plus minimum versus maximum rule sets.
-# XXX AT SOME POINT NEED TO TEST AGAINST A RAM DISK.
 # XXX COMPARE PARSING ONLY TO PARSING AND ACTIONS.
 
 my @options = (
     {
-#        XXX RENABLE THIS OPTION
-#        insert_results              => q{},
         skip_inserting_results      => q{--skip_inserting_results},
     },
     {
