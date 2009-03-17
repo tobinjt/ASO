@@ -15,6 +15,10 @@ XXX COMPARE BEST AND WORST POSSIBLE RESULTS WITH REAL RESULTS\@.
 
 XXX REUSE THE CONTENT FROM THE PAPER FOR THIS SECTION\@.
 
+XXX DO A TEST-SOME RUN AND SAVE THE RESULTS TO THE DATABASE, THEN COMPARE
+THE TIME WITH A RUN THAT DOES NOT SAVE RESULTS\@; PUT THE COMPARISON IN THE
+INTRODUCTION, NEAR THE MACHINE SPECS\@.
+
 \section{Parser Efficiency}
 
 \label{parser efficiency}
@@ -230,6 +234,20 @@ noticeable improvement at log files 22 and 62--68, where a higher ratio
 means more log lines parsed per unit of time; similarly \graphref{Parsing
 time relative to shuffled ordering graph} shows a much smaller difference
 between the orderings at log files 22 and 62--68.
+
+\subsection{Perfect Rule Ordering}
+
+\label{perfect rule ordering}
+
+XXX WRITE ABOUT PERFECT RULE ORDERING\@; DUNNO WHETHER TO PUT IT IN WITH
+RULE ORDERING FOR EFFICIENCY, OR IN ITS OWN SECTION\@.
+
+\subsection{Where Is The Time Spent: Recognising Or Processing Log Lines?}
+
+\label{recognising vs processing}
+
+XXX EXAMINE THE TIME SPENT RECOGNISING LOG LINES VS THE TIME SPENT
+PROCESSING THEM\@.
 
 \subsection{Scalability When The Number Of Rules Rises}
 

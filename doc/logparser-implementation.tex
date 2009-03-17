@@ -525,15 +525,160 @@ hundreds.
 
 \section{Framework}
 
-XXX TO BE WRITTEN\@.
+The role of the framework in this architecture was described in detail in
+\sectionref{framework in architecture}; this section is concerned with the
+implementation of the framework within \parsername{}.  The framework
+manages the parsing process, taking care of the drudgery and boring tasks,
+provides services to the actions, and implements some efficiency measures.
 
-XXX GENERIC RULES\@.
+Each time the parser is run the framework performs some initialisation
+tasks, setting up data structures that will later be used by actions,
+including several state tables.  Data about the connections and mails being
+processed is held in \texttt{connections} and \texttt{queueids}
+respectively.  There are also state tables used when working around
+complications in parsing: \texttt{timeout\_queueids} is used when dealing
+with connections that time out during the DATA phase (\sectionref{timeouts
+during data phase}); \texttt{bounce\_queueids} is part of the solution to
+bounce notification mails being delivered before their creation is logged
+(\sectionref{Bounce notification mails delivered before their creation is
+logged}); and \texttt{postsuper\_deleted\_queueids} caches information
+about mails recently deleted by the administrator so that subsequent log
+lines processed by the SAVE\_DATA action can be discarded (\sectionref{Mail
+deleted before delivery is attempted}).
 
-XXX COMPRESSED FILES\@.
+When the framework loads the ruleset, it verifies each of the rules,
+checking:
 
-XXX STATE TABLES\@.
+\begin{itemize}
 
-XXX LOAD AND VERIFY RULES\@.
+    \squeezeitems{}
+
+    \item That the specified action is registered with the framework.
+
+    \item Ensuring the regex is valid and compiling it for efficiency
+        (\sectionref{Caching compiled regexes}).
+
+    \item For overlap between the data captured by the regex and additional
+        data specified in either \texttt{connection\_data} or
+        \texttt{result\_data}.
+
+    \item That \texttt{connection\_data}, \texttt{result\_data}, and the
+        regex captures specify valid fields to save data to.
+
+\end{itemize}
+
+If there are state tables from a previous \parsername{} run to be loaded,
+they will be loaded now; obviously the framework supports saving its state
+tables too.  The need to track re-injected mail (\sectionref{Re-injected
+mails}) complicates the process of saving state, as the relationships
+between mails must be maintained; loading state is complicated by dealing
+with aborted delivery attempts (\sectionref{aborted delivery attempts}),
+because a different set of relationships between connections and mails must
+be re-created when the state tables are restored.
+
+The framework will now move on to parsing each log file.  For each log line
+it will use those rules whose \texttt{program} field matches the program in
+the log line (see \sectionref{rule conditions in implementation}), falling
+back to generic rules if necessary, and warning if the log line is
+unrecognised.  The rules are sorted for increased efficiency; see
+\sectionref{rule ordering for efficiency} for details.  The repetitive
+nature of log files gives them high compression ratios; the framework
+supports reading compressed files, simplifying the process of parsing them
+because they do not have to be uncompressed to a temporary file before
+parsing begins.  The framework also displays a progress bar to show how far
+parsing has progressed through the log file, and to give the user an
+indication of how long the remainder of the parsing process is likely to
+take.  The progress bar is not as reliable when parsing compressed files
+because a compressed block may uncompress to a variable number of log
+lines; there is also variation between the recognition and processing time
+of individual log lines, but overall the progress bar is a useful addition.
+
+The framework collects data used when evaluating \parsernames{} efficiency
+for the results chapter (\sectionref{Results}); in addition some of the
+techniques used to improve parsing speed can be turned off or altered to
+show the effect they have.  Three sets of data are collected:
+
+\begin{enumerate}
+
+    \item How long it takes to parse each log file.
+
+    \item The number of rules tried when recognising log lines; the
+        framework may need to try multiple rules for a given log line
+        before it finds one that recognises it.
+
+    \item How many log lines did the framework attempt to recognise, how
+        many were skipped because there were no rules whose condition
+        matched that log line's program, how many were successfully
+        recognised, and how many were not recognised.
+
+\end{enumerate}
+
+There are five ways the framework can adapt its behaviour to demonstrate
+how effective the optimisations it uses are, and how efficient
+\parsername{} is:
+
+\begin{enumerate}
+
+    \item The rule ordering used can be changed from optimal (the default,
+        most efficient) to shuffled (intended to represent an unordered
+        ruleset) or reverse (reverse of optimal, least efficient).  The
+        results of this are shown in \sectionref{rule ordering for
+        efficiency}.
+
+    \item The framework can record which rule recognised each log line, and
+        then on a subsequent run use that information so that it uses the
+        correct rule for each log line.  This gives the best possible
+        running time, as only one rule is used for each log line.  A
+        variation of this is to use the correct rule last, to get the worst
+        possible running time.  \sectionref{perfect rule ordering}
+        discusses this in detail.
+
+    \item Each regex is compiled and the result cached when the rules are
+        loaded; this can be disabled and the regex compiled every time it
+        is used when recognising log lines, to demonstrate the effect this
+        optimisation has on parser efficiency, as shown in
+        \sectionref{Caching compiled regexes}.
+
+    \item Normally once a log line has been recognised, the framework
+        invokes the action specified by the rule.  Invoking the action can
+        be skipped if desired, so the timing information shows how long is
+        spent recognising log lines; this time can be subtracted from the
+        time taken by a normal run to show how long is spent processing log
+        lines.  This data is analysed in \sectionref{recognising vs
+        processing}.
+
+    \item The framework can skip inserting data into the database, because
+        that dominates the execution time of the parser, and the evaluation
+        in \sectionref{Results} is measuring the speed of \parsername{},
+        not the speed of the database or the disks it resides on.
+
+\end{enumerate}
+
+The framework also provides several debugging options, to aid in writing or
+correcting rules, or figuring out why the parser is not behaving as
+expected.  In increasing order of severity they are:
+
+\begin{enumerate}
+
+    \item The regex from the recognising rule and the log line it
+        recognised can be printed, so that the user can verify that the
+        correct rule recognised each log line.  A possible variant of this
+        would be to mark specific rules so only their regexes and the log
+        lines they recognise would be printed.
+
+    \item Each result can be extended with extra debugging information, so
+        that when a mail's data is dumped for inspection more information
+        is available.  The information currently added is: the log line's
+        timestamp in human readable form; the entire log line; the name of
+        the log file and the number of the log line within it.
+
+    \item Every connection and result added to the database can be dumped
+        in a human readable form.  This will result in a huge amount of
+        debugging information, so it is only useful for small log file
+        snippets, because otherwise the amount of information is
+        overwhelming.
+
+\end{enumerate}
 
 \section{Actions}
 
@@ -786,7 +931,8 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
 
 \label{adding new actions in implementation}
 
-XXX HALF OF THIS CONTENT IS IN FOOTNOTES, WHICH SHOULD BE INLINED\@.
+XXX HALF OF THIS CONTENT IS IN FOOTNOTES, WHICH SHOULD BE INLINED\@; IT
+ALSO NEEDS TO BE PROOFREAD\@.
 
 Adding new actions is not as easy as adding new rules, though care has been
 taken in the architecture and implementation to make adding new actions as
@@ -832,12 +978,16 @@ idiosyncrasies and peculiarities a mail server in the wild must deal with,
 but the downside is that significantly altering the configuration just to
 log messages from a different Postfix component is not an option.}
 
-
 \section{Rules}
 
 \label{rules in implementation}
 
+\label{rule conditions in implementation}
+
 XXX NEED AN INTRODUCTION\@.
+
+XXX MENTION RULE CONDITIONS HERE\@; STRIP THE EXISTING STUFF FROM THE RULES
+TABLE AND EXAMPLE RULE, THEN HAVE THEM REFER TO HERE\@.
 
 The rules are responsible for classifying each log line and specifying the
 correct action to be invoked.  For any parser implemented using this
@@ -1520,8 +1670,6 @@ database immediately they accumulate in the state table and will cause
 clashes if the queueid is reused.
 
 These checks are made during the DISCONNECT action.
-
-\newpage{} % XXX ADDED BECAUSE OF FLIP-FLOPPING LAYOUT.
 
 \subsection{Timeouts During DATA Phase}
 
