@@ -193,7 +193,9 @@
 
 % \showgraph{filename}{caption}{label}
 \newcommand{\showgraph}[3]{%
-    \begin{figure}[hbt!]
+    % XXX REVISIT THE PLACEMENT OF FIGURES, THOUGH I THINK LATEX'S DEFAULTS
+    % AR EPROBABLY PRETTY GOOD.
+    \begin{figure}%[hbt!]
         \caption{#2}\label{#3}
         \includegraphics{#1}
     \end{figure}

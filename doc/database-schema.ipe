@@ -1,0 +1,310 @@
+<ipe version="60030" creator="Ipe 6.0 preview 30">
+<info created="D:20090316144731" modified="D:20090316174217" bbox="cropbox"/>
+<ipestyle>
+</ipestyle>
+<ipestyle>
+</ipestyle>
+<ipestyle>
+</ipestyle>
+<ipestyle>
+</ipestyle>
+<page gridsize="8">
+<layer name="alpha"/>
+<view layers="alpha" active="alpha"/>
+<text layer="alpha" stroke="black" matrix="1 0 0 2.1564 -16 -906.62" pos="64 784" type="label" width="59.113" height="6.918" depth="0" valign="baseline" size="normal">\textbf{Rules Table}</text>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -128" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -160" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -192" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -224" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -256" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -288" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -320" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -352" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -32" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 0" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -96" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -64" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<text stroke="black" matrix="1 0 0 1 -8 0" pos="64 752" type="label" width="8.302" height="6.918" depth="0" valign="baseline" size="normal">id</text>
+<text stroke="black" matrix="1 0 0 1 -8 0" pos="64 720" type="label" width="23.246" height="4.289" depth="0" valign="baseline" size="normal">name</text>
+<text stroke="black" matrix="1 0 0 1 -8 0" pos="64 688" type="label" width="47.682" height="6.926" depth="1.93" valign="baseline" size="normal">description</text>
+<text stroke="black" matrix="1 0 0 1 -8 0" pos="64 656" type="label" width="71.222" height="6.654" depth="0" valign="baseline" size="normal">restriction\_name</text>
+<text stroke="black" matrix="1 0 0 1 -8 0" pos="64 624" type="label" width="36.585" height="4.297" depth="1.93" valign="baseline" size="normal">program</text>
+<text stroke="black" matrix="1 0 0 1 -8 0" pos="64 592" type="label" width="22.997" height="4.297" depth="1.93" valign="baseline" size="normal">regex</text>
+<text stroke="black" matrix="1 0 0 1 -8 0" pos="64 560" type="label" width="26.567" height="6.654" depth="0" valign="baseline" size="normal">action</text>
+<text stroke="black" matrix="1 0 0 1 -8 0" pos="64 528" type="label" width="69.451" height="6.918" depth="0" valign="baseline" size="normal">connection\_data</text>
+<text stroke="black" matrix="1 0 0 1 -8 0" pos="64 496" type="label" width="47.395" height="6.918" depth="0" valign="baseline" size="normal">result\_data</text>
+<text stroke="black" matrix="1 0 0 1 -8 0" pos="64 464" type="label" width="32.711" height="6.661" depth="1.93" valign="baseline" size="normal">priority</text>
+<text stroke="black" matrix="1 0 0 1 -8 0" pos="64 432" type="label" width="16.106" height="6.918" depth="0" valign="baseline" size="normal">hits</text>
+<text stroke="black" matrix="1 0 0 1 -8 0" pos="64 400" type="label" width="40.172" height="6.918" depth="0" valign="baseline" size="normal">hits\_total</text>
+<text stroke="black" matrix="1 0 0 1 280 464" pos="64 320" type="label" width="92.529" height="6.918" depth="0" valign="baseline" size="normal">\textbf{Connections Table}</text>
+<text stroke="black" matrix="1 0 0 1 -232 0" pos="416 784" type="label" width="68.087" height="6.918" depth="0" valign="baseline" size="normal">\textbf{Results Table}</text>
+<group matrix="1 0 0 1 160 0">
+<group>
+<path stroke="black" matrix="0.611111 0 0 1 154.667 336" pen="normal">
+48 272 m
+192 272 l
+192 304 l
+48 304 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 154.667 304" pen="normal">
+48 272 m
+192 272 l
+192 304 l
+48 304 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 154.667 272" pen="normal">
+48 272 m
+192 272 l
+192 304 l
+48 304 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 154.667 240" pen="normal">
+48 272 m
+192 272 l
+192 304 l
+48 304 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 154.667 208" pen="normal">
+48 272 m
+192 272 l
+192 304 l
+48 304 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 154.667 432" pen="normal">
+48 272 m
+192 272 l
+192 304 l
+48 304 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 154.667 464" pen="normal">
+48 272 m
+192 272 l
+192 304 l
+48 304 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 154.667 368" pen="normal">
+48 272 m
+192 272 l
+192 304 l
+48 304 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 154.667 400" pen="normal">
+48 272 m
+192 272 l
+192 304 l
+48 304 l
+h
+</path>
+<text stroke="black" matrix="1 0 0 1 128 464" pos="64 288" type="label" width="8.302" height="6.918" depth="0" valign="baseline" size="normal">id</text>
+<text stroke="black" matrix="1 0 0 1 128 464" pos="64 256" type="label" width="68.676" height="6.918" depth="0" valign="baseline" size="normal">client\_hostname</text>
+<text stroke="black" matrix="1 0 0 1 128 464" pos="64 224" type="label" width="35.412" height="6.926" depth="1.93" valign="baseline" size="normal">client\_ip</text>
+<text stroke="black" matrix="1 0 0 1 128 464" pos="64 192" type="label" width="70.724" height="6.918" depth="0" valign="baseline" size="normal">server\_hostname</text>
+<text stroke="black" matrix="1 0 0 1 128 464" pos="64 160" type="label" width="37.46" height="6.661" depth="1.93" valign="baseline" size="normal">server\_ip</text>
+<text stroke="black" matrix="1 0 0 1 128 464" pos="64 128" type="label" width="17.711" height="6.918" depth="0" valign="baseline" size="normal">helo</text>
+<text stroke="black" matrix="1 0 0 1 128 464" pos="64 96" type="label" width="33.486" height="6.926" depth="1.93" valign="baseline" size="normal">queueid</text>
+<text stroke="black" matrix="1 0 0 1 128 464" pos="64 64" type="label" width="20.562" height="6.128" depth="0" valign="baseline" size="normal">start</text>
+<text stroke="black" matrix="1 0 0 1 128 464" pos="64 32" type="label" width="15.497" height="6.918" depth="0" valign="baseline" size="normal">end</text>
+</group>
+</group>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 528" type="label" width="8.302" height="6.918" depth="0" valign="baseline" size="normal">id</text>
+<text stroke="black" matrix="1 0 0 1 -192.592 221.349" pos="384 496" type="label" width="58.381" height="6.918" depth="0" valign="baseline" size="normal">connection\_id</text>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 464" type="label" width="28.521" height="6.918" depth="0" valign="baseline" size="normal">rule\_id</text>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 432" type="label" width="45.994" height="6.661" depth="1.93" valign="baseline" size="normal">timestamp</text>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 400" type="label" width="34.62" height="6.661" depth="1.93" valign="baseline" size="normal">warning</text>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 368" type="label" width="37.388" height="6.661" depth="1.93" valign="baseline" size="normal">recipient</text>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 336" type="label" width="27.757" height="6.918" depth="0" valign="baseline" size="normal">sender</text>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 304" type="label" width="15.553" height="6.654" depth="0" valign="baseline" size="normal">size</text>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 272" type="label" width="46.869" height="6.926" depth="1.93" valign="baseline" size="normal">message\_id</text>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 240" type="label" width="44.6" height="6.926" depth="1.93" valign="baseline" size="normal">smtp\_code</text>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 208" type="label" width="93.35" height="6.918" depth="0" valign="baseline" size="normal">enhanced\_status\_code</text>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 176" type="label" width="22.693" height="6.926" depth="1.93" valign="baseline" size="normal">delay</text>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 144" type="label" width="26.622" height="6.926" depth="1.93" valign="baseline" size="normal">delays</text>
+<text stroke="black" matrix="1 0 0 1 -192 224" pos="384 112" type="label" width="19.372" height="6.918" depth="0" valign="baseline" size="normal">data</text>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 736 m
+432 736 l
+432 768 l
+320 768 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 704 m
+432 704 l
+432 736 l
+320 736 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 672 m
+432 672 l
+432 704 l
+320 704 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 640 m
+432 640 l
+432 672 l
+320 672 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 608 m
+432 608 l
+432 640 l
+320 640 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 576 m
+432 576 l
+432 608 l
+320 608 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 544 m
+432 544 l
+432 576 l
+320 576 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 512 m
+432 512 l
+432 544 l
+320 544 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 480 m
+432 480 l
+432 512 l
+320 512 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 448 m
+432 448 l
+432 480 l
+320 480 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 416 m
+432 416 l
+432 448 l
+320 448 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 384 m
+432 384 l
+432 416 l
+320 416 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 352 m
+432 352 l
+432 384 l
+320 384 l
+h
+</path>
+<path stroke="black" matrix="1 0 0 1 -136 0" pen="normal">
+320 320 m
+432 320 l
+432 352 l
+320 352 l
+h
+</path>
+<path stroke="black" pen="normal" arrow="normal">
+296 720 m
+344 752 l
+</path>
+<path stroke="black" pen="normal" arrow="normal">
+184 688 m
+136 752 l
+</path>
+</page>
+</ipe>

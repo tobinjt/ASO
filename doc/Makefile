@@ -427,6 +427,12 @@ build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.
 build/include-sample-sql-query.tex: generate-sample-sql-output.sql
 	( echo '\begin{verbatim}'; cat "$<"; echo '\end{verbatim}' ) > "$@"
 
+# Database schema
+database-schema.pdf: database-schema.ipe
+	ipetoipe -pdf "$<" "$@"
+database-schema.ps: database-schema.ipe
+	ipetoipe -eps "$<" "$@"
+
 # Cleanup.
 clean:
 	rm -f	*.acn *.acr *.alg *.aux *.bbl *.blg *.cbk *.cit *.deps *.dvi \

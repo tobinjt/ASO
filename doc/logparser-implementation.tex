@@ -5,16 +5,12 @@
 XXX WRITE AN INTRODUCTION\@.  MOST OF THIS IS CRAP, BUT I MIGHT BE ABLE TO
 RESCUE SOME OF IT\@.
 
-XXX UPDATE REFERENCES WHEN ARCHITECTURE AND IMPLEMENTATION ARE MORE FLESHED
-OUT\@.  XXX WHEN FINISHED, CHECK ALL REFERENCES TO ENSURE THEY POINT AT THE
-CORRECT CHAPTER\@.
-
 The parser deals with all the complications of parsing, the eccentricities
 and oddities of Postfix log files, presenting the resulting data in a
 normalised, simple to use representation.  The parser's task is to follow
-the journey each mail takes through Postfix, combining the data extracted
-by rules into a coherent whole, saving it in a useful and consistent form,
-and performing housekeeping duties.
+the journey each mail takes through Postfix, combining the data captured by
+rules into a coherent whole, saving it in a useful and consistent form, and
+performing housekeeping duties.
 
 Please refer to \sectionref{parser design} for a discussion of why the
 rules, actions, and framework have been separated in the parser's design.
@@ -98,12 +94,15 @@ to treating Postfix as a black box during parser development:
 
 \label{flow chart}
 
-XXX NEEDS AN INTRO\@.
-
 A picture is said to be worth a thousand words: the flow chart in
 \figureref{flow chart image} shows the most common paths a connection or
 mail can take through \parsername{}; the parsing complications described in
-\sectionref{complications} are excluded for the sake of clarity.
+\sectionref{complications} are excluded for the sake of clarity.  The flow
+chart is intended to be a graphical overview of how a mail progresses
+through both Postfix and \parsername{}, providing an overall context into
+which the detailed descriptions in the remainder of this chapter will fit,
+in particular the actions (\sectionref{actions in implementation}) and
+complications (\sectionref{complications}).
 
 \showgraph{build/logparser-flow-chart-part-1}{Parser flow chart}{flow chart
 image}
@@ -117,7 +116,7 @@ explicit log lines of its own; it is explained fully in
 \sectionref{Re-injected mails}.  Internally generated mails lack any
 explicit origin in Postfix 2.2.x and must be detected using heuristics as
 described in \sectionref{identifying bounce notifications}; later versions
-of Postfix do provide log lines for internally generated mails.    Bounce
+of Postfix do provide log lines for internally generated mails.  Bounce
 notifications are the primary example of internally generated mails, though
 there are other types, e.g.\ Postfix may generate mails to the
 administrator when it encounters configuration errors, but such mails are
@@ -142,11 +141,9 @@ presumably rare.
         data structure).
 
     \item If one or more mails were accepted there will be more log lines
-        for those mails later, see \sectionref{mail delivery}.
+        for those mails.
 
 \end{enumerate}
-
-\label{mail delivery}
 
 The obvious counterpart to mail entering the system is mail leaving the
 system, whether by deletion, bouncing, local delivery, or remote delivery.
@@ -158,16 +155,16 @@ All four are handled in exactly the same way:
         \flowchart{SAVE\_DATA}{9}.
 
     \item Sometimes mail is re-injected and the child mail needs to be
-        tracked by the parent mail \flowchart{TRACK}{10};
-        \sectionref{tracking re-injected mail} discusses this in detail.
+        tracked by the parent mail \flowchart{TRACK}{10}; the handling of
+        re-injected mails is described in \sectionref{tracking re-injected
+        mail}.
 
     \item Eventually the mail will be delivered, bounced, or deleted by the
         administrator \flowchart{COMMIT}{12}.  This is the last log line
         for this particular mail (though it may be indirectly referred to
         if it was re-injected).  If it is neither parent nor child of
         re-injection the data is cleaned up and entered in the database,
-        then deleted from the state tables.  The handling of re-injected
-        mails is described in \sectionref{tracking re-injected mail}.
+        then deleted from the state tables.
 
 \end{enumerate}
 
@@ -191,12 +188,12 @@ how the database schema functions as an \acronym{API}.
 
 The database schema can be conceptually divided in two: the rules used to
 recognise log lines, and the data saved from the parsing of log files.
-Rules have the fields required to recognise log lines, extract data to be
-saved, and specify the action to be invoked; they also have several fields
-that aid the user in understanding the meaning of the log lines recognised
-by each rule.  The rules are described in detail in \sectionref{rules in
-implementation}, but the fields are covered with the rest of the database
-schema in this section.
+Each rule has a regex to recognise log lines and capture data from them,
+and specifies the action to be invoked when a log line is recognised; they
+also have several fields that aid the user in understanding the meaning of
+the log lines recognised by each rule.  The rules are described in detail
+in \sectionref{rules in implementation}, but the rules table is documented
+in \sectionref{rules table} with the rest of the database schema.
 
 The data saved from parsing the log files is also divided into two tables:
 connections and results.  The connections table contains an entry for every
@@ -205,8 +202,8 @@ individual fields will be described in \sectionref{connections table}.
 There will be at least one entry in the results table for each entry in the
 connections table; the result table's fields will be covered in detail in
 \sectionref{results table}.  A diagram of the database schema is provided
-in \sectionref{Diagram of the Database Schema} before the in-depth
-descriptions of each table.
+in \figureref{Diagram of the Database Schema picture}, alongside the
+in-depth descriptions of each table.
 
 An important but easily overlooked benefit of storing the rules in the
 database is the link between rules and results: if more information is
@@ -215,11 +212,11 @@ available for inspection because each result references the rule that
 created it.  There is no ambiguity about which rule resulted in a
 particular result, eliminating one potential source of confusion.
 
-A clear, comprehensible schema is essential when using the extracted data;
-it is more important when using the data than when storing it, because
-storing the data is a write-once operation, whereas utilising the data
-requires frequent searching, sorting, and manipulation of the data to
-produce customised reports or statistics.
+A clear, comprehensible schema is essential when using the data extracted
+from log lines; it is more important when using the data than when storing
+it, because storing the data is a write-once operation, whereas utilising
+the data requires frequent searching, sorting, and manipulation of the data
+to produce customised reports or statistics.
 
 \subsection{Using A Database To Provide An Application Programming Interface}
 
@@ -303,23 +300,24 @@ using those results, because the log files need only be parsed once rather
 than each time the data is used; indeed the results may be used by someone
 with no access to the original log files.
 
-\subsection{Diagram of the Database Schema}
-
-\label{Diagram of the Database Schema}
-
-XXX ADD A DIAGRAM OF THE DATABASE SCHEMA\@.
-
 \subsection{Rules Table}
 
 \label{rules table}
 
+\newlength{\belowcaptionskipORIG}
+\setlength{\belowcaptionskipORIG}{\belowcaptionskip}
+\setlength{\belowcaptionskip}{10pt}
+\showgraph{database-schema}{Diagram of the Database Schema}{Diagram
+of the Database Schema picture}
+\setlength{\belowcaptionskip}{\belowcaptionskipORIG}
+
 Rules are discussed in detail in \sectionref{rules in implementation}, but
-the structure of the rules table is covered here with the other tables in
-the database.  Rules are created by the user, not the parser, and will not
-be modified by the parser (except for the hits and hits\_total fields).
-Rules classify the individual log lines, extracting data to be saved in the
-connections and results tables, and specifying the action to take for that
-log line.
+the structure of the rules table is documented here along with the other
+tables in the database.  Rules are created by the user, not the parser, and
+will not be modified by the parser (except for the hits and hits\_total
+fields).  Rules classify the individual log lines, capturing data to be
+saved in the connections and results tables, and specifying the action to
+take for that log line.
 
 The following attributes are defined for each rule:
 
@@ -354,12 +352,12 @@ The following attributes are defined for each rule:
         simplifies reading and writing rules; avoids needless repetition of
         complex regex components; allows the components to be corrected
         and/or improved in one location; enables automatic extraction and
-        saving of data; and makes each regex largely self-documenting.  For
-        efficiency the keywords are expanded and every rule's regex is
-        compiled before attempting to parse the log file; otherwise every
-        regex would be recompiled each time it was used, resulting in a
-        large, data dependent slowdown, as shown in \sectionref{Caching
-        compiled regexes}.
+        saving of captured data; and makes each regex largely
+        self-documenting.  For efficiency the keywords are expanded and
+        every rule's regex is compiled before attempting to parse the log
+        file; otherwise every regex would be recompiled each time it was
+        used, resulting in a large, data dependent slowdown, as shown in
+        \sectionref{Caching compiled regexes}.
 
     \item [connection\_data] Sometimes rules need to save data that is not
         present in the log line: e.g.\ setting \texttt{client\_ip} when a
@@ -367,12 +365,11 @@ The following attributes are defined for each rule:
         \newline{} \tab{} \texttt{ client\_hostname = localhost,}
         \newline{} \tab{} \tab{} \texttt{client\_ip = 127.0.0.1} \newline{}
         i.e.\ semi-colon or comma separated assignment statements, with the
-        variable name on the left and the value on the right hand
-        side.\footnote{Commas and semi-colons cannot be escaped and thus
-        cannot be included in data.  This feature is intended for use with
-        small amounts of data, so dealing with escape sequences was deemed
-        unnecessary.}  Any field in the connections table can be set in
-        this way.
+        variable name on the left and the value on the right hand side.
+        Any field in the connections table can be set in this way.  Commas
+        and semi-colons cannot be escaped and thus cannot be included in
+        data.  This feature is intended for use with small amounts of data,
+        so dealing with escape sequences was deemed unnecessary.
 
     \item [result\_data] The result table equivalent of
         \texttt{connection\_data}.
@@ -1276,8 +1273,8 @@ implicit indications:
         that mail.  The mail will be flagged as having unknown origins;
         this flag will subsequently be cleared once the origin has been
         established.  This may also be an indicator that the mail is a
-        bounce notification, see
-        \sectionref{identifying bounce notifications} for details.
+        bounce notification, see \sectionref{identifying bounce
+        notifications} for details.
 
     \item Local delivery re-injects the mail and logs a relayed delivery
         rather than delivering directly to a mailbox or program as it
@@ -1365,11 +1362,11 @@ notifications, and those heuristics are:
     \item The queueid in the message-id must be the same as the queueid of
         the mail: this is what distinguishes bounce notifications generated
         locally from bounce notifications which are being re-injected as a
-        result of aliasing (described in \sectionref{Re-injected mails}).
-        In the latter case the message-id will be unchanged from the
-        original bounce notification, and so even if it happens to be in
-        the correct format (e.g.\ if it was generated by Postfix on this or
-        another server) it will not match the queueid of the mail.
+        result of aliasing.  In the latter case the message-id will be
+        unchanged from the original bounce notification, and so even if it
+        happens to be in the correct format (e.g.\ if it was generated by
+        Postfix on this or another server) it will not match the queueid of
+        the mail.
 
 \end{enumerate}
 
@@ -1777,10 +1774,10 @@ attempts} occur frequently, but the aborted delivery attempts described in
 this section only occur four times in the \numberOFlogFILES{} log files
 used for testing.  The symptoms are the same as in \sectionref{aborted
 delivery attempts}, except that there \textit{is\/} a \daemon{cleanup} log
-line; there does not appear to be anything in the log file to explain why
-there are no further log lines.  The only way to detect these mails is to
-periodically scan all mails in the state tables, deleting any mails
-displaying the following characteristics:
+line; there is nothing in the log file to explain why there are no further
+log lines.  The only way to detect these mails is to periodically scan all
+mails in the state tables, deleting any mails displaying the following
+characteristics:
 
 \begin{itemize}
 
@@ -1812,9 +1809,8 @@ loop}, mail bomb\glsadd{mail bomb}, or joe~job\glsadd{Joe-job}) before
 Postfix has had a chance to try to deliver it.  In this case the recipient
 address will not have been logged, so a dummy recipient address needs to be
 added, as every mail is required by the database schema
-(\sectionref{results table}) to have at least one recipient.  This
-complication has been observed in XXX/\numberOFlogFILES{} log files, but
-typically when it does occur there were many instances of it, closely
+(\sectionref{results table}) to have at least one recipient.  Typically
+when this complication occurs there are many instances of it, closely
 grouped.
 
 This lack of information cannot easily be overcome: it is trivial to log a
