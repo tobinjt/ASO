@@ -1661,7 +1661,7 @@ INSERT INTO rules(name, description, program, regex, action)
     VALUES('Cleanup doing its thing', 'Cleanup doing whatever it does with mail',
         'postfix/cleanup',
         '^(__QUEUEID__): (?:resent-)?message-id=(__MESSAGE_ID__)$',
-        'MAIL_QUEUED'
+        'CLEANUP_PROCESSING'
 );
 
 -- warning: 9701438A4: read timeout on cleanup socket

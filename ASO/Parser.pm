@@ -350,6 +350,7 @@ sub init_globals {
         TRACK
         DELIVERY_REJECTED
         EXPIRY
+        CLEANUP_PROCESSING
         MAIL_QUEUED
         PICKUP
         CLONE
@@ -1237,10 +1238,9 @@ sub DELIVERY_REJECTED {
 
 =over  4
 
-=item MAIL_QUEUED
+=item CLEANUP_PROCESSING
 
-This action represents Postfix picking a mail from the queue to deliver.  This
-action is used for both qmgr and cleanup due to out of order log lines.
+This action represents cleanup processing a mail.
 
 There are some complications:
 
@@ -1254,7 +1254,7 @@ mail is the result of forwarding or a bounce notification.
 =item *
 
 Sometimes cleanup lines need to be discarded, as they're a remnant of mails
-discarded due to timeouts.  The cleanup line must have been logged within six
+discarded due to timeouts.  The cleanup line must have been logged within ten
 minutes of the mail being accepted, and the queueid must not be in the global
 state tables yet - if it is then the queueid has been reused and this cleanup
 line isn't for the discarded mail, so must be kept.
@@ -1268,12 +1268,11 @@ the line.
 
 =cut
 
-sub MAIL_QUEUED {
+sub CLEANUP_PROCESSING {
     my ($self, $rule, $line, $matches) = @_;
     my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
 
-    if ($line->{program} eq q{postfix/cleanup}
-            and exists $self->{timeout_queueids}->{$queueid}) {
+    if (exists $self->{timeout_queueids}->{$queueid}) {
         # This MAY be a cleanup line for a connection which timed out during the
         # DATA phase, but which wasn't seen before smtpd finished logging, i.e.
         # the logging sequence was:
@@ -1307,6 +1306,39 @@ sub MAIL_QUEUED {
         }
         # Otherwise we continue onwards as normal.
     }
+
+    # Sometimes I need to create connections here because there are
+    # tracked connections where the child shows up before the parent
+    # logs the tracking line; there's a similar requirement in track().
+    my $connection = $self->get_or_make_connection_by_queueid($queueid,
+        faked => $line
+    );
+    $self->save($connection, $line, $rule, $matches);
+    return;
+}
+
+=over  4
+
+=item MAIL_QUEUED
+
+This action represents Postfix picking a mail from the queue to deliver.
+
+There is one complication: sometimes the state table entry needs to be created
+by this action, because the mail is the result of forwarding or a bounce
+notification.
+
+=back
+
+This action handles the above complication and saves the data extracted from the
+line.
+
+=back
+
+=cut
+
+sub MAIL_QUEUED {
+    my ($self, $rule, $line, $matches) = @_;
+    my $queueid = $self->get_queueid_from_matches($line, $rule, $matches);
 
     # Sometimes I need to create connections here because there are
     # tracked connections where the child shows up before the parent
