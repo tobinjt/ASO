@@ -405,6 +405,8 @@ allows them to easily be undertaken independently.
 
 \label{attaching conditions to rules}
 
+\label{rule conditions in architecture}
+
 Rules can have conditions attached that will be evaluated by the framework
 before attempting to use a rule to recognise an input: if the condition is
 true the rule will be used, if not the rule will be skipped.  Conditions
@@ -416,8 +418,8 @@ required to evaluate them.  Beyond a certain level of complexity,
 conditions should probably be written in a proper programming language,
 e.g.\ taking advantage of dynamic languages' support for evaluating code at
 run-time, or embedding a language like Lua.  If an implementation is going
-to use conditions so complex that they will require a Turing-equivalent
-programming language to implement them, the design may need to be
+to use conditions so complex that they will require a programming language
+capable of implementing a Turing machine, the design may need to be
 re-thought, including the decision to use this architecture --- there may
 be other architectures more suitable.
 

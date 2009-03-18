@@ -1,15 +1,15 @@
-\chapter{Results}
+\chapter{Results and Evaluation}
 
 \label{Results}
-
-XXX SHOULD THIS CHAPTER BE CALLED ``Results'' OR ``Evaluation''\@?
 
 XXX NEED AN INTRODUCTION\@.
 
 XXX COMPARE PARSING + ACTIONS TO JUST PARSING\@.
 
 XXX USE THE DATA COLLECTED ABOUT NUMBER OF RULES TRIED\@.  MAYBE INCLUDE IN
-ORDERINGS SECTION\@?
+ORDERINGS SECTION\@?  MIX WITH RECOGNISING VS RECOGNISING + ACTION, AND
+KEEP COUNTERS FOR EACH PROGRAM TOO --- MAYBE SOMETHING USEFUL WILL COME
+FROM IT\@.
 
 XXX COMPARE BEST AND WORST POSSIBLE RESULTS WITH REAL RESULTS\@.
 
@@ -27,12 +27,18 @@ Parsing efficiency is an obvious concern when the parser routinely needs to
 parse large log files.  The server that generated the log files used in
 testing this parser accepts approximately 10,000 mails for 700 users a day;
 \graphref{Mails received per day} shows that as expected there are far more
-mails received on weekdays than at weekends.   Median log file size is
-50MB, containing 285,000 log lines --- large scale mail servers would have
-much larger log files.  Note that \graphref{Mails received per day} and
-\tableref{Number of mails received per day: statistics} show the number of
-mails received by \acronym{SMTP} only; in particular the mail loops
-noticeable in other graphs do not contribute to these figures.
+mails received on weekdays than at weekends.  The mail server in question
+is a production mail server handling mail for a university department; the
+benefit of using this server is that the log files from it exhibit the
+idiosyncrasies and peculiarities a mail server in the wild must deal with,
+but the downside is that significantly altering the configuration just to
+log messages from a different Postfix component is not an option.  Median
+log file size is 50MB, containing 285,000 log lines --- large scale mail
+servers would have much larger log files.  Note that \graphref{Mails
+received per day} and \tableref{Number of mails received per day:
+statistics} show the number of mails received by \acronym{SMTP} only; in
+particular the mail loops noticeable in other graphs do not contribute to
+these figures.
 
 \showgraph{build/graph-mails-received}{Number of mails received via SMTP
 per day}{Mails received per day}
