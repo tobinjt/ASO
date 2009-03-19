@@ -63,6 +63,7 @@ reject_unauth_pipelining: DATA
 reject_unknown_address: __EMAIL__
 reject_unknown_client: __HOSTNAME__ __IP__
 reject_unknown_mailhost: __HOSTNAME__
+reject_unverified_address: __RECIPIENT__
 resolve_clnt: .*flags= .+
 rewrite_clnt: local: __EMAIL__ -> __EMAIL__
 send attr .* =.*

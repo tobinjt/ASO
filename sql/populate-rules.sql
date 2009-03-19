@@ -591,7 +591,7 @@ INSERT INTO rules(name, description, program, regex, action, restriction_name, c
 INSERT INTO rules(name, description, program, regex, action, restriction_name, cluster_group_id)
     VALUES('Unwanted mail to root 2', 'People keep sending us mail for root at their machine (2)',
         'postfix/smtpd',
-        '^__RESTRICTION_START__ <__RECIPIENT__>: Recipient address rejected: (?:alias root to some other user, damnit.|Please do something with root.s mail.); from=<(__RECIPIENT__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
+        '^__RESTRICTION_START__ <__RECIPIENT__>: Recipient address rejected: (?:alias root to some other user, damnit.|Please do something with root.s mail.); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
         'check_recipient_access',
         4
@@ -793,16 +793,6 @@ INSERT INTO rules(name, description, program, regex, action, restriction_name, c
     VALUES('Address verification not finished', 'Address verification is in progress',
         'postfix/smtpd',
 	    '^__RESTRICTION_START__ <__RECIPIENT__>: Recipient address rejected: unverified address: Address verification in progress; from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
-        'DELIVERY_REJECTED',
-        'reject_unverified_recipient',
-        4
-);
-
--- reject_unverified_address: asdf@oenone.cs.tcd.ie
-INSERT INTO rules(name, description, program, regex, action, restriction_name, cluster_group_id)
-    VALUES('Address verification was unsuccessful', 'Address verification did not find the address at the remote server',
-        'postfix/smtpd',
-        '^reject_unverified_address: (__RECIPIENT__)$',
         'DELIVERY_REJECTED',
         'reject_unverified_recipient',
         4
@@ -1309,7 +1299,7 @@ VALUES('Lost connection after data', 'Lost connection after end-of-data - messag
 INSERT INTO rules(name, description, program, regex, result_data, connection_data, action)
     VALUES('Malformed DNS reply, or no data', 'The DNS reply was malformed, or the requested record was not found',
         'postfix/smtp',
-        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=bounced \((__DATA__(?:Host or domain name not found. )?Name service error for name=.* type=(?:A|AAAA|MX): (?:Malformed name server reply|Host found but no data record of requested type))\)$',
+        '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__, )?status=bounced \((__DATA__(?:Host or domain name not found. )?Name service error for name=(__SERVER_HOSTNAME__) type=(?:A|AAAA|MX): (?:Malformed name server reply|Host found but no data record of requested type))\)$',
         'smtp_code = 554',
         'client_hostname = localhost, client_ip = 127.0.0.1, server_ip = unknown',
         'MAIL_BOUNCED'
@@ -1385,10 +1375,11 @@ INSERT INTO rules(name, description, program, regex, action)
 );
 
 -- 32CBB3FA53: to=<obries10@hiteshpc.cs.tcd.ie>, relay=hiteshpc.cs.tcd.ie[2001:770:10:200:201:3ff:fe49:b00d]:25, delay=0.16, delays=0.01/0/0.09/0.05, dsn=2.1.5, status=deliverable (250 2.1.5 Ok)
-INSERT INTO rules(name, description, program, regex, action)
+INSERT INTO rules(name, description, program, regex, result_data, action)
     VALUES('Postfix logging how it will deliver some mail via SMTP', 'XXX FIGURE OUT WHY THIS HAPPENS 2',
         'postfix/smtp',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=(__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\](?::\d+)?, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__,\s)?status=deliverable \((__DATA__.*)\)$',
+        'smtp_code = 250',
         'SAVE_DATA'
 );
 
@@ -1578,10 +1569,11 @@ INSERT INTO rules(name, description, program, regex, action)
 );
 
 -- 6C7D1F3894: to=<james.murphy@cs.tcd.ie>, relay=local, delay=0.04, delays=0.02/0.02/0/0, dsn=2.0.0, status=deliverable (aliased to jfmurphy)
-INSERT INTO rules(name, description, program, regex, action)
+INSERT INTO rules(name, description, program, regex, result_data, action)
     VALUES('Postfix logging how it will deliver some mail via local delivery', 'XXX FIGURE OUT WHY THIS HAPPENS',
         'postfix/local',
         '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=local, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__,\s)?status=deliverable \((__DATA__.*)\)$',
+        'smtp_code = 250',
         'SAVE_DATA'
 );
 

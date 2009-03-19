@@ -2896,6 +2896,22 @@ DIFFERENT
         }
     }
 
+    # Deal with bounce mails that are delivered locally, and so have no
+    # client or server information.
+    if (exists $connection->{bounce_notification}) {
+        my %client_server = (
+            server_hostname => q{localhost},
+            server_ip       => q{127.0.0.1},
+            client_hostname => q{localhost},
+            client_ip       => q{127.0.0.1},
+        );
+        foreach my $key (keys %client_server) {
+            if (not exists $connection->{connection}->{$key}) {
+                $connection->{connection}->{$key} = $client_server{$key};
+            }
+        }
+    }
+
     my %missing_result;
     # Check that we have everything we need
     RESULT:
