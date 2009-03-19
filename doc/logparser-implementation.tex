@@ -343,17 +343,8 @@ The following attributes are defined for each rule:
         lines the rule applies to; see \sectionref{rule conditions in
         implementation} for full details of how this attribute is used.
 
-    \item [regex] The regex to recognise log lines with.  The regex will
-        have several keywords expanded when the rules are loaded: this
-        simplifies reading and writing rules; avoids needless repetition of
-        complex regex components; allows the components to be corrected
-        and/or improved in one location; enables automatic extraction and
-        saving of captured data; and makes each regex largely
-        self-documenting.  For efficiency the keywords are expanded and
-        every rule's regex is compiled before attempting to parse the log
-        file; otherwise every regex would be recompiled each time it was
-        used, resulting in a large, data dependent slowdown, as shown in
-        \sectionref{Caching compiled regexes}.
+    \item [regex] The regex to recognise log lines with, documented in
+        \sectionref{regex components}.
 
     \item [connection\_data] Sometimes rules need to save data that is not
         present in the log line: e.g.\ setting \texttt{client\_ip} when a
@@ -763,8 +754,6 @@ recognising rule's regex.  Each action is passed the same arguments:
 
 \end{boldeqlist}
 
-XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
-
 \begin{description}
 
     \item [BOUNCE\_CREATED] Postfix 2.3 and subsequent versions log the
@@ -781,8 +770,8 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
         \sectionref{Postfix Daemons}.  This action saves all data captured
         by the rule's regex if the log line has not come after a timeout
         (see \sectionref{discarding cleanup log lines}); it also creates
-        the mail if necessary (see \sectionref{pickup logging after
-        cleanup}).
+        the mail if necessary, setting its unknown origin flag (see
+        \sectionref{pickup logging after cleanup}).
 
     \item [CLONE] Multiple mails may be accepted on a single connection, so
         each time a mail is accepted the connection's state table entry
@@ -798,12 +787,11 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
         mail (\sectionref{Re-injected mails}).
 
     \item [CONNECT] Handle a remote client connecting: create a new
-        connection indexed by \daemon{smtpd} \acronym{pid}, and save the
-        data captured by the rule's regex (\acronym{IP} address and
-        hostname of the client).  If a connection already exists it is
-        treated as a symptom of a bug in \parsername{}, and the action will
-        issue a warning containing the full contents of the existing
-        connection plus the log line that has just been parsed.
+        connection, indexed by \daemon{smtpd} \acronym{pid}.  If a
+        connection already exists it is treated as a symptom of a bug in
+        \parsername{}, and the action will issue a warning containing the
+        full contents of the existing connection plus the log line that has
+        just been parsed.
 
     \item [DELETE] Deals with mail deleted using Postfix's administrative
         command \daemon{postsuper}.  This action adds a dummy recipient
@@ -831,16 +819,10 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
     \item [EXPIRY] If Postfix has not managed to deliver a mail after
         trying for five days it will give up and return the mail to the
         sender.  When this happens the mail will not have a combination of
-        Postfix programs which passes the valid combinations check (see
-        \sectionref{out of order log lines}).  To ensure that the mail can
-        be committed the EXPIRY action sets a flag marking the mail as
-        expired; this flag later causes the valid combinations check to be
-        skipped.  The mail will be committed when a log line triggers the
-        \texttt{COMMIT} action; if the \texttt{COMMIT} action has already
-        run and refused to enter the mail in the database because it failed
-        the valid program combinations check, the \texttt{SAVE\_DATA}
-        action will re-invoke the \texttt{COMMIT} action the next time it
-        is invoked.
+        Postfix programs which passes the valid combinations check as
+        described in \sectionref{out of order log lines}; this action, with
+        cooperation from the COMMIT and SAVE\_DATA actions, deals with that
+        complication.
 
     \item [MAIL\_BOUNCED] This action behaves exactly like the
         \texttt{SAVE\_DATA} action; it saves all data captured by the
@@ -874,16 +856,16 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
         timeouts the processing is the same for mails that are too large.
 
     \item [PICKUP] The PICKUP action corresponds to the \daemon{pickup}
-        service dealing with a locally submitted mail.  Out of order log
-        entries may have caused the state table entry to already exist (see
-        \sectionref{pickup logging after cleanup}); if it does not exist it
-        will be created.
+        service dealing with a locally submitted mail.  A new mail will be
+        created, although out of order log entries may have caused the
+        state table entry to already exist, as documented in
+        \sectionref{pickup logging after cleanup}.
 
     \item [POSTFIX\_RELOAD] When Postfix stops or reloads its configuration
         it kills all \daemon{smtpd} processes, requiring any active
         connections to be cleaned up, entered in the database, and deleted
         from the state tables.  Postfix probably kills all the other
-        components too, but the parser is only affected by \daemon{smtpd}
+        components too, but \parsername{} is only affected by \daemon{smtpd}
         processes exiting.
 
     \item [SAVE\_DATA] Every action that can locate the correct entry in
@@ -900,24 +882,24 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
         cannot be entered into the database; unfortunately this means that
         some data is lost.
 
-    \item [SMTPD\_KILLED] Sometimes an \daemon{smtpd} is killed by a
-        signal; this is processed in the same way as the
-        \texttt{SMTPD\_DIED} action.
+    \item [SMTPD\_KILLED] Sometimes a \daemon{smtpd} is killed by a signal;
+        this is processed in the same way as a \daemon{smtpd} dying, see
+        the \texttt{SMTPD\_DIED} action for details.
 
     \item [SMTPD\_WATCHDOG] \daemon{smtpd} processes have a watchdog timer
         to deal with unusual situations; after five hours the timer will
         expire and the \daemon{smtpd} will exit.  This occurs very
         infrequently, as there are many other timeouts that should occur in
-        the intervening hours, e.g.\ timeouts for DNS requests, timeouts
+        the intervening hours, e.g.\ timeouts for DNS requests or timeouts
         reading data from the client.  The active connection for that
         \daemon{smtpd} must be cleaned up, entered in the database, and
         deleted from the state tables.
 
-    \item [TIMEOUT] The connection timed out so the mail currently being
-        transferred must be discarded.  The mail may have been accepted, in
-        which case there's a data structure to dispose of, or it may not in
-        which case there is not.  See \sectionref{timeouts during data
-        phase} for the gory details.
+    \item [TIMEOUT] The connection with the remote client timed out so the
+        mail currently being transferred must be discarded.  The mail may
+        have been accepted, in which case there's a data structure to
+        dispose of, or it may not in which case there is not.  See
+        \sectionref{timeouts during data phase} for full details.
 
     \item [TRACK] Track a mail when it is re-injected for forwarding to
         another mail server; this happens when a local address is aliased
@@ -928,9 +910,10 @@ XXX MAKE ALL ACTION DESCRIPTIONS FLOW BETTER\@.
         by this parent or by another parent, and issues appropriate
         warnings in either case.
 
-    \item [UNINTERESTING] This rule just returns successfully; it is used
-        when a line needs to be parsed for completeness but does not either
-        provide any useful data or require anything to be done.
+    \item [UNINTERESTING] This action just returns successfully: it is used
+        when a log line needs to be parsed for completeness, but does not
+        either provide any useful data to be saved or require anything to
+        be done.
 
 \end{description}
 
@@ -957,8 +940,6 @@ does not have rules for.
 
 \label{rules in implementation}
 
-XXX NEED AN INTRODUCTION\@.
-
 The rules are responsible for classifying each log line and specifying the
 correct action to be invoked.  For any parser implemented using this
 architecture, the rules are the most visible component and most likely to
@@ -967,7 +948,7 @@ can easily modify or add to them, but the implementation must balance that
 simplicity with the need to provide enough flexibility and power to
 successfully parse the inputs.
 
-The theoretical aspects of this component are covered in detail in
+The role of the rules in the architecture is covered in detail in
 \sectionref{rules in architecture}; this section is concerned with the
 practical aspects of how rules are implemented and used in \parsername{}.
 The structure of the rules table has already been documented in
@@ -1234,20 +1215,82 @@ of the rules are successful the framework will warn the user.
 
 \subsection{Regex Components}
 
-XXX WRITE THIS BIT, AND REDUCE THE ENTRY IN THE RULES TABLE\@.
+\label{regex components}
 
-    The regex to recognise log lines with.  The regex will
-        have several keywords expanded when the rules are loaded: this
-        simplifies reading and writing rules; avoids needless repetition of
-        complex regex components; allows the components to be corrected
-        and/or improved in one location; enables automatic extraction and
-        saving of captured data; and makes each regex largely
-        self-documenting.  For efficiency the keywords are expanded and
-        every rule's regex is compiled before attempting to parse the log
-        file; otherwise every regex would be recompiled each time it was
-        used, resulting in a large, data dependent slowdown, as shown in
-        \sectionref{Caching compiled regexes}.
+Each rule's regex will have keywords expanded when the rules are loaded,
+for several reasons:
 
+\begin{itemize}
+
+    \item It simplifies both reading and writing of regexes and makes each
+        regex largely self-documenting.  E.g.\ the meaning of
+        \_\_CLIENT\_HOSTNAME\_\_ is immediately clear, whereas
+        \verb!(?:unknown|(?:[-.\w]+))! needs to be deciphered.
+
+    \item It avoids needless repetition of complex regex components, and
+        allows the components to be corrected or improved in one
+        location.  E.g.\ \_\_SENDER\_\_ is used in 68 rules; if a mistake
+        is discovered it can be corrected in one place only.
+
+    \item It enables automatic extraction and saving of captured data.  The
+        regex snippets use Perl 5.10's named capture buffers~\cite{perlre},
+        so the mapping between captures and fields does not need to be
+        explicitly specified by the rule.
+
+\end{itemize}
+
+For efficiency the keywords are expanded and every rule's regex is compiled
+before attempting to parse the log file, otherwise every regex would be
+recompiled each time it was used, resulting in a large, data dependent
+slowdown, as shown in \sectionref{Caching compiled regexes}.  Most of the
+keywords are named after the fields in the connections or results tables
+they populate: \_\_CLIENT\_HOSTNAME\_\_, \_\_CLIENT\_IP\_\_, \_\_DELAY\_\_,
+\_\_DELAYS\_\_, \_\_ENHANCED\_STATUS\_CODE\_\_, \_\_HELO\_\_,
+\_\_MESSAGE\_ID\_\_, \_\_QUEUEID\_\_, \_\_RECIPIENT\_\_, \_\_SENDER\_\_,
+\_\_SERVER\_HOSTNAME\_\_, \_\_SERVER\_IP\_\_, \_\_SIZE\_\_, and
+\_\_SMTP\_CODE\_\_.
+
+Some of the keywords need more explanation:
+
+\begin{eqlist}
+
+    \squeezeitems{}
+
+    \item [\_\_CHILD\_\_]  The queueid of a child mail; see
+        \sectionref{Re-injected mails}.
+
+    \item [\_\_COMMAND\_\_]  All \acronym{SMTP} commands, except
+        \texttt{DATA}, which typically has a more specific rule.
+        Priorities could have been used instead of excluding \texttt{DATA}.
+
+    \item [\_\_CONN\_USE\_\_]  How many times the connection was reused;
+        Postfix tries to reuse connections whenever possible to reduce the
+        load on both the sending and receiving servers.
+
+    \item [\_\_DATA\_\_]  This snippet is special: it matches a zero-length
+        string, so it needs to be followed by a pattern that matches
+        appropriately, but it captures whatever is matched so that it can
+        be saved.  E.g.\ \verb!/(__DATA__connection (?:refused|reset!
+        \newline{} \tab{}\verb!by peer))/! matches either ``connection
+        refused'' or ``connection reset by peer'' and causes it to be saved
+        to the data field of that log line's result.
+
+    \item [\_\_PID\_\_]  The \acronym{pid} of a \daemon{smtpd} process that
+        dies or is killed; see the SMTPD\_DIED action in
+        \sectionref{actions in detail in implementation}.
+
+    \item [\_\_RESTRICTION\_START\_\_]  Matches the start of a delivery
+        rejected log line: XXX SHOULD I INCLUDE THIS\@? \newline{}
+        \verb!/(__QUEUEID__): reject(?:_warning)?: ! \newline{}
+        \verb!(?:RCPT|DATA) from ! \newline{}
+        \verb!(?>(__CLIENT_HOSTNAME__)\\[)! \newline{}
+        \verb!(?>(__CLIENT_IP__)\\]): (__SMTP_CODE__)! \newline{}
+        \verb!(?: __ENHANCED_STATUS_CODE__)?/!
+
+    \item [\_\_SHORT\_CMD\_\_]  Postfix sometimes logs \acronym{SMTP}
+        commands in a short, single word form.
+
+\end{eqlist}
 
 \subsection{Overlapping Rules}
 

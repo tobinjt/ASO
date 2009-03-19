@@ -461,13 +461,15 @@ check: lines-from-paragraphs
 	ack '(address|author|publisher|title)\s+=\s+.* (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]]' logparser-bibliography.tt2
 	# Check for:
 	# * using a bare \url{} command
-	# * trailing spaces or lines # containing only spaces
+	# * trailing spaces or lines containing only spaces
 	# * repeated .
 	# * . not followed by two spaces
 	ack '\\url{|[ \t]+$$|\.{2,}|\. [^ ]' logparser-*.tex
 	ack 'XX[X]' logparser.bbl
 	# Check for repeated words
 	ack '\b(\w+)\b\s+\b\1\b' build/logparser*.tex
+	# Check for using an instead of a before \daemon{foo}
+	ack ' an \\daemon{' build/logparser*.tex
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
