@@ -1341,20 +1341,22 @@ INSERT INTO rules(name, description, program, regex, action)
 );
 
 -- 6F50FF34BC: to=<maa10887@relay.cs.tcd.ie>, relay=none, delay=0.03, delays=0.01/0.02/0/0, dsn=5.4.6, status=undeliverable (mail for relay.cs.tcd.ie loops back to myself)
-INSERT INTO rules(name, description, program, regex, action, restriction_name, cluster_group_id)
+INSERT INTO rules(name, description, program, regex, result_data, action, restriction_name, cluster_group_id)
     VALUES('Mail loop detected (3)', 'This host is the MX for the addresses domain, but is not final destination for that domain (3)',
         'postfix/smtp',
     	 '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<(__RECIPIENT__)>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__,\s)?status=undeliverable \(mail for __SERVER_HOSTNAME__ loops back to myself\)$',
+        'smtp_code = 550',
         'MAIL_BOUNCED',
         'Mail loop detection',
         10
 );
 
 -- F2295F3894: to=<root@cagnode21.cs.tcd.ie>, relay=none, delay=30, delays=0.02/0/30/0, dsn=4.4.1, status=undeliverable (connect to cagnode21.cs.tcd.ie[134.226.53.85]:25: Connection timed out)
-INSERT INTO rules(name, description, program, regex, action)
+INSERT INTO rules(name, description, program, regex, result_data, action)
     VALUES('Mail bounced because the connection was refused/timed out', 'Mail bounced because the smtp connection was refused/timed out',
         'postfix/smtp',
 	    '^(__QUEUEID__): to=<(__RECIPIENT__)>,(?: orig_to=<__RECIPIENT__>,)? relay=none, (?:__CONN_USE__)?__DELAY__(?:__DELAYS__)?(?:dsn=__ENHANCED_STATUS_CODE__,\s)?status=undeliverable \(connect to (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]:25: Connection (?:refused|timed out)\)$',
+        'smtp_code = 550',
         'MAIL_BOUNCED'
 );
 
