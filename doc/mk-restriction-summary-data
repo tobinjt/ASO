@@ -4,7 +4,7 @@ set -e
 set -u
 
 sqlite3 db.full-run.sq3 <<'SQL'
-select "All rejections",                    sum(hits_total) from rules where postfix_action = "REJECTED";
+select "All rejections",                    sum(hits_total) from rules where action = "DELIVERY_REJECTED";
 select "Unknown recipients",                hits_total      from rules where name = "Unknown recipient";
 select "Unknown sender",                    hits_total      from rules where name = "Unknown sender";
 select "\glspl{DNSBL}",                     sum(hits_total) from rules where restriction_name = "reject_rbl_client";
