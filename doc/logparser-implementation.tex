@@ -934,7 +934,7 @@ action may need to extend the list of valid combinations described in
 \sectionref{out of order log lines} if the new action creates a different
 set of acceptable programs, but this would only be necessary if the new
 action processes log lines from Postfix components \parsername{} currently
-does not have rules for.
+does not have rules for, e.g.\ \daemon{virtual} or \daemon{lmtp}.
 
 \section{Rules}
 
@@ -1279,13 +1279,9 @@ Some of the keywords need more explanation:
         dies or is killed; see the SMTPD\_DIED action in
         \sectionref{actions in detail in implementation}.
 
-    \item [\_\_RESTRICTION\_START\_\_]  Matches the start of a delivery
-        rejected log line: XXX SHOULD I INCLUDE THIS\@? \newline{}
-        \verb!/(__QUEUEID__): reject(?:_warning)?: ! \newline{}
-        \verb!(?:RCPT|DATA) from ! \newline{}
-        \verb!(?>(__CLIENT_HOSTNAME__)\\[)! \newline{}
-        \verb!(?>(__CLIENT_IP__)\\]): (__SMTP_CODE__)! \newline{}
-        \verb!(?: __ENHANCED_STATUS_CODE__)?/!
+    \item [\_\_RESTRICTION\_START\_\_]  Matches the standard information
+        Postfix includes at the start of almost all log lines resulting
+        from rejecting a delivery attempt.
 
     \item [\_\_SHORT\_CMD\_\_]  Postfix sometimes logs \acronym{SMTP}
         commands in a short, single word form.
@@ -1340,20 +1336,27 @@ be helpful:
 
 \label{complications}
 
-XXX IMPROVE THE INTRO\@: ``needs more of a lead-in''.
+It was initially expected that parsing Postfix log files would be a
+relatively simple task, requiring a couple of months of work.  The author
+had found Postfix log files useful when investigating problems reported by
+users, and an examination of the log files gave the impression that they
+would be straightforward to parse, process, and understand.  The large
+variation in log lines was not apparent, because the majority of log lines
+are recognised by a small set of rules, as shown in \figureref{rule hits
+graph}.  Most of the myriad complications and difficulties documented in
+this section were discovered during \parsernames{} development, but the
+first three complications were identified during the planning and design
+phase of this project, influencing the architecture's design.
 
-The complications described in this section are listed in the order in
-which they were encountered during development of the parser.  Each of
-these complications caused the parser to operate incorrectly, generating
-either warning messages or leaving mails in the state table.  The frequency
-of occurrence is much higher at the start of the list, with the first
-complication occurring several orders of magnitude more frequently than the
-last.  When deciding which problem to address next, the most common was
-always chosen, as resolving the most common problem would yield the biggest
-improvement in the parser, prune the greatest number of mails from the
-state tables and error messages, and make the remaining problems more
-apparent.  The first three complications were encountered early in the
-parser's implementation and guided its design and development.
+Each of these complications caused \parsername{} to operate incorrectly,
+generate warning messages, or leave mails in the state table.  The
+complications are listed in the order in which they were overcome during
+development of \parsername{}, with the first complication occurring several
+orders of magnitude more frequently than the last.  When deciding which
+problem to tackle next, the problem causing the highest number of warning
+messages or mails incorrectly remaining in the state tables was always
+chosen, because that approach yielded the biggest improvement in the
+parser, and made the remaining problems more apparent.
 
 \subsection{Queueid Vs Pid}
 
@@ -1414,119 +1417,74 @@ the above sequence, but currently there will only be one.
 
 \label{tracking re-injected mail}
 
-The most difficult complication initially encountered is that locally
-addressed mails are not always delivered directly to a mailbox: sometimes
-they are addressed to and accepted for a local address but need to be
-delivered to one or more remote addresses due to aliases.  When this
-occurs a child mail will be injected into the Postfix queue, but without
-the explicit logging that \daemon{smtpd} or \daemon{postdrop} injected
-mails have.  Thus the source of the mail is not immediately discernible
-from the log line in which the mail first appears; from a strictly
-chronological reading of the log files it usually appears as if the child
-mail has appeared from thin air.  Subsequently the parent mail will log the
-creation of the child mail, e.g.\ parent mail 3FF7C4317 creates child mail
-56F5B43FD\@:
+Mails sent to local addresses are not always delivered directly to a
+mailbox: sometimes they are sent to and accepted for a local address, but
+need to be delivered to one or more remote addresses due to aliasing.  When
+this occurs, a child mail will be injected into the Postfix queue, but
+without the explicit logging that mails injected by \daemon{smtpd} or
+\daemon{postdrop} have.  Thus the source of the mail is not immediately
+discernible from the log line in which the mail's queueid first appears:
+from a strictly chronological reading of the log lines it usually appears
+as if the child mail has been created without a source.  Subsequently the
+parent mail will log the creation of the child mail, e.g.\ parent mail
+3FF7C4317 creates child mail 56F5B43FD\@:
 
-\texttt{3FF7C4317: to=<username@example.com>, relay=local, \newline{}
-\tab{} delay=0, status=sent (forwarded as 56F5B43FD)}
+\texttt{3FF7C4317: to=<username@example.com>, relay=local, \hfill{}
+\newline{} \tab{} \tab{} delay=0, status=sent (forwarded as 56F5B43FD)}
 
 Unfortunately, while all log lines from an individual process appear in
 chronological order, the order in which log lines from different processes
 are interleaved is subject to the vagaries of process scheduling.  In
-addition, the first log line belonging to the child mail (the log line
-cited above belongs to the parent mail) is logged by \daemon{qmgr}, so the
-order also depends on how soon \daemon{qmgr} processes the new mail.
+addition, the first log line belonging to the child mail (the example log
+line above belongs to the parent mail) is logged by \daemon{qmgr} or
+\daemon{cleanup}, so the order also depends on how soon they process the
+new mail.
 
-Because of the uncertain order the parser cannot complain when it
-encounters a log line from \daemon{qmgr} for a previously unseen mail;
-instead it must flag the mail as coming from an unknown origin, and
-subsequently clear the flag if and when the origin of the mail becomes
-clear.  Obviously the parser could omit checking where mails originate
-from, but requiring an explicit source helps to expose bugs in the parser;
-such checks helped to identify the complications described in
-\sectionref{discarding cleanup log lines} and \sectionref{pickup logging
-after cleanup}.
+Because of the uncertain order that log lines can appear in, \parsername{}
+cannot complain when it encounters a log line from either \daemon{qmgr} or
+\daemon{cleanup} for a previously unseen mail; instead it must flag the
+mail as coming from an unknown origin, and subsequently clear that flag if
+and when the origin of the mail becomes clear.  Obviously the parser could
+omit checking where mails originate from, but requiring an explicit source
+helps to expose bugs in the parser; such checks helped to identify the
+complications described in \sectionref{discarding cleanup log lines} and
+\sectionref{pickup logging after cleanup}.
 
 Process scheduling can have a still more confusing effect: quite often the
-child mail will be created, delivered, and entirely finished with
-\textbf{before} the parent logs the creation log line!  Thus, mails flagged
-as coming from an unknown origin cannot be entered into the database when
-their final log line is parsed; instead they must be marked as ready for
-entry and subsequently entered once the parent mail has been identified.
+child mail will be created, delivered, and entirely finished with,
+\textit{before\/} the parent mail logs the creation log line!  Thus, mails
+flagged as coming from an unknown origin cannot be entered into the
+database when their final log line is processed; instead they must be
+marked as ready for entry and subsequently entered once their origin has
+been identified.  The crux of this complication is that re-injected mails
+appear in the log files without explicit logging indicating their source.
 
-XXX MERGE THE REMAINDER OF THIS SECTION INTO THE PRIOR MATERIAL\@.
-
-The crux of this complication is that re-injected mails appear in the log
-files without explicit logging indicating their source.  There are two
-implicit indications:
+Tracking re-injected mail requires \parsername{} to do the following in the
+COMMIT action:
 
 \begin{enumerate}
 
-    \item The indicator which more commonly introduces re-injection is when
-        \daemon{qmgr} selects a mail with a previously unseen queueid for
-        delivery, in which case a new data structure will be created for
-        that mail.  The mail will be flagged as having unknown origins;
-        this flag will subsequently be cleared once the origin has been
-        established.  This may also be an indicator that the mail is a
-        bounce notification, see \sectionref{identifying bounce
-        notifications} for details.
+    \item If a mail is tagged with the unknown origin flag it is assumed to
+        be a child mail whose parent has not yet been identified.  The mail
+        is tagged as ready to be entered in the database, but entry is
+        postponed until the parent is identified.  The child mail should
+        not have any subsequent log lines: only its parent should refer to
+        it.
 
-    \item Local delivery re-injects the mail and logs a relayed delivery
-        rather than delivering directly to a mailbox or program as it
-        usually would.\footnote{Relayed delivery is performed by the
-        \acronym{SMTP} client; local delivery means local to the server,
-        i.e.\ an address the server is final destination for.}  In this
-        case the mail may already have been created (described above) and
-        the unknown origin flag will be cleared; if not a new data
-        structure will be created.  In both cases the re-injected mail is
-        marked as a child of the original mail.  The log line in question
-        is:
+    \item If the mail is a child mail with an identified parent it is
+        entered in the database as usual, then removed from its parent's
+        list of children.  If this child is the last mail on that list, and
+        the parent has already been entered in the database, the parent
+        will be removed from the state tables.
 
-        \texttt{3FF7C4317: to=<username@example.com>, relay=local,
-        \newline{} \tab{} delay=0, status=sent (forwarded as 56F5B43FD)}
-
-        This always occurs for re-injected mail but typically occurs after
-        the first indicator.  This log line is required to tie the parent
-        and child mails together and so is central to the process of
-        tracking re-injected mails.
+    \item If the mail is a parent it is entered in the database as usual,
+        because there will be no further log lines for it.  There may be
+        child mails waiting to be entered in the database; these are
+        entered as normal, and removed from the state tables.  If there are
+        more child mails, the parent's removal from the state tables will
+        be postponed until the last child has been entered.
 
 \end{enumerate}
-
-The algorithm for tracking and saving re-injected mail to the database can
-finally be described:
-
-\begin{itemize}
-
-    \item If the mail is of unknown origin it is assumed to be a child mail
-        whose parent has not yet been identified.  Mark the mail as ready
-        for entry in the database and wait for the parent to deal with it.
-        The mail should not have any subsequent log lines; only its parent
-        should refer to it.
-
-    \item If the mail is a child mail then it has already been tracked: as
-        with all other mail, the data is cleaned up, the child is entered
-        in the database, and then deleted from the state tables.  The child
-        mail will be removed from the parent mail's list of children; if
-        this is the last child and the parent has already been entered in
-        the database, the parent will also be deleted from the state
-        tables.
-
-    \item The last alternative is that the mail is a parent mail.
-        Regardless of the state of its children its data is cleaned up and
-        entered in the database.  The parent may have children that are
-        waiting to be entered in the database; the data for each of those
-        children is cleaned up and entered in the database, then deleted
-        from the state tables.  The parent may also have outstanding
-        children which are not yet delivered, in which case the parent must
-        be retained in the state tables until those children are finished
-        with.  As soon as the last child is deleted from the state tables
-        the parent will also be deleted from the state tables.
-
-\end{itemize}
-
-A parent mail can have multiple children, which may be delivered before or
-after the parent mail.
-
 
 \subsection{Identifying Bounce Notifications}
 
@@ -1722,16 +1680,14 @@ These checks are made during the DISCONNECT action.
 
 The DATA phase of the \acronym{SMTP} conversation is where the headers and
 body of the mail are transferred.  Sometimes there is a timeout or the
-connection is lost\footnote{For brevity's sake \textit{timeout\/} will be
-used throughout this section, but everything applies equally to lost
-connections.} during the DATA phase; when this occurs Postfix will discard
+connection is lost during the DATA phase;\footnote{For brevity's sake
+\textit{timeout\/} will be used throughout this section, but everything
+applies equally to lost connections.} when this occurs Postfix will discard
 the mail and the parser needs to discard the data associated with that
 mail.  It seems more intuitive to save the mail's data to the database, but
 if a timeout occurs there is no data available to save; the timeout is
-recorded with the connection data instead, which is saved.
-
-To deal properly with timeouts the parsing algorithm needs to do the
-following in the TIMEOUT action:
+recorded and saved with the connection instead.  To deal properly with
+timeouts the TIMEOUT action does the following:
 
 \begin{enumerate}
 
@@ -1741,30 +1697,33 @@ following in the TIMEOUT action:
     \item If no mails have been accepted yet nothing needs to be done; the
         TIMEOUT action ends.
 
-    \item If one or more recipients have been accepted Postfix will have
-        allocated a queueid for the incoming mail, and there will be a mail
-        in the state tables that needs to be dealt with.
+    \item If one or more recipients have been accepted, Postfix will have
+        allocated a queueid for the incoming mail, and there may be a mail
+        in the state tables that needs to be discarded.  The timeout may
+        have interrupted transfer of an accepted delivery attempt, or it
+        may have occurred after a mail delivery attempt was rejected.  To
+        distinguish between the two cases the action compares the timestamp
+        of the last accepted mail against the timestamp of the last log
+        line from \daemon{smtpd} for that connection; this depends on the
+        CLONE action keeping a list of all mails accepted for each
+        connection.  If the mail acceptance timestamp is later than the
+        timeout timestamp, the timeout applies to the just-accepted mail,
+        which will be removed from the state tables, without entering it in
+        the database.  If the \daemon{smtpd} timestamp is later there was a
+        rejection between the accepted mail and the timeout: the action
+        assumes that the timeout applies to the rejected delivery attempt
+        and finishes.  This assumption is not necessarily correct, because
+        Postfix may have accepted an earlier recipient and rejected a later
+        one, in which case the timeout applies to the accepted mail, which
+        should be discarded; this has not been a problem in practice.
+        Processing timeouts is further complicated by the presence of out
+        of order \daemon{cleanup} log lines: see \sectionref{discarding
+        cleanup log lines} for details.
 
 \end{enumerate}
 
-XXX MAKE THIS PARAGRAPH CLEARER\@.  A timeout may thus apply either to an
-accepted mail or a rejected mail.  To distinguish between the two cases the
-algorithm compares the timestamp of the last accepted mail against the
-timestamp of the last line logged by \daemon{smtpd} for that connection
-(the TIMEOUT action is dependant on the CLONE action keeping a list of all
-mails accepted on each connection).  If the mail acceptance timestamp is
-later then the timeout applies to the just-accepted mail, which will be
-discarded.  If the \daemon{smtpd} timestamp is later there was a rejection
-between the accepted mail and the timeout: the action assumes that the
-timeout applies to a rejected delivery attempt and finishes.  This
-assumption is not necessarily correct, because Postfix may have accepted an
-earlier recipient and rejected a later one, in which case the timeout
-applies to the accepted mail, which should be discarded.  This has not been
-a problem in practice, though it may be in future.  This complication is
-further complicated by the presence of out of order \daemon{cleanup} log
-lines: see \sectionref{discarding cleanup log lines} for details.
-
-This complication is dealt with in the TIMEOUT action.
+This complication is dealt with by the TIMEOUT action, with help from the
+CLONE action.
 
 \subsection{Discarding Cleanup Log Lines}
 
