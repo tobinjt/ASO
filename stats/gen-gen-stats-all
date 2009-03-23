@@ -57,21 +57,12 @@ PRELUDE
 # Plus minimum versus maximum rule sets for each combination of options.
 # Plus parsing only, as a special case.
 
-my @options = (
-    {
-        skip_inserting_results      => q{--skip_inserting_results},
-    },
-    {
-        cache_compiled_regexes      => q{},
-        discard_compiled_regexes    => q{--discard_compiled_regex},
-    },
-    {
+my %options = (
         perfect_best                => q{--perfect-rule-order=best},
         optimal_ordering            => q{--sort_rules=optimal},
         shuffle_ordering            => q{--sort_rules=shuffle},
         reverse_ordering            => q{--sort_rules=reverse},
         perfect_worst               => q{--perfect-rule-order=worst},
-    },
 );
 
 my @arguments = (
@@ -81,22 +72,24 @@ my @arguments = (
     },
 );
 
-my %parsing_only = (
-    options     => [qw( --skip_inserting_results
-                        --sort_rules=optimal
-                        --parse_lines_only
-                    )],
-    arguments   => [q{../sql/db.maximum-ruleset.sq3}],
-    directory   => [qw( skip_inserting_results
-                        cache_compiled_regexes
-                        optimal_ordering
-                        parse_lines_only
-                    )],
+my %template = (
+    options     => [q{--sort_rules=optimal}],
+    arguments   => q{../sql/db.maximum-ruleset.sq3},
+    directory   => [q{optimal_ordering}],
 );
+# Parsing only:
+my $parsing_only = dclone(\%template);
+push @{$parsing_only->{options}}, q{--parse_lines_only};
+push @{$parsing_only->{directory}}, q{parse_lines_only};
+# Discarding compiled regexes.
+my $discarding_regexes = dclone(\%template);
+push @{$discarding_regexes->{options}}, q{--discard_compiled_regex};
+push @{$discarding_regexes->{directory}}, q{discard_compiled_regexes};
 
 #use Data::Dumper;
-my @mega_results = add_options(\@options, \@arguments, {});
-push @mega_results, \%parsing_only;
+my @mega_results = add_options(\%options, \@arguments, {});
+push @mega_results, $parsing_only;
+push @mega_results, $discarding_regexes;
 #print Dumper(\@mega_results);
 
 print_commands($fh, \@mega_results);
@@ -106,56 +99,43 @@ print qq{$num_test_runs test runs with different options\n};
 sub add_options {
     my ($options, $arguments, $results) = @_;
 
-    if (not @{$options}) {
-        return add_arguments($arguments, $results);
-    }
     $results->{options}     ||= [];
     $results->{directory}   ||= [];
 
     my @all_results;
-    my $remaining_options = dclone($options);
-    my $option_list = shift @{$remaining_options};
 
-    foreach my $option (sort keys %{$option_list}) {
+    foreach my $option (sort keys %{$options}) {
         my $results_copy = dclone($results);
-        push @{$results_copy->{options}}, $option_list->{$option};
+        push @{$results_copy->{options}}, $options->{$option};
         push @{$results_copy->{directory}}, $option;
-        push @all_results,
-            add_options($remaining_options, $arguments, $results_copy);
+        push @all_results, $results_copy;
     }
 
-    return @all_results;
-}
+    my @real_results;
+    foreach my $result (@all_results) {
+        my $minimum = dclone($result);
+        $minimum->{arguments} = q{../sql/db.minimum-ruleset.sq3};
+        push @{$minimum->{directory}}, q{minimum_ruleset};
+        push @real_results, $minimum;
 
-sub add_arguments {
-    my ($arguments, $results) = @_;
-
-    if (not @{$arguments}) {
-        return $results;
+        my $maximum = dclone($result);
+        $maximum->{arguments} = q{../sql/db.maximum-ruleset.sq3};
+        push @{$maximum->{directory}}, q{maximum_ruleset};
+        push @real_results, $maximum;
     }
-    $results->{arguments}   ||= [];
-    $results->{directory}   ||= [];
-
-    my @all_results;
-    my $remaining_arguments = dclone($arguments);
-    my $argument_list = shift @{$remaining_arguments};
-
-    foreach my $argument (sort keys %{$argument_list}) {
-        my $results_copy = dclone($results);
-        push @{$results_copy->{arguments}}, $argument_list->{$argument};
-        push @{$results_copy->{directory}}, $argument;
-        push @all_results, add_arguments($remaining_arguments, $results_copy);
-    }
-
-    return @all_results;
+    return @real_results;
 }
 
 sub print_commands {
     my ($fh, $all_results) = @_;
 
-    foreach my $result (@{$all_results}) {
+    my @runs;
+    push @runs, grep { $_->{arguments} =~ m/min/ } @{$all_results};
+    push @runs, grep { $_->{arguments} =~ m/max/ } @{$all_results};
+
+    foreach my $result (@runs) {
         my $options   = join q{ }, @{$result->{options}};
-        my $arguments = join q{ }, @{$result->{arguments}};
+        my $arguments = $result->{arguments};
         my $directory = join q{--}, q{/home/tobinjt/results/results}, @{$result->{directory}};
         print $fh <<"COMMAND";
 if [ ! -d "$directory" ]; then
