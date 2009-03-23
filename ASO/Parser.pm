@@ -536,7 +536,8 @@ sub parse {
     $self->{counters}->{num_lines_skipped}  = 0;
     $self->{counters}->{num_lines_failed}   = 0;
     $self->{counters}->{num_rules_tried}    = 0;
-    $self->{counters}->{by_program}         = {};
+    $self->{counters}->{rules_by_program}   = {};
+    $self->{counters}->{lines_by_program}   = {};
 
     LINE:
     while (my $line = $syslog->next()) {
@@ -744,7 +745,7 @@ sub parse_line {
                     @{$self->{rules_by_program}->{q{*}}}) {
                 $line->{text} =~ m/$rule->{regex}/;
                 $self->{counters}->{num_rules_tried}++;
-                $self->{counters}->{by_program}->{$rule->{program}}++;
+                $self->{counters}->{rules_by_program}->{$rule->{program}}++;
             }
         }
     }
@@ -755,7 +756,7 @@ sub parse_line {
             @{$self->{rules_by_program}->{$line->{program}}},
             @{$self->{rules_by_program}->{q{*}}}) {
         $self->{counters}->{num_rules_tried}++;
-        $self->{counters}->{by_program}->{$rule->{program}}++;
+        $self->{counters}->{rules_by_program}->{$rule->{program}}++;
         if ($line->{text} !~ m/$rule->{regex}/) {
             next RULE;
         }
@@ -765,6 +766,7 @@ sub parse_line {
         my %matches = %+;
         $rule->{count}++;
         $self->{counters}->{num_lines_parsed}++;
+        $self->{counters}->{lines_by_program}->{$rule->{program}}++;
         if (exists $self->{rule_order_save_fh}) {
             my $fh = $self->{rule_order_save_fh};
             say $fh $rule->{id};

@@ -110,12 +110,15 @@ foreach my $logfile (@ARGV) {
     print_timing(qq{Start parsing logfile}, $logfile);
     my $results = $parser->parse($logfile);
     if ($Options->{q{timing-data}}) {
-        print {$Options->{timing_file}}
-            map { qq{$_: $logfile: $results->{$_}\n} }
-                sort grep /^num/, keys %{$results};
-        print {$Options->{timing_file}}
-            map { qq{$_: $logfile: } . $results->{by_program}->{$_} . qq{\n} }
-                sort keys %{$results->{by_program}};
+        map { say {$Options->{timing_file}}
+                qq{$_: $logfile: $results->{$_}} }
+            sort grep /^num/, keys %{$results};
+        map { say {$Options->{timing_file}}
+                qq{$_ rules: $logfile: } . $results->{rules_by_program}->{$_}}
+            sort keys %{$results->{rules_by_program}};
+        map { say {$Options->{timing_file}}
+                qq{$_ lines: $logfile: } . $results->{lines_by_program}->{$_}}
+            sort keys %{$results->{lines_by_program}};
     }
     print_timing(qq{Parsed logfile}, $logfile);
     if (exists $Options->{memory_out_fh}) {
