@@ -531,19 +531,20 @@ sub parse {
         = $self->create_progress_bar($logfile, $logfile_fh);
     my ($last_update, $next_update) = (0, 0);
 
-    $self->{num_lines_read}     = 0;
-    $self->{num_lines_parsed}   = 0;
-    $self->{num_lines_skipped}  = 0;
-    $self->{num_lines_failed}   = 0;
-    $self->{num_rules_tried}    = 0;
+    $self->{counters}->{num_lines_read}     = 0;
+    $self->{counters}->{num_lines_parsed}   = 0;
+    $self->{counters}->{num_lines_skipped}  = 0;
+    $self->{counters}->{num_lines_failed}   = 0;
+    $self->{counters}->{num_rules_tried}    = 0;
+    $self->{counters}->{by_program}         = {};
 
     LINE:
     while (my $line = $syslog->next()) {
-        $self->{num_lines_read}++;
+        $self->{counters}->{num_lines_read}++;
         $self->{last_timestamp} = $line->{timestamp};
         if (not exists $self->{rules_by_program}->{$line->{program}}) {
             # It's not from a program we're interested in, skip it.
-            $self->{num_lines_skipped}++;
+            $self->{counters}->{num_lines_skipped}++;
             next LINE;
         }
 
@@ -558,7 +559,7 @@ sub parse {
         # To avoid data structures growing uncontrollably, we prune them every
         # 50000 log lines; this number is a guess, and may need to be changed,
         # but anything over 50000 is a big log file.
-        if ($self->{num_lines_read} % 50000 == 0) {
+        if ($self->{counters}->{num_lines_read} % 50000 == 0) {
             $self->post_parsing();
         }
 
@@ -580,31 +581,28 @@ sub parse {
         $self->{dbix}->txn_commit();
     }
 
-    if ($self->{num_lines_read} !=   $self->{num_lines_parsed}
-                                   + $self->{num_lines_skipped}
-                                   + $self->{num_lines_failed}) {
+    if ($self->{counters}->{num_lines_read} !=   $self->{counters}->{num_lines_parsed}
+                                   + $self->{counters}->{num_lines_skipped}
+                                   + $self->{counters}->{num_lines_failed}) {
         my $message = <<"MESSAGE";
 
-num_lines_read ($self->{num_lines_read}) !=   num_lines_parsed  ($self->{num_lines_parsed})
-                            + num_lines_skipped ($self->{num_lines_skipped})
-                            + num_lines_failed  ($self->{num_lines_failed})
+num_lines_read ($self->{counters}->{num_lines_read}) !=
+          num_lines_parsed  ($self->{counters}->{num_lines_parsed})
+        + num_lines_skipped ($self->{counters}->{num_lines_skipped})
+        + num_lines_failed  ($self->{counters}->{num_lines_failed})
 MESSAGE
 
         $self->my_die($message);
     }
-    if ($self->{num_lines_parsed} > $self->{num_rules_tried}) {
+    if ($self->{counters}->{num_lines_parsed} > $self->{counters}->{num_rules_tried}) {
         my $message = <<"MESSAGE";
-
-num_lines_parsed ($self->{num_lines_parsed}) > num_rules_tried ($self->{num_rules_tried})
+num_lines_parsed ($self->{counters}->{num_lines_parsed}) > num_rules_tried ($self->{num_rules_tried})
 MESSAGE
 
         $self->my_die($message);
     }
 
-    my %results = map { $_ => $self->{$_} } qw(num_lines_read
-                        num_lines_parsed num_lines_skipped
-                        num_lines_failed num_rules_tried);
-    return \%results;
+    return $self->{counters};
 }
 
 =over 4
@@ -745,7 +743,8 @@ sub parse_line {
             foreach my $rule (@{$self->{rules_by_program}->{$line->{program}}},
                     @{$self->{rules_by_program}->{q{*}}}) {
                 $line->{text} =~ m/$rule->{regex}/;
-                $self->{num_rules_tried}++;
+                $self->{counters}->{num_rules_tried}++;
+                $self->{counters}->{by_program}->{$rule->{program}}++;
             }
         }
     }
@@ -755,7 +754,8 @@ sub parse_line {
     foreach my $rule (@correct_rule,
             @{$self->{rules_by_program}->{$line->{program}}},
             @{$self->{rules_by_program}->{q{*}}}) {
-        $self->{num_rules_tried}++;
+        $self->{counters}->{num_rules_tried}++;
+        $self->{counters}->{by_program}->{$rule->{program}}++;
         if ($line->{text} !~ m/$rule->{regex}/) {
             next RULE;
         }
@@ -764,7 +764,7 @@ sub parse_line {
         # The leak is fixed in bleadperl, and will be fixed in 5.10.1.
         my %matches = %+;
         $rule->{count}++;
-        $self->{num_lines_parsed}++;
+        $self->{counters}->{num_lines_parsed}++;
         if (exists $self->{rule_order_save_fh}) {
             my $fh = $self->{rule_order_save_fh};
             say $fh $rule->{id};
@@ -787,7 +787,7 @@ sub parse_line {
     warn qq{$0: $self->{current_logfile}: }
         . $self->{current_logfile_fh}->input_line_number()
         . qq{: unparsed line: $line->{program}: $line->{text}\n};
-    $self->{num_lines_failed}++;
+    $self->{counters}->{num_lines_failed}++;
     return;
 }
 

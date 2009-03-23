@@ -112,7 +112,10 @@ foreach my $logfile (@ARGV) {
     if ($Options->{q{timing-data}}) {
         print {$Options->{timing_file}}
             map { qq{$_: $logfile: $results->{$_}\n} }
-                sort keys %{$results};
+                sort grep /^num/, keys %{$results};
+        print {$Options->{timing_file}}
+            map { qq{$_: $logfile: } . $results->{by_program}->{$_} . qq{\n} }
+                sort keys %{$results->{by_program}};
     }
     print_timing(qq{Parsed logfile}, $logfile);
     if (exists $Options->{memory_out_fh}) {
