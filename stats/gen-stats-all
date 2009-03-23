@@ -1,0 +1,61 @@
+#!/bin/bash
+
+set -u -e
+
+# Start by doing a straight test run, to get a baseline idea of parsing speed.
+
+full_run_dir="/home/tobinjt/results/results-full-run"
+mkdir -p "$full_run_dir"
+cp -p ../sql/db.maximum-ruleset.sq3 ../sql/db.sq3
+perl ../logparser/logparser --year 2007 --skip_inserting_results \
+    --out-statefile "$full_run_dir/state" --individual-state-files \
+    --timing-data "$full_run_dir/timing" \
+    --out-rule-order "$full_run_dir/rule-order" --individual-rule-order-files \
+    $( < ../logparser/logs-some ) 2> "$full_run_dir/warnings"
+rule_order_dir="$full_run_dir/../rule_order"
+mkdir -p "$rule_order_dir"
+cp -f "$full_run_dir/"rule-order* "$rule_order_dir"
+
+# Now insert results, to see how that affects speed.
+
+insert_results_dir="/home/tobinjt/results/results-insert-results"
+mkdir -p "$insert_results_dir"
+cp -p ../sql/db.maximum-ruleset.sq3 ../sql/db.sq3
+perl ../logparser/logparser --year 2007 \
+    --out-statefile "$insert_results_dir/state" --individual-state-files \
+    --timing-data "$insert_results_dir/timing" \
+    --out-rule-order "$insert_results_dir/rule-order" --individual-rule-order-files \
+    $( < ../logparser/logs-some ) 2> "$insert_results_dir/warnings"
+
+function run_test() {
+    options="$1"
+    directory="$2"
+    database="$3"
+
+    if [ ! -d "$directory" ]; then
+        LOGPARSER_SWITCHES="$1" bash ../stats/gen-stats "$dir" "$database"
+    else
+        echo "Skipping existing directory $directory"
+    fi
+}
+
+# Now run all the various combinations.
+# Minimum ruleset
+run_test "--perfect-rule-order=best"                        "/home/tobinjt/results/results--perfect_best--minimum_ruleset"              ../sql/db.minimum-ruleset.sq3
+run_test "--sort_rules=optimal"                             "/home/tobinjt/results/results--optimal_ordering--minimum_ruleset"          ../sql/db.minimum-ruleset.sq3
+run_test "--sort_rules=shuffle"                             "/home/tobinjt/results/results--shuffle_ordering--minimum_ruleset"          ../sql/db.minimum-ruleset.sq3
+run_test "--sort_rules=reverse"                             "/home/tobinjt/results/results--reverse_ordering--minimum_ruleset"          ../sql/db.minimum-ruleset.sq3
+run_test "--perfect-rule-order=worst"                       "/home/tobinjt/results/results--perfect_worst--minimum_ruleset"             ../sql/db.minimum-ruleset.sq3
+
+# Special cases
+# Don't invoke actions
+run_test "--sort_rules=optimal --parse_lines_only"          "/home/tobinjt/results/results--optimal_ordering--parse_lines_only"         ../sql/db.maximum-ruleset.sq3
+# Discard compiled actions
+run_test "--sort_rules=optimal --discard_compiled_regex"    "/home/tobinjt/results/results--optimal_ordering--discard_compiled_regexes" ../sql/db.maximum-ruleset.sq3
+
+# Maximum ruleset
+run_test "--perfect-rule-order=best"                        "/home/tobinjt/results/results--perfect_best--maximum_ruleset"              ../sql/db.maximum-ruleset.sq3
+run_test "--sort_rules=optimal"                             "/home/tobinjt/results/results--optimal_ordering--maximum_ruleset"          ../sql/db.maximum-ruleset.sq3
+run_test "--sort_rules=shuffle"                             "/home/tobinjt/results/results--shuffle_ordering--maximum_ruleset"          ../sql/db.maximum-ruleset.sq3
+run_test "--sort_rules=reverse"                             "/home/tobinjt/results/results--reverse_ordering--maximum_ruleset"          ../sql/db.maximum-ruleset.sq3
+run_test "--perfect-rule-order=worst"                       "/home/tobinjt/results/results--perfect_worst--maximum_ruleset"             ../sql/db.maximum-ruleset.sq3
