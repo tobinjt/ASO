@@ -34,7 +34,7 @@ test.%: ../../../../logs/mail.log-%
 	make INPUT='"$<"'                 SUFFIX=		test-real
 
 test-real:
-	date; perl logparser --out-rule-order order --individual-rule-order-files --year 2007 --skip_inserting_results --out-statefile state${SUFFIX} --individual-state-files --timing-data timing${SUFFIX} --memory-data memory${SUFFIX} ${INPUT} 2> warnings${SUFFIX}; date
+	date; perl logparser --debug_results --out-rule-order order --individual-rule-order-files --year 2007 --skip_inserting_results --out-statefile state${SUFFIX} --individual-state-files --timing-data timing${SUFFIX} --memory-data memory${SUFFIX} ${INPUT} 2> warnings${SUFFIX}; date
 
 test-parsing-only:
 	rm -f warnings-parsing-only
