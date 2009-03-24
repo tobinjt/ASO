@@ -22,7 +22,7 @@ mkdir -p "$dir"
 # Try to load libraries, modules etc in advance.
 perl ../logparser/logparser --help > /dev/null
 
-rule_order_dir=$( basename "$dir" );
+rule_order_dir=$( dirname "$dir" );
 rule_order_dir="$rule_order_dir/rule_order"
 if [ ! -d "$rule_order_dir" ]; then
     echo "rule_order directory $rule_order_dir doesn't exist" >&2

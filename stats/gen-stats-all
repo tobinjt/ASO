@@ -33,7 +33,7 @@ function run_test() {
     database="$3"
 
     if [ ! -d "$directory" ]; then
-        LOGPARSER_SWITCHES="$1" bash ../stats/gen-stats "$dir" "$database"
+        LOGPARSER_SWITCHES="$1" bash ../stats/gen-stats "$directory" "$database"
     else
         echo "Skipping existing directory $directory"
     fi
