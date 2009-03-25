@@ -31,11 +31,10 @@ digraph logparser {
     rejection                       -> { clone }
 
     /* Disconnect without queueid */
-    disconnect                      -> { if_no_queueid } [weight = 5]
-    if_no_queueid                   -> { fixup_enter_in_db_disconnect }
+    disconnect                      -> { fixup_enter_in_db_disconnect } [weight = 5, label = "Connection" ]
 
     /* Disconnect with queueid */
-    if_no_queueid                   -> { save_by_queueid } [weight = 5]
+    disconnect                      -> { save_by_queueid } [weight = 5, label = " Mail" ]
 
     /* Misc entry */
     pickup                          -> { save_by_queueid } [headport = n]
@@ -57,12 +56,11 @@ digraph logparser {
     /* NODE LABELS */
     rejection                       [label = "4: Postfix rejects an\nSMTP command."]
     connect                         [label = "1: Connection from remote host."]
-    clone                           [label = "5: Clone when multiple mails\n(not recipients) are delivered\nduring one connection."]
+    clone                           [label = "5: Clone when multiple mails\n(not recipients) are delivered\nover one connection."]
 
     /* Disconnect without queueid */
-    disconnect                      [label = "6: Normal disconnection, error\ndisconnection, or timeout by client."]
-    if_no_queueid                   [label = "7: If no queueid:", shape = diamond]
-    fixup_enter_in_db_disconnect    [label = "8: Clean up, enter in database.\nDelete from state tables by pid."]
+    disconnect                      [label = "6: Client disconnects,\neither successfully\nor with an error."]
+    fixup_enter_in_db_disconnect    [label = "7: Clean up, enter in database.\nDelete from state tables by pid."]
 
     /* Disconnect with queueid - already covered */
 
@@ -71,15 +69,15 @@ digraph logparser {
     qmgr_chooses_mail               [label = "3: Mail picked \nfor delivery\nby qmgr."]
 
     /* Save results by queueid */
-    save_by_queueid                 [label = "9: Save by queueid."]
-    track                           [label = "10: Track child of this mail\n(usually due to aliases)."]
+    save_by_queueid                 [label = "8: Save data from log lines."]
+    track                           [label = "9: Track child of this mail\n(usually due to aliases)."]
 
     /* Expiry */
-    expiry                          [label = "11: Mark mail as expired."]
+    expiry                          [label = "10: Mark mail as expired."]
 
     /* Commit is complicated */
     /* Neither parent nor child. */
-    commit                          [label = "12: Mail has been delivered,\nbounced, or deleted."]
+    commit                          [label = "11: Mail has been delivered,\nbounced, or deleted."]
 
     /* SUB-GRAPHS */
     subgraph sources {
@@ -97,7 +95,7 @@ digraph logparser {
 
     subgraph disconnect_without_queueid {
         rank = same
-        if_no_queueid
+        disconnect
         fixup_enter_in_db_disconnect
     }
 
