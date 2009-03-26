@@ -365,26 +365,33 @@ timeouts the \action{TIMEOUT} action does the following:
         allocated a queueid for the incoming mail, and there may be a mail
         in the state tables that needs to be discarded.  The timeout may
         have interrupted transfer of an accepted delivery attempt, or it
-        may have occurred after a mail delivery attempt was rejected.
+        may have occurred after a mail delivery attempt was rejected.  If a
+        mail needs to be discarded, the following checks will all pass:
 
-        XXX THE REMAINDER OF THIS DOES NOT MAKE SENSE\@; CHECK AND CORRECT
-        IT\@.  To distinguish between the two cases the action compares the
-        timestamp of the last accepted mail against the timestamp of the
-        last log line from \daemon{smtpd} for that connection; this depends
-        on the \action{CLONE} action keeping a list of all mails accepted
-        for each connection.  If the mail acceptance timestamp is later
-        than the timeout timestamp, the timeout applies to the
-        just-accepted mail, which will be removed from the state tables,
-        without entering it in the database.  If the \daemon{smtpd}
-        timestamp is later there was a rejection between the accepted mail
-        and the timeout: the action assumes that the timeout applies to the
-        rejected delivery attempt and finishes.  This assumption is not
+        \begin{itemize}
+
+            \item The timestamp of the log line preceding the timeout log
+                line is earlier than the timestamp of the last accepted
+                delivery attempt, i.e.\ there have not been any rejections
+                since then the delivery attempt was accepted.
+
+            \item The mail must exist in the state tables.
+
+            \item The mail does not have a \daemon{qmgr} log line.
+
+        \end{itemize}
+
+        If all the checks are passed the mail will be discarded from the
+        state table, and will not be entered in the database.  If one or
+        more checks are not passed it is assumed that the timeout happened
+        after a rejected delivery attempt.  This assumption is not
         necessarily correct, because Postfix may have accepted an earlier
         recipient and rejected a later one, in which case the timeout
-        applies to the accepted mail, which should be discarded; this has
-        not been a problem in practice.  Processing timeouts is further
-        complicated by the presence of out of order \daemon{cleanup} log
-        lines: see \sectionref{discarding cleanup log lines} for details.
+        applies to the partially accepted mail, which should be discarded;
+        this has not been a problem in practice.  Processing timeouts is
+        further complicated by the presence of out of order
+        \daemon{cleanup} log lines: see \sectionref{discarding cleanup log
+        lines} for details.
 
 \end{enumerate}
 
@@ -509,8 +516,6 @@ is untouched.
 
 This complication is handled by several actions: \action{POSTFIX\_RELOAD} (1),
 \action{SMTPD\_DIED} (2 \& 3), and \action{SMTPD\_WATCHDOG} (4).
-
-\newpage{} %XXX VARIOREF PROBLEM
 
 \subsection{Out of Order Log Lines}
 
