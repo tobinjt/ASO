@@ -146,8 +146,8 @@ without needing changes to the source code of a parser.  The framework is
 the core of the architecture and is deliberately quite simple: the rules
 deal with the variation in inputs, and the actions deal with the
 intricacies and complications encountered during parsing.  The function
-that finds the rule matching the input and invokes the requested action can
-be expressed in pseudo-code as:
+that finds the rule recognising the input and invokes the requested action
+can be expressed in pseudo-code as:
 
 \begin{verbatim}
 INPUT:
@@ -288,7 +288,7 @@ far lower degree of coupling and interdependency than in a monolithic
 parser.
 
 During development of \parsername{} it became apparent that in addition to
-the obvious variety in log~lines there were many complications to be
+the obvious variety in log lines there were many complications to be
 overcome.  Some were the result of deficiencies in Postfix's logging, and
 some of those deficiencies were rectified by later versions of Postfix,
 e.g.\ identifying bounce notifications (\sectionref{identifying bounce
@@ -308,7 +308,7 @@ parsed as if read from the input stream, allowing for a simplified version
 of cascaded parsing~\cite{cascaded-parsing}.  This powerful facility allows
 several rules and actions to parse a single input, potentially simplifying
 both rules and actions.  A simple example is to have one rule and action
-removing comments from input lines, so that other rules and actions do not
+removing comments from inputs, so that other rules and actions do not
 have to handle comments at all; obviously if comment characters can be
 escaped or embedded in quoted strings the implementation must be careful
 not to remove those.  For some inputs this type of pre-processing can
@@ -499,18 +499,18 @@ and difficulties of using overlapping rules.
 When adding new rules, the rule author must be aware that the new rule may
 overlap with one or more existing rules, i.e.\ some inputs could be parsed
 by more than one rule.  Unintentionally overlapping rules lead to
-inconsistent parsing and data extraction because the first matching rule
-wins, and the order in which rules are tried against each input might
-change between parser invocations.  Overlapping rules are frequently a
-requirement, allowing a more specific rule to match some inputs and a more
-general rule to match the remainder, e.g.\ separating \acronym{SMTP}
-delivery to specific sites from \acronym{SMTP} delivery to the rest of the
-world.  Allowing overlapping rules simplifies both the general rule and the
-more specific rule; additionally rules from different sources can be
-combined with a minimum of prior cooperation or modification required.
-Overlapping rules should have a priority attribute to specify their
-relative ordering; negative priorities may be useful for catchall rules.
-The architecture does not try to detect overlapping rules: that
+inconsistent parsing and data extraction because the first rule to
+recognise the input wins, and the order in which rules are tried against
+each input might change between parser invocations.  Overlapping rules are
+frequently a requirement, allowing a more specific rule to recognise some
+inputs and a more general rule to recognise the remainder, e.g.\ separating
+\acronym{SMTP} delivery to specific sites from \acronym{SMTP} delivery to
+the rest of the world.  Allowing overlapping rules simplifies both the
+general rule and the more specific rule; additionally rules from different
+sources can be combined with a minimum of prior cooperation or modification
+required.  Overlapping rules should have a priority attribute to specify
+their relative ordering; negative priorities may be useful for catchall
+rules.  The architecture does not try to detect overlapping rules: that
 responsibility is left to the author of the rules.
 
 Overlapping rules can be detected by visual inspection, or a program may be

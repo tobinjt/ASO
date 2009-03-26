@@ -57,7 +57,7 @@ states causing parsing to fail --- e.g.\ when a \textbf{C} parser sees the
 keyword \textbf{for} it expects to immediately see a left parenthesis, with
 any other input causing parsing to fail (comments will already have been
 removed by the preprocessor).  This parser is different: the rule which
-matches the next log line for a mail dictates the action that will be
+recognises the next log line for a mail dictates the action that will be
 invoked, which is equivalent to the next state in other parsers; thus the
 next log line for a mail dictates the next state for that mail.
 

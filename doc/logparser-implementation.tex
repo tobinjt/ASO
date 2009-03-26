@@ -6,20 +6,12 @@ XXX WRITE AN INTRODUCTION\@.  MOST OF THIS IS CRAP, BUT I MIGHT BE ABLE TO
 RESCUE SOME OF IT\@.  IT SHOULD HAVE A BLURB, FOLLOWED BY A PREVIEW OF THE
 CHAPTER\@.
 
-XXX MAIL MADS ABOUT EXAMINERS\@.
-
-XXX make log-files-lines
-
-XXX grep matches logparser*.tex
-
 The parser deals with all the complications of parsing, the eccentricities
 and oddities of Postfix log files, presenting the resulting data in a
 normalised, simple to use representation.  The parser's task is to follow
 the journey each mail takes through Postfix, combining the data captured by
 rules into a coherent whole, saving it in a useful and consistent form, and
 performing housekeeping duties.
-
-XXX DID I SAY THE STUFF IN THE NEXT TWO PARAGRAPHS ALREADY\@?
 
 The intermingling of log entries from different mails immediately rules out
 the possibility of handling each mail in isolation; the parser must be able
@@ -32,8 +24,8 @@ encountered.
 
 There is a similarity between this design and the event-driven programming
 paradigm commonly used in GUI programs, where one part of the program
-responds to events (mouse clicks in a GUI program, log lines being matched
-in the parser) and invokes the correct action.
+responds to events (mouse clicks in a GUI program, log lines being
+recognised in \parsername{}) and invokes the correct action.
 
 
 \section{Assumptions}
@@ -563,21 +555,21 @@ relationships between connections and mails must be re-created when the
 state tables are restored.
 
 The framework is now ready to begin parsing.  For each log line it will use
-those rules whose \texttt{program} field matches the program in the log
-line (see \sectionref{rule conditions in implementation}), falling back to
+those rules whose \texttt{program} field equals the program in the log line
+(see \sectionref{rule conditions in implementation}), falling back to
 generic rules if necessary, and warning if the log line is unrecognised.
 The rules are sorted for increased efficiency; see \sectionref{rule
 ordering for efficiency} for details.  The repetitive nature of log files
 gives them high compression ratios; the framework supports reading
-compressed files, simplifying the process of parsing them because they do
-not have to be uncompressed to a temporary file before parsing begins.  The
-framework also displays a progress bar to show how far parsing has
+compressed log files, simplifying the process of parsing them because they
+do not have to be uncompressed to a temporary file before parsing begins.
+The framework also displays a progress bar to show how far parsing has
 progressed through the log file, and to give the user an indication of how
 long the remainder of the parsing process is likely to take.  The progress
-bar is not as reliable when parsing compressed files, because a compressed
-block may uncompress to a variable number of log lines; there is also
-variation between the recognition and processing time of individual log
-lines, but overall the progress bar is a useful addition.
+bar is not as reliable when parsing compressed log files, because a
+compressed block may uncompress to a variable number of log lines; there is
+also variation between the recognition and processing time of individual
+log lines, but overall the progress bar is a useful addition.
 
 The framework collects data used when evaluating \parsernames{} efficiency
 for the results chapter (\sectionref{Results}); some of the techniques used
@@ -593,8 +585,8 @@ they have.  Three sets of data are collected:
         before it finds one that recognises it.
 
     \item How many log lines did the framework attempt to recognise, how
-        many were skipped because there were no rules whose condition
-        matched that log line's program, how many were successfully
+        many were skipped because there were no rules whose condition was
+        equal to that log line's program, how many were successfully
         recognised, and how many were not recognised.
 
 \end{enumerate}
@@ -1183,16 +1175,15 @@ in the algorithm:
 
 XXX MERGE logs2regexes WITH check-regexes.  CHECK IF SLCT DOES THIS STEP\@.
 
-A second utility is also provided that reads a list of new regexes and
-the input given to the first utility.  It tries to match each input log
-line against each regex, counting the number of log lines that match
-each regex, warning the user if an input log line is matched by more
-than one regex, and additionally warning if an input log line is not
-matched by any regex.  It displays a summary of how many input log lines
-each regex matched, comparing it to the expected number of matches; this
-provides the user with an easy method of checking if the regexes
-produced by the first utility are correctly matching the input log lines
-they are based upon.
+A second utility is also provided that reads a list of new regexes and the
+input given to the first utility.  It tries to match each input log line
+with each regex, counting the number of log lines that match each regex,
+warning the user if an input log line is matched by more than one regex,
+and additionally warning if an input log line is not matched by any regex.
+It displays a summary of how many input log lines each regex matched,
+comparing it to the expected number of matches; this provides the user with
+an easy method of checking if the regexes produced by the first utility are
+correctly matching the input log lines they are based upon.
 
 These utilities are not intended to create perfect regexes, but they
 greatly reduce the effort required to parse new or different log lines.
@@ -1355,11 +1346,11 @@ improvements that have been identified in \parsername{}.
     \item Each new Postfix release requires writing new rules or modifying
         existing rules to cope with the new or changed log lines.
         Similarly using a new \acronym{DNSBL}, a new policy server, or new
-        administrator-defined rejection messages requires new rules.
+        administrator-defined rejection messages also requires new rules.
 
     \item The hostname used in the HELO command is not logged if the
         incoming delivery attempt is successful.  Configuring Postfix to do
-        this is relatively simple: create a restriction that is guaranteed
+        this is relatively simple; create a restriction that is guaranteed
         to warn for every accepted mail, as follows:
 
         \begin{enumerate}
@@ -1375,12 +1366,12 @@ improvements that have been identified in \parsername{}.
         \end{enumerate}
 
         Although \texttt{smtpd\_helo\_restrictions} seems like the natural
-        place to log the HELO hostname, there will not yet be a queueid
-        associated with the mail when \texttt{smtpd\_helo\_restrictions} is
-        evaluated for the first recipient, so the log line cannot be
-        associated with the correct mail.  There is guaranteed to be a
-        queueid when the DATA command has been reached, and thus the
-        queueid will be logged by any restrictions taking effect in
+        place to log the HELO hostname, when it is evaluated for the first
+        recipient there will not yet be a queueid allocated for the
+        delivery attempt, so the log line cannot be associated with the
+        correct mail.  There is guaranteed to be a queueid when the DATA
+        command has been reached, and thus the queueid will be logged by
+        any restrictions taking effect in
         \texttt{smtpd\_data\_restrictions}, and the log line can be
         associated with the correct mail.  There is no difficulty in
         specifying a HELO-based restriction in
@@ -1413,8 +1404,8 @@ improvements that have been identified in \parsername{}.
         or it may be viewed as a limitation because there is no facility to
         distinguish between log files from different sources in the same
         database.  If the results of parsing log files from different
-        sources must remain separate, the parser can easily be instructed
-        to use a different database.
+        sources must remain separate, \parsername{} can easily be
+        instructed to use a different database.
 
     \item The solution to complication \sectionref{Mails deleted during
         delivery} involves discarding data.
@@ -1436,22 +1427,36 @@ improvements that have been identified in \parsername{}.
 
 \section{Summary}
 
-XXX TO BE WRITTEN\@.  START WITH THE OLD CONTENT BELOW\@.
-
-This section presented the core of the parser, starting with a very high
-level view and the initial complications that arose.  A flow chart showing
-the paths a mail may take through the nascent simplified algorithm was
-provided, followed by an explanation of those paths, and a discussion of
-the parser's emergent behaviour --- the data from the log files creates the
-paths in the flow chart, they are not specified anywhere in the parser.
-The framework which holds the parser together was covered next, after which
-came a description of the current actions provided by the parser, and the
-algorithm for analysing unparsed log lines to create regexes for new rules.
-Detecting, diagnosing, and defeating complications forms the largest single
-portion of this section, mirroring the development of the parser.  The
-complications are described in the order they were overcome, with
-subsequent problems affecting fewer mails (often by an order or magnitude),
-though the time required to solve problems increased with each successive
-problem.
-
-
+This section has presented \parsername{}, the parser implemented for this
+project, beginning with the assumptions made during its development.  A
+simplified flowchart shows the most common paths taken through Postfix and
+\parsername{}, accompanied by a description of the stages and transitions.
+A database provides storage for rules and for data gathered from log files;
+any further use of that data is dependent on a clear understanding of the
+database schema, so the resemblance between a database schema and an
+\acronym{API} is described, followed by a detailed description and a
+diagram of the database schema.  The framework is documented next,
+including the steps it takes during initialisation, the parsing process,
+and the conveniences it offers to users.  The data collected by the
+framework is described, as are the ways in which various optimisations can
+be disabled to demonstrate their effect, and the debugging options the
+framework provides.  The implementation of actions in \parsername{} is
+documented, including how frequently each action is specified by rules, and
+brief descriptions of why some actions are more popular than others.  All
+the actions that are part of \parsername{} are described in detail,
+followed by the process of adding a new action to the parser.  The final
+component of the architecture, the rules, is also the most visible
+component, and its implementation is examined in detail with: an example
+rule and an explanation of every field; a description of how to add new
+rules and determine the values that should be used for each field; an
+explanation of the algorithm used by the utility that creates new regexes
+based on unparsed log lines, and how it differs from the original algorithm
+it is based on.  How \parsername{} uses rule conditions and overlapping
+rules is discussed, accompanied by a description of the regex snippets the
+framework provides to simplify the regexes used in rules.  The many
+complications and difficulties encountered while writing \parsername{}, and
+the solutions developed to overcome them, are documented in depth, also
+documented are how some solutions interact and which action or actions the
+solution is implemented in.  This chapter concludes with a list of the
+limitations identified in \parsername{}, followed by some possible
+improvements suggested by the author.

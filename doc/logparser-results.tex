@@ -186,18 +186,18 @@ per log line}{Mean number of rules tried per log line}
 \label{rule ordering for efficiency}
 
 At the time of writing there are \numberOFrules{} different rules: the top
-10\% match the vast majority of log lines, with the remaining log lines
+10\% recognise the vast majority of log lines, with the remaining log lines
 split across the other 90\% of the rules (as shown in \graphref{rule hits
 graph}).  Assuming that the distribution of log lines is reasonably
 consistent over time, parser efficiency should benefit from trying more
-frequently matching rules before those that match less frequently.  To
-test this hypothesis three full test runs were performed with different
+frequently recognising rules before those that recognise less frequently.
+To test this hypothesis three full test runs were performed with different
 rule orderings:
 
 \begin{eqlist}
 
     \item [Optimal]  The most optimal order, according to the hypothesis:
-        rules that match most often will be tried first.
+        rules that recognise log lines most often will be tried first.
 
     \item [Shuffle] This is intended to represent a randomly ordered rule
         set.  The rules will be shuffled once before use and will retain
@@ -205,8 +205,8 @@ rule orderings:
         change every time the parser is executed, so 10 different rule
         orderings will be generated for each log file in the test run.
 
-    \item [Reverse] Hypothetically the worst order: the most frequently
-        matching rules will be tried last.
+    \item [Reverse] Hypothetically the worst order: the rules that
+        recognise log lines most frequently will be tried last.
 
 \end{eqlist}
 
@@ -282,8 +282,8 @@ time increase of maximum ruleset over minimum ruleset}
 It is clear from \graphref{Percentage parsing time increase of maximum
 ruleset over minimum ruleset} that the increased number of rules noticeably
 increases parsing time with reverse ordering, and to a lesser extent with
-shuffled ordering.  The optimal ordering (where the most frequently
-matching rules are tried first) shows a mean increase of
+shuffled ordering.  The optimal ordering (where the rules that recognise
+log lines most frequently are tried first) shows a mean increase of
 \input{build/include-full-ruleset-vs-minimum-ruleset} in parsing time for a
 \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.  Log
 files 22 and 62--68 show much smaller increases for shuffled and reversed
@@ -379,8 +379,8 @@ Parsing a log line is a three stage process:
     \item Check if there are any rules for the Postfix component that
         produced the log line; if not then skip the log line.
 
-    \item Try each rule until a matching rule is found; if no match is
-        issue a warning and move to the next log line.
+    \item Try each rule until a recognising rule is found; if the log line
+        is not recognised, issue a warning and move to the next log line.
 
     \item Execute the action specified by the rule.
 
@@ -397,13 +397,14 @@ Full coverage of log lines requires the following:
         intermingled in the log file, and there are some Postfix programs
         that do not produce any log lines of interest.
 
-    \item There must be a rule to match each different log line produced by
-        each program; if a log line is not successfully matched the parser
-        will issue a warning.  Rules should be as specific and tightly
-        bound as possible to ensure accurate parsing:\footnote{A rule that
-        matches zero or more of any character will successfully parse every
-        log line, but not in a meaningful way.} most log lines contain
-        fixed strings and have a rigid pattern, so this is not a problem.
+    \item There must be a rule to recognise each different log line
+        produced by each program; if a log line is not successfully
+        recognised the parser will issue a warning.  Rules should be as
+        specific and tightly bound as possible to ensure accurate
+        parsing:\footnote{A rule with a regex that matches zero or more of
+        any character will successfully recognise every log line, but not
+        in a meaningful way.} most log lines contain fixed strings and have
+        a rigid pattern, so this is not a problem.
 
     \item The appropriate action to take --- discussed in
         \sectionref{mails-covered}.
@@ -421,9 +422,9 @@ Postfix change warning messages (usually adding more information), etc.,\
 so over time the log lines drift and change.  \Graphref{rule hits graph}
 shows the number of hits for each rule over all \numberOFlogFILES{} log
 files.  The number of hits per rule is quite unevenly spread, resembling a
-Power Law distribution --- it is obvious that a small number of rules match
-the vast majority of the log lines, and more than half the rules match
-fewer than 100 times.
+Power Law distribution --- it is obvious that a small number of rules
+recognise the vast majority of the log lines, and more than half the rules
+recognise fewer than 100 log lines.
 
 \showgraph{build/graph-hits}{Hits per rule}{rule hits graph}
 
