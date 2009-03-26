@@ -234,6 +234,10 @@
     (action: #1\@; flowchart:~#2)%
 }
 
+\newcommand{\action}[1]{%
+    \texttt{#1}%
+}
+
 % Add last checked dates to all URLs
 \newcommand{\urlLastChecked}[3][ ]{%
     \url{#2}#1(last checked #3)%
@@ -292,7 +296,7 @@
 
 % The name of the program, so I only have to change it in one place.
 \newcommand{\parsername}{\acronym{PLP}}
-\newcommand{\parsernames}{\acronyms{PLP}}
+\newcommand{\parsernames}{\acronym['s]{PLP}}
 \newcommand{\parsernamelong}{Postfix Log Parser}
 
 \begin{document}
@@ -328,13 +332,7 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
     XXX CHECK ALL ``UNINTERESTING'' RULES TO SEE IF THEY COULD BE USED\@.
 
-    XXX ADD A $\backslash{}$action\{\} COMMAND TO FORMAT ACTION NAMES
-    CONSISTENTLY\@.
-
     XXX FIX THE PROBLEMS THAT AROSE FROM THE LAST all-logs RUN\@.
-
-    XXX PLPs SHOULD BE PLP's IN A LOT OF PLACES\@; ADD A NEW COMMAND AND
-    CHECK THE CURRENT USAGE\@.
 
     XXX SHOULD I HAVE A ``FUTURE WORK'' SECTION SOMEWHERE IN THE
     CONCLUSION\@?

@@ -330,7 +330,7 @@ otherwise stated.
     \item [restriction\_name] The name of the Postfix restriction that
         caused the mail to be rejected.  Only applicable to rules that
         recognise rejection log lines, i.e.\ rules that have an action of
-        \texttt{DELIVERY\_REJECTED}; other rules should not set this field.
+        \action{DELIVERY\_REJECTED}; other rules should not set this field.
 
     \item [program] The Postfix component (e.g.\ \daemon{smtpd}) whose log
         lines the rule applies to; see \sectionref{rule conditions in
@@ -449,7 +449,7 @@ hundreds.
         This field will be false for a real rejection, or true if the log
         line was a warning.  This field should be ignored if the result is
         not a rejection, i.e.\ the action field of the associated rule is
-        not \texttt{DELIVERY\_REJECTED}.
+        not \action{DELIVERY\_REJECTED}.
 
     \item [smtp\_code] The \acronym{SMTP} code associated with the log
         line.  In general an \acronym{SMTP} code is only present in a log
@@ -520,8 +520,8 @@ bounce notification mails being delivered before their creation is logged
 (\sectionref{Bounce notification mails delivered before their creation is
 logged}); and \texttt{postsuper\_deleted\_queueids} caches information
 about mails recently deleted by the administrator so that subsequent log
-lines processed by the SAVE\_DATA action can be discarded (\sectionref{Mail
-deleted before delivery is attempted}).
+lines processed by the \action{SAVE\_DATA} action can be discarded
+(\sectionref{Mail deleted before delivery is attempted}).
 
 When the framework loads the ruleset, it verifies each of the rules,
 checking:
@@ -669,12 +669,12 @@ complications and difficulties that arise.  \parsername{} has
 \numberOFactions{} actions and \numberOFrules{} rules, with an uneven
 distribution of rules to actions as shown in \graphref{Distribution of
 rules per action}.  Unsurprisingly, the action with the most associated
-rules is \texttt{DELIVERY\_REJECTED}, the action that processes Postfix
+rules is \action{DELIVERY\_REJECTED}, the action that processes Postfix
 rejecting a mail delivery attempt.  The next most common action is, perhaps
-surprisingly, \texttt{UNINTERESTING}: this action does nothing when
+surprisingly, \action{UNINTERESTING}: this action does nothing when
 invoked, allowing uninteresting log lines to be parsed without any effects
 (it does not imply that the input is ungrammatical or unparsed).  Generally
-rules specifying the \texttt{UNINTERESTING} action recognise log lines that
+rules specifying the \action{UNINTERESTING} action recognise log lines that
 are not associated with a specific mail, e.g.\ notices about configuration
 files changing; these log lines are recognised and processed so that the
 framework can warn about unrecognised log lines, informing the user that
@@ -683,7 +683,7 @@ have only one or two associated rules: some are specialised actions
 required to address a deficiency in the log files, or a complication that
 arises during parsing; other actions will only ever have one log line
 variant, e.g.\ all log lines showing that a remote client has connected are
-recognised by a single rule and handled by the \texttt{CONNECT} action.
+recognised by a single rule and handled by the \action{CONNECT} action.
 \parsernames{} actions are described in detail in \sectionref{actions in
 detail in implementation}, and \sectionref{adding new actions in
 implementation} covers the process of adding a new action.
@@ -701,7 +701,7 @@ from one action to another as its log lines are recognised.  The words
 \textit{mail\/} and \textit{connection\/} are used in the actions
 descriptions below because they are less unwieldy and more specific than
 \textit{state table entry\/}; a connection becomes a mail during the
-\texttt{CLONE} action, which processes Postfix accepting a delivery
+\action{CLONE} action, which processes Postfix accepting a delivery
 attempt, and the data structure moves from the connections state table to
 the queueids state table.
 
@@ -788,8 +788,8 @@ recognising rule's regex.  Each action is passed the same arguments:
     \item [DELETE] Deals with mail deleted using Postfix's administrative
         command \daemon{postsuper}.  This action adds a dummy recipient
         address if required (see \sectionref{Mail deleted before delivery
-        is attempted}), then invokes the COMMIT action to save the mail to
-        the database.
+        is attempted}), then invokes the \action{COMMIT} action to save the
+        mail to the database.
 
     \item [DELIVERY\_REJECTED] Deals with Postfix rejecting an
         \acronym{SMTP} command from the remote client.  This is the action
@@ -813,11 +813,11 @@ recognising rule's regex.  Each action is passed the same arguments:
         Postfix programs which passes the valid combinations check,
         implemented to deal with the complication described in
         \sectionref{out of order log lines}; this action tags the mail as
-        having expired, so the COMMIT action will skip the valid
+        having expired, so the \action{COMMIT} action will skip the valid
         combinations check.
 
     \item [MAIL\_BOUNCED] This action behaves exactly like the
-        \texttt{SAVE\_DATA} action; it saves all data captured by the
+        \action{SAVE\_DATA} action; it saves all data captured by the
         recognising rule's regex, and does nothing more.  It is a separate
         action to distinguish delivery attempts that bounce from other
         delivery attempts.
@@ -825,7 +825,7 @@ recognising rule's regex.  Each action is passed the same arguments:
     \item [MAIL\_DISCARDED] Sometimes mail is discarded, e.g.\ mail
         submitted locally that is larger than the limit configured by the
         administrator.  This action is used for those mails; it invokes the
-        \texttt{COMMIT} action, but is a separate action to simplify
+        \action{COMMIT} action, but is a separate action to simplify
         further analysis.
 
     \item [MAIL\_QUEUED] This action represents Postfix picking a mail from
@@ -834,7 +834,7 @@ recognising rule's regex.  Each action is passed the same arguments:
         \sectionref{Re-injected mails} for details.
 
     \item [MAIL\_SENT] This action behaves exactly like the
-        \texttt{SAVE\_DATA} action; it saves all data captured by the
+        \action{SAVE\_DATA} action; it saves all data captured by the
         recognising rule's regex, and does nothing more.  It is a separate
         action to distinguish successful delivery attempts from other
         delivery attempts.
@@ -847,11 +847,11 @@ recognising rule's regex.  Each action is passed the same arguments:
         details; although that describes timeouts the processing is the
         same for mails that are too large.
 
-    \item [PICKUP] The PICKUP action corresponds to the \daemon{pickup}
-        service dealing with a locally submitted mail.  A new mail will be
-        created, although out of order log entries may have caused it to
-        already exist, as documented in \sectionref{pickup logging after
-        cleanup}.
+    \item [PICKUP] The \action{PICKUP} action corresponds to the
+        \daemon{pickup} service dealing with a locally submitted mail.  A
+        new mail will be created, although out of order log entries may
+        have caused it to already exist, as documented in
+        \sectionref{pickup logging after cleanup}.
 
     \item [POSTFIX\_RELOAD] When Postfix stops or reloads its
         configuration, it kills all \daemon{smtpd} processes, requiring all
@@ -862,7 +862,7 @@ recognising rule's regex.  Each action is passed the same arguments:
 
     \item [SAVE\_DATA] Every action that can locate the correct entry in
         the state tables saves any data captured by the recognising rule's
-        regex to it.  The \texttt{SAVE\_DATA} saves data in this way but
+        regex to it.  The \action{SAVE\_DATA} saves data in this way but
         does not do anything else; it is invoked for log lines that contain
         useful data but do not require any further processing.
 
@@ -892,9 +892,9 @@ recognising rule's regex.  Each action is passed the same arguments:
     \item [TRACK] Track a mail when it is re-injected for forwarding to
         another mail server; this happens when a local address is aliased
         to a remote address (see \sectionref{tracking re-injected mail} for
-        a full explanation).  \texttt{TRACK} will be called when dealing
+        a full explanation).  \action{TRACK} will be called when dealing
         with the parent mail, and will create the child mail if necessary.
-        \texttt{TRACK} checks if the child has already been tracked, either
+        \action{TRACK} checks if the child has already been tracked, either
         by this parent or by another parent, and issues appropriate
         warnings in either case.
 
@@ -990,7 +990,7 @@ NOQUEUE: reject: RCPT from smtp.example.com[192.0.2.1]:
                         & \verb!proto=E?SMTP helo=<(__HELO__)>$!            \\
     result\_data        &                                                   \\
     connection\_data    &                                                   \\
-    action              & DELIVERY\_REJECTED                                \\
+    action              & \action{DELIVERY\_REJECTED}                       \\
     hits                & 0                                                 \\
     hits\_total         & 0                                                 \\
     priority            & 0                                                 \\
@@ -1071,7 +1071,7 @@ it will be obvious that the priority field needs to be set, on this rule
 and possibly others; the priority field may be needed on unintentionally
 overlapping rules too, but that is more difficult to determine.  Finally
 the restriction\_name field should be set when the rule's action is
-\texttt{DELIVERY\_REJECTED}; hopefully the name of the restriction will be
+\action{DELIVERY\_REJECTED}; hopefully the name of the restriction will be
 clear from the content of the log line.
 
 A program is provided with \parsername{} to ease the process of creating
@@ -1267,7 +1267,7 @@ Some of the keywords need more explanation:
         to the data field of that log line's result.
 
     \item [\_\_PID\_\_]  The \acronym{pid} of a \daemon{smtpd} process that
-        dies or is killed; see the SMTPD\_DIED action in
+        dies or is killed; see the \action{SMTPD\_DIED} action in
         \sectionref{actions in detail in implementation}.
 
     \item [\_\_RESTRICTION\_START\_\_]  Matches the standard information

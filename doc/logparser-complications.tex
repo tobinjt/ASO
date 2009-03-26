@@ -127,7 +127,7 @@ that re-injected mails appear in the log files without explicit logging
 indicating their source.
 
 Tracking re-injected mail requires \parsername{} to do the following in the
-COMMIT action:
+\action{COMMIT} action:
 
 \begin{enumerate}
 
@@ -217,7 +217,7 @@ this case is a benefit rather than a drawback, as other mails generated
 internally by Postfix will be handled correctly.  Postfix 2.3 (and
 hopefully subsequent versions) log the creation of a bounce message.
 
-This check is performed during the COMMIT action.
+This check is performed during the \action{COMMIT} action.
 
 \subsection{Aborted Delivery Attempts}
 
@@ -270,7 +270,7 @@ for the following:
 
 \begin{itemize}
 
-    \item Was the second result processed by the \texttt{CLONE} action?
+    \item Was the second result processed by the \action{CLONE} action?
         The first two \daemon{smtpd} log lines will be a connection log
         line and a mail acceptance log line.
 
@@ -284,7 +284,7 @@ for the following:
         an aborted delivery attempt.
 
     \item If there are third and subsequent results, were those log lines
-        processed by the \texttt{SAVE\_DATA} action?  If there are any log
+        processed by the \action{SAVE\_DATA} action?  If there are any log
         lines after the first two they should be informational only.
 
 \end{itemize}
@@ -305,8 +305,9 @@ the state tables after they should have been removed, otherwise the only
 way to detect false negatives is to examine the state tables after each
 parsing run.
 
-This check is performed in the DISCONNECT action; it requires support in
-the CLONE action where the list of accepted mails is maintained.
+This check is performed in the \action{DISCONNECT} action; it requires
+support in the \action{CLONE} action where the list of accepted mails is
+maintained.
 
 
 \subsection{Further Aborted Delivery Attempts}
@@ -336,7 +337,7 @@ for such mails, so without identifying and entering them in the database
 immediately they accumulate in the state table and will cause clashes if
 the queueid is reused.
 
-These checks are made during the DISCONNECT action.
+These checks are made during the \action{DISCONNECT} action.
 
 \subsection{Timeouts During DATA Phase}
 
@@ -351,14 +352,14 @@ the mail and \parsername{} needs to discard the data associated with that
 mail.  It seems more intuitive to save the mail's data to the database, but
 if a timeout occurs there is no data available to save; the timeout is
 recorded and saved with the connection instead.  To deal properly with
-timeouts the TIMEOUT action does the following:
+timeouts the \action{TIMEOUT} action does the following:
 
 \begin{enumerate}
 
     \item Record the timeout and captured data in the connection's results.
 
     \item If no mails have been accepted yet nothing needs to be done; the
-        TIMEOUT action ends.
+        \action{TIMEOUT} action ends.
 
     \item If one or more recipients have been accepted, Postfix will have
         allocated a queueid for the incoming mail, and there may be a mail
@@ -370,25 +371,25 @@ timeouts the TIMEOUT action does the following:
         IT\@.  To distinguish between the two cases the action compares the
         timestamp of the last accepted mail against the timestamp of the
         last log line from \daemon{smtpd} for that connection; this depends
-        on the CLONE action keeping a list of all mails accepted for each
-        connection.  If the mail acceptance timestamp is later than the
-        timeout timestamp, the timeout applies to the just-accepted mail,
-        which will be removed from the state tables, without entering it in
-        the database.  If the \daemon{smtpd} timestamp is later there was a
-        rejection between the accepted mail and the timeout: the action
-        assumes that the timeout applies to the rejected delivery attempt
-        and finishes.  This assumption is not necessarily correct, because
-        Postfix may have accepted an earlier recipient and rejected a later
-        one, in which case the timeout applies to the accepted mail, which
-        should be discarded; this has not been a problem in practice.
-        Processing timeouts is further complicated by the presence of out
-        of order \daemon{cleanup} log lines: see \sectionref{discarding
-        cleanup log lines} for details.
+        on the \action{CLONE} action keeping a list of all mails accepted
+        for each connection.  If the mail acceptance timestamp is later
+        than the timeout timestamp, the timeout applies to the
+        just-accepted mail, which will be removed from the state tables,
+        without entering it in the database.  If the \daemon{smtpd}
+        timestamp is later there was a rejection between the accepted mail
+        and the timeout: the action assumes that the timeout applies to the
+        rejected delivery attempt and finishes.  This assumption is not
+        necessarily correct, because Postfix may have accepted an earlier
+        recipient and rejected a later one, in which case the timeout
+        applies to the accepted mail, which should be discarded; this has
+        not been a problem in practice.  Processing timeouts is further
+        complicated by the presence of out of order \daemon{cleanup} log
+        lines: see \sectionref{discarding cleanup log lines} for details.
 
 \end{enumerate}
 
-This complication is dealt with by the TIMEOUT action, with help from the
-CLONE action.
+This complication is dealt with by the \action{TIMEOUT} action, with help
+from the \action{CLONE} action.
 
 \subsection{Discarding Cleanup Log Lines}
 
@@ -398,16 +399,16 @@ The author has only observed this complication occurring after a timeout,
 though there may be other circumstances that trigger it.  Sometimes the
 \daemon{cleanup} log line for a mail being accepted is logged after the
 timeout log line, by which time \parsername{} has discarded the mail;
-parsing the \daemon{cleanup} log line causes the CLEANUP\_PROCESSING action
-to create a new state table entry, to help deal with re-injected mails
-(\sectionref{Re-injected mails}).  This is incorrect because the log line
-actually belongs to the mail that has just been discarded; if the queueid
-is reused there will be a queueid clash, otherwise the new mail will just
-remain in the state tables.
+parsing the \daemon{cleanup} log line causes the
+\action{CLEANUP\_PROCESSING} action to create a new state table entry, to
+help deal with re-injected mails (\sectionref{Re-injected mails}).  This is
+incorrect because the log line actually belongs to the mail that has just
+been discarded; if the queueid is reused there will be a queueid clash,
+otherwise the new mail will just remain in the state tables.
 
-During the TIMEOUT action, if the \daemon{cleanup} line is still pending,
-the action updates the \texttt{timeout\_queueids} state table, adding the
-queueid and the timestamp from the log line.  When the next
+During the \action{TIMEOUT} action, if the \daemon{cleanup} line is still
+pending, the action updates the \texttt{timeout\_queueids} state table,
+adding the queueid and the timestamp from the log line.  When the next
 \daemon{cleanup} line is parsed for that queueid, the list will be checked
 and if the log line meets the following requirements it will be deemed part
 of the mail where the timeout occurred and discarded.
@@ -430,14 +431,14 @@ of the mail where the timeout occurred and discarded.
 The \daemon{cleanup} log line must meet the criteria above for it to be
 discarded because some, but not all, connections where a timeout occurs
 will have an associated \daemon{cleanup} log line; if the
-CLEANUP\_PROCESSING action blindly discarded the next \daemon{cleanup} log
-line after a timeout it would sometimes be mistaken.  When the next
-\daemon{pickup} log line containing that queueid is processed the queueid
-will be removed from the cache of timeout queueids, regardless of whether
-it meets the criteria above.
+\action{CLEANUP\_PROCESSING} action blindly discarded the next
+\daemon{cleanup} log line after a timeout it would sometimes be mistaken.
+When the next \daemon{pickup} log line containing that queueid is processed
+the queueid will be removed from the cache of timeout queueids, regardless
+of whether it meets the criteria above.
 
-This complication is handled by the CLEANUP\_PROCESSING and TIMEOUT
-actions.
+This complication is handled by the \action{CLEANUP\_PROCESSING} and
+\action{TIMEOUT} actions.
 
 \subsection{Pickup Logging After Cleanup}
 
@@ -445,11 +446,11 @@ actions.
 
 When mail is submitted locally, \daemon{pickup} accepts the new mail and
 generates a log line.  Occasionally this log line will occur later in the
-log file than the \daemon{cleanup} log line, so the PICKUP action will find
-that a state table entry already exists for that queueid.  Normally when
-this happens a warning is generated by the PICKUP action, but if the
-following conditions are met it is assumed that the log lines were out of
-order:
+log file than the \daemon{cleanup} log line, so the \action{PICKUP} action
+will find that a state table entry already exists for that queueid.
+Normally when this happens a warning is generated by the \action{PICKUP}
+action, but if the following conditions are met it is assumed that the log
+lines were out of order:
 
 \begin{itemize}
 
@@ -466,7 +467,7 @@ heuristics match incorrectly, but none have been identified so far.  This
 complication seems to occur during periods of particularly heavy load, so
 is most likely caused by process scheduling vagaries.
 
-This complication is dealt with by the PICKUP action.
+This complication is dealt with by the \action{PICKUP} action.
 
 \subsection{Smtpd Stops Logging}
 
@@ -506,8 +507,8 @@ last accepted mail may need to be discarded, as detailed in
 \sectionref{timeouts during data phase}; otherwise the queueid state table
 is untouched.
 
-These occurrences are handled by the actions POSTFIX\_RELOAD (1),
-SMTPD\_DIED (2 \& 3), and SMTPD\_WATCHDOG (4).
+This complication is handled by several actions: \action{POSTFIX\_RELOAD} (1),
+\action{SMTPD\_DIED} (2 \& 3), and \action{SMTPD\_WATCHDOG} (4).
 
 \newpage{} %XXX VARIOREF PROBLEM
 
@@ -529,14 +530,14 @@ entered into the database; a new mail is created when the \daemon{local}
 log line is processed and remains in the state tables; four warnings are
 issued per pair of out of order log lines.
 
-The COMMIT action examines the list of programs that have produced log lines
-for each mail, comparing the list against a table of known-good program
-combinations.  If the mail's combination is found in the table the mail can be
-entered in the database; if the combination is not found entry must be
-postponed and the mail flagged for later entry.  The MAIL\_DELIVERED action
-checks for that flag; if the additional log lines have caused the mail to reach
-a valid combination then entry in the database will proceed, otherwise it must
-be postponed once more.
+The \action{COMMIT} action examines the list of programs that have produced
+log lines for each mail, comparing the list against a table of known-good
+program combinations.  If the mail's combination is found in the table the
+mail can be entered in the database; if the combination is not found entry
+must be postponed and the mail flagged for later entry.  The
+\action{MAIL\_DELIVERED} action checks for that flag; if the additional log
+lines have caused the mail to reach a valid combination then entry in the
+database will proceed, otherwise it must be postponed once more.
 
 The list of valid combinations is explained below.  Every mail will
 additionally have log lines from \daemon{cleanup} and \daemon{qmgr}; any
@@ -583,8 +584,8 @@ both.
 \end{description}
 
 This check applies to accepted mails only, not to rejected mails.  This
-check is performed during the COMMIT action, with support from the
-MAIL\_DELIVERED action.
+check is performed during the \action{COMMIT} action, with support from the
+\action{MAIL\_DELIVERED} action.
 
 \subsection{Yet More Aborted Delivery Attempts}
 
@@ -642,7 +643,7 @@ setting will cause disk IO for every delivery attempt, instead of just for
 delivery attempts where recipients are accepted, and consequently a drastic
 reduction in the performance of the mail server.
 
-The DELETE action is responsible for handling this complication.
+The \action{DELETE} action is responsible for handling this complication.
 
 \subsection{Bounce Notification Mails Are Delivered Before Their Creation
 Is Logged}
@@ -654,26 +655,27 @@ extremely high load, when process scheduling and even hard disk access
 times cause strange behaviour.  In this complication, bounce notification
 mails are created, delivered, and deleted from the queue, \textit{before\/}
 the log line from \daemon{bounce} that explains their source.  To deal with
-this the COMMIT action maintains a cache of recently committed bounce
-notification mails, which the BOUNCE action subsequently checks if the
-bounce mail is not found in the state tables.  If the queueid exists in the
-cache, and its start time is less than ten seconds before the timestamp of
-the bounce log line, it is assumed that the bounce notification mail has
-already been processed and the BOUNCE action does not create one.  If the
-queueid exists in the cache it is removed, because it has either just been
-used or the problem did not occur for that mail.  Whether the BOUNCE action
-creates a mail or finds an existing mail in the state tables, it flags the
-mail as having been seen by the BOUNCE action; if this flag is present the
-COMMIT action will not add the mail to the cache of recent bounce
-notification mails.  This is not required to correctly deal with the
-complication, but is an optimisation to reduce the parser's memory usage.
-On the occasions the author has observed this complication occurring there
-have been a huge number of bounce notification mails generated: if every
-bounce notification mail was cached it would dramatically increase the
-memory requirements of the parser.  The cache of bounce notification mails
-will be pruned whenever the parser's state is saved, though if the size of
-the cache ever becomes a problem it could be pruned periodically to keep it
-in check.
+this the \action{COMMIT} action maintains a cache of recently committed
+bounce notification mails, which the \action{BOUNCE\_CREATED} action
+subsequently checks if the bounce mail is not found in the state tables.
+If the queueid exists in the cache, and its start time is less than ten
+seconds before the timestamp of the bounce log line, it is assumed that the
+bounce notification mail has already been processed and the
+\action{BOUNCE\_CREATED} action does not create one.  If the queueid exists
+in the cache it is removed, because it has either just been used or the
+problem did not occur for that mail.  Whether the \action{BOUNCE\_CREATED}
+action creates a mail or finds an existing mail in the state tables, it
+flags the mail as having been seen by the \action{BOUNCE\_CREATED} action;
+if this flag is present the \action{COMMIT} action will not add the mail to
+the cache of recent bounce notification mails.  This is not required to
+correctly deal with the complication, but is an optimisation to reduce the
+parser's memory usage.  On the occasions the author has observed this
+complication occurring there have been a huge number of bounce notification
+mails generated: if every bounce notification mail was cached it would
+dramatically increase the memory requirements of the parser.  The cache of
+bounce notification mails will be pruned whenever the parser's state is
+saved, though if the size of the cache ever becomes a problem it could be
+pruned periodically to keep it in check.
 
 \subsection{Mails Deleted During Delivery}
 
@@ -684,9 +686,9 @@ mails that are in the process of being delivered will be deleted.  This
 results in the log lines from the delivery agent (\daemon{local},
 \daemon{virtual} or \daemon{smtp}) appearing in the log file
 \textit{after\/} the mail has been removed from the state tables and saved
-in the database.  The DELETE action adds deleted mails to a cache, which is
-checked by the SAVE\_DATA action, and the current log line discarded if the
-following conditions are met:
+in the database.  The \action{DELETE} action adds deleted mails to a cache,
+which is checked by the \action{SAVE\_DATA} action, and the current log
+line discarded if the following conditions are met:
 
 \begin{enumerate}
 
