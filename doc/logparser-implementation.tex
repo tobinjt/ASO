@@ -3,7 +3,10 @@
 \label{Postfix Parser Implementation}
 
 XXX WRITE AN INTRODUCTION\@.  MOST OF THIS IS CRAP, BUT I MIGHT BE ABLE TO
-RESCUE SOME OF IT\@.
+RESCUE SOME OF IT\@.  IT SHOULD HAVE A BLURB, FOLLOWED BY A PREVIEW OF THE
+CHAPTER\@.
+
+XXX MAIL MADS ABOUT EXAMINERS\@.
 
 XXX make log-files-lines
 
@@ -807,23 +810,24 @@ recognising rule's regex.  Each action is passed the same arguments:
         line is required.
 
     \item [DISCONNECT] Invoked when the remote client disconnects, it
-        enters the connection in the database, performs any required
-        cleanup, and deletes the connection from the state tables.  This
-        action deals with aborted delivery attempts (\sectionref{aborted
-        delivery attempts}).
+        enters the connection in the database if it has any useful data,
+        performs any required cleanup, and deletes the connection from the
+        state tables.  This action deals with aborted delivery attempts
+        (\sectionref{aborted delivery attempts}).
 
     \item [EXPIRY] If Postfix has not managed to deliver a mail after
-        trying for five days it will give up and return the mail to the
+        trying for five days, it will give up and return the mail to the
         sender.  When this happens the mail will not have a combination of
-        Postfix programs which passes the valid combinations check as
-        described in \sectionref{out of order log lines}; this action, with
-        cooperation from the COMMIT and SAVE\_DATA actions, deals with that
-        complication.
+        Postfix programs which passes the valid combinations check,
+        implemented to deal with the complication described in
+        \sectionref{out of order log lines}; this action tags the mail as
+        having expired, so the COMMIT action will skip the valid
+        combinations check.
 
     \item [MAIL\_BOUNCED] This action behaves exactly like the
         \texttt{SAVE\_DATA} action; it saves all data captured by the
         recognising rule's regex, and does nothing more.  It is a separate
-        action to help distinguish delivery attempts that bounce from other
+        action to distinguish delivery attempts that bounce from other
         delivery attempts.
 
     \item [MAIL\_DISCARDED] Sometimes mail is discarded, e.g.\ mail
@@ -840,29 +844,29 @@ recognising rule's regex.  Each action is passed the same arguments:
     \item [MAIL\_SENT] This action behaves exactly like the
         \texttt{SAVE\_DATA} action; it saves all data captured by the
         recognising rule's regex, and does nothing more.  It is a separate
-        action to help distinguish successful delivery attempts from other
+        action to distinguish successful delivery attempts from other
         delivery attempts.
 
     \item [MAIL\_TOO\_LARGE] When a client tries to send a mail larger than
-        the local server accepts it will be discarded and the client
+        the local server accepts, the mail will be discarded and the client
         informed of the problem.  The mail may have been accepted and
         partially transferred, in which case there's a data structure to
-        dispose of, otherwise there will not be.  See \sectionref{timeouts
-        during data phase} for the gory details; although that describes
-        timeouts the processing is the same for mails that are too large.
+        dispose of.  See \sectionref{timeouts during data phase} for full
+        details; although that describes timeouts the processing is the
+        same for mails that are too large.
 
     \item [PICKUP] The PICKUP action corresponds to the \daemon{pickup}
         service dealing with a locally submitted mail.  A new mail will be
-        created, although out of order log entries may have caused the
-        state table entry to already exist, as documented in
-        \sectionref{pickup logging after cleanup}.
+        created, although out of order log entries may have caused it to
+        already exist, as documented in \sectionref{pickup logging after
+        cleanup}.
 
-    \item [POSTFIX\_RELOAD] When Postfix stops or reloads its configuration
-        it kills all \daemon{smtpd} processes, requiring any active
+    \item [POSTFIX\_RELOAD] When Postfix stops or reloads its
+        configuration, it kills all \daemon{smtpd} processes, requiring all
         connections to be cleaned up, entered in the database, and deleted
         from the state tables.  Postfix probably kills all the other
-        components too, but \parsername{} is only affected by \daemon{smtpd}
-        processes exiting.
+        components too, but \parsername{} is only affected by
+        \daemon{smtpd} processes exiting.
 
     \item [SAVE\_DATA] Every action that can locate the correct entry in
         the state tables saves any data captured by the recognising rule's
@@ -870,17 +874,13 @@ recognising rule's regex.  Each action is passed the same arguments:
         does not do anything else; it is invoked for log lines that contain
         useful data but do not require any further processing.
 
-    \item [SMTPD\_DIED] Sometimes a \daemon{smtpd} dies or exits
-        unsuccessfully; the active connection for that \daemon{smtpd} must
-        be cleaned up, entered in the database if it has sufficient data,
-        and deleted from the state tables.  In some cases the connection
-        will not have enough data to satisfy the database schema, so it
-        cannot be entered into the database; unfortunately this means that
-        some data is lost.
-
-    \item [SMTPD\_KILLED] Sometimes a \daemon{smtpd} is killed by a signal;
-        this is processed in the same way as a \daemon{smtpd} dying, see
-        the \texttt{SMTPD\_DIED} action for details.
+    \item [SMTPD\_DIED] Sometimes a \daemon{smtpd} dies, is killed by a
+        signal, or exits unsuccessfully; the associated connection must be
+        cleaned up, entered in the database if it has sufficient data, and
+        deleted from the state tables.  In some cases the connection will
+        not have enough data to satisfy the database schema, so it cannot
+        be entered into the database; unfortunately this means that some
+        data is lost.
 
     \item [SMTPD\_WATCHDOG] \daemon{smtpd} processes have a watchdog timer
         to deal with unusual situations; after five hours the timer will
@@ -891,11 +891,11 @@ recognising rule's regex.  Each action is passed the same arguments:
         \daemon{smtpd} must be cleaned up, entered in the database, and
         deleted from the state tables.
 
-    \item [TIMEOUT] The connection with the remote client timed out so the
+    \item [TIMEOUT] The connection with the remote client timed out, so the
         mail currently being transferred must be discarded.  The mail may
         have been accepted, in which case there's a data structure to
-        dispose of, or it may not in which case there is not.  See
-        \sectionref{timeouts during data phase} for full details.
+        dispose of.  See \sectionref{timeouts during data phase} for full
+        details.
 
     \item [TRACK] Track a mail when it is re-injected for forwarding to
         another mail server; this happens when a local address is aliased
@@ -937,26 +937,26 @@ does not have rules for, e.g.\ \daemon{virtual} or \daemon{lmtp}.
 \label{rules in implementation}
 
 The rules are responsible for classifying each log line and specifying the
-correct action to be invoked.  For any parser implemented using this
-architecture, the rules are the most visible component and most likely to
-be modified by users.  Rules need to be as simple as possible so that users
-can easily modify or add to them, but the implementation must balance that
-simplicity with the need to provide enough flexibility and power to
-successfully parse the inputs.
+correct action to be invoked.  In any parser implemented using this
+architecture, the rules will be the most visible component and most likely
+to be modified by users.  Rules need to be as simple as possible so that
+users can easily modify or add to them, but the implementation must balance
+that simplicity with the need to provide enough flexibility and power to
+successfully parse inputs.
 
 The role of the rules in the architecture is covered in detail in
 \sectionref{rules in architecture}; this section is concerned with the
 practical aspects of how rules are implemented and used in \parsername{}.
 The structure of the rules table has already been documented in
-\sectionref{rules table}; that abstract description will not be repeated
-here, but should be fleshed out by the concrete example rule in
-\sectionref{example rule in implementation}.  The process of creating new
-rules from unparsed log lines is dealt with in \sectionref{creating new
-rules in implementation}; the implementation of the utility supplied with
-\parsername{} to create regexes from unparsed log lines is also described
-in that section.  The rule conditions used in \parsername{} are explained
-next, and the final portion of this section provides some
-suggestions for how to detect overlapping rules.
+\sectionref{rules table}; that description will not be repeated here, but
+should be fleshed out by the example rule in \sectionref{example rule in
+implementation}.  The process of creating new rules from unparsed log lines
+is dealt with in \sectionref{creating new rules in implementation}; the
+implementation of the utility supplied with \parsername{} to create regexes
+from unparsed log lines is also described in that section.  The rule
+conditions used in \parsername{} are explained next, and the final portion
+of this section provides some suggestions for how to detect overlapping
+rules.
 
 \subsection{Example Rule}
 
@@ -964,9 +964,9 @@ suggestions for how to detect overlapping rules.
 
 The example rule in \tableref{Example rule in implementation table}
 recognises the log line resulting from Postfix rejecting a delivery attempt
-because the domain in the sender address does not have an A, AAAA,
-or MX DNS entry, i.e.\ mail could not be delivered to the sender's address
-(for full details see~\cite{reject-unknown-sender-domain}).
+because the domain in the sender address does not have an A, AAAA, or MX
+DNS entry, i.e.\ mail could not be delivered to any address in the sender's
+domain (for full details see~\cite{reject-unknown-sender-domain}).
 
 Example log line recognised by this rule:
 
@@ -1062,24 +1062,24 @@ unrecognised log lines.  The action depends on the what the log line
 represents, e.g.\ a delivery rejection, a mail being delivered, some useful
 information, or something else; examine the list of actions in
 \sectionref{actions in detail in implementation} to determine the correct
-one.  The regex will be constructed based on the log line, but see below
-for a tool to ease the process.
+one.  The regex needs to be constructed based on the log line, but see
+below for a tool to ease the process.
 
-There are other attributes that may be required in a rule:
-connection\_data, result\_data, priority, or restriction\_name.  In general
-it will only become clear that connection\_data or result\_data are
-required when \parsername{} warns about an entry in the connections or
+There are other attributes that may be required to make a rule work
+correctly: connection\_data, result\_data, priority, or restriction\_name.
+In general it will only become clear that connection\_data or result\_data
+are required when \parsername{} warns about an entry in the connections or
 results tables that is missing some required fields, because values for the
 missing fields are not present in any of the log lines.  E.g.\ the rule
 recognising the \daemon{pickup} component processing a mail sets the
 client\_hostname to \texttt{localhost} and the client\_ip to
 \texttt{127.0.0.1}, because the mail originates on the local server.  If
 the new rule deliberately uses the architecture's overlapping rules feature
-it will be obvious that the priority field needs to be set, on this rule and
-possibly others; the priority field may be needed on unintentionally
+it will be obvious that the priority field needs to be set, on this rule
+and possibly others; the priority field may be needed on unintentionally
 overlapping rules too, but that is more difficult to determine.  Finally
 the restriction\_name field should be set when the rule's action is
-\texttt{DELIVERY\_REJECTED}; hopefully the restriction in question will be
+\texttt{DELIVERY\_REJECTED}; hopefully the name of the restriction will be
 clear from the content of the log line.
 
 A program is provided with \parsername{} to ease the process of creating
@@ -1087,12 +1087,12 @@ new rules from unrecognised log lines, based on the algorithm developed by
 Risto Vaarandi for his \acronym{SLCT}~\cite{slct-paper}.  The differences
 between the two algorithms will be outlined as part of the general
 explanation below.  The core of the \acronym{SLCT} algorithm is quite
-simple: log lines are generally created by substituting variable words into
-a fixed pattern, and analysis of the frequency with which each word occurs
-can be used to determine whether the word is variable or part of the fixed
-pattern.  This classification can be used to group similar log lines and
-generate a regex to match each group of log lines.  There are 4 steps in
-the algorithm:
+simple: programs generally create log lines by substituting variable words
+into a fixed pattern, and analysis of the frequency with which each word
+occurs can be used to determine whether the word is variable or part of the
+fixed pattern.  This classification can be used to group similar log lines
+and generate a regex to match each group of log lines.  There are 4 steps
+in the algorithm:
 
 \begin{description}
 
@@ -1101,13 +1101,13 @@ the algorithm:
         it performs a large number of substitutions on the input log lines,
         replacing commonly occurring variable terms (e.g.\ email addresses,
         \acronym{IP} addresses, the standard start of rejection messages)
-        with keywords that \parsername{} will expand when it loads the new
-        rule.  The purpose of this step is to utilise existing knowledge to
-        create more accurate regexes; it replaces a large number of
-        variable words with fixed words, improving the subsequent
-        classification of words as fixed or variable.  The altered log
-        lines are written to a temporary file, which subsequent stages will
-        use instead of the original input file.
+        with keywords described in \sectionref{regex components}.  The
+        purpose of this step is to utilise existing knowledge to create
+        more accurate regexes; it replaces a large number of variable words
+        with fixed words, improving the subsequent classification of words
+        as fixed or variable.  The altered log lines are written to a
+        temporary file, which subsequent stages will use instead of the
+        original input file.
 
         In the original algorithm the purpose of the pre-processing stage
         was to reduce the memory consumption of the program.  In the first
@@ -1122,7 +1122,7 @@ the algorithm:
     \item [Calculate word frequencies.]  The position of words within a log
         line is important: a word occurring in two log lines does not
         indicate similarity unless it occupies the same position in both
-        log lines.  If a variable term within a line contains
+        log lines.  If a variable term substituted into a log line contains
         spaces, it will appear to the algorithm as more than one word.
         This will alter the position of subsequent words, so a word
         occurring in different positions in two log lines \textit{may\/}
@@ -1133,41 +1133,46 @@ the algorithm:
 
         The original algorithm hashes each word and checks that result's
         counter from the previous pass; if that counter has a high
-        frequency a separate counter will be maintained for this word in
-        this position.  This reduces the number of counters maintained by
-        the algorithm in this step, reducing the memory requirements of the
-        algorithm at a cost of increased CPU usage.
+        frequency a separate counter will be maintained for this
+        \texttt{(word, word's position within the log line)} tuple.  This
+        reduces the number of counters maintained by the algorithm in this
+        step, reducing the memory requirements of the algorithm at the cost
+        of increased CPU usage.
 
-        As time goes on the amount of memory typically available increases
-        and the need to reduce memory requirements decreases, so the
-        modified algorithm omits the hashing step and maintains counters
-        for all tokens.  In addition most of the infrequently occurring
-        words will have been substituted with keywords during the first
-        step, vastly reducing the number of tuples to maintain counters
-        for.
+        As time goes by the amount of memory typically available to a
+        program or algorithm increases, and the need to reduce memory
+        requirements correspondingly decreases, so the modified algorithm
+        omits the hashing step and maintains counters for all tokens.  Most
+        of the infrequently occurring words will have been substituted with
+        keywords during the first step, vastly reducing the number of
+        tuples to maintain counters for; the original algorithm does not
+        have the detailed knowledge leveraged by the new algorithm, because
+        it is a generic tool.
 
-    \item [Classify words based on their frequency.]  The frequency of
-        every tuple \texttt{(word, word's position within the log line)} is
+    \item [Classify words based on their frequency.]  The frequency of each
+        \texttt{(word, word's position within the log line)} tuple is
         checked: if its frequency is greater than the threshold supplied by
         the user (1\% of all log lines is generally a good starting point),
         it is classified as a fixed word, otherwise it is classified as a
         variable term.  If a variable term appears sufficiently often it
-        will be misclassified as a fixed term, but that should be noticed
-        by the user when reviewing the new regexes.  Variable terms are
-        replaced by \texttt{.+} to match one or more of any character.
+        will be misclassified as a fixed term, but that will hopefully be
+        noticed by the user when reviewing the new regexes, and will be
+        obvious when the new rules do not recognise some log lines they are
+        expected to.  Variable terms are replaced by \texttt{.+} to match
+        one or more of any character.
 
     \item [Build regexes.]  The words are reassembled to produce a regex
         matching the log line, and a counter is maintained for each regex.
-        Contiguous sequences of \texttt{.+} in the newly reassembled
-        regexes are collapsed to a single \texttt{.+}; any resulting
-        duplicate regexes are combined, and their counters added together.
-        If a regex's counter is lower than the threshold supplied by the
-        user the regex is discarded; this second threshold is independent
-        of the threshold used to differentiate between fixed and variable
-        words, but once again 1\% of log lines is a good starting point.
-        The new regexes are displayed for the user to add to the database,
-        either as new rules or merged into the regexes of existing rules;
-        the counter for each regex is also displayed, giving the user an
+        Contiguous sequences of \texttt{.+} in the newly assembled regexes
+        are collapsed to a single \texttt{.+}; any resulting duplicate
+        regexes are combined, and their counters added together.  If a
+        regex's counter is lower than the threshold supplied by the user
+        the regex is discarded; this second threshold is independent of the
+        threshold used to differentiate between fixed and variable words,
+        but once again 1\% of log lines is a good starting point.  The new
+        regexes are displayed for the user to add to the database, either
+        as new rules or merged into the regexes of existing rules; the
+        counter for each regex is also displayed, giving the user an
         indication of how many of the log lines that regex should match.
         Discarding regexes will result in some of the log lines not being
         matched; when the rules have been augmented with the new regexes,
@@ -1176,7 +1181,7 @@ the algorithm:
 
 \end{description}
 
-XXX MERGE logs2regexes WITH check-regexes.
+XXX MERGE logs2regexes WITH check-regexes.  CHECK IF SLCT DOES THIS STEP\@.
 
 A second utility is also provided that reads a list of new regexes and
 the input given to the first utility.  It tries to match each input log
@@ -1201,13 +1206,13 @@ Rule conditions as part of the architecture have already been documented in
 and difficult to evaluate.  In contrast, \parsername{} uses very simple
 rule conditions: each rule has a \texttt{program} attribute that specifies
 the Postfix component whose log lines it recognises, and each log line
-contains the name of the Postfix component that produced it; the framework
-will only use rules where the two are equal when trying to recognise log
-lines.  This avoids needlessly trying rules that will not match the log
-line, or worse, might match unintentionally.  In addition the framework
-supports generic rules, whose program attribute is ``*''; these will be
-used if none of the program-specific rules recognise the log line.  If none
-of the rules are successful the framework will warn the user.
+contains the name of the Postfix component that produced it; when trying to
+recognise log lines, the framework will only use rules where the two are
+equal.  This avoids needlessly trying rules that will not recognise the log
+line, or worse, might recognise it unintentionally.  In addition the
+framework supports generic rules, whose program attribute is ``*''; these
+will be used if none of the program-specific rules recognise the log line.
+If none of the rules are successful the framework will warn the user.
 
 \subsection{Regex Components}
 
@@ -1221,17 +1226,18 @@ for several reasons:
     \item It simplifies both reading and writing of regexes and makes each
         regex largely self-documenting.  E.g.\ the meaning of
         \_\_CLIENT\_HOSTNAME\_\_ is immediately clear, whereas
-        \verb!(?:unknown|(?:[-.\w]+))! needs to be deciphered.
+        \verb!(?:unknown|(?:[-.\w]+))! needs to be deciphered each time it
+        is encountered.
 
     \item It avoids needless repetition of complex regex components, and
-        allows the components to be corrected or improved in one
-        location.  E.g.\ \_\_SENDER\_\_ is used in 68 rules; if a mistake
-        is discovered it can be corrected in one place only.
+        allows the components to be corrected or improved in one location.
+        E.g.\ \_\_SENDER\_\_ is used in 68 rules; if a mistake is
+        discovered it only needs to be corrected in one place.
 
     \item It enables automatic extraction and saving of captured data.  The
-        regex snippets use Perl 5.10's named capture buffers~\cite{perlre},
-        so the mapping between captures and fields does not need to be
-        explicitly specified by the rule.
+        regex snippets use Perl 5.10's named capture buffers~\cite{perlre}
+        to capture data, so the mapping between captures and fields does
+        not need to be explicitly specified by the rule.
 
 \end{itemize}
 
@@ -1255,9 +1261,7 @@ Some of the keywords need more explanation:
     \item [\_\_CHILD\_\_]  The queueid of a child mail; see
         \sectionref{Re-injected mails}.
 
-    \item [\_\_COMMAND\_\_]  All \acronym{SMTP} commands, except
-        \texttt{DATA}, which typically has a more specific rule.
-        Priorities could have been used instead of excluding \texttt{DATA}.
+    \item [\_\_COMMAND\_\_]  All \acronym{SMTP} commands.
 
     \item [\_\_CONN\_USE\_\_]  How many times the connection was reused;
         Postfix tries to reuse connections whenever possible to reduce the
@@ -1280,7 +1284,11 @@ Some of the keywords need more explanation:
         from rejecting a delivery attempt.
 
     \item [\_\_SHORT\_CMD\_\_]  Postfix sometimes logs \acronym{SMTP}
-        commands in a short, single word form.
+        commands in a short, single word form; this snippet matches all of
+        those, except \texttt{DATA}, which typically has a more specific
+        rule.  Priorities could have been used instead of excluding
+        \texttt{DATA}.
+
 
 \end{eqlist}
 
@@ -1288,43 +1296,43 @@ Some of the keywords need more explanation:
 
 \label{overlapping rules in implementation}
 
-\parsername{} does not try to detect overlapping rules; that responsibility
-is left to the author of the rules.  The advantages and difficulties of
-overlapping rules have already been addressed in \sectionref{overlapping
-rules in architecture} and will not be repeated here.  \parsername{}
-provides a mechanism for ordering overlapping rules: the priority field in
-each rule (defaulting to zero); negative priorities may be useful for
-catchall rules.
+The advantages and difficulties of overlapping rules have already been
+addressed in \sectionref{overlapping rules in architecture} and will not be
+repeated here.  \parsername{} does not try to detect overlapping rules;
+that responsibility is left to the author of the rules.  A mechanism is
+provided for ordering overlapping rules: the priority field in each rule;
+negative priorities may be useful for catchall rules.
 
 Detecting overlapping rules is difficult, but the following approaches may
 be helpful:
 
 \begin{itemize}
 
-    \item Sort by program and regex, then visually inspect the list, e.g.\
-        with \acronym{SQL} similar to:      \newline{}
-        \verb!SELECT program, regex!        \newline{}
-        \verb!    FROM rules!               \newline{}
-        \verb!    ORDER BY program, regex;! \newline{}
+    \item Sort rules by program and regex, then visually inspect the list,
+        e.g.\ with \acronym{SQL} similar to:    \newline{}
+        \verb!SELECT program, regex!            \newline{}
+        \verb!    FROM rules!                   \newline{}
+        \verb!    ORDER BY program, regex;!     \newline{}
         The rules are sorted first by program, then by regex, because rules
         with overlapping regexes will not overlap if their programs are
-        different.  Note that this does not properly deal with rules whose
-        program is \texttt{*}; those rules will be used on all log lines
-        that have not been recognised by program-specific rules.
+        different.  Note that this does not properly deal with generic
+        rules whose program is \texttt{*}; those rules will be used on all
+        log lines that have not been recognised by program-specific rules.
 
-    \item Compare the results of parsing using different rule orderings
-        (described in \sectionref{rule ordering for efficiency}).  Parse
+    \item Compare the results of parsing using different rule orderings, as
+        described in \sectionref{rule ordering for efficiency}.  Parse
         several log files using optimal ordering, then dump a textual
         representation of the rules, connections, and results tables.
         Repeat with shuffled and reversed ordering, starting with a fresh
         database.  If there are no overlapping rules the tables from each
-        run will be identical; differences indicate overlapping rules.  The
-        rules that overlap can be determined by examining the differences
-        in the tables: each result contains a reference to the rule which
-        created it, which will change if that rule overlaps with another.
-        Unfortunately this method cannot prove the absence of overlapping
-        rules; it can detect overlapping rules, but only if there are log
-        lines in the log files that are recognised by more than one rule.
+        run will be identical; differences indicate overlapping rules.
+        The rules that overlap can be determined by examining the
+        differences in the tables: each result contains a reference to the
+        rule which created it, which will change if that rule overlaps with
+        another.  Unfortunately this method cannot prove the absence of
+        overlapping rules; it can detect overlapping rules, but only if
+        there are log lines in the log files that are recognised by more
+        than one rule.
 
 \end{itemize}
 
