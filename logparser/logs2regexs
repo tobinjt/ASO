@@ -22,10 +22,11 @@ my $parser = ASO::Parser->new({data_source =>
         q{dbi:SQLite:dbname=../sql/db.sq3}});
 
 my %Options = get_options();
+my $Input_File = $ARGV[0];
 
 # Read all the input files, replacing known regexs in each line.
 debug(qq{$0: starting replace_regexs()\n});
-my ($filtered_file, $number_of_lines) = replace_regexs(@ARGV);
+my ($filtered_file, $number_of_lines) = replace_regexs($Input_File);
 #$filtered_file->unlink_on_destroy(0);
 debug(qq{$0: Temporary file: } . $filtered_file->filename() . qq{\n});
 
@@ -37,10 +38,13 @@ my $pattern_hashes = build_pattern_hashes($filtered_file, $frequency, $number_of
 debug(qq{$0: starting build_regexs()\n});
 my $patterns = build_regexs($pattern_hashes, $frequency, $number_of_lines);
 
+my $num_lines_really_matched = test_regexes($Input_File, $patterns);
+
 my $lines_matched = 0;
-foreach my $regex_pair (sort { $a->[0] cmp $b->[0] } @$patterns) {
-    print qq{$regex_pair->[1]\t $regex_pair->[0]\n};
-    $lines_matched += $regex_pair->[1];
+print qq{Matched: actual/expected; Regex\n};
+foreach my $regex (sort { $a->{regex} cmp $b->{regex} } @$patterns) {
+    print qq{$regex->{actual_count}/$regex->{expected_count}\t $regex->{regex}\n};
+    $lines_matched += $regex->{expected_count};
 }
 my $percent = $lines_matched * 100 / $number_of_lines;
 debug(qq{Matching $lines_matched/$number_of_lines lines ($percent\%)\n});
@@ -236,7 +240,10 @@ sub build_regexs {
         if ($regex !~ m/\$$/) {
             $regex =~ s/$/\$/;
         }
-        push @modified_patterns, [$regex => $count];
+        push @modified_patterns, {
+            regex           => $regex,
+            expected_count  => $count,
+        };
     }
     return \@modified_patterns;
 }
@@ -295,8 +302,12 @@ sub get_options {
     Getopt::Long::Configure qw(no_getopt_compat permute bundling);
     Getopt::Long::GetOptions(\%opts, @switches) or pod2usage(2);
 
-    if ($opts{help}) {
+    if (@ARGV != 1) {
         pod2usage(1);
+    }
+
+    if ($opts{help}) {
+        pod2usage(0);
     }
     if ($opts{version}) {
         my $version = q{$Id$};
@@ -323,6 +334,56 @@ DEATH
     }
 }
 
+sub test_regexes {
+    my ($log_lines, $regexes) = @_;
+
+    my $log_lines_fh = IO::File->new(q{<} . $log_lines)
+        or die qq{$0: Failed opening $log_lines: $!\n};
+    my $parser = ASO::Parser->new(
+            data_source => q{dbi:SQLite:dbname=../sql/db.sq3}
+        ) or die qq{$0: failed creating parser: $!, $@\n};
+    # Compile all regexes for efficiency and to check they're valid.
+    foreach my $regex (@{$regexes}) {
+        my $filtered_regex = $parser->filter_regex($regex->{regex});
+        eval {
+            $regex->{compiled_regex} = qr/$filtered_regex/;
+        };
+        if ($@) {
+            die qq{$0: failed to compile regex:\n}
+                . qq{regex: $regex->{regex}\n}
+                . qq{filtered regex: $filtered_regex\n}
+                . qq{because: $@\n};
+        }
+    }
+
+    my $matched_lines = 0;
+    while (<$log_lines_fh>) {
+        my $line = $_;
+        my @matching_regexes;
+        foreach my $regex (@{$regexes}) {
+            if ($line =~ m/$regex->{compiled_regex}/) {
+                push @matching_regexes, $regex;
+                $regex->{actual_count}++;
+            }
+        }
+        if (not @matching_regexes) {
+            warn qq{$0: unmatched line: $line};
+        } else {
+            $matched_lines++;
+        }
+        if (@matching_regexes > 1) {
+            my $num = @matching_regexes;
+            my $message = qq{$0: line matched $num times: $line};
+            foreach my $regex (@matching_regexes) {
+                $message .= qq{regex: $regex->{regex}\n};
+            }
+            warn $message;
+        }
+    }
+
+    return $matched_lines;
+}
+
 =pod
 
 =head1 NAME
@@ -334,6 +395,8 @@ logs2regexs - create new regexes from unparsed Postfix log lines
 Version $Id$
 
 =head1 SYNOPSIS
+
+    logs2regexs [OPTIONS] FILE
 
     # Parse mail.log.1, saving unparsed lines
     logparser --parse_lines_only mail.log.1 2> warnings
