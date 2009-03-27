@@ -2,31 +2,63 @@
 
 \label{Postfix Parser Implementation}
 
-XXX WRITE AN INTRODUCTION\@.  MOST OF THIS IS CRAP, BUT I MIGHT BE ABLE TO
-RESCUE SOME OF IT\@.  IT SHOULD HAVE A BLURB, FOLLOWED BY A PREVIEW OF THE
-CHAPTER\@.
+This chapter documents the implementation of \parsername{}, based on the
+architecture described in \sectionref{parser architecture}.  Any design may
+look good when examined in the abstract, but the real test of the design
+comes with the first concrete implementation; only then do any practical
+difficulties come to light.  Implementing this architecture was relatively
+straightforward, with only minor changes required: rule conditions and
+cascaded parsing were added, although later the implementation stopped
+using cascaded parsing.  The difficulties came not from the architecture
+and design, but from anomalies in the log files and Postfix's behaviour, as
+described in \sectionref{complications}.
 
-The parser deals with all the complications of parsing, the eccentricities
-and oddities of Postfix log files, presenting the resulting data in a
-normalised, simple to use representation.  The parser's task is to follow
-the journey each mail takes through Postfix, combining the data captured by
-rules into a coherent whole, saving it in a useful and consistent form, and
-performing housekeeping duties.
+\parsername{} deals with all the complications of parsing, the
+eccentricities and oddities of Postfix log files, presenting the resulting
+data in a normalised, simple to use representation.  The parser's task is
+to follow the journey each mail takes through Postfix, combining the data
+captured by rules into a coherent whole, saving it in a useful and
+consistent form, and performing housekeeping duties.
 
-The intermingling of log entries from different mails immediately rules out
-the possibility of handling each mail in isolation; the parser must be able
-to handle multiple mails in parallel, each potentially at a different stage
-in its journey, without any interference between mails --- except in the
-minority of cases where intra-mail interference is required.  The best way
-to implement this is to maintain state information for every unfinished
-mail and manipulate the appropriate mail correctly for each log line
-encountered.
+This chapter begins with the assumptions under which \parsername{} was
+designed and written, followed by a flowchart showing the most common paths
+taken through Postfix and \parsername{}, with a description of the stages
+and transitions.  The topic of the next section is the database that
+provides storage for the parser: any future work that analyses gathered
+data will do so using the database, so the database schema acts as an
+\acronym{API}.  A diagram of the database schema is provided, plus
+documentation for every table and field.
 
-There is a similarity between this design and the event-driven programming
-paradigm commonly used in GUI programs, where one part of the program
-responds to events (mouse clicks in a GUI program, log lines being
-recognised in \parsername{}) and invokes the correct action.
+The next three sections document the implementation of the three components
+of the architecture.  First is the framework, including its initialisation
+phase, the parsing process, and the conveniences it offers to users; that
+section finishes with the features that are important for this thesis but
+not strictly necessary for parsing: the performance data collected by the
+framework, the optimisations that can be disabled to show their effect, and
+the debugging options it provides.  The second component of the
+architecture is the actions: their implementation is documented, with a
+graph of how often each action is specified by rules, and a description of
+why some actions are more popular than others.  Every action that is part
+of \parsername{} is documented, and the actions section concludes with the
+process of adding a new action, and how to determine the values for each of
+the required fields.  Rules are the final component of the architecture,
+and also the most visible to users, because it is likely that users will
+need to add their own rules to recognise their log lines.  An example rule
+used by \parsername{} is shown, with every field clearly documented; this
+is followed by a description of adding new rules, and how to determine the
+value of each of the fields.  \parsername{} provides a utility to create
+regexes from unrecognised log lines; the algorithm it uses is documented,
+including the differences between it and the original algorithm.  The rules
+section finishes with a discussion of how \parsername{} uses rule
+conditions and overlapping rules, plus a description of the regex snippets
+provided to ease the process of writing regexes.
 
+On first inspection, Postfix log files look like they will be simple to
+parse, but this is not the case.  The many complications and difficulties
+encountered while writing \parsername{}, and the solutions developed to
+overcome them, are documented in \sectionref{complications}.  This chapter
+finishes with a list of \parsernames{} limitations, and some possible
+improvements that could be implemented.
 
 \section{Assumptions}
 
@@ -104,6 +136,15 @@ complications (\sectionref{complications}).
 
 \showgraph{build/logparser-flow-chart-part-1}{Parser flow chart}{flow chart
 image}
+
+The intermingling of log entries from different mails immediately rules out
+the possibility of handling each mail in isolation; the parser must be able
+to handle multiple mails in parallel, each potentially at a different stage
+in its journey, without any interference between mails --- except in the
+minority of cases where intra-mail interference is required.  The best way
+to implement this is to maintain state information for every unfinished
+mail and manipulate the appropriate mail correctly for each log line
+encountered.
 
 Everything starts off with a mail entering the system, whether by local
 submission via \daemon{postdrop}, by \acronym{SMTP}, by re-injection due to
@@ -1428,7 +1469,7 @@ improvements that have been identified in \parsername{}.
 
 \section{Summary}
 
-This section has presented \parsername{}, the parser implemented for this
+This chapter has presented \parsername{}, the parser implemented for this
 project, beginning with the assumptions made during its development.  A
 simplified flowchart shows the most common paths taken through Postfix and
 \parsername{}, accompanied by a description of the stages and transitions.
@@ -1438,9 +1479,9 @@ database schema, so the resemblance between a database schema and an
 \acronym{API} is described, followed by a detailed description and a
 diagram of the database schema.  The framework is documented next,
 including the steps it takes during initialisation, the parsing process,
-and the conveniences it offers to users.  The data collected by the
-framework is described, as are the ways in which various optimisations can
-be disabled to demonstrate their effect, and the debugging options the
+and the conveniences it offers to users.  The performance data collected by
+the framework is described, as are the ways in which various optimisations
+can be disabled to demonstrate their effect, and the debugging options the
 framework provides.  The implementation of actions in \parsername{} is
 documented, including how frequently each action is specified by rules, and
 brief descriptions of why some actions are more popular than others.  All
@@ -1456,8 +1497,8 @@ it is based on.  How \parsername{} uses rule conditions and overlapping
 rules is discussed, accompanied by a description of the regex snippets the
 framework provides to simplify the regexes used in rules.  The many
 complications and difficulties encountered while writing \parsername{}, and
-the solutions developed to overcome them, are documented in depth, also
-documented are how some solutions interact and which action or actions the
+the solutions developed to overcome them, are documented in depth; also
+documented are how some solutions interact, and which action or actions the
 solution is implemented in.  This chapter concludes with a list of the
 limitations identified in \parsername{}, followed by some possible
 improvements suggested by the author.
