@@ -1125,7 +1125,7 @@ simple: programs generally create log lines by substituting variable words
 into a fixed pattern, and analysis of the frequency with which each word
 occurs can be used to determine whether the word is variable or part of the
 fixed pattern.  This classification can be used to group similar log lines
-and generate a regex to match each group of log lines.  There are 4 steps
+and generate a regex to match each group of log lines.  There are five steps
 in the algorithm:
 
 \begin{description}
@@ -1203,32 +1203,34 @@ in the algorithm:
         regex's counter is lower than the threshold supplied by the user
         the regex is discarded; this second threshold is independent of the
         threshold used to differentiate between fixed and variable words,
-        but once again 1\% of log lines is a good starting point.  The new
-        regexes are displayed for the user to add to the database, either
-        as new rules or merged into the regexes of existing rules; the
-        counter for each regex is also displayed, giving the user an
-        indication of how many of the log lines that regex should match.
-        Discarding regexes will result in some of the log lines not being
-        matched; when the rules have been augmented with the new regexes,
-        the original log files should be parsed again, and any remaining
-        unparsed log lines used as input to this utility.
+        but once again 1\% of log lines is a good starting point.
+
+    \item [Test the new regexes.]  The final step replaces keywords in the
+        new regexes in the same way as \parsername{} does, and compiles
+        each regex to check they are valid.  A match will be attempted
+        between all of the new regexes and each of the unparsed log lines
+        the regexes were built from; the user will be warned if a log line
+        is not matched by any regex, or if a log line is matched by more
+        than one regex.  The number of log lines each regex matches is
+        counted, as is the number of log lines matched by all regexes,
+        though a log line is counted once only, even if matched by more
+        than one regex.
+
+        This step is not performed by the original algorithm.
 
 \end{description}
 
-XXX MERGE logs2regexes WITH check-regexes.  CHECK IF SLCT DOES THIS STEP\@.
+The new regexes are displayed for the user to add to the database, either
+as new rules or merged into the regexes of existing rules; also displayed
+are the number of log lines each regex was expected to match, and the
+number it actually matched, to help the user notice problems in the new
+regexes.  Discarding regexes will result in some of the log lines not being
+matched; when the rules have been augmented with the new regexes, the
+original log files should be parsed again, and any remaining unparsed log
+lines used as input to this utility.
 
-A second utility is also provided that reads a list of new regexes and the
-input given to the first utility.  It tries to match each input log line
-with each regex, counting the number of log lines that match each regex,
-warning the user if an input log line is matched by more than one regex,
-and additionally warning if an input log line is not matched by any regex.
-It displays a summary of how many input log lines each regex matched,
-comparing it to the expected number of matches; this provides the user with
-an easy method of checking if the regexes produced by the first utility are
-correctly matching the input log lines they are based upon.
-
-These utilities are not intended to create perfect regexes, but they
-greatly reduce the effort required to parse new or different log lines.
+This utility is not intended to create perfect regexes, but it greatly
+reduces the effort required to deal with unrecognised log lines.
 
 \subsection{Rule Conditions}
 
