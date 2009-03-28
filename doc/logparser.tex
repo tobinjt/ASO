@@ -193,8 +193,8 @@
 
 % \showgraph{filename}{caption}{label}
 \newcommand{\showgraph}[3]{%
-    % XXX REVISIT THE PLACEMENT OF FIGURES, THOUGH I THINK LATEX'S DEFAULTS
-    % AR EPROBABLY PRETTY GOOD.
+    % XXX REVISIT THE PLACEMENT OF FIGURES AND TABLES, THOUGH I THINK
+    % LATEX'S DEFAULTS ARE PROBABLY PRETTY GOOD.
     \begin{figure}%[hbt!]
         \caption{#2}\label{#3}
         \includegraphics{#1}
@@ -203,7 +203,7 @@
 
 %\showtable{filename}{caption}{label}
 \newcommand{\showtable}[3]{
-    \begin{table}[ht]
+    \begin{table}%[ht]
         \caption{#2}\label{#3}
         \input{#1}
     \end{table}

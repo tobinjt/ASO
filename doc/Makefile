@@ -49,7 +49,10 @@ logparser.deps: \
 		build/include-timing-run-duration.tex					\
 		build/include-timing-run-throughput.tex					\
 		build/include-median-throughput-log-lines.tex				\
-		build/include-median-throughput-MB.tex
+		build/include-median-throughput-MB.tex					\
+		build/include-top-ten-hits.tex						\
+		build/include-optimal-ordering-parsing-time-reduction-other-logs.tex	\
+		build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex
 	touch "$@"
 
 # Additional dependencies are included from Makefile.deps-ps and
@@ -263,18 +266,21 @@ build/stats-hits: db.full-run.sq3
 	nl "$@.tmp" > "$@"
 	rm -f "$@.tmp"
 
+build/stats-hits-reversed: build/stats-hits
+	tac "$<" > "$@"
+
 # Stats for cached regexes vs discarded regexs: all logs, logs 22,62-68, all other logs.
 build/stats-cached-regexes-vs-discarded-regexes-stddev: build/stats-cached-regexes-vs-discarded-regexes
 	perl ../stats/stddev "$<" > "$@"
-	echo "Row: All logs" >> "$@"
+	echo "Row: All log files" >> "$@"
 
 build/stats-cached-regexes-vs-discarded-regexes-logs-22-62-68-stddev: build/stats-cached-regexes-vs-discarded-regexes
 	sed -e '1,21d; 23,61d; 69,$$d;' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: Logs 22 and 62--68" >> "$@"
+	echo "Row: Log files 22 and 62--68" >> "$@"
 
 build/stats-cached-regexes-vs-discarded-regexes-other-logs-stddev: build/stats-cached-regexes-vs-discarded-regexes
 	sed -e '22d; 62,68d;' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: All logs except 22 and 62--68" >> "$@"
+	echo "Row: All log files except 22 and 62--68" >> "$@"
 
 build/include-cached-regexes-vs-discarded-regexes.tex: build/stats-cached-regexes-vs-discarded-regexes-stddev build/stats-cached-regexes-vs-discarded-regexes-logs-22-62-68-stddev build/stats-cached-regexes-vs-discarded-regexes-other-logs-stddev
 	perl mk-stats-cached-discarded-include $^ > "$@"
@@ -282,27 +288,27 @@ build/include-cached-regexes-vs-discarded-regexes.tex: build/stats-cached-regexe
 # File size and number of lines ratios: stddev, mean, etc.
 build/stats-file-size-vs-parsing-time-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$2}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: File size vs. parsing time" >> "$@"
+	echo "Row: File size vs\\@. parsing time" >> "$@"
 
 build/stats-file-size-vs-parsing-time-logs-22-62-68-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$2}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: File size vs. parsing time (logs 22, 62--68)" >> "$@"
+	echo "Row: File size vs\\@. parsing time (log files 22, 62--68)" >> "$@"
 
 build/stats-file-size-vs-parsing-time-other-logs-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: File size vs. parsing time (all other logs)" >> "$@"
+	echo "Row: File size vs\\@. parsing time (all other log files)" >> "$@"
 
 build/stats-number-of-log-lines-vs-parsing-time-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: Number of log lines vs. parsing time" >> "$@"
+	echo "Row: No\\@. of log lines vs\\@. parsing time" >> "$@"
 
 build/stats-number-of-log-lines-vs-parsing-time-logs-22-62-68-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: Number of log lines vs. parsing time (logs 22, 62--68)" >> "$@"
+	echo "Row: No\\@. of log lines vs\\@. parsing time (log files 22, 62--68)" >> "$@"
 
 build/stats-number-of-log-lines-vs-parsing-time-other-logs-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: Number of log lines vs. parsing time (all other logs)" >> "$@"
+	echo "Row: No\\@. of log lines vs\\@. parsing time (all other log files)" >> "$@"
 
 build/include-file-size-and-number-of-log-lines-vs-parsing-time.tex: 			\
 		build/stats-file-size-vs-parsing-time-stddev				\
@@ -316,27 +322,27 @@ build/include-file-size-and-number-of-log-lines-vs-parsing-time.tex: 			\
 # Optimal/shuffle/reverse ratios: stddev, mean, etc.
 build/stats-optimal-vs-shuffle-stddev: build/stats-optimal-and-reverse-vs-shuffle
 	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: Optimal (all logs)" >> "$@"
+	echo "Row: Optimal (all log files)" >> "$@"
 
 build/stats-optimal-vs-shuffle-logs-22-62-68-stddev: build/stats-optimal-and-reverse-vs-shuffle
 	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: Optimal (logs 22, 62--68)" >> "$@"
+	echo "Row: Optimal (log files 22, 62--68)" >> "$@"
 
 build/stats-optimal-vs-shuffle-other-logs-stddev: build/stats-optimal-and-reverse-vs-shuffle
 	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: Optimal (all other logs)" >> "$@"
+	echo "Row: Optimal (all other log files)" >> "$@"
 
 build/stats-reverse-vs-shuffle-stddev: build/stats-optimal-and-reverse-vs-shuffle
 	awk '!/#/ {print $$2}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: Reverse (all logs)" >> "$@"
+	echo "Row: Reverse (all log files)" >> "$@"
 
 build/stats-reverse-vs-shuffle-logs-22-62-68-stddev: build/stats-optimal-and-reverse-vs-shuffle
 	awk '!/#/ {print $$2}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: Reverse (logs 22, 62--68)" >> "$@"
+	echo "Row: Reverse (log files 22, 62--68)" >> "$@"
 
 build/stats-reverse-vs-shuffle-other-logs-stddev: build/stats-optimal-and-reverse-vs-shuffle
 	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: Reverse (all other logs)" >> "$@"
+	echo "Row: Reverse (all other log files)" >> "$@"
 
 build/include-optimal-and-reverse-vs-shuffle.tex: 			\
 		build/stats-optimal-vs-shuffle-stddev			\
@@ -412,8 +418,8 @@ build/include-optimal-ordering-parsing-time-reduction-other-logs.tex: build/stat
 build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex: build/stats-optimal-and-reverse-vs-shuffle 
 	sed -e '/^#/d' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | awk '{print $$1}' | ../stats/stddev | awk '/Median:/ { printf "%.3f%%\n", 100 - $$2 }' > "$@"
 
-build/include-top-ten-hits.tex: build/stats-hits
-	awk 'BEGIN { sum = 0; topten = 0 }; { sum += $$2 }; $$1 >= 160 { topten += $$2 }; END { printf "%'\''.3f%\n", topten * 100 / sum };' "$<" > "$@"
+build/include-top-ten-hits.tex: build/stats-hits-reversed
+	awk 'BEGIN { sum = 0; topten = 0 }; { sum += $$2 }; NR <= 10 { topten += $$2 }; END { printf "%'\''.3f%\n", topten * 100 / sum };' "$<" > "$@"
 
 build/stats-rules-tried-per-log-line: results/stats-full-run/timing
 	perl -Mstrict -w -E 'my ($$rules_tried, $$lines_parsed); while (<>) { m/^num_lines_parsed:.*: ([^:]+)$$/ and $$lines_parsed = $$1; m/^num_rules_tried:.*: ([^:]+)$$/ and $$rules_tried = $$1; m/^Parsed logfile:/ and say $$rules_tried / $$lines_parsed; }' "$<" > "$@"
@@ -453,7 +459,7 @@ check: lines-from-paragraphs
 	make --silent join-lines | grep -i -E 'underfull|overfull|LaTeX Warning' || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' *.log
 	grep '!!' *.?lg || true;
-	chktex -I0 -q *.tex *.bbl
+	chktex -I0 -q *.tex *.bbl build/include-*.tex
 	# Check for contractions.
 	ack -i 'it'\''s|\w'\''(?!s)\w' logparser*.tex
 	# Check for uncapitalised words in section headings, and then in bibliography entries.

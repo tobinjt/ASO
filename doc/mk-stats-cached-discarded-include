@@ -7,14 +7,15 @@ use warnings;
 
 use File::Slurp;
 
+print <<'HEADER';
+\begin{center}
+    \begin{tabular}[]{lrr}
+        \tabletopline{}%
+        & Mean & Std. Dev. \\
+        \tablemiddleline{}%
+HEADER
+
 my ($label, $mean, $stddev);
-
-print q(\begin{tabular}[]{lrr}) . qq{\n};
-
-$label  = q{};
-$mean   = q{Mean};
-$stddev = q{Std. Dev.};
-print qq{$label & $mean & $stddev \\\\\n};
 
 foreach my $file (@ARGV) {
     my @lines = read_file($file);
@@ -27,8 +28,12 @@ foreach my $file (@ARGV) {
     chomp $label;
     $mean   = sprintf q{%.2f\%%}, $data{q{Mean}};
     $stddev = sprintf q{%.2f\%%}, $data{q{Standard deviation}};
-    print qq{$label & $mean & $stddev \\\\\n};
+    print qq{        $label & $mean & $stddev \\\\\n};
 }
 
-print q(\end{tabular}) . qq{\n};
+print <<'FOOTER';
+        \tablebottomline{}%
+    \end{tabular}
+\end{center}
+FOOTER
 

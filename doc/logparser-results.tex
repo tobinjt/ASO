@@ -13,8 +13,6 @@ FROM IT\@.  COMPARE NUMBER OF RULES TRIED FOR DIFFERENT RULE ORDERINGS\@.
 
 XXX COMPARE BEST AND WORST POSSIBLE RESULTS WITH REAL RESULTS\@.
 
-XXX REUSE THE CONTENT FROM THE PAPER FOR THIS SECTION\@.
-
 XXX DO A TEST-SOME RUN AND SAVE THE RESULTS TO THE DATABASE, THEN COMPARE
 THE TIME WITH A RUN THAT DOES NOT SAVE RESULTS\@; PUT THE COMPARISON IN THE
 INTRODUCTION, NEAR THE MACHINE SPECS\@.
@@ -70,8 +68,6 @@ Parsing all \numberOFlogFILES{} log files in one run took
 the task of gathering statistics from test runs, and was not used for any
 other purpose while test runs were ongoing; any services not necessary for
 running the tests were disabled.
-
-\clearpage{}
 
 \subsection{Architecture Scalability: Input Size}
 
@@ -186,13 +182,13 @@ per log line}{Mean number of rules tried per log line}
 \label{rule ordering for efficiency}
 
 At the time of writing there are \numberOFrules{} different rules: the top
-10\% recognise the vast majority of log lines, with the remaining log lines
-split across the other 90\% of the rules (as shown in \graphref{rule hits
-graph}).  Assuming that the distribution of log lines is reasonably
-consistent over time, parser efficiency should benefit from trying more
-frequently recognising rules before those that recognise less frequently.
-To test this hypothesis three full test runs were performed with different
-rule orderings:
+10\% recognise \input{build/include-top-ten-hits}\% of the log lines, with
+the remaining log lines split across the other 90\% of the rules (as shown
+in \graphref{rule hits graph}).  Assuming that the distribution of log
+lines is reasonably consistent over time, parser efficiency should benefit
+from trying more frequently recognising rules before those that recognise
+less frequently.  To test this hypothesis three full test runs were
+performed with different rule orderings:
 
 \begin{eqlist}
 
@@ -214,9 +210,14 @@ rule orderings:
 parsing times of optimal and reverse orderings relative to shuffled
 ordering; the mean relative parsing times for different groupings of log
 files are given in \tableref{Parsing time relative to shuffled ordering
-table}.  Overall this optimisation provides a modest but worthwhile
-performance increase of approximately 10\%, for a small investment in time
-and programming.
+table}.  This optimisation provides a mean reduction in parsing time of
+\input{build/include-optimal-ordering-parsing-time-reduction-other-logs}\%
+with normal log files,
+\input{build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68}\%
+when a mail loop occurs and the distribution of log lines is unusual.
+Optimal rule ordering has other benefits, described in
+\sectionref{scalability as the number of rules rises}.
+
 
 \showgraph{build/graph-optimal-and-reverse-vs-shuffle}{Parsing time
 relative to shuffled ordering}{Parsing time relative to shuffled ordering
@@ -268,22 +269,21 @@ when generating the results in this thesis is \numberOFrulesMINIMUM{},
 \numberOFrulesMINIMUMpercentage{} of the full ruleset.  The full ruleset is
 larger because the Postfix parser is tested with \numberOFlogFILESall{} log
 files, to improve its parsing and ensure it correctly parses logs generated
-by later Postfix versions.  A second set of statistics was generated using
-the minimum ruleset and compared to the statistics generated using the full
-ruleset: the percentage parsing time increase when using the full ruleset
-instead of the minimal ruleset for optimal, shuffled, and reversed
-orderings is shown in \graphref{Percentage parsing time increase of maximum
-ruleset over minimum ruleset}.
+by later Postfix versions.  A second set of test runs was performed using
+the minimum ruleset, and the parsing times compared to those generated
+using the full ruleset: the percentage parsing time increase when using the
+full ruleset instead of the minimal ruleset for optimal, shuffled and
+reverse orderings is shown in \graphref{Percentage parsing time increase of
+maximum ruleset over minimum ruleset}.
 
 \showgraph{build/graph-full-ruleset-vs-minimum-ruleset}{Percentage parsing
 time increase of maximum ruleset over minimum ruleset}{Percentage parsing
 time increase of maximum ruleset over minimum ruleset}
 
-It is clear from \graphref{Percentage parsing time increase of maximum
-ruleset over minimum ruleset} that the increased number of rules noticeably
-increases parsing time with reverse ordering, and to a lesser extent with
-shuffled ordering.  The optimal ordering (where the rules that recognise
-log lines most frequently are tried first) shows a mean increase of
+Clearly the increased number of rules has a noticeable performance impact
+with reverse ordering, and a lesser impact with shuffled ordering.  The
+optimal ordering (where the rules that recognise log lines most frequently
+are tried first) shows a mean increase of
 \input{build/include-full-ruleset-vs-minimum-ruleset} in parsing time for a
 \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.  Log
 files 22 and 62--68 show much smaller increases for shuffled and reversed
