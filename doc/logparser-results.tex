@@ -2,20 +2,29 @@
 
 \label{Results}
 
-XXX NEED AN INTRODUCTION\@.
+% XXX IS CHANGING FIGURE TO GRAPH A GOOD IDEA?
+\renewcommand{\figurename}{Graph}
 
-XXX COMPARE PARSING + ACTIONS TO JUST PARSING\@.
+XXX NEED AN INTRODUCTION\@.
 
 XXX USE THE DATA COLLECTED ABOUT NUMBER OF RULES TRIED\@.  MAYBE INCLUDE IN
 ORDERINGS SECTION\@?  MIX WITH RECOGNISING VS RECOGNISING + ACTION, AND
 KEEP COUNTERS FOR EACH PROGRAM TOO --- MAYBE SOMETHING USEFUL WILL COME
 FROM IT\@.  COMPARE NUMBER OF RULES TRIED FOR DIFFERENT RULE ORDERINGS\@.
 
-XXX COMPARE BEST AND WORST POSSIBLE RESULTS WITH REAL RESULTS\@.
-
 XXX DO A TEST-SOME RUN AND SAVE THE RESULTS TO THE DATABASE, THEN COMPARE
 THE TIME WITH A RUN THAT DOES NOT SAVE RESULTS\@; PUT THE COMPARISON IN THE
 INTRODUCTION, NEAR THE MACHINE SPECS\@.
+
+XXX THINK ABOUT THE ORDERING OF TABLES AND GRAPHS\@; MAYBE REARRANGE THEM
+SO THAT THEY APPEAR IN THE ORDER THEY ARE REFERENCED\@?
+
+XXX SHOULD I USE $\backslash{}$clearpage{} OR SOMETHING TO AFFECT
+PLACEMENT\@?  GRAPHS AND TABLES TEND TO MOVE QUITE FAR IN SOME OF THE
+SUBSECTIONS, THOUGH MAKING THE TEXT LONGER MIGHT HELP TOO\@.  IDEALLY I
+WANT TO HAVE TEXT, THEN ALL GRAPHS AND TABLES, THEN THE NEXT SECTION\@; I
+DO NOT LIKE THAT GRAPHS/TABLES SOMETIMES APPEAR BEFORE THEY ARE
+REFERENCED\@.  I MIGHT NEED TO REDUCE THE HEIGHT OF THE GRAPHS TOO\@.
 
 \section{Parser Efficiency}
 
@@ -24,19 +33,18 @@ INTRODUCTION, NEAR THE MACHINE SPECS\@.
 Parsing efficiency is an obvious concern when the parser routinely needs to
 parse large log files.  The server that generated the log files used in
 testing this parser accepts approximately 10,000 mails for 700 users a day;
-\graphref{Mails received per day} shows that as expected there are far more
-mails received on weekdays than at weekends.  The mail server in question
-is a production mail server handling mail for a university department; the
-benefit of using this server is that the log files from it exhibit the
+\graphref{Mails received per day} shows that, as expected, far more mails
+are received on weekdays than at weekends.  The mail server in question is
+a production mail server handling mail for a university department; the
+benefit of using this server is that its log files exhibit the
 idiosyncrasies and peculiarities a mail server in the wild must deal with,
-but the downside is that significantly altering the configuration just to
-log messages from a different Postfix component is not an option.  Median
-log file size is 50MB, containing 285,000 log lines --- large scale mail
-servers would have much larger log files.  Note that \graphref{Mails
-received per day} and \tableref{Number of mails received per day:
-statistics} show the number of mails received by \acronym{SMTP} only; in
-particular the mail loops noticeable in other graphs do not contribute to
-these figures.
+but the downside is that significantly altering the configuration to
+accommodate this project is not an option.  Median log file size is 50MB,
+containing 285,000 log lines; large scale mail servers would have much
+larger log files.  Note that \graphref{Mails received per day} and
+\tableref{Number of mails received per day: statistics} show the number of
+mails received by \acronym{SMTP} only; in particular the mail loops
+noticeable in later graphs do not contribute to these figures.
 
 \showgraph{build/graph-mails-received}{Number of mails received via SMTP
 per day}{Mails received per day}
@@ -46,22 +54,29 @@ SMTP per day}{Number of mails received per day: statistics}
 
 When generating the timing data used in this section, \numberOFlogFILES{}
 log files (totaling 10.08 GB, \numberOFlogLINEShuman{} log lines) were each
-parsed 10 times and the parsing times averaged.  Saving results to the
-database was disabled for the test runs, as that dominates the run time of
-the program, and the tests are aimed at measuring the speed of the parser
-rather than the speed of the database and the disks the database is stored
-on.  The computer used for test runs was a Dell Optiplex 745, equipped
-with:
+parsed 10 times, and the parsing times from the 10 runs averaged.  Saving
+results to the database was disabled for the test runs, because that
+dominates the run time of the program, and the tests are aimed at measuring
+the speed of \parsername{} rather than the speed of the database and the
+disks the database is stored on.  The computer used for test runs was a
+Dell Optiplex 745, shown in \tableref{Computer used to generate
+statistics}.
 
-\begin{tabular}[]{ll}
-
-    CPU         & One dual core 2.40GHz Intel\textregistered{}
-                    Core\texttrademark{}2 CPU,                      \\
-                & with 32KB L1 cache and 4MB L2 cache.              \\
-    RAM         & 2GB 667 MHz DDR RAM\@.                            \\
-    Hard disk   & One Seagate Barracuda 7200 RPM 250GB SATA disk.   \\
-
-\end{tabular}
+\begin{table}[htbp]
+    \caption{Computer used to generate statistics}
+    \empty{}\label{Computer used to generate statistics}
+    \begin{tabular}[]{ll}
+        \tabletopline{}%
+        Component  & Component in use                                   \\
+        \tablemiddleline{}%
+        CPU         & One dual core 2.40GHz Intel\textregistered{}
+                        Core\texttrademark{}2 CPU,                      \\
+                    & with 32KB L1 cache and 4MB L2 cache.              \\
+        RAM         & 2GB 667 MHz DDR RAM\@.                            \\
+        Hard disk   & One Seagate Barracuda 7200 RPM 250GB SATA disk.   \\
+        \tablebottomline{}%
+    \end{tabular}
+\end{table}
 
 Parsing all \numberOFlogFILES{} log files in one run took
 \input{build/include-timing-run-duration}.  The computer was dedicated to
@@ -74,20 +89,20 @@ running the tests were disabled.
 An important property of a parser is how parsing time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
 \Graphref{parsing time vs file size vs number of log lines graph} shows the
-parsing time in seconds, file size in MB, and tens of thousands of log
-lines for each of the \numberOFlogFILES{} log files.  All three lines run
-roughly in parallel, giving the impression that the algorithm scales
-linearly with input size.  This impression is borne out by
-\graphref{parsing time vs file size vs number of log lines factor} which
+parsing time in seconds, file size in MB, and number of log lines in tens
+of thousands, for each of the \numberOFlogFILES{} log files.  The three
+lines run roughly in parallel, giving the impression that the algorithm
+scales linearly with input size.  This impression is borne out by
+\graphref{parsing time vs file size vs number of log lines factor}, which
 plots both the ratio of file size vs parsing time, and the ratio of number
 of log lines vs parsing time (higher is better in both cases);
 \tableref{parsing time vs file size vs number of log lines factor table}
 shows the same ratios for different groups of log files.  The ratios are
-quite tightly banded, providing empirical evidence that the algorithm
-scales linearly.  The ratio increases (i.e.\ improves) for log files 22 and
-62--68 despite their larger than average size (shown in \graphref{parsing
-time vs file size vs number of log lines graph}); this is explained fully
-in \sectionref{Explaining the peaks in log file size}.
+quite tightly banded, showing that the algorithm scales linearly.  The
+ratios increase (i.e.\ improve) for log files 22 and 62--68 despite their
+larger than average size (shown in \graphref{parsing time vs file size vs
+number of log lines graph}); this is explained fully in
+\sectionref{Explaining the peaks in log file size}.
 
 \showtable{build/include-file-size-and-number-of-log-lines-vs-parsing-time}{Ratio
 of file size and number of log lines to parsing time}{parsing time vs file
@@ -105,6 +120,12 @@ number of log lines factor}
 
 \label{Explaining the peaks in log file size}
 
+XXX SHOULD THIS BE A SEPARATE SECTION OR INCLUDED IN THE PREVIOUS ONE\@?
+MAYBE INCLUDE GRAPHS OF RULES PER FILE OR SOMETHING TO EXTEND THIS\@?
+
+XXX REWRITE WHEN STATS RUNS HAVE FINISHED\@; REWRITE ALL THE REFERENCES
+TOO\@.
+
 \Graphref{parsing time vs file size vs number of log lines graph} shows log
 file size varying between 30--100MB, except for log files 22 (200MB) and
 62--68 (400--900MB).  These large log files were caused by a user
@@ -119,52 +140,13 @@ to, creating an infinite loop.  To prevent this happening Postfix examines
 the Delivered-To header in the mail, and if the mail has already been
 delivered to the current address it is bounced back to the sender with the
 error message \newline{} \tab{} \texttt{mail forwarding loop for
-username@domain}\newline{}  Ordinarily this works well, but unfortunately
-in this instance the user noticed they had not received any mail in a while
-and opted to send a test mail to themselves, causing a loop not caught by
-Postfix:
+username@domain}\newline{}  Normally this works well, but the forwarding
+method in use at that time stripped the Delivered-To header from the mail,
+breaking loop detection.
 
-XXX REWRITE THIS SECTION SO THAT IT IS CORRECT\@: POINT 4 SAYS THAT THE
-ENVELOPE SENDER CHANGES, IS THAT CORRECT\@?
-
-\begin{enumerate}
-
-    \item Postfix accepts a mail from username@domain, for username@domain.
-
-    \item Postfix delivers the mail to the local mailbox and
-        username@domain, as instructed by the user's forwarding
-        instructions.  The forwarded mail has a
-        \texttt{Delivered-To:~username@domain} header added, and the
-        envelope sender address is username@domain.
-
-    \item Postfix accepts the mail for username@domain, but during delivery
-        it notices that the \texttt{Delivered-To} header already contains
-        the address it is currently delivering to, and therefore sends a
-        bounce notification with sender address \texttt{<>}\glsadd{<>} to
-        the original sender: username@domain.
-
-    \item Postfix accepts the bounce notification and delivers it to both
-        the local mailbox and to username@domain, as instructed by the
-        user's forwarding instructions.  A
-        \texttt{Delivered-To:~username@domain} header is added to the
-        forwarded bounce notification, XXX which now has an envelope sender
-        address of username@domain.   XXX IS THIS CORRECT\@?
-
-    \item Postfix accepts the forwarded bounce notification but during mail
-        delivery it notices that the \texttt{Delivered-To} header already
-        contains the address currently being delivered to, and sends a
-        bounce notification to the sender: username@domain.
-
-    \item Repeat from step two; this will continue indefinitely unless an
-        administrator intervenes and deletes the appropriate mails from the
-        queue.
-
-\end{enumerate}
-
-The sequence described above occurs extremely rapidly because Postfix does
-not have to deliver the mail to an external system, so mails are delivered,
-bounced, and generated as fast as the disks can keep up, resulting in a
-huge volume of log lines.
+When the recipient in a mail loop is local, Postfix does not have to
+deliver the mail to an external system, so mails are delivered as fast as
+the disks can keep up, resulting in a huge volume of log lines.
 
 XXX EXPAND THIS PARAGRAPH\@; THERE MAY BE CONTENT IN THE PAPER\@.  REFER TO
 THE NEW GRAPH BELOW TOO\@.
@@ -185,21 +167,22 @@ At the time of writing there are \numberOFrules{} different rules: the top
 10\% recognise \input{build/include-top-ten-hits}\% of the log lines, with
 the remaining log lines split across the other 90\% of the rules (as shown
 in \graphref{rule hits graph}).  Assuming that the distribution of log
-lines is reasonably consistent over time, parser efficiency should benefit
-from trying more frequently recognising rules before those that recognise
-less frequently.  To test this hypothesis three full test runs were
-performed with different rule orderings:
+lines is reasonably consistent over time, \parsernames{} efficiency should
+benefit from trying more frequently recognising rules before those that
+recognise less frequently.  To test this hypothesis three full test runs
+were performed with different rule orderings:
 
 \begin{eqlist}
 
     \item [Optimal]  The most optimal order, according to the hypothesis:
         rules that recognise log lines most often will be tried first.
 
-    \item [Shuffle] This is intended to represent a randomly ordered rule
-        set.  The rules will be shuffled once before use and will retain
-        that ordering until the parser exits.  Note that the ordering will
-        change every time the parser is executed, so 10 different rule
-        orderings will be generated for each log file in the test run.
+    \item [Shuffle] This ordering is intended to represent a randomly
+        ordered rule set.  The rules will be shuffled once before use and
+        will retain that ordering until the parser exits.  Note that the
+        ordering will change every time the parser is executed, so 10
+        different rule orderings will be generated for each log file in the
+        test run.
 
     \item [Reverse] Hypothetically the worst order: the rules that
         recognise log lines most frequently will be tried last.
@@ -219,6 +202,8 @@ Optimal rule ordering has other benefits, described in
 \sectionref{scalability as the number of rules rises}.
 
 
+\showgraph{build/graph-hits}{Hits per rule}{rule hits graph}
+
 \showgraph{build/graph-optimal-and-reverse-vs-shuffle}{Parsing time
 relative to shuffled ordering}{Parsing time relative to shuffled ordering
 graph}
@@ -227,15 +212,17 @@ graph}
 relative to shuffled ordering}{Parsing time relative to shuffled ordering
 table}
 
+\newpage{} % XXX VARIOREF PROBLEM
+
 Differences in rule ordering have less effect on parsing time when parsing
 log files 22 and 62--68, due to the different distribution of log lines in
 those log files (see \sectionref{Explaining the peaks in log file size}).
 When a mail loop occurs the vast majority of log lines are from Postfix
-components that have few rules associated with them, whereas in general the
+components that have few rules associated with them, whereas in general
 most log lines are from Postfix components that have a high number of
 associated rules; this results in the average number of rules required to
 parse a log line from log files 22 or 62--68 being considerably lower than
-usual.  The ratio of number of log lines versus parsing time in
+usual.  The ratio of number of log lines vs.\ parsing time in
 \graphref{parsing time vs file size vs number of log lines factor} shows a
 noticeable improvement at log files 22 and 62--68, where a higher ratio
 means more log lines parsed per unit of time; similarly \graphref{Parsing
@@ -263,11 +250,11 @@ PROCESSING THEM\@.
 How any architecture scales as the number of rules increases is important,
 but it is particularly important in this architecture because it is
 expected that the typical parser will have a large number of rules.  There
-are \numberOFrules{} rules in the full Postfix ruleset, whereas the minimum
+are \numberOFrules{} rules in the full \parsername{} ruleset, whereas the minimum
 number of rules required to parse the \numberOFlogFILES{} log files used
 when generating the results in this thesis is \numberOFrulesMINIMUM{},
 \numberOFrulesMINIMUMpercentage{} of the full ruleset.  The full ruleset is
-larger because the Postfix parser is tested with \numberOFlogFILESall{} log
+larger because \parsername{} is tested with \numberOFlogFILESall{} log
 files, to improve its parsing and ensure it correctly parses logs generated
 by later Postfix versions.  A second set of test runs was performed using
 the minimum ruleset, and the parsing times compared to those generated
@@ -282,66 +269,67 @@ time increase of maximum ruleset over minimum ruleset}
 
 Clearly the increased number of rules has a noticeable performance impact
 with reverse ordering, and a lesser impact with shuffled ordering.  The
-optimal ordering (where the rules that recognise log lines most frequently
-are tried first) shows a mean increase of
+optimal ordering shows a mean increase of
 \input{build/include-full-ruleset-vs-minimum-ruleset} in parsing time for a
-\numberOFrulesMAXIMUMpercentage{} increase in the number of rules.  Log
-files 22 and 62--68 show much smaller increases for shuffled and reversed
-ordering than other log files do, because the majority of log lines in
-those log files are parsed by Postfix components with a small number of
-parsing rules, so removing unnecessary rules has little effect on the total
-number of rules used.  These results show that the architecture scales very
-well as the number of rules increases, and that optimally sorting the rules
-is an important optimisation contributing to this scalability.
+\numberOFrulesMAXIMUMpercentage{} increase in the number of rules.
+XXXXXXXXXXXX IMPROVE THIS EXPLANATION\@.  Log files 22 and 62--68 show much
+smaller increases for shuffled and reversed ordering than other log files
+do, because the majority of log lines in those log files are parsed by
+Postfix components with a small number of parsing rules, so removing
+unnecessary rules has little effect on the total number of rules used.
+These results show that the architecture scales very well as the number of
+rules increases, and that optimally sorting the rules is an important
+optimisation contributing to this scalability.
 
 \subsection{Caching Compiled Regexes}
 
 \label{Caching compiled regexes}
 
 Before the Perl interpreter attempts to match a regex against a piece of
-text, the regex is compiled into an internal representation and
-optimised to improve the speed of matching.  This compilation and
-optimisation takes CPU time ---in many cases it takes far more CPU time
-than the actual matching.  If the interpreter is certain that a regex
-will not change it will automatically cache the compilation results for
-later use.   The results of compiling a dynamically generated regex can
-be cached and used in preference to the original regex, but it is the
-responsibility of the programmer to do this.  The Postfix parser loads the
-rules it uses from a database, and thus each rule's regex is compiled
-and the result cached to reduce parsing time.
+text, the regex is compiled into an internal representation and optimised
+to improve the speed of matching.  This compilation and optimisation takes
+CPU time: in many cases it takes far more CPU time than the actual
+matching.  If the interpreter is certain that a regex will not change, it
+will automatically cache the compilation results for later use.   The
+results of compiling a dynamically generated regex can be cached and used
+in preference to the original regex, but it is the responsibility of the
+programmer to do this.  \parsername{} loads the rules it uses from a
+database, so it compiles each rule's regex and caches the result to reduce
+parsing time.
 
 \Graphref{Increase in parsing time when not caching compiled regexes graph}
 shows the impact that not caching compiled regexes has on parser
-performance: on typical log files the parsing time when not caching
-compiled regexes is 400--600\% of the parsing time when caching.
-Caching compiled regexes is probably the single most effective
-optimisation possible in the parser's implementation, and was quite simple
-to implement.
+performance: on typical log files, the parsing time when not caching
+compiled regexes is 400--600\% of the parsing time when caching.  Caching
+compiled regexes is probably the single most effective optimisation
+possible in \parsername{}, and was quite simple to implement.
 
 \showgraph{build/graph-cached-regexes-vs-discarded-regexes}{Increase in
 parsing time when not caching compiled regexes}{Increase in parsing time
 when not caching compiled regexes graph}
 
-Two large dips can be seen in \graphref{Increase in parsing time when not
-caching compiled regexes graph} at log files 22 and 62--68, corresponding
-to the spikes in log file size in \graphref{parsing time vs file size vs
-number of log lines graph}.  The distribution of log lines across rules
-when there is a mail loop is much different to the norm, and the average
-number of rules consulted per log line is much lower: this results in far
-fewer regex compilations per line when there is a mail loop, and a
-corresponding decrease in the average parsing time for a single log line.
-The outcome is that caching compiled regexes is proportionally less
+XXX UPDATE THIS\@.  Two large dips can be seen in \graphref{Increase in
+parsing time when not caching compiled regexes graph} at log files 22 and
+62--68, corresponding to the spikes in log file size in \graphref{parsing
+time vs file size vs number of log lines graph}.  The distribution of log
+lines across rules when there is a mail loop is much different to the norm,
+and the average number of rules consulted per log line is much lower: this
+results in far fewer regex compilations per line when there is a mail loop,
+and a corresponding decrease in the average parsing time for a single log
+line.  The outcome is that caching compiled regexes is proportionally less
 important when the log file contents were created by a mail loop.  The
 increases in parsing time when not caching compiled regexes for different
 groups of log files are summarised in \tableref{Increase in parsing time
 when not caching compiled regexes table}.
 
-\showtable{build/include-cached-regexes-vs-discarded-regexes} {Increase in
-parsing time when not caching compiled regexes} {Increase in parsing time
+\showtable{build/include-cached-regexes-vs-discarded-regexes}{Increase in
+parsing time when not caching compiled regexes}{Increase in parsing time
 when not caching compiled regexes table}
 
 
 \subsection{Summary}
+
+XXX REWRITE WHEN THIS CHAPTER IS FINISHED\@.
 
 This section began with parser scalability, showing the linear relationship
 between parsing time and input size.  Demonstrates the effect of rule
@@ -425,8 +413,6 @@ files.  The number of hits per rule is quite unevenly spread, resembling a
 Power Law distribution --- it is obvious that a small number of rules
 recognise the vast majority of the log lines, and more than half the rules
 recognise fewer than 100 log lines.
-
-\showgraph{build/graph-hits}{Hits per rule}{rule hits graph}
 
 Warnings are issued for any log lines that are not parsed; no warnings are
 issued for unparsed log lines while testing with the \numberOFlogFILES{}
