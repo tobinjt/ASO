@@ -166,8 +166,8 @@
 }
 
 % Sort numbers where there are multiple citations.  Does not appear to have
-% the expected effect (probably clashes with varioref or hyperref), though
-% it does reduce the space between numbers.
+% the expected effect (probably clashes with hyperref), though it does
+% reduce the space between numbers.
 \usepackage{cite}
 % Check for unused references, and how the citation key (e.g.\ slct-paper)
 % in the margin beside the reference.
@@ -313,6 +313,8 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
     \phantomsection{}
     \addcontentsline{toc}{chapter}{Abstract}
 
+    XXX REWRITE WHEN THESIS IS FINISHED\@.
+
     Parsing Postfix log files is much more difficult than it first appears,
     but it \textit{is\/} possible to achieve a high degree of accuracy in
     understanding the log files, and thus accuracy in reconstructing the
@@ -325,6 +327,21 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
     optimise current anti-spam measures, provide a baseline to test new
     anti-spam measures against, or to produce statistics showing how
     effective those measures are.
+
+    XXX ABSTRACT FROM SGAI PAPER\@.
+
+    Some parsers need to be very precise and strict when parsing, yet must
+    allow users to easily adapt or extend the parser to parse new inputs,
+    without requiring that the user have an in-depth knowledge and
+    understanding of the parser's internal workings.  This paper presents a
+    novel parsing architecture, designed for parsing Postfix log files,
+    that aims to make the process of parsing new inputs as simple as
+    possible, enabling users to trivially add new rules (to parse variants
+    of existing inputs) and relatively easily add new actions (to process a
+    previously unknown category of input).  The architecture scales
+    linearly or better as the number of rules and size of input increases,
+    making it suitable for parsing large corpora or months of accumulated
+    data.
 
     \SVN$Id$
     \begin{center}
