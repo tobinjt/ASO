@@ -1742,6 +1742,9 @@ sub tidy_after_timeout {
 
     # Check the timestamps to see whether there's been a rejection since the
     # previous acceptance.
+    # XXX THERE WILL ALWAYS BE AT LEAST TWO RESULTS: THE CONNECT LINE AND THE
+    # TIMEOUT LINE.
+    # XXX WHY DON'T I CHECK FOR A DELIVERY_REJECTED ACTION?
     if (scalar @{$connection->{results}} >= 2
             and $connection->{results}->[-2]->{timestamp}
                 > $connection->{last_clone_timestamp}) {
