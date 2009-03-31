@@ -219,6 +219,12 @@ my %cols = (
         sql                 => q{},
         type                => q{integer},
     },
+    # When this rule recognises a log line, there will be a warning containing
+    # extra debugging information.
+    debug               => {
+        sql                 => q{DEFAULT 0},
+        type                => q{integer},
+    },
 );
 
 =head1 SUBROUTINES/METHODS 

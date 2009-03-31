@@ -1,5 +1,7 @@
 <ipe version="60030" creator="Ipe 6.0 preview 30">
-<info created="D:20090316144731" modified="D:20090316174217" bbox="cropbox"/>
+<info created="D:20090316144731" modified="D:20090331171800" bbox="cropbox"/>
+<ipestyle>
+</ipestyle>
 <ipestyle>
 </ipestyle>
 <ipestyle>
@@ -48,13 +50,6 @@ h
 h
 </path>
 <path stroke="black" matrix="0.611111 0 0 1 18.6667 -288" pen="normal">
-48 736 m
-192 736 l
-192 768 l
-48 768 l
-h
-</path>
-<path stroke="black" matrix="0.611111 0 0 1 18.6667 -320" pen="normal">
 48 736 m
 192 736 l
 192 768 l
@@ -306,5 +301,20 @@ h
 184 688 m
 136 752 l
 </path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -320" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<path stroke="black" matrix="0.611111 0 0 1 18.6667 -384" pen="normal">
+48 736 m
+192 736 l
+192 768 l
+48 768 l
+h
+</path>
+<text stroke="black" pos="56 368" type="label" width="26.014" height="6.926" depth="1.93" valign="baseline" size="normal" style="default">debug</text>
 </page>
 </ipe>

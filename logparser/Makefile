@@ -53,8 +53,9 @@ test-parsing-only:
 
 db: ../sql/create-tables-sqlite3-generated.sql ../sql/debug_peer_list-rule
 	(cd ../sql/ && rm -f db.sq3 && perl setup-database create-tables-sqlite3-generated.sql populate-cluster-groups.sql populate-rules.sql debug_peer_list-rule)
-	sqlite3 ../sql/db.sq3 'select name, regex from rules where regex not like "^%$$"';
-	sqlite3 ../sql/db.sq3 'select name, regex from rules where regex     like "%NOQUEUE%"';
+	sqlite3 ../sql/db.sq3 'select name, regex from rules where regex not like "^%$$";'
+	sqlite3 ../sql/db.sq3 'select name, regex from rules where regex     like "%NOQUEUE%";'
+	sqlite3 ../sql/db.sq3 'select name, description, regex from rules where debug == 1;'
 
 db-clean:
 	(cd ../sql/ && perl setup-database cleanup.sql)

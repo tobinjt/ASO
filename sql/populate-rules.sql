@@ -57,26 +57,25 @@ INSERT INTO rules(name, description, program, regex, result_data, action, priori
 -- }}}
 
 -- SMTPD IGNORE RULES {{{1
--- These will always be followed by a disconnect line, as matched above
 INSERT INTO rules(name, description, program, regex, action)
     VALUES('lost connection', 'Client disconnected uncleanly',
         'postfix/smtpd',
-        '^lost connection after __SHORT_CMD__ from __CLIENT_HOSTNAME__\[__CLIENT_IP__\]$',
-        'UNINTERESTING'
+        '^lost connection after __SHORT_CMD__ from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]$',
+        'DELIVERY_ERROR'
 );
 
 INSERT INTO rules(name, description, program, regex, action)
     VALUES('Timeout reading reply', 'Timeout reading reply from client',
         'postfix/smtpd',
-        '^timeout after __SHORT_CMD__ from __CLIENT_HOSTNAME__\[__CLIENT_IP__\]$',
-        'UNINTERESTING'
+        '^timeout after __SHORT_CMD__ from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]$',
+        'DELIVERY_ERROR'
 );
 
 INSERT INTO rules(name, description, program, regex, action)
     VALUES('Too many errors', 'The client has made so many errors postfix has disconnected it',
         'postfix/smtpd',
-        '^too many errors after (?:\w+|END-OF-MESSAGE) (?:\(\d+ bytes\) )?from __CLIENT_HOSTNAME__\[__CLIENT_IP__\]$',
-        'UNINTERESTING'
+        '^too many errors after (?:\w+|END-OF-MESSAGE) (?:\(\d+ bytes\) )?from (__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]$',
+        'DELIVERY_ERROR'
 );
 
 -- gethostbyaddr: eta.routhost.com. != 66.98.227.100
@@ -102,11 +101,12 @@ INSERT INTO rules(name, description, program, regex, action)
         'UNINTERESTING'
 );
 
-INSERT INTO rules(name, description, program, regex, action)
+INSERT INTO rules(name, description, program, regex, action, debug)
     VALUES('Fatal error', 'Fatal error of some sort',
         'postfix/smtpd',
         '^fatal: .*$',
-        'UNINTERESTING'
+        'UNINTERESTING',
+        1
 );
 
 -- NOTE: SEE big-regex-rule ALSO.
@@ -900,8 +900,8 @@ INSERT INTO rules(name, description, program, regex, action)
 INSERT INTO rules(name, description, program, regex, action)
     VALUES('Qmgr skipping a mail', 'I presume qmgr is rescanning the queue, sees this mail, but knows there is a process trying to deliver it?  How can it take so long?',
         'postfix/qmgr',
-        '^__QUEUEID__: skipped, still being delivered$',
-        'UNINTERESTING'
+        '^(__QUEUEID__): skipped, still being delivered$',
+        'SAVE_DATA'
 );
 
 -- 0F5073725: to=<amulllly@cs.tcd.ie>, relay=none, delay=0, status=deferred (delivery temporarily suspended: lost connection with 127.0.0.1[127.0.0.1] while sending end of data -- message may be sent more than once)
@@ -993,11 +993,10 @@ INSERT INTO rules(name, description, program, regex, result_data, action, priori
 -- connect to 127.0.0.1[127.0.0.1]: Connection refused (port 10024)
 -- connect to mail.3dns.tns-global.com[194.202.213.46]: Connection reset by peer (port 25)
 -- connect to mailgate2.brunel.ac.uk[193.62.141.2]:25: Connection refused
-INSERT INTO rules(name, description, program, regex, connection_data, action)
+INSERT INTO rules(name, description, program, regex, action)
     VALUES('connect refused', 'postfix tried to connect to a remote smtp server, but the connection was refused',
         'postfix/smtp',
         '^connect to (__SERVER_HOSTNAME__)\[(__SERVER_IP__)\](?::\d+)?: Connection (?:refused|reset by peer)(?: \(port \d+\))?$',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
         'UNINTERESTING'
 );
 
@@ -1051,11 +1050,10 @@ INSERT INTO rules(name, description, program, regex, result_data, connection_dat
 );
 
 -- connect to lackey.cs.qub.ac.uk[143.117.5.165]: Connection timed out (port 25)
-INSERT INTO rules(name, description, program, regex, connection_data, action)
+INSERT INTO rules(name, description, program, regex, action)
     VALUES('connect timed out', 'time out while postfix was connecting to remote server',
         'postfix/smtp',
         '^connect to __SERVER_HOSTNAME__\[__SERVER_IP__\](?::\d+)?: Connection timed out(?: \(port 25\))?$',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
         'UNINTERESTING'
 );
 
@@ -1073,11 +1071,10 @@ INSERT INTO rules(name, description, program, regex, connection_data, action)
 
 -- connect to mx1.mail.yahoo.com[4.79.181.14]: server refused to talk to me: 421 Message from (134.226.32.56) temporarily deferred - 4.16.50. Please refer to http://help.yahoo.com/help/us/mail/defer/defer-06.html   (port 25)
 -- connect to mx1.mail.ukl.yahoo.com[195.50.106.7]: server refused to talk to me: 451 Message temporarily deferred - 4.16.50   (port 25)
-INSERT INTO rules(name, description, program, regex, connection_data, action)
+INSERT INTO rules(name, description, program, regex, action)
     VALUES('Server refused to talk', 'The remote server refused to talk for some reason',
         'postfix/smtp',
         '^connect to __SERVER_HOSTNAME__\[__SERVER_IP__\]: server refused to talk to me: __SMTP_CODE__(?:.*) \(port 25\)$',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
         'UNINTERESTING'
 );
 
@@ -1092,11 +1089,10 @@ INSERT INTO rules(name, description, program, regex, connection_data, action)
 );
 
 -- warning: numeric domain name in resource data of MX record for phpcompiler.org: 80.68.89.7
-INSERT INTO rules(name, description, program, regex, connection_data, action)
+INSERT INTO rules(name, description, program, regex, action)
     VALUES('Warning from smtp', 'Warning of some sort from smtp - rare',
         'postfix/smtp',
         '^warning: .*$',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
         'UNINTERESTING'
 );
 
@@ -1113,11 +1109,10 @@ INSERT INTO rules(name, description, program, regex, connection_data, action, pr
 );
 
 -- connect to smap-net-bk.mr.outblaze.com[205.158.62.181]: read timeout (port 25)
-INSERT INTO rules(name, description, program, regex, connection_data, action)
+INSERT INTO rules(name, description, program, regex, action)
     VALUES('read timeout', 'reading data from remote server timed out',
         'postfix/smtp',
         '^connect to __SERVER_HOSTNAME__\[__SERVER_IP__\]: read timeout \(port 25\)$',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
         'UNINTERESTING'
 );
 
@@ -1142,11 +1137,10 @@ INSERT INTO rules(name, description, program, regex, connection_data, action)
 
 -- no queueid to save with
 -- connect to mail.boilingpoint.com[66.240.186.41]: server dropped connection without sending the initial SMTP greeting (port 25)
-INSERT INTO rules(name, description, program, regex, connection_data, action)
+INSERT INTO rules(name, description, program, regex, action)
     VALUES('remote server rudely hung up', 'The remote server closed the connection without saying anything at all',
         'postfix/smtp',
         '^connect to __SERVER_HOSTNAME__\[__SERVER_IP__\]: server dropped connection without sending the initial SMTP greeting \(port \d+\)$',
-        'client_hostname = localhost, client_ip = 127.0.0.1',
         'UNINTERESTING'
 );
 
@@ -1551,7 +1545,7 @@ INSERT INTO rules(name, description, program, regex, action)
     VALUES('warning from local', 'A warning message from the local delivery agent',
         'postfix/local',
         '^warning: (__QUEUEID__): address with illegal extension: .*$',
-        'UNINTERESTING'
+        'SAVE_DATA'
 );
 
 -- warning: file /users/pg/steicheb/.forward is not a regular file
@@ -1634,7 +1628,7 @@ INSERT INTO rules(name, description, program, regex, action)
 INSERT INTO rules(name, description, program, regex, action)
     VALUES('Messages released from the hold queue', 'Postsuper released messages from the hold queue',
         'postfix/postsuper',
-        '^Released from hold: 3 messages$',
+        '^Released from hold: \d+ messages$',
         'UNINTERESTING'
 );
 
@@ -1662,8 +1656,8 @@ INSERT INTO rules(name, description, program, regex, action)
 INSERT INTO rules(name, description, program, regex, action)
     VALUES('Something went wrong reading mail', 'Cleanup did not get the full mail',
         'postfix/cleanup',
-        '^warning: __QUEUEID__: read timeout on cleanup socket$',
-        'UNINTERESTING'
+        '^warning: (__QUEUEID__): read timeout on cleanup socket$',
+        'SAVE_DATA'
 );
 
 -- warning: stripping too many comments from address: Mail Administrator <Postmaster@charter.net> <Postmaster@charter.net> <Postmaster@charter.net> <Postm...

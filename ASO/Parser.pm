@@ -345,6 +345,7 @@ sub init_globals {
         MAIL_BOUNCED
         MAIL_SENT
         SAVE_DATA
+        DELIVERY_ERROR
         MAIL_DISCARDED
         COMMIT
         TRACK
@@ -761,6 +762,11 @@ sub parse_line {
             next RULE;
         }
 
+        if ($rule->{debug}) {
+            $self->my_warn(qq{A rule tagged debugging recognised a log line},
+                $self->dump_rule($rule), $self->dump_line($line));
+        }
+
         # Memory leak here, according to Devel::LeakTrace::Fast.
         # The leak is fixed in bleadperl, and will be fixed in 5.10.1.
         my %matches = %+;
@@ -838,6 +844,23 @@ sub CONNECT {
     # We also want to save the hostname/IP info
     $self->save($connection, $line, $rule, $matches);
     return;
+}
+
+=over  4
+
+=item DELIVERY_ERROR
+
+Deal with an error message that will be followed by a disconnect line.
+
+=back
+
+=cut
+
+sub DELIVERY_ERROR {
+    my ($self, $rule, $line, $matches) = @_;
+
+    my $connection = $self->get_connection_by_pid($line->{pid});
+    return $self->save($connection, $line, $rule, $matches);
 }
 
 =over  4
@@ -1997,6 +2020,7 @@ sub load_rules {
                                     $self->{connection_cols_names}),
             count            => 0,
             rule             => $rule,
+            debug            => $rule->debug(),
         };
 
         if (not exists $self->{actions}->{$rule_hash->{action}}) {

@@ -421,6 +421,10 @@ otherwise stated.
         described in \sectionref{rules in architecture}.  This field is
         optional.
 
+    \item [debug] If this field is true, a warning will be issued with
+        information about the rule and the log line every time this rule
+        recognises a log line.  This field is optional.
+
 \end{boldeqlist}
 
 \subsection{Connections Table}
@@ -681,9 +685,9 @@ expected.  In increasing order of severity they are:
 
     \item The regex from the recognising rule and the log line it
         recognised can be printed, so that the user can verify that the
-        correct rule recognised each log line.  A possible variant of this
-        would be to mark specific rules so only their regexes and the log
-        lines they recognise would be printed.
+        correct rule recognised each log line.  Individual rules can also
+        set their debug field to true, and debugging information will be
+        printed each time they recognise a log line.
 
     \item Each result can be extended with extra debugging information,
         which is useful when a warning dumps a mail's data for inspection.
@@ -832,6 +836,12 @@ recognising rule's regex.  Each action is passed the same arguments:
         address if required (see \sectionref{Mail deleted before delivery
         is attempted}), then invokes the \action{COMMIT} action to save the
         mail to the database.
+
+    \item [DELIVERY\_ERROR] Process log lines indicating that an error
+        occurred and the remote client disconnected; the log lines
+        processed by this action will be followed by log lines processed by
+        the \action{DISCONNECT} action, so all this action does is save
+        data from the log line.
 
     \item [DELIVERY\_REJECTED] Deals with Postfix rejecting an
         \acronym{SMTP} command from the remote client.  This is the action
@@ -1036,6 +1046,7 @@ NOQUEUE: reject: RCPT from smtp.example.com[192.0.2.1]:
     hits                & 0                                                 \\
     hits\_total         & 0                                                 \\
     priority            & 0                                                 \\
+    debug               & 0                                                 \\
     %cluster\_group      & 400                                               \\
 
     \end{tabular}
@@ -1072,6 +1083,9 @@ follows:
         parsing run hits is set to the number of log lines recognised by
         the rule.  Hits\_total is the sum of hits over every parsing run,
         but is otherwise unused by the parser.
+
+    \item [debug] controls the debugging information that can be generated
+        when this rule recognises a log line.
 
 \end{description}
 
