@@ -299,6 +299,7 @@
 \newcommand{\parsername}{\acronym{PLP}}
 \newcommand{\parsernames}{\acronym['s]{PLP}}
 \newcommand{\parsernamelong}{Postfix Log Parser}
+\newcommand{\parsernameshort}{PLP}
 
 \begin{document}
 
@@ -317,16 +318,16 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
     Parsing Postfix log files is much more difficult than it first appears,
     but it \textit{is\/} possible to achieve a high degree of accuracy in
-    understanding the log files, and thus accuracy in reconstructing the
-    actions taken by Postfix to generate the log files.  This paper
-    describes the creation of a parser for Postfix log files, documenting
-    the architecture developed and the parser implementing it, explaining
-    the difficulties encountered and the solutions developed, with
-    reference to an implementation that stores data gleaned from the log
-    files in an SQL database.  The gathered data can then be used to
-    optimise current anti-spam measures, provide a baseline to test new
-    anti-spam measures against, or to produce statistics showing how
-    effective those measures are.
+    understanding the log files and reconstructing the actions taken by
+    Postfix to generate the log files.  This paper describes the creation
+    of a parser for Postfix log files, documenting the architecture
+    developed and the parser implementing it, explaining the difficulties
+    encountered and the solutions developed, with reference to an
+    implementation that stores data gleaned from the log files in an SQL
+    database.  The gathered data can then be used to optimise current
+    anti-spam measures, provide a baseline to test new anti-spam measures
+    against, or to produce statistics showing how effective those measures
+    are.
 
     XXX ABSTRACT FROM SGAI PAPER\@.
 

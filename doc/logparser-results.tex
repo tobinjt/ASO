@@ -1,4 +1,4 @@
-\chapter{Results and Evaluation}
+\chapter{Results And Evaluation}
 
 \label{Results}
 
@@ -59,12 +59,12 @@ results to the database was disabled for the test runs, because that
 dominates the run time of the program, and the tests are aimed at measuring
 the speed of \parsername{} rather than the speed of the database and the
 disks the database is stored on.  The computer used for test runs was a
-Dell Optiplex 745, shown in \tableref{Computer used to generate
-statistics}.
+Dell Optiplex 745, shown in \tableref{Details of the computer used to
+generate statistics}.
 
 \begin{table}[htbp]
-    \caption{Computer used to generate statistics}
-    \empty{}\label{Computer used to generate statistics}
+    \caption{Details of the computer used to generate statistics}
+    \empty{}\label{Details of the computer used to generate statistics}
     \begin{tabular}[]{ll}
         \tabletopline{}%
         Component  & Component in use                                   \\
@@ -109,14 +109,14 @@ of file size and number of log lines to parsing time}{parsing time vs file
 size vs number of log lines factor table}
 
 \showgraph{build/graph-input-size-vs-parsing-time}{Parsing time, file size,
-and number of log lines}{parsing time vs file size vs number of log lines
-graph}
+and number of log lines for \numberOFlogFILES{} log files}{parsing time vs
+file size vs number of log lines graph}
 
 \showgraph{build/graph-input-size-vs-parsing-time-ratio}{Ratio of file size
 and number of log lines to parsing time}{parsing time vs file size vs
 number of log lines factor}
 
-\subsection{Explaining the Peaks in Log File Size}
+\subsection{Explaining The Peaks In Log File Size}
 
 \label{Explaining the peaks in log file size}
 
@@ -204,7 +204,7 @@ Optimal rule ordering has other benefits, described in
 
 \clearpage{} % XXX GRAPHS MOVE AROUND DURING REBUILDS
 
-\showgraph{build/graph-hits}{Hits per rule}{rule hits graph}
+\showgraph{build/graph-hits}{Log lines recognised per rule}{rule hits graph}
 
 \showgraph{build/graph-optimal-and-reverse-vs-shuffle}{Parsing time
 relative to shuffled ordering}{Parsing time relative to shuffled ordering

@@ -463,7 +463,7 @@ check: lines-from-paragraphs
 	# Check for contractions.
 	ack -i 'it'\''s|\w'\''(?!s)\w' logparser*.tex
 	# Check for uncapitalised words in section headings, and then in bibliography entries.
-	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]])' logparser*.tex
+	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? [[:lower:]])' logparser*.tex
 	ack '(address|author|publisher|title)\s+=\s+.* (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]]' logparser-bibliography.tt2
 	# Check for:
 	# * using a bare \url{} command

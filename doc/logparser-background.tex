@@ -42,8 +42,8 @@ query}):
 \input{build/include-sample-sql-query}
 
 \begin{table}[ht]
-    \caption{Sample output from SQL query showing percentage of delivery
-    attempts rejected by each restriction}
+    \caption{Sample output from SQL query, showing the percentage of
+    delivery attempts rejected by top ten restrictions}
     \empty{}\label{Sample output from SQL query}
     \begin{tabular}[]{lrr}
         \tabletopline{}%
@@ -187,7 +187,7 @@ components that are privileged do not interact with other hosts, making it
 much more difficult for an attacker to exploit any bugs that may exist in
 those components.
 
-\subsection{Mixing and Matching Postfix Restrictions}
+\subsection{Mixing And Matching Postfix Restrictions}
 
 \label{Mixing and matching Postfix restrictions}
 
@@ -364,19 +364,20 @@ Some widely deployed policy servers:
         spam senders adapt, but it does block a large percentage of spam
         mail at the moment; the most effective restrictions from the
         \numberOFlogFILES{} log files used when generating the results in
-        \sectionref{Results} are shown in \tableref{Summary of rejections}.
-        The table shows that greylisting is worth using at the moment,
-        particularly when you take into account its position as the final
-        restriction that a mail must overcome in the configuration used on
-        the mail server that generated the log files: on that server
-        greylisting only takes effect for mails that have passed all other
-        restrictions.  Some problems may be encountered when using
-        greylisting: some servers fail to retry after a temporary failure,
-        or legitimate mail may be delayed, particularly when coming from a
-        pool of servers.
+        \sectionref{Results} are shown in \tableref{Most effective Postfix
+        restrictions}.  The table shows that greylisting is worth using at
+        the moment, particularly when you take into account its position as
+        the final restriction that a mail must overcome in the
+        configuration used on the mail server that generated the log files:
+        on that server greylisting only takes effect for mails that have
+        passed all other restrictions.  Some problems may be encountered
+        when using greylisting: some servers fail to retry after a
+        temporary failure, or legitimate mail may be delayed, particularly
+        when coming from a pool of servers.
 
         \begin{table}[ht]
-            \caption{Summary of rejections}\label{Summary of rejections}
+            \caption{Most effective Postfix restrictions}
+            \empty{}\label{Most effective Postfix restrictions}
             \input{build/include-restriction-summary-table}
         \end{table}
 
