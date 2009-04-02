@@ -83,10 +83,12 @@ build/Makefile.graph-deps-ps: graphs/*
 	done > "$@"
 
 build/Makefile.graph-deps: graphs/*
-	set -e;												\
-	for file in $^; do										\
-		sed -n -e 's!^load "\(.*\)"$$!'"$$file"': graphs/\1\n\ttouch '"$$file"'!p' "$$file";	\
-		sed -n -e 's!^load "\(.*\)-ps.gpi"$$!'"$$file"': graphs/\1-pdf.gpi!p' "$$file";		\
+	# The output from the first sed command is piped through sort and uniq 
+	# to remove duplicate commands that cause warnings from make.
+	set -e;														\
+	for file in $^; do												\
+		sed -n -e 's!^load "\(.*\)"$$!'"$$file"': graphs/\1\n\ttouch '"$$file"'!p' "$$file" | sort | uniq;	\
+		sed -n -e 's!^load "\(.*\)-ps.gpi"$$!'"$$file"': graphs/\1-pdf.gpi!p' "$$file";				\
 	done > "$@"
 
 
