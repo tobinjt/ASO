@@ -13,6 +13,7 @@ logparser.ps.deps:								\
 			build/graph-perfect-best-and-perfect-worst-and-optimal-and-reverse-vs-shuffled.pdf \
 			build/graph-rules-tried-per-log-line.ps			\
 			build/graph-number-of-action-invocations.ps		\
+			build/graph-per-file-action-invocation-numbers.pdf	\
 			build/database-schema.ps
 	touch "$@"
 

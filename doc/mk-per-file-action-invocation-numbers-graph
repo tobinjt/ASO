@@ -1,0 +1,18 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use feature qw(say);
+
+while (<>) {
+    s/^# //;
+    my $line = lc $_;
+    my $i = 0;
+    say qq{plot \\\n}, join qq{, \\\n},
+        map { $i++; qq{"../build/stats-per-file-action-invocation-numbers" using $i with lines title "$_"}; }
+            split /\s+/, $line;
+    exit;
+}

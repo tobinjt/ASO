@@ -1,0 +1,10 @@
+load "plot-defaults-ps.gpi"
+
+set xlabel "Log file"
+set ylabel "Action"
+set output "../build/graph-per-file-action-invocation-numbers.ps"
+
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
+
+load "../build/graph-per-file-action-invocation-numbers.gpi"

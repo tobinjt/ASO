@@ -472,7 +472,17 @@ build/stats-rules-tried-per-log-line: results/results-full-run/timing
 	perl -Mstrict -w -E 'my ($$rules_tried, $$lines_parsed); while (<>) { m/^num_lines_parsed:.*: ([^:]+)$$/ and $$lines_parsed = $$1; m/^num_rules_tried:.*: ([^:]+)$$/ and $$rules_tried = $$1; m/^Parsed logfile:/ and say $$rules_tried / $$lines_parsed; }' "$<" > "$@"
 
 build/stats-number-of-action-invocations: results/results-full-run/timing
-	perl -Mstrict -w -n -E 'our %counts; if (m/^(\w+) lines_by_action: .*: (\d+)$$/) { $$counts{$$1} += $$2; } END { my $$i = 1; map { say qq{$$i $$_ $$counts{$$_}}; $$i++; } sort { $$counts{$$a} <=> $$counts{$$b} or $$a cmp $$b } keys %counts; }' "$<" > "$@"
+	perl -Mstrict -w -n -E 'our %counts; if (m/^(\w+) lines_by_action: .*: (\d+)$$/) { $$counts{$$1} += $$2; } END { my $$i = 1; map { say lc qq{$$i $$_ $$counts{$$_}}; $$i++; } sort { $$counts{$$a} <=> $$counts{$$b} or $$a cmp $$b } keys %counts; }' "$<" > "$@"
+
+build/stats-per-file-action-invocation-numbers: results/results-full-run/timing
+	perl mk-per-file-action-invocation-numbers "$<" > "$@"
+
+build/graph-per-file-action-invocation-numbers.gpi: build/stats-per-file-action-invocation-numbers
+	perl mk-per-file-action-invocation-numbers-graph "$<" > "$@"
+
+build/graph-per-file-action-invocation-numbers.pdf: build/graph-per-file-action-invocation-numbers.gpi
+build/graph-per-file-action-invocation-numbers.ps: build/graph-per-file-action-invocation-numbers.gpi
+
 
 # Sample output from an SQL query.
 build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql
@@ -521,7 +531,7 @@ check: lines-from-paragraphs
 	# * repeated .
 	# * . not followed by two spaces
 	ack '\\url{|[ \t]+$$|\.{2,}|\. [^ ]' logparser-*.tex
-	ack 'XX[X]' logparser.bbl
+	ack -i 'XX[X]' logparser.bbl
 	# Check for repeated words
 	ack '\b(\w+)\b\s+\b\1\b' build/logparser*.tex
 	# Check for using an instead of a before \daemon{foo}
@@ -533,9 +543,9 @@ check-acronyms:
 		| grep -f - -n $$(ls logparser*.tex | grep -v ^logparser-acronyms.tex)
 
 todo:
-	grep    -n -E '[T]ODO|[X]XX' Makefile *.tex *.tt2 || true
-	grep -c -n -E '[T]ODO|[X]XX' Makefile *.tex *.tt2 | grep -v ':0$$'
-	grep    -n -E '[T]ODO|[X]XX' Makefile *.tex *.tt2 | wc -l
+	grep    -n -E -i '[T]ODO|[X]XX' Makefile *.tex *.tt2 || true
+	grep -c -n -E -i '[T]ODO|[X]XX' Makefile *.tex *.tt2 | grep -v ':0$$'
+	grep    -n -E -i '[T]ODO|[X]XX' Makefile *.tex *.tt2 | wc -l
 
 join-lines:
 	perl -p -E 'if (m/LaTeX Warning:/ and not m/\.$$/) { chomp; }' *.log
