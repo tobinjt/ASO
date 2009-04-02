@@ -52,7 +52,8 @@ logparser.deps: \
 		build/include-median-throughput-MB.tex					\
 		build/include-top-ten-hits.tex						\
 		build/include-optimal-ordering-parsing-time-reduction-other-logs.tex	\
-		build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex
+		build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex	\
+		build/include-perfect-best-and-optimal-and-reverse-and-perfect-worst-vs-shuffle.tex
 	touch "$@"
 
 # Additional dependencies are included from Makefile.deps-ps and
@@ -247,18 +248,21 @@ build/plot-%-pdf.gpi: graphs/plot-%.gpi
 build/results-%: results/results-%
 	perl ../stats/parse-stats "$<" > "$@"
 
-build/results--skip_inserting_results--cache_compiled_regexes--optimal_ordering--maximum_ruleset--comment-stripped: build/results--skip_inserting_results--cache_compiled_regexes--optimal_ordering--maximum_ruleset
+build/results--optimal_ordering--maximum_ruleset--comment-stripped: build/results--optimal_ordering--maximum_ruleset
 	sed -e '/^#/d' "$<" > "$@"
 
 # Factored stats for graphs.
-build/stats-input-size-vs-parsing-time: build/results--skip_inserting_results--cache_compiled_regexes--optimal_ordering--maximum_ruleset--comment-stripped wc.txt file-sizes.txt
+build/stats-input-size-vs-parsing-time: build/results--optimal_ordering--maximum_ruleset--comment-stripped wc.txt file-sizes.txt
 	paste -d ' ' $^ | awk 'BEGIN { print "# line-count file-size"; }; {print ($$3 * 10 * 1000 / $$8), " ", ($$3 * 1000 * 1000 / $$11) }' > "$@"
 
-build/stats-cached-regexes-vs-discarded-regexes: build/results--skip_inserting_results--cache_compiled_regexes--optimal_ordering--maximum_ruleset build/results--skip_inserting_results--discard_compiled_regexes--optimal_ordering--maximum_ruleset
+build/stats-cached-regexes-vs-discarded-regexes: build/results--optimal_ordering--maximum_ruleset build/results--skip_inserting_results--discard_compiled_regexes--optimal_ordering--maximum_ruleset
 	paste -d ' ' $^ | awk '$$1 != "#" {print ($$9 * 100 / $$3) - 100 }' > "$@"
 
-build/stats-optimal-and-reverse-vs-shuffle: build/results--skip_inserting_results--cache_compiled_regexes--optimal_ordering--maximum_ruleset build/results--skip_inserting_results--cache_compiled_regexes--shuffle_ordering--maximum_ruleset build/results--skip_inserting_results--cache_compiled_regexes--reverse_ordering--maximum_ruleset
+build/stats-optimal-and-reverse-vs-shuffle: build/results--optimal_ordering--maximum_ruleset build/results--shuffle_ordering--maximum_ruleset build/results--reverse_ordering--maximum_ruleset
 	paste -d ' ' $^ | awk 'BEGIN { print "# optimal/shuffle reverse/shuffle"; } $$1 != "#" {print ($$3 * 100 / $$9), " ", ($$15 * 100 / $$9) }' > "$@"
+
+build/stats-perfect-best-and-perfect-worst-vs-shuffle: build/results--perfect_best--maximum_ruleset build/results--shuffle_ordering--maximum_ruleset build/results--perfect_worst--maximum_ruleset
+	paste -d ' ' $^ | awk 'BEGIN { print "# perfect-best/shuffle perfect-worst/shuffle"; } $$1 != "#" {print ($$3 * 100 / $$9), " ", ($$15 * 100 / $$9) }' > "$@"
 
 # Hits per rule.
 build/stats-hits: db.full-run.sq3
@@ -354,6 +358,49 @@ build/include-optimal-and-reverse-vs-shuffle.tex: 			\
 		
 	perl mk-stats-cached-discarded-include $^ > "$@" || (rm -f "$@"; false)
 
+# Perfect-best/optimal/shuffle/reverse/perfect-worst ratios: stddev, mean, etc.
+# These partially depend on optimal/shuffle/reverse ratios generated above.
+build/stats-perfect-best-vs-shuffle-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
+	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
+	echo "Row: Perfect best (all log files)" >> "$@"
+
+build/stats-perfect-best-vs-shuffle-logs-22-62-68-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
+	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
+	echo "Row: Perfect best (log files 22, 62--68)" >> "$@"
+
+build/stats-perfect-best-vs-shuffle-other-logs-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
+	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
+	echo "Row: Perfect best (all other log files)" >> "$@"
+
+build/stats-perfect-worst-vs-shuffle-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
+	awk '!/#/ {print $$2}' "$<" | perl ../stats/stddev > "$@"
+	echo "Row: Perfect worst (all log files)" >> "$@"
+
+build/stats-perfect-worst-vs-shuffle-logs-22-62-68-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
+	awk '!/#/ {print $$2}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
+	echo "Row: Perfect worst (log files 22, 62--68)" >> "$@"
+
+build/stats-perfect-worst-vs-shuffle-other-logs-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
+	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
+	echo "Row: Perfect worst (all other log files)" >> "$@"
+
+build/include-perfect-best-and-optimal-and-reverse-and-perfect-worst-vs-shuffle.tex: 			\
+		build/stats-perfect-best-vs-shuffle-stddev			\
+		build/stats-perfect-best-vs-shuffle-logs-22-62-68-stddev	\
+		build/stats-perfect-best-vs-shuffle-other-logs-stddev		\
+		build/stats-optimal-vs-shuffle-stddev				\
+		build/stats-optimal-vs-shuffle-logs-22-62-68-stddev		\
+		build/stats-optimal-vs-shuffle-other-logs-stddev		\
+		build/stats-reverse-vs-shuffle-stddev				\
+		build/stats-reverse-vs-shuffle-logs-22-62-68-stddev		\
+		build/stats-reverse-vs-shuffle-other-logs-stddev		\
+		build/stats-perfect-worst-vs-shuffle-stddev			\
+		build/stats-perfect-worst-vs-shuffle-logs-22-62-68-stddev	\
+		build/stats-perfect-worst-vs-shuffle-other-logs-stddev		\
+		
+	perl mk-stats-cached-discarded-include $^ > "$@" || (rm -f "$@"; false)
+
+# Summary of most effective restrictions
 build/include-restriction-summary-table.tex: db.full-run.sq3
 	perl mk-restriction-summary-table > "$@"
 
@@ -389,13 +436,13 @@ build/stats-action-distribution: db.full-run.sq3
 build/include-full-ruleset-vs-minimum-ruleset.tex: build/stats-optimal-full-ruleset-vs-minimum-ruleset
 	awk 'BEGIN { sum = 0; } { sum += $$2; } END { printf "%.3g\\%%%%\n", sum / NR }' "$<" > "$@" || (rm -f "$@"; false)
 
-build/stats-optimal-full-ruleset-vs-minimum-ruleset: build/results--skip_inserting_results--cache_compiled_regexes--optimal_ordering--maximum_ruleset build/results--skip_inserting_results--cache_compiled_regexes--optimal_ordering--minimum_ruleset
+build/stats-optimal-full-ruleset-vs-minimum-ruleset: build/results--optimal_ordering--maximum_ruleset build/results--optimal_ordering--minimum_ruleset
 	INPUT="$^" OUTPUT="$@" make full-ruleset-vs-minimum-ruleset
 
-build/stats-reverse-full-ruleset-vs-minimum-ruleset: build/results--skip_inserting_results--cache_compiled_regexes--reverse_ordering--maximum_ruleset build/results--skip_inserting_results--cache_compiled_regexes--reverse_ordering--minimum_ruleset
+build/stats-reverse-full-ruleset-vs-minimum-ruleset: build/results--reverse_ordering--maximum_ruleset build/results--reverse_ordering--minimum_ruleset
 	INPUT="$^" OUTPUT="$@" make full-ruleset-vs-minimum-ruleset
 
-build/stats-shuffle-full-ruleset-vs-minimum-ruleset: build/results--skip_inserting_results--cache_compiled_regexes--shuffle_ordering--maximum_ruleset build/results--skip_inserting_results--cache_compiled_regexes--shuffle_ordering--minimum_ruleset
+build/stats-shuffle-full-ruleset-vs-minimum-ruleset: build/results--shuffle_ordering--maximum_ruleset build/results--shuffle_ordering--minimum_ruleset
 	INPUT="$^" OUTPUT="$@" make full-ruleset-vs-minimum-ruleset
 
 full-ruleset-vs-minimum-ruleset:
@@ -404,13 +451,13 @@ full-ruleset-vs-minimum-ruleset:
 	paste -d ' ' ${INPUT} | awk '!/^#/ { print $$1, (($$3 -$$9) * 100 / $$9)}' > "${OUTPUT}"
 
 # Duration of the full run parsing all 93 log files.
-build/include-timing-run-duration.tex: results/stats-full-run/timing
+build/include-timing-run-duration.tex: results/results-full-run/timing
 	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes and %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@"
-build/include-timing-run-throughput.tex: results/stats-full-run/timing
+build/include-timing-run-throughput.tex: results/results-full-run/timing
 	awk -F': ' '/^Total time:/ { printf "%.3f~MB (%'\''.3f log lines) parsed per minute%%\n", (10076909581 / (1024 * 1024)) / ($$3 / 60), 60721709 / ($$3 / 60)}' "$<" > "$@"
-build/include-median-throughput-MB.tex: build/results--skip_inserting_results--cache_compiled_regexes--optimal_ordering--maximum_ruleset--comment-stripped file-sizes.txt
+build/include-median-throughput-MB.tex: build/results--optimal_ordering--maximum_ruleset--comment-stripped file-sizes.txt
 	paste -d ' ' $^ | awk '{ printf "%.3f\n", ($$8 / (1024 * 1024) ) / ($$3 / 60); }' | perl ../stats/stddev | awk '/Median:/ { print $$2 "~MB%" }' > "$@"
-build/include-median-throughput-log-lines.tex: build/results--skip_inserting_results--cache_compiled_regexes--optimal_ordering--maximum_ruleset--comment-stripped wc.txt
+build/include-median-throughput-log-lines.tex: build/results--optimal_ordering--maximum_ruleset--comment-stripped wc.txt
 	paste -d ' ' $^ | awk '{ printf "%.3f\n", $$8 / ($$3 / 60); }' | perl ../stats/stddev | awk '/Median:/ { printf "%'\''.3f log lines%\n", $$2 }' > "$@"
 
 build/include-optimal-ordering-parsing-time-reduction-other-logs.tex: build/stats-optimal-and-reverse-vs-shuffle 
@@ -421,8 +468,11 @@ build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex: build/s
 build/include-top-ten-hits.tex: build/stats-hits-reversed
 	awk 'BEGIN { sum = 0; topten = 0 }; { sum += $$2 }; NR <= 10 { topten += $$2 }; END { printf "%'\''.3f%\n", topten * 100 / sum };' "$<" > "$@"
 
-build/stats-rules-tried-per-log-line: results/stats-full-run/timing
+build/stats-rules-tried-per-log-line: results/results-full-run/timing
 	perl -Mstrict -w -E 'my ($$rules_tried, $$lines_parsed); while (<>) { m/^num_lines_parsed:.*: ([^:]+)$$/ and $$lines_parsed = $$1; m/^num_rules_tried:.*: ([^:]+)$$/ and $$rules_tried = $$1; m/^Parsed logfile:/ and say $$rules_tried / $$lines_parsed; }' "$<" > "$@"
+
+build/stats-number-of-action-invocations: results/results-full-run/timing
+	perl -Mstrict -w -n -E 'our %counts; if (m/^(\w+) lines_by_action: .*: (\d+)$$/) { $$counts{$$1} += $$2; } END { my $$i = 1; map { say qq{$$i $$_ $$counts{$$_}}; $$i++; } sort { $$counts{$$a} <=> $$counts{$$b} or $$a cmp $$b } keys %counts; }' "$<" > "$@"
 
 # Sample output from an SQL query.
 build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql
@@ -434,9 +484,9 @@ build/include-sample-sql-query.tex: generate-sample-sql-output.sql
 	( echo '\begin{verbatim}'; cat "$<"; echo '\end{verbatim}' ) > "$@"
 
 # Database schema
-database-schema.pdf: database-schema.ipe
+build/database-schema.pdf: database-schema.ipe
 	ipetoipe -pdf "$<" "$@"
-database-schema.ps: database-schema.ipe
+build/database-schema.ps: database-schema.ipe
 	ipetoipe -eps "$<" "$@"
 
 # Cleanup.

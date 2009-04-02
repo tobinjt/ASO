@@ -159,7 +159,6 @@ number of rules rises}, and \sectionref{Caching compiled regexes}.
 \showgraph{build/graph-rules-tried-per-log-line}{Mean number of rules tried
 per log line}{Mean number of rules tried per log line}
 
-\clearpage{} % XXX GRAPHS MOVE AROUND A LOT
 \subsection{Rule Ordering For Efficiency}
 
 \label{rule ordering for efficiency}
@@ -202,8 +201,6 @@ when a mail loop occurs and the distribution of log lines is unusual.
 Optimal rule ordering has other benefits, described in
 \sectionref{scalability as the number of rules rises}.
 
-\clearpage{} % XXX GRAPHS MOVE AROUND DURING REBUILDS
-
 \showgraph{build/graph-hits}{Log lines recognised per rule}{rule hits graph}
 
 \showgraph{build/graph-optimal-and-reverse-vs-shuffle}{Parsing time
@@ -237,6 +234,20 @@ between the orderings at log files 22 and 62--68.
 
 XXX WRITE ABOUT PERFECT RULE ORDERING\@; DUNNO WHETHER TO PUT IT IN WITH
 RULE ORDERING FOR EFFICIENCY, OR IN ITS OWN SECTION\@.
+
+XXX ADD A TABLE SHOWING PERFECT WORST RELATIVE TO PERFECT BEST\@.
+
+\showgraph{build/graph-perfect-best-and-perfect-worst-and-optimal-and-reverse-vs-shuffled}{Parsing
+time including perfect best and worst relative to shuffled
+ordering}{Parsing time relative to shuffled ordering including perfect best
+and worst graph}
+
+\showtable{build/include-perfect-best-and-optimal-and-reverse-and-perfect-worst-vs-shuffle}{Parsing
+time including perfect best and worst relative to shuffled
+ordering}{Parsing time including perfect best and worst relative to
+shuffled ordering table}
+
+% XXX \FloatBarrier{} MIGHT BE USEFUL TO CONTROL WHERE FLOATS ARE PLACED.
 
 \subsection{Where Is The Time Spent: Recognising Or Processing Log Lines?}
 

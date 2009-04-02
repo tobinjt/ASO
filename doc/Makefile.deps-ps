@@ -10,8 +10,10 @@ logparser.ps.deps:								\
 			build/graph-input-size-vs-parsing-time-ratio.ps		\
 			build/graph-mails-received.ps				\
 			build/graph-optimal-and-reverse-vs-shuffle.ps		\
+			build/graph-perfect-best-and-perfect-worst-and-optimal-and-reverse-vs-shuffled.pdf \
 			build/graph-rules-tried-per-log-line.ps			\
-			database-schema.ps
+			build/graph-number-of-action-invocations.ps		\
+			build/database-schema.ps
 	touch "$@"
 
 sgai-2008.ps.deps:								\

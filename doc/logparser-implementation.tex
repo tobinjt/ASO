@@ -342,7 +342,7 @@ with no access to the original log files.
 \newlength{\belowcaptionskipORIG}
 \setlength{\belowcaptionskipORIG}{\belowcaptionskip}
 \setlength{\belowcaptionskip}{10pt}
-\showgraph{database-schema}{Diagram of the Database Schema}{Diagram
+\showgraph{build/database-schema}{Diagram of the Database Schema}{Diagram
 of the Database Schema picture}
 \setlength{\belowcaptionskip}{\belowcaptionskipORIG}
 
@@ -716,26 +716,37 @@ complications and difficulties that arise.  \parsername{} has
 distribution of rules to actions as shown in \graphref{Distribution of
 rules per action}.  Unsurprisingly, the action with the most associated
 rules is \action{DELIVERY\_REJECTED}, the action that processes Postfix
-rejecting a mail delivery attempt.  The next most common action is, perhaps
-surprisingly, \action{UNINTERESTING}: this action does nothing when
-invoked, allowing uninteresting log lines to be parsed without any effects
-(it does not imply that the input is ungrammatical or unparsed).  Generally
-rules specifying the \action{UNINTERESTING} action recognise log lines that
-are not associated with a specific mail, e.g.\ notices about configuration
-files changing; these log lines are recognised and processed so that the
-framework can warn about unrecognised log lines, informing the user that
-they need to add to or extend their ruleset.  Most of the remaining actions
-have only one or two associated rules: some are specialised actions
-required to address a deficiency in the log files, or a complication that
-arises during parsing; other actions will only ever have one log line
-variant, e.g.\ all log lines showing that a remote client has connected are
-recognised by a single rule and handled by the \action{CONNECT} action.
+rejecting a mail delivery attempt; next is \action{SAVE\_DATA}, the action
+that saves useful information without doing any other processing.  The
+third most common action is, perhaps surprisingly, \action{UNINTERESTING}:
+this action does nothing when invoked, allowing uninteresting log lines to
+be parsed without any effects (it does not imply that the input is
+ungrammatical or unparsed).  Generally rules specifying the
+\action{UNINTERESTING} action recognise log lines that are not associated
+with a specific mail, e.g.\ notices about configuration files changing;
+these log lines are recognised and processed so that the framework can warn
+about unrecognised log lines, informing the user that they need to add to
+or extend their ruleset.  Most of the remaining actions have only one or
+two associated rules: some are specialised actions required to address a
+deficiency in the log files, or a complication that arises during parsing;
+other actions will only ever have one log line variant, e.g.\ all log lines
+showing that a remote client has connected are recognised by a single rule
+and handled by the \action{CONNECT} action.
+
+XXX RUN test-some, STITCH THE COUNTS OF NUMBER OF RULES INVOKED INTO THE
+REAL TIMING DATA, UPDATE THE NUMBER OF INVOCATIONS GRAPH, AND WRITE ABOUT
+IT\@.
+
 \parsernames{} actions are described in detail in \sectionref{actions in
 detail in implementation}, and \sectionref{adding new actions in
 implementation} covers the process of adding a new action.
 
 \showgraph{build/graph-action-distribution}{Distribution of rules per
 action}{Distribution of rules per action}
+
+\showgraph{build/graph-number-of-action-invocations}{Number of times each
+action was invoked when parsing \numberOFlogFILES{} log files}{Number of times
+each action was invoked}
 
 \subsection{Actions In The \parsernamelong{}}
 

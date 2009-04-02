@@ -6,6 +6,13 @@
 \usepackage{amstext}
 % Include images
 \usepackage[final]{graphicx}
+% Provides \FloatBarrier that stops floats going past it.
+\usepackage{placeins}
+% Relax the parameters Latex uses when placing floats.
+% XXX DUNNO IF THIS IS A GOOD IDEA
+\usepackage{flexiblefloats}
+% Prevent floats from appearing above the line that includes them
+\usepackage{flafter}
 % Add the bibliography into the table of contents.
 \usepackage[chapter,numbib]{tocbibind}
 % Create a label for the last page.  Might be useful for "page 23/79" or
@@ -59,9 +66,8 @@
 % Must be loaded before hyperref.
 \usepackage{varioref}
 % Warnings rather than errors when references cross page boundaries.
+% XXX DISABLE THIS WHEN THESIS IS NEARLY FINISHED
 \vrefwarning{}
-% Errors when loops are encountered
-\vrefshowerrors{}
 % Shorten the text used for references with page numbers.
 \renewcommand{\reftextfaraway}[1]{%
     [p.~\pageref{#1}]%
@@ -192,20 +198,18 @@
 % New formatting commands.
 
 % \showgraph{filename}{caption}{label}
-\newcommand{\showgraph}[3]{%
-    % XXX REVISIT THE PLACEMENT OF FIGURES AND TABLES, THOUGH I THINK
-    % LATEX'S DEFAULTS ARE PROBABLY PRETTY GOOD.
-    \begin{figure}%[hbt!]
-        \caption{#2}\label{#3}
-        \includegraphics{#1}
+\newcommand{\showgraph}[4][tbph]{%
+    \begin{figure}[#1]%[hbt!]
+        \caption{#3}\label{#4}
+        \includegraphics{#2}
     \end{figure}
 }
 
 %\showtable{filename}{caption}{label}
-\newcommand{\showtable}[3]{
-    \begin{table}%[ht]
-        \caption{#2}\label{#3}
-        \input{#1}
+\newcommand{\showtable}[4][tbph]{
+    \begin{table}[#1]%[ht]
+        \caption{#3}\label{#4}
+        \input{#2}
     \end{table}
 }
 
@@ -256,9 +260,8 @@
     93%
 }
 
-% XXX UPDATE THIS WHEN all-logs PASSES
 \newcommand{\numberOFlogFILESall}[0]{%
-    522%
+    774%
 }
 
 \newcommand{\numberOFrules}[0]{%
@@ -343,10 +346,6 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
     \begin{center}
         \SVNId{}
     \end{center}
-
-    XXX FIX THE PROBLEMS THAT AROSE FROM THE LAST all-logs RUN\@.
-
-    XXX RUN ``test-some'' AGAIN TO UPDATE THE DB\@.
 
     XXX SHOULD I HAVE A ``FUTURE WORK'' SECTION SOMEWHERE IN THE
     CONCLUSION\@?
