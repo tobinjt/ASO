@@ -539,6 +539,9 @@ sub parse {
     $self->{counters}->{num_rules_tried}    = 0;
     $self->{counters}->{rules_by_program}   = {};
     $self->{counters}->{lines_by_program}   = {};
+    $self->{counters}->{lines_by_action}    = {};
+    map { $self->{counters}->{lines_by_action}->{$_} = 0; }
+        keys %{$self->{actions}};
 
     LINE:
     while (my $line = $syslog->next()) {
@@ -778,6 +781,9 @@ sub parse_line {
             say $fh $rule->{id};
         }
 
+        my $action = $rule->{action};
+        $self->{counters}->{lines_by_action}->{$action}++;
+
         if ($self->{print_matching_regex}) {
             print $rule->{regex_orig}, q{ !!!! }, $line->{text}, qq{\n};
         }
@@ -785,8 +791,6 @@ sub parse_line {
             return;
         }
 
-        # Hmmm, I can't figure out how to combine the next two lines.
-        my $action = $rule->{action};
         return $self->$action($rule, $line, \%matches);
     }
 

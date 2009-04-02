@@ -110,15 +110,7 @@ foreach my $logfile (@ARGV) {
     print_timing(qq{Start parsing logfile}, $logfile);
     my $results = $parser->parse($logfile);
     if ($Options->{q{timing-data}}) {
-        map { say {$Options->{timing_file}}
-                qq{$_: $logfile: $results->{$_}} }
-            sort grep /^num/, keys %{$results};
-        map { say {$Options->{timing_file}}
-                qq{$_ rules: $logfile: } . $results->{rules_by_program}->{$_}}
-            sort keys %{$results->{rules_by_program}};
-        map { say {$Options->{timing_file}}
-                qq{$_ lines: $logfile: } . $results->{lines_by_program}->{$_}}
-            sort keys %{$results->{lines_by_program}};
+        print_results($results, $logfile);
     }
     print_timing(qq{Parsed logfile}, $logfile);
     if (exists $Options->{memory_out_fh}) {
@@ -291,6 +283,23 @@ sub print_timing {
         $last_timestamp = $now;
     }
     print_memory($message, $filename);
+}
+
+sub print_results {
+    my ($results, $logfile) = @_;
+
+    # Print the simple counters
+    map { say {$Options->{timing_file}}
+            qq{$_: $logfile: $results->{$_}} }
+        sort grep { not ref $results->{$_} } keys %{$results};
+
+    # Print the hashes
+    foreach my $counter (sort grep { ref $results->{$_} } keys %{$results}) {
+        foreach my $count (sort keys %{$results->{$counter}}) {
+            say {$Options->{timing_file}}
+                qq{$count $counter: $logfile: $results->{$counter}->{$count}};
+        }
+    }
 }
 
 sub print_memory {
