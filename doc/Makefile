@@ -91,6 +91,7 @@ build/Makefile.graph-deps: graphs/*
 		sed -n -e 's!^load "\(.*\)"$$!'"$$file"': graphs/\1\n\ttouch '"$$file"'!p' "$$file" | sort | uniq;	\
 		sed -n -e 's!^load "\(.*\)-ps.gpi"$$!'"$$file"': graphs/\1-pdf.gpi!p' "$$file";				\
 	done > "$@"
+	sed -i -e 's!graphs/../build/!build/!' "$@"
 
 
 # This isn't a wildcard rule because it screws up later postscript wildcard 
