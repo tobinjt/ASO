@@ -53,7 +53,8 @@ logparser.deps: \
 		build/include-top-ten-hits.tex						\
 		build/include-optimal-ordering-parsing-time-reduction-other-logs.tex	\
 		build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex	\
-		build/include-perfect-best-and-optimal-and-reverse-and-perfect-worst-vs-shuffle.tex
+		build/include-perfect-best-and-optimal-and-reverse-and-perfect-worst-vs-shuffle.tex	\
+		build/include-per-file-action-invocation-numbers-table.tex
 	touch "$@"
 
 # Additional dependencies are included from Makefile.deps-ps and
@@ -485,6 +486,8 @@ build/graph-per-file-action-invocation-numbers.gpi: build/stats-per-file-action-
 build/graph-per-file-action-invocation-numbers.pdf: build/graph-per-file-action-invocation-numbers.gpi
 build/graph-per-file-action-invocation-numbers.ps: build/graph-per-file-action-invocation-numbers.gpi
 
+build/include-per-file-action-invocation-numbers-table.tex: build/stats-per-file-action-invocation-numbers
+	perl mk-per-file-action-invocation-numbers-table "$<" > "$@"
 
 # Sample output from an SQL query.
 build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql

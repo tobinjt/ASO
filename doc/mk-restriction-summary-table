@@ -18,8 +18,12 @@ while (<$data_pipe>) {
     $data{$key} = $value;
 }
 
-print q(\begin{tabular}[]{lrr}) . qq{\n};
-print qq{Restriction type & Number of rejections & Percentage\\\\\n};
+print <<'HEADER';
+\begin{tabular}[]{lrr}
+    \tabletopline{}%
+    Restriction type & Number of rejections & Percentage\\
+    \tablemiddleline{}%
+HEADER
 
 my $all_rejections = $data{q{All rejections}};
 $data{q{Other restrictions}} = $all_rejections
@@ -29,5 +33,7 @@ foreach my $key (sort { $data{$b} <=> $data{$a} || $a cmp $b } keys %data) {
     print qq{$key & $data{$key} & $percentage\\\\\n};
 }
 
-print q(\end{tabular}) . qq{\n};
-
+print <<'FOOTER';
+    \tablebottomline{}%
+\end{tabular}
+FOOTER

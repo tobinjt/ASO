@@ -317,7 +317,9 @@ identity theft.
     \centering{}
 
     \begin{tabular}[]{ll}
-
+        \tabletopline{}%
+        Attribute name          & Attribute value           \\
+        \tablemiddleline{}%
         request                 & smtpd\_access\_policy     \\
         protocol\_state         & RCPT                      \\
         protocol\_name          & SMTP                      \\
@@ -330,7 +332,7 @@ identity theft.
         client\_name            & another.domain.tld        \\
         reverse\_client\_name   & another.domain.tld        \\
         instance                & 123.456.7                 \\
-
+        \tablebottomline{}%
     \end{tabular}
 
 \end{table}

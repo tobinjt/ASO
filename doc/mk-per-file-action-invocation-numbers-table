@@ -1,0 +1,74 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use feature qw(say);
+
+use List::Util qw(sum);
+use Data::Dumper;
+
+my @actions;
+my @invocations;
+while (<>) {
+    chomp;
+    if (m/^#/) {
+        s/_/\\_/g;
+        $_ = lc $_;
+        @actions = split /\s+/;
+        shift @actions;
+    } else {
+        push @invocations, [split /\s+/];
+    }
+}
+
+# Transpose the array.
+my @transposed_invocations;
+foreach my $row (0 .. (@invocations - 1)) {
+    foreach my $column (0 .. (@{$invocations[$row]} - 1)) {
+        $transposed_invocations[$column][$row] = $invocations[$row][$column];
+    }
+}
+
+say <<'HEADER';
+\begin{tabular}[]{lrrrrrr}
+    \tabletopline{}%
+           & \multicolumn{2}{c}{All log files} & \multicolumn{2}{c}{Log files
+           22, 62--68} & \multicolumn{2}{c}{Other log files} \\
+    Action & Mean & Std dev & Mean & Std dev & Mean & Std dev \\
+    \tablemiddleline{}%
+HEADER
+foreach my $action_counts (@transposed_invocations) {
+    # Create a copy of the array, rip out 22 and 62-68, creating another new
+    # array from them.
+    my $other_logs = [@{$action_counts}];
+    my $logs_22_62_68 = [];
+    push    @{$logs_22_62_68}, splice @{$other_logs}, 61, 7;
+    unshift @{$logs_22_62_68}, splice @{$other_logs}, 21, 1;
+
+    my $line = join q{ & },
+                    shift @actions, 
+                    map { sprintf q{%.0f}, $_; }
+                        mean_and_stddev($action_counts),
+                        mean_and_stddev($logs_22_62_68),
+                        mean_and_stddev($other_logs);
+    say $line . q{ \\\\};
+}
+
+say <<'FOOTER';
+    \tablebottomline{}%
+\end{tabular}
+FOOTER
+
+sub mean_and_stddev {
+    my ($values) = @_;
+    my $mean = sum(@{$values}) / @{$values};
+    my $sum_of_differences = 0;
+    foreach my $value (@{$values}) {
+        $sum_of_differences += (($value - $mean) ** 2);
+    }
+    my $stddev = sqrt ($sum_of_differences / @{$values});
+    return ($mean, $stddev);
+}
