@@ -7,18 +7,31 @@ architecture described in \sectionref{parser architecture}.  Any design may
 look good when examined in the abstract, but the real test of the design
 comes with the first concrete implementation; only then do any practical
 difficulties come to light.  Implementing this architecture was relatively
-straightforward, with only minor changes required: rule conditions and
-cascaded parsing were added, although later the implementation stopped
-using cascaded parsing.  The difficulties came not from the architecture
-and design, but from anomalies in the log files and Postfix's behaviour, as
-described in \sectionref{complications}.
+straightforward: the difficulties came not from the architecture and
+design, but from anomalies in the log files and Postfix's behaviour, as
+described in \sectionref{complications}.  \parsername{} successfully deals
+with all the difficulties that were discovered during its development, but
+further difficulties may arise during future usage; unfortunately solving
+all potential difficulties that may arise is an intractable task, but the
+descriptions of the solutions developed thus far (see
+\sectionref{complications}) should help if someone needs to develop a
+solution of their own.
 
 \parsername{} deals with all the complications of parsing, the
 eccentricities and oddities of Postfix log files, presenting the resulting
 data in a normalised, simple to use representation.  The parser's task is
 to follow the journey each mail takes through Postfix, combining the data
 captured by rules into a coherent whole, saving it in a useful and
-consistent form, and performing housekeeping duties.
+consistent form, and performing housekeeping duties.  The intermingling of
+log entries from different mails immediately rules out the possibility of
+handling each mail in isolation; the parser must be able to handle multiple
+mails in parallel, each potentially at a different stage in its journey,
+without any interference between mails --- except in the minority of cases
+where intra-mail interference is required, e.g.\ mail re-injected for
+forwarding (\sectionref{Re-injected mails}).  The best way to deal with
+intermingling is to maintain state information for every unfinished mail
+and manipulate the appropriate mail correctly for each log line
+encountered.
 
 This chapter begins with the assumptions under which \parsername{} was
 designed and written, followed by a flowchart showing the most common paths
@@ -42,16 +55,17 @@ why some actions are more popular than others.  Every action that is part
 of \parsername{} is documented, and the actions section concludes with the
 process of adding a new action, and how to determine the values for each of
 the required fields.  Rules are the final component of the architecture,
-and also the most visible to users, because it is likely that users will
-need to add their own rules to recognise their log lines.  An example rule
-used by \parsername{} is shown, with every field clearly documented; this
-is followed by a description of adding new rules, and how to determine the
-value of each of the fields.  \parsername{} provides a utility to create
-regexes from unrecognised log lines; the algorithm it uses is documented,
-including the differences between it and the original algorithm.  The rules
-section finishes with a discussion of how \parsername{} uses rule
-conditions and overlapping rules, plus a description of the regex snippets
-provided to ease the process of writing regexes.
+and also the most visible to advanced users, e.g.\ systems administrators,
+because it is likely that they will need to add their own rules to
+recognise their log lines.  An example rule used by \parsername{} is shown,
+with every field clearly documented; this is followed by a description of
+adding new rules, and how to determine the value of each of the fields.
+\parsername{} provides a utility to create regexes from unrecognised log
+lines; the algorithm it uses is documented, including the differences
+between it and the original algorithm.  The rules section finishes with a
+discussion of how \parsername{} uses rule conditions and overlapping rules,
+plus a description of the regex snippets provided to ease the process of
+writing regexes.
 
 On first inspection, Postfix log files look like they will be simple to
 parse, but this is not the case.  The many complications and difficulties
@@ -73,7 +87,11 @@ assumptions:
         the volume of log messages).  On a well run system it is extremely
         unlikely that any of these problems will arise, though it is of
         course possible, particularly when suffering from a deluge of spam
-        or a mail loop.
+        or a mail loop.  When parsing individual log files in isolation,
+        it is highly likely that some mails will have log lines in previous
+        log files, and others will have log lines in subsequent log files;
+        to alleviate this problem \parsername{} supports saving and loading
+        its state tables, so they can be preserved between log files.
 
     \item Postfix logs enough information to make it possible to accurately
         reconstruct the actions it has taken.  Heuristics are used in
@@ -124,42 +142,34 @@ to treating Postfix as a black box during parser development:
 
 \label{flow chart}
 
-A picture is said to be worth a thousand words: the flow chart in
-\figureref{flow chart image} shows the most common paths a connection or
-mail can take through \parsername{}; the difficulties described in
-\sectionref{complications} are excluded for the sake of clarity.  The flow
-chart is intended to be a graphical overview of how a mail progresses
-through both Postfix and \parsername{}, providing an overall context into
-which the detailed descriptions in the remainder of this chapter will fit,
-in particular the actions (\sectionref{actions in implementation}) and
-complications (\sectionref{complications}).
+The flow chart in \figureref{flow chart image} shows the most common paths
+a connection or mail can take through \parsername{}; the difficulties
+described in \sectionref{complications} are excluded for the sake of
+clarity.  The flow chart is intended to be a graphical overview of how a
+mail progresses through both Postfix and \parsername{}, providing an
+overall context into which the detailed descriptions in the remainder of
+this chapter will fit, in particular the actions (\sectionref{actions in
+implementation}) and complications (\sectionref{complications}).  The
+states and transitions shown in \figureref{flow chart image} will be
+explained later in this section.
 
 \showgraph{build/logparser-flow-chart-part-1}{\parsernamelong{} flow
 chart}{flow chart image}
-
-The intermingling of log entries from different mails immediately rules out
-the possibility of handling each mail in isolation; the parser must be able
-to handle multiple mails in parallel, each potentially at a different stage
-in its journey, without any interference between mails --- except in the
-minority of cases where intra-mail interference is required.  The best way
-to implement this is to maintain state information for every unfinished
-mail and manipulate the appropriate mail correctly for each log line
-encountered.
 
 Everything starts off with a mail entering the system, whether by local
 submission via \daemon{postdrop}, by \acronym{SMTP}, by re-injection due to
 forwarding, or generated internally by Postfix.  Local submission is the
 simplest case: a queueid is assigned immediately \flowchart{PICKUP}{2}, and
 the mail moves on to the delivery stage.  Re-injection due to forwarding
-sadly lacks explicit log lines of its own; it is explained fully in
+lacks explicit log lines of its own; it is explained fully in
 \sectionref{Re-injected mails}.  Internally generated mails lack any
 explicit origin in Postfix 2.2.x and must be detected using heuristics as
 described in \sectionref{identifying bounce notifications}; later versions
-of Postfix do provide log lines for internally generated mails.  Bounce
-notifications are the primary example of internally generated mails, though
-there are other types, e.g.\ Postfix may generate mails to the
-administrator when it encounters configuration errors, but such mails are
-presumably rare.
+of Postfix do provide log lines for internally generated mails
+\flowchart{BOUNCE\_CREATED}{3}.  Bounce notifications are the primary
+example of internally generated mails, though there are other types, e.g.\
+Postfix may generate mails to the administrator when it encounters
+configuration errors.
 
 \acronym{SMTP} is more complicated than the others:
 
@@ -171,13 +181,13 @@ presumably rare.
     \item This is followed by rejection of sender address, recipient
         addresses, client \acronym{IP} address or hostname, etc.\
         \flowchart{DELIVERY\_REJECTED}{4}; acceptance of one or more mails
-        \flowchart{CLONE}{5}; or some interleaving of both.
+        \flowchart{CLONE}{5}; or some random interleaving of both.
 
     \item The client disconnects \flowchart{DISCONNECT}{6}.  If Postfix has
         rejected any \acronym{SMTP} commands the resulting data will be
         saved to the database; if there were no rejections there will not
         be any data to save.  Any mails accepted will already have been
-        cloned so their data is in another data structure, nd will be
+        cloned so their data is in another data structure, and will be
         delivered in the same way as mails that entered the system by any
         other route.
 
@@ -193,7 +203,7 @@ All four are handled in exactly the same way:
         \flowchart{SAVE\_DATA}{8}.
 
     \item Sometimes mail is re-injected and the child mail needs to be
-        tracked by the parent mail \flowchart{TRACK}{9}; the handling of
+        tracked with the parent mail \flowchart{TRACK}{9}; the handling of
         re-injected mails is described in \sectionref{tracking re-injected
         mail}.
 
@@ -294,12 +304,6 @@ data in several ways:
             \item A VIEW gives a custom arrangement of data with minimal
                 effort.
 
-            \item Some databases support granting access on a fine-grained
-                basis, e.g.\ allowing the finance department to produce
-                invoices, the helpdesk to run limited queries as part of
-                dealing with support calls, and the administrators to have
-                full access to the data.
-
             \item Triggers can be written to perform actions when certain
                 events occur.  In pseudo-\acronym{SQL}\@:
 
@@ -316,17 +320,20 @@ CREATE TRIGGER ON INSERT INTO results
 
         \end{itemize}
 
+    \item Some databases support granting access on a fine-grained basis,
+        e.g.\ allowing the finance department to produce invoices, the
+        helpdesk to run limited queries as part of dealing with support
+        calls, and the administrators to have full access to the data.
+
 
     \item \acronym{SQL} is reasonably standard and many people will already
         be familiar with it; for those unfamiliar with it there are lots of
         readily available resources from which to learn, e.g.\
         \urlLastChecked{http://philip.greenspun.com/sql/}{2009/02/23}.
         Although every vendor implements a different dialect of
-        \acronym{SQL}, the basics are the same everywhere, analogous to the
-        overall similarity and minor differences amongst Irish English,
-        British English, American English, and Australian English.
-        Depending on the database in use there may be tools available that
-        reduce or remove the requirement to know \acronym{SQL}.
+        \acronym{SQL}, the basics are the same everywhere.  Depending on
+        the database in use there may be tools available that reduce or
+        remove the requirement to know \acronym{SQL}.
 
 \end{enumerate}
 
@@ -488,13 +495,14 @@ hundreds.
 
     \item [id] A unique identifier for this result.
 
-    \item [warning] Postfix can be configured to log a warning instead of
-        enforcing a restriction that would reject an \acronym{SMTP} command
-        --- a mechanism that is quite useful for testing new restrictions.
-        This field will be false for a real rejection, or true if the log
-        line was a warning.  This field should be ignored if the result is
-        not a rejection, i.e.\ the action field of the associated rule is
-        not \action{DELIVERY\_REJECTED}.
+    \item [warning] Administrators can configure Postfix to log a warning
+        instead of enforcing a restriction that would reject an
+        \acronym{SMTP} command --- a mechanism that is quite useful for
+        testing new restrictions.  This field will be false for a real
+        rejection, or true if the log line was a warning.  This field
+        should be ignored if the result is not a rejection, i.e.\ the
+        action field of the associated rule is not
+        \action{DELIVERY\_REJECTED}.
 
     \item [smtp\_code] The \acronym{SMTP} code associated with the log
         line.  In general an \acronym{SMTP} code is only present in a log
@@ -606,16 +614,16 @@ those rules whose \texttt{program} field equals the program in the log line
 generic rules if necessary, and warning if the log line is unrecognised.
 The rules are sorted for increased efficiency; see \sectionref{rule
 ordering for efficiency} for details.  The repetitive nature of log files
-gives them high compression ratios; the framework supports reading
-compressed log files, simplifying the process of parsing them because they
-do not have to be uncompressed to a temporary file before parsing begins.
-The framework also displays a progress bar to show how far parsing has
-progressed through the log file, and to give the user an indication of how
-long the remainder of the parsing process is likely to take.  The progress
-bar is not as reliable when parsing compressed log files, because a
-compressed block may uncompress to a variable number of log lines; there is
-also variation between the recognition and processing time of individual
-log lines, but overall the progress bar is a useful addition.
+gives them high compression ratios; the framework can read compressed log
+files, simplifying the process of parsing them because they do not have to
+be uncompressed to a temporary file before parsing begins.  When used
+interactively, the framework also displays a progress bar to show how far
+parsing has progressed through the log file and how long the remainder of
+the parsing process is likely to take.  The progress bar is not as reliable
+when parsing compressed log files, because a compressed block may
+uncompress to a variable number of log lines; there is also variation
+between the recognition and processing time of individual log lines, but
+overall the progress bar is a useful addition.
 
 The framework collects data used when evaluating \parsernames{} efficiency
 for the results chapter (\sectionref{Results}); some of the techniques used
@@ -727,11 +735,9 @@ with a specific mail, e.g.\ notices about configuration files changing;
 these log lines are recognised and processed so that the framework can warn
 about unrecognised log lines, informing the user that they need to add to
 or extend their ruleset.  Most of the remaining actions have only one or
-two associated rules: some are specialised actions required to address a
-deficiency in the log files, or a complication that arises during parsing;
-other actions will only ever have one log line variant, e.g.\ all log lines
-showing that a remote client has connected are recognised by a single rule
-and handled by the \action{CONNECT} action.
+two associated rules, because they will only ever have one or two log line
+variants, e.g.\ all log lines showing that a remote client has connected
+are recognised by a single rule and handled by the \action{CONNECT} action.
 
 There is no correlation between how often an action is specified by rules
 and how often an action is invoked because a rule recognises a log line.
@@ -880,8 +886,7 @@ recognising rule's regex.  Each action is passed the same arguments:
         quite simple: if the log line contains a queueid, save the data
         captured by the rule's regex to the mail identified by that
         queueid; otherwise save it to the connection identified by the
-        \acronym{pid} in the log line.  No further processing of the log
-        line is required.
+        \acronym{pid} in the log line.
 
     \item [DISCONNECT] Invoked when the remote client disconnects, it
         enters the connection in the database if it has any useful data,
@@ -904,10 +909,10 @@ recognising rule's regex.  Each action is passed the same arguments:
         action to distinguish delivery attempts that bounce from other
         delivery attempts.
 
-    \item [MAIL\_DISCARDED] Sometimes mail is discarded, e.g.\ mail
-        submitted locally that is larger than the limit configured by the
-        administrator.  This action is used for those mails; it invokes the
-        \action{COMMIT} action, but is a separate action to simplify
+    \item [MAIL\_DISCARDED] Sometimes mail is discarded by Postfix, e.g.\
+        mail submitted locally that is larger than the limit configured by
+        the administrator.  This action is used for those mails; it invokes
+        the \action{COMMIT} action, but is a separate action to simplify
         further analysis.
 
     \item [MAIL\_QUEUED] This action represents Postfix picking a mail from
@@ -953,8 +958,9 @@ recognising rule's regex.  Each action is passed the same arguments:
         cleaned up, entered in the database if it has sufficient data, and
         deleted from the state tables.  In some cases the connection will
         not have enough data to satisfy the database schema, so it cannot
-        be entered into the database; unfortunately this means that some
-        data is lost.
+        be entered into the database for future analysis; unfortunately
+        this means that the small amount of data that has been gathered
+        will be lost.
 
     \item [SMTPD\_WATCHDOG] \daemon{smtpd} processes have a watchdog timer
         to deal with unusual situations; after five hours the timer will
@@ -993,18 +999,21 @@ recognising rule's regex.  Each action is passed the same arguments:
 
 Adding new actions is not as easy as adding new rules, though care has been
 taken in the architecture and implementation to make adding new actions as
-painless as possible.  The implementer writes a subroutine that accepts the
-standard arguments given to actions, and registers it with the framework.
-The new action must be registered before the rules are loaded, because it
-is an error for a rule to specify an unregistered action; this helps catch
-mistakes made when adding new rules.  No other work is required from the
-implementer to integrate the action into the parser; all of their attention
-and effort can be focused on correctly implementing their new action.  The
-action may need to extend the list of valid combinations described in
-\sectionref{out of order log lines} if the new action creates a different
-set of acceptable programs, but this would only be necessary if the new
-action processes log lines from Postfix components \parsername{} currently
-does not have rules for, e.g.\ \daemon{virtual} or \daemon{lmtp}.
+painless as possible; one of the few limitations is that \parsername{} is
+written in Perl, so new actions must also be written in Perl.  The
+implementer writes a subroutine that accepts the standard arguments given
+to actions, and registers it with the framework by calling the framework's
+\texttt{add\_actions()} subroutine.  The new action must be registered
+before the rules are loaded, because it is an error for a rule to specify
+an unregistered action; this helps catch mistakes made when adding new
+rules.  No other work is required from the implementer to integrate the
+action into the parser; all of their attention and effort can be focused on
+correctly implementing their new action.  The action may need to extend the
+list of valid combinations described in \sectionref{out of order log lines}
+if the new action creates a different set of acceptable programs, but this
+would only be necessary if the new action processes log lines from Postfix
+components \parsername{} currently does not have rules for, e.g.\
+\daemon{virtual} or \daemon{lmtp}.
 
 \section{Rules}
 
@@ -1147,8 +1156,8 @@ correctly: connection\_data, result\_data, priority, or restriction\_name.
 In general it will only become clear that connection\_data or result\_data
 are required when \parsername{} warns about an entry in the connections or
 results tables that is missing some required fields, because values for the
-missing fields are not present in any of the log lines.  E.g.\ the rule
-recognising the \daemon{pickup} component processing a mail sets the
+missing fields are not present in any of the log lines.  For example, the
+rule recognising the \daemon{pickup} component processing a mail sets the
 client\_hostname to \texttt{localhost} and the client\_ip to
 \texttt{127.0.0.1}, because the mail originates on the local server.  If
 the new rule deliberately uses the architecture's overlapping rules feature
@@ -1290,7 +1299,10 @@ equal.  This avoids needlessly trying rules that will not recognise the log
 line, or worse, might recognise it unintentionally.  In addition the
 framework supports generic rules, whose program attribute is ``*''; these
 will be used if none of the program-specific rules recognise the log line.
-If none of the rules are successful the framework will warn the user.
+If none of the rules are successful the framework will warn the user,
+informing them that they need to augment their ruleset, and alerting them
+that because \parsername{} failed to recognise some of their log lines, the
+results stored in the database may be incomplete.
 
 \subsection{Regex Components}
 
@@ -1496,6 +1508,10 @@ improvements that have been identified in \parsername{}.
 
     \item The solution to complication \sectionref{Mails deleted during
         delivery} involves discarding data.
+
+    \item XXX FURTHER COMPLICATIONS MAY ARISE\@.
+
+    \item XXX DATABASE GROWS WITHOUT BOUNDS\@.
 
 \end{enumerate}
 
