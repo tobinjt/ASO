@@ -1,4 +1,3 @@
-# XXX GENERATE GRAPH DEPENDENCIES BY SEARCHING FOR \showgraph AND \showtable
 # Cause make to delete output files when a command fails.
 .DELETE_ON_ERROR:
 MAKEFLAGS += --no-print-directory
