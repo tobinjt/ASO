@@ -1,0 +1,11 @@
+load "plot-defaults-ps.gpi"
+
+set xlabel "Log file"
+set ylabel "Average number of rules tried per log line"
+set output "../build/graph-average-number-of-rules-tried-per-log-line.ps"
+
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
+
+plot "../build/stats-average-number-of-rules-tried-per-log-line" using 1 with lines \
+    title "Average number of rules tried per log line"
