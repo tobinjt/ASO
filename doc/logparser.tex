@@ -19,6 +19,9 @@
 % something.
 \usepackage{lastpage}
 
+% Better looking horizontal rules for tables.
+\usepackage{booktabs}
+
 % Extra footnote functionality, including references to earlier footnotes.
 % Removed for now, because it generates a warning:
 % "LaTeX Warning: Command \@makecol  has changed."
@@ -214,19 +217,15 @@
 }
 
 \newcommand{\tabletopline}[0]{%
-    \hline%
-    \noalign{\smallskip}%
+    \toprule{}%
 }
 
 \newcommand{\tablebottomline}[0]{%
-    \noalign{\smallskip}%
-    \hline%
+    \bottomrule{}%
 }
 
 \newcommand{\tablemiddleline}[0]{%
-    \noalign{\smallskip}%
-    \hline%
-    \noalign{\smallskip}%
+    \midrule{}%
 }
 
 % A command to format a Postfix daemon's name
