@@ -249,7 +249,7 @@ build/results--optimal_ordering--maximum_ruleset--comment-stripped: build/result
 build/stats-input-size-vs-parsing-time: build/results--optimal_ordering--maximum_ruleset--comment-stripped wc.txt file-sizes.txt
 	paste -d ' ' $^ | awk 'BEGIN { print "# line-count file-size"; }; {print ($$3 * 10 * 1000 / $$8), " ", ($$3 * 1000 * 1000 / $$11) }' > "$@"
 
-build/stats-cached-regexes-vs-discarded-regexes: build/results--optimal_ordering--maximum_ruleset build/results--skip_inserting_results--discard_compiled_regexes--optimal_ordering--maximum_ruleset
+build/stats-cached-regexes-vs-discarded-regexes: build/results--optimal_ordering--maximum_ruleset build/results--optimal_ordering--discard_compiled_regexes
 	paste -d ' ' $^ | awk '$$1 != "#" {print ($$9 * 100 / $$3) - 100 }' > "$@"
 
 build/stats-optimal-and-reverse-vs-shuffle: build/results--optimal_ordering--maximum_ruleset build/results--shuffle_ordering--maximum_ruleset build/results--reverse_ordering--maximum_ruleset
@@ -320,6 +320,9 @@ build/include-file-size-and-number-of-log-lines-vs-parsing-time.tex: 			\
 # Average number of rules tried per log line
 build/stats-average-number-of-rules-tried-per-log-line: results/results-full-run/timing
 	awk '/num_lines_parsed:/ { lines_parsed = $$3 }; /num_rules_tried:/ { rules_tried = $$3; print rules_tried / lines_parsed; }' "$<" > "$@"
+
+build/stats-average-number-of-rules-tried-per-program: results/results-full-run/timing
+	perl mk-average-number-of-rules-tried-per-program "$<" > "$@"
 
 # Optimal/shuffle/reverse ratios: stddev, mean, etc.
 build/stats-optimal-vs-shuffle-stddev: build/stats-optimal-and-reverse-vs-shuffle
@@ -449,10 +452,15 @@ full-ruleset-vs-minimum-ruleset:
 	paste -d ' ' ${INPUT} | awk '!/^#/ { print $$1, (($$3 -$$9) * 100 / $$9)}' > "${OUTPUT}"
 
 # Duration of the full run parsing all 93 log files.
-build/include-timing-run-duration.tex: results/results-full-run/timing
+build/include-%-duration.tex: results/results-%/timing
 	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes and %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@"
-build/include-timing-run-throughput.tex: results/results-full-run/timing
+build/include-%-throughput.tex: results/results-%/timing
 	awk -F': ' '/^Total time:/ { printf "%.3f~MB (%'\''.3f log lines) parsed per minute%%\n", (10076909581 / (1024 * 1024)) / ($$3 / 60), 60721709 / ($$3 / 60)}' "$<" > "$@"
+build/include-skip-inserting-as-percentage-of-inserting.tex: results/results-full-run/timing results/results-insert-results/timing
+	perl -Mstrict -w -E 'our @times; while (<>) { if (m/^Total time: : (.*)$$/) { push @times, $$1; } } chomp @times; printf qq{%.3f\\%%%%\n}, 100 * $$times[0] / $$times[1];' $^ > "$@"
+build/include-skip-inserting-with-50-percent-improvement--as-percentage-of-inserting.tex: build/include-skip-inserting-as-percentage-of-inserting.tex
+	perl -Mstrict -w -E 'my $$percentage = <>; $$percentage =~ s/\\%%//; printf qq{%.3f\\%%%%\n}, $$percentage / 2;' "$<" > "$@"
+
 build/include-median-throughput-MB.tex: build/results--optimal_ordering--maximum_ruleset--comment-stripped file-sizes.txt
 	paste -d ' ' $^ | awk '{ printf "%.3f\n", ($$8 / (1024 * 1024) ) / ($$3 / 60); }' | perl ../stats/stddev | awk '/Median:/ { print $$2 "~MB%" }' > "$@"
 build/include-median-throughput-log-lines.tex: build/results--optimal_ordering--maximum_ruleset--comment-stripped wc.txt
@@ -513,7 +521,8 @@ realclean: veryclean
 veryclean: clean
 	rm -f	build/stats-* build/include-* build/graph-*	\
 		build/logparser-flow-chart* build/Makefile.*	\
-		build/plot-* build/logparser*.tex
+		build/plot-* build/logparser*.tex		\
+		build/database-schema.*
 
 .PHONY: check
 check: lines-from-paragraphs

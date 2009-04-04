@@ -12,19 +12,12 @@ ORDERINGS SECTION\@?  MIX WITH RECOGNISING VS RECOGNISING + ACTION, AND
 KEEP COUNTERS FOR EACH PROGRAM TOO --- MAYBE SOMETHING USEFUL WILL COME
 FROM IT\@.  COMPARE NUMBER OF RULES TRIED FOR DIFFERENT RULE ORDERINGS\@.
 
-XXX DO A TEST-SOME RUN AND SAVE THE RESULTS TO THE DATABASE, THEN COMPARE
-THE TIME WITH A RUN THAT DOES NOT SAVE RESULTS\@; PUT THE COMPARISON IN THE
-INTRODUCTION, NEAR THE MACHINE SPECS\@.
-
-XXX THINK ABOUT THE ORDERING OF TABLES AND GRAPHS\@; MAYBE REARRANGE THEM
-SO THAT THEY APPEAR IN THE ORDER THEY ARE REFERENCED\@?
-
-XXX SHOULD I USE $\backslash{}$clearpage{} OR SOMETHING TO AFFECT
+XXX SHOULD I USE $\backslash{}$clearpage{} OR SOMETHING TO AFFECT FLOAT
 PLACEMENT\@?  GRAPHS AND TABLES TEND TO MOVE QUITE FAR IN SOME OF THE
 SUBSECTIONS, THOUGH MAKING THE TEXT LONGER MIGHT HELP TOO\@.  IDEALLY I
-WANT TO HAVE TEXT, THEN ALL GRAPHS AND TABLES, THEN THE NEXT SECTION\@; I
-DO NOT LIKE THAT GRAPHS/TABLES SOMETIMES APPEAR BEFORE THEY ARE
-REFERENCED\@.  I MIGHT NEED TO REDUCE THE HEIGHT OF THE GRAPHS TOO\@.
+WANT TO HAVE TEXT, THEN ALL GRAPHS AND TABLES, THEN THE NEXT SECTION\@.
+
+\newpage{} % XXX VARIOREF PROBLEMS
 
 \section{Parser Efficiency}
 
@@ -33,34 +26,25 @@ REFERENCED\@.  I MIGHT NEED TO REDUCE THE HEIGHT OF THE GRAPHS TOO\@.
 Parsing efficiency is an obvious concern when the parser routinely needs to
 parse large log files.  The server that generated the log files used in
 testing this parser accepts approximately 10,000 mails for 700 users a day;
-\graphref{Mails received per day} shows that, as expected, far more mails
-are received on weekdays than at weekends.  The mail server in question is
-a production mail server handling mail for a university department; the
-benefit of using this server is that its log files exhibit the
-idiosyncrasies and peculiarities a mail server in the wild must deal with,
-but the downside is that significantly altering the configuration to
-accommodate this project is not an option.  Median log file size is 50MB,
-containing 285,000 log lines; large scale mail servers would have much
-larger log files.  Note that \graphref{Mails received per day} and
-\tableref{Number of mails received per day: statistics} show the number of
-mails received by \acronym{SMTP} only; in particular the mail loops
-noticeable in later graphs do not contribute to these figures.
+\graphref{Mails received per day} and \tableref{Number of mails received
+per day: statistics} show that, as expected, far more mails are received on
+weekdays than at weekends.  The mail server in question is a production
+mail server handling mail for a university department; the benefit of using
+this server is that its log files exhibit the idiosyncrasies and
+peculiarities a mail server in the wild must deal with, but the downside is
+that significantly altering the configuration to accommodate this project
+is not an option.  Median log file size is 50MB, containing 285,000 log
+lines; large scale mail servers would have much larger log files.  Note
+that \graphref{Mails received per day} and \tableref{Number of mails
+received per day: statistics} show the number of mails received by
+\acronym{SMTP} only; in particular the mail loops noticeable in later
+graphs do not contribute to these figures.
 
 \showgraph{build/graph-mails-received}{Number of mails received via SMTP
 per day}{Mails received per day}
 
 \showtable{build/include-mails-received-table}{Number of mails received via
 SMTP per day}{Number of mails received per day: statistics}
-
-When generating the timing data used in this section, \numberOFlogFILES{}
-log files (totaling 10.08 GB, \numberOFlogLINEShuman{} log lines) were each
-parsed 10 times, and the parsing times from the 10 runs averaged.  Saving
-results to the database was disabled for the test runs, because that
-dominates the run time of the program, and the tests are aimed at measuring
-the speed of \parsername{} rather than the speed of the database and the
-disks the database is stored on.  The computer used for test runs was a
-Dell Optiplex 745, shown in \tableref{Details of the computer used to
-generate statistics}.
 
 \begin{table}[htbp]
     \caption{Details of the computer used to generate statistics}
@@ -78,11 +62,30 @@ generate statistics}.
     \end{tabular}
 \end{table}
 
-Parsing all \numberOFlogFILES{} log files in one run took
-\input{build/include-timing-run-duration}.  The computer was dedicated to
-the task of gathering statistics from test runs, and was not used for any
-other purpose while test runs were ongoing; any services not necessary for
-running the tests were disabled.
+When generating the timing data used in this section, \numberOFlogFILES{}
+log files (totaling 10.08 GB, \numberOFlogLINEShuman{} log lines) were each
+parsed 10 times, and the times from the 10 runs averaged.  The computer
+used for test runs was a Dell Optiplex 745, shown in \tableref{Details of
+the computer used to generate statistics}; it was dedicated to the task of
+gathering statistics from test runs, and was not used for any other purpose
+while test runs were ongoing.  Saving results to the database was disabled
+for the test runs, because that dominates the run time of the parser, and
+the tests are aimed at measuring the speed of \parsername{} rather than the
+speed of the database and the disks the database is stored on.  Parsing all
+\numberOFlogFILES{} log files in one run without saving results to the
+database took \input{build/include-full-run-duration}, mean throughput is
+\input{build/include-full-run-throughput}; median throughput when parsing
+files separately was \input{build/include-median-throughput-MB}
+(\input{build/include-median-throughput-log-lines}) parsed per minute.  In
+contrast, when saving results to the database, parsing all
+\numberOFlogFILES{} log files took
+\input{build/include-insert-results-duration}, with mean throughput of
+\input{build/include-insert-results-throughput}; parsing makes up
+\input{build/include-skip-inserting-as-percentage-of-inserting} of the
+execution time when saving results to the database, so a 50\% improvement
+in the speed of parsing would result in only a
+\input{build/include-skip-inserting-with-50-percent-improvement--as-percentage-of-inserting}
+improvement in speed overall.
 
 \subsection{Architecture Scalability: Input Size}
 
@@ -98,11 +101,19 @@ plots both the ratio of file size vs parsing time, and the ratio of number
 of log lines vs parsing time (higher is better in both cases);
 \tableref{parsing time vs file size vs number of log lines factor table}
 shows the same ratios for different groups of log files.  The ratios are
-quite tightly banded, showing that the algorithm scales linearly.  The
-ratios increase (i.e.\ improve) for log files 22 and 62--68 despite their
-larger than average size (shown in \graphref{parsing time vs file size vs
-number of log lines graph}); this is explained fully in
-\sectionref{Explaining the peaks in log file size}.
+quite tightly banded, showing that the algorithm scales linearly; the
+ratios increase (i.e.\ improve) for log files 22 and 62--68, despite their
+larger than average size.  In both groups of log files there was a mail
+loop because a user set up mail forwarding incorrectly, resulting in a very
+different distribution of log lines: normally most log lines are generated
+by mail delivery attempts from other hosts, but when the mail loops
+occurred most of the log lines resulted from failed delivery of mail
+generated on the server itself.  The Postfix components that generated most
+of the log lines during the mail loop have fewer associated rules than the
+Postfix components whose log lines normally make up the bulk of each log
+file; \graphref{Average number of rules tried per log line} shows the drop
+in the average number of rules tried per log line for log files containing
+a mail loop.
 
 \showtable{build/include-file-size-and-number-of-log-lines-vs-parsing-time}{Ratio
 of file size and number of log lines to parsing time}{parsing time vs file
@@ -116,48 +127,15 @@ file size vs number of log lines graph}
 and number of log lines to parsing time}{parsing time vs file size vs
 number of log lines factor}
 
-\subsection{Explaining The Peaks In Log File Size}
+\showgraph{build/graph-average-number-of-rules-tried-per-log-line}{Average
+number of rules tried per log line}{Average number of rules tried per log
+line}
 
-\label{Explaining the peaks in log file size}
+\showgraph{build/graph-average-number-of-rules-tried-per-program}{Average
+number of rules tried per Postfix component per log line}{Average number of
+rules tried per Postfix component per log line}
 
-XXX SHOULD THIS BE A SEPARATE SECTION OR INCLUDED IN THE PREVIOUS ONE\@?
-MAYBE INCLUDE GRAPHS OF RULES PER FILE OR SOMETHING TO EXTEND THIS\@?
-
-XXX REWRITE WHEN STATS RUNS HAVE FINISHED\@; REWRITE ALL THE REFERENCES
-TOO\@.
-
-\Graphref{parsing time vs file size vs number of log lines graph} shows log
-file size varying between 30--100MB, except for log files 22 (200MB) and
-62--68 (400--900MB).  These large log files were caused by a user
-unintentionally creating a mail forwarding loop, resulting in a huge number
-of mail deliveries and up to an order of magnitude more log lines than is
-usual.  The user specified his mail forwarding as: \newline{}
-\tab{}\texttt{$\backslash$username, username@domain} \newline{} This
-instructs Postfix to deliver the mail to the local user, and also forward a
-copy to the remote address; this is generally not a problem except that the
-remote address in this instance is the address the mail was originally sent
-to, creating an infinite loop.  To prevent this happening Postfix examines
-the Delivered-To header in the mail, and if the mail has already been
-delivered to the current address it is bounced back to the sender with the
-error message \newline{} \tab{} \texttt{mail forwarding loop for
-username@domain}\newline{}  Normally this works well, but the forwarding
-method in use at that time stripped the Delivered-To header from the mail,
-breaking loop detection.
-
-When the recipient in a mail loop is local, Postfix does not have to
-deliver the mail to an external system, so mails are delivered as fast as
-the disks can keep up, resulting in a huge volume of log lines.
-
-XXX EXPAND THIS PARAGRAPH\@; THERE MAY BE CONTENT IN THE PAPER\@.  REFER TO
-THE NEW GRAPH BELOW TOO\@.
-
-The different distribution of log lines caused by a mail forwarding loop
-has unexpected effects on parsing time, described in detail in
-\sectionref{rule ordering for efficiency}, \sectionref{scalability as the
-number of rules rises}, and \sectionref{Caching compiled regexes}.
-
-\showgraph{build/graph-rules-tried-per-log-line}{Mean number of rules tried
-per log line}{Mean number of rules tried per log line}
+\FloatBarrier{}
 
 \subsection{Rule Ordering For Efficiency}
 
@@ -189,6 +167,8 @@ were performed with different rule orderings:
 
 \end{eqlist}
 
+\newpage{} % XXX GRAPH PLACEMENT FLIP-FLOPPING
+
 \Graphref{Parsing time relative to shuffled ordering graph} shows the
 parsing times of optimal and reverse orderings relative to shuffled
 ordering; the mean relative parsing times for different groupings of log
@@ -215,7 +195,7 @@ table}
 
 Differences in rule ordering have less effect on parsing time when parsing
 log files 22 and 62--68, due to the different distribution of log lines in
-those log files (see \sectionref{Explaining the peaks in log file size}).
+those log files.
 When a mail loop occurs the vast majority of log lines are from Postfix
 components that have few rules associated with them, whereas in general
 most log lines are from Postfix components that have a high number of
