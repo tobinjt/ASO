@@ -552,9 +552,9 @@ check-acronyms:
 		| grep -f - -n $$(ls logparser*.tex | grep -v ^logparser-acronyms.tex)
 
 todo:
-	grep    -n -E -i '[T]ODO|[X]XX' Makefile *.tex *.tt2 || true
-	grep -c -n -E -i '[T]ODO|[X]XX' Makefile *.tex *.tt2 | grep -v ':0$$'
-	grep    -n -E -i '[T]ODO|[X]XX' Makefile *.tex *.tt2 | wc -l
+	grep    -n -E '[T]ODO|[X]XX|[x]xx' Makefile *.tex *.tt2 || true
+	grep -c -n -E '[T]ODO|[X]XX|[x]xx' Makefile *.tex *.tt2 | grep -v ':0$$'
+	grep    -n -E '[T]ODO|[X]XX|[x]xx' Makefile *.tex *.tt2 | wc -l
 
 join-lines:
 	perl -p -E 'if (m/LaTeX Warning:/ and not m/\.$$/) { chomp; }' *.log

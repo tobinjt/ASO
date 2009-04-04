@@ -9,7 +9,6 @@
 % Provides \FloatBarrier that stops floats going past it.
 \usepackage{placeins}
 % Relax the parameters Latex uses when placing floats.
-% XXX DUNNO IF THIS IS A GOOD IDEA
 \usepackage{flexiblefloats}
 % Prevent floats from appearing above the line that includes them
 \usepackage{flafter}
@@ -68,9 +67,6 @@
 % Produce nicer references like "section 4.3 on the next page"
 % Must be loaded before hyperref.
 \usepackage{varioref}
-% Warnings rather than errors when references cross page boundaries.
-% XXX DISABLE THIS WHEN THESIS IS NEARLY FINISHED
-\vrefwarning{}
 % Shorten the text used for references with page numbers.
 \renewcommand{\reftextfaraway}[1]{%
     [p.~\pageref{#1}]%
@@ -350,8 +346,6 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
     CONCLUSION\@?
 
     XXX MAIL MADS ABOUT EXAMINERS\@.
-
-    XXX INVESTIGATE THE booktabs PACKAGE\@.
 
 \end{abstract}
 
