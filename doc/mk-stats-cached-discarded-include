@@ -8,11 +8,11 @@ use warnings;
 use File::Slurp;
 
 print <<'HEADER';
-\begin{center}
-    \begin{tabular}[]{lrr}
-        \tabletopline{}%
-        & Mean & Std. Dev. \\
-        \tablemiddleline{}%
+\centering{}
+\begin{tabular}[]{lrr}
+    \tabletopline{}%
+    & Mean & Std. Dev. \\
+    \tablemiddleline{}%
 HEADER
 
 my ($label, $mean, $stddev);
@@ -28,12 +28,11 @@ foreach my $file (@ARGV) {
     chomp $label;
     $mean   = sprintf q{%.2f\%%}, $data{q{Mean}};
     $stddev = sprintf q{%.2f\%%}, $data{q{Standard deviation}};
-    print qq{        $label & $mean & $stddev \\\\\n};
+    print qq{    $label & $mean & $stddev \\\\\n};
 }
 
 print <<'FOOTER';
-        \tablebottomline{}%
-    \end{tabular}
-\end{center}
+    \tablebottomline{}%
+\end{tabular}
 FOOTER
 

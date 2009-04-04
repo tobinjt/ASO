@@ -40,6 +40,10 @@ sgai-2008.deps:									\
 # latex, because latex is noisy and slow.
 logparser.deps:
 	touch "$@"
+logparser.pdf.deps:
+	touch "$@"
+logparser.ps.deps:
+	touch "$@"
 
 # We generate the lists of graphs and tables that are included.
 include build/Makefile.tables-included
