@@ -1,3 +1,4 @@
+# XXX GENERATE GRAPH DEPENDENCIES BY SEARCHING FOR \showgraph AND \showtable
 # Cause make to delete output files when a command fails.
 .DELETE_ON_ERROR:
 MAKEFLAGS += --no-print-directory
@@ -37,34 +38,19 @@ sgai-2008.deps:									\
 
 # 'make logparser.deps' correctly builds all dependencies, without running
 # latex, because latex is noisy and slow.
-logparser.deps: \
-		build/include-file-size-and-number-of-log-lines-vs-parsing-time.tex	\
-		build/include-optimal-and-reverse-vs-shuffle.tex 			\
-		build/include-cached-regexes-vs-discarded-regexes.tex			\
-		build/include-restriction-summary-table.tex				\
-		build/include-mails-received-table.tex					\
-		build/include-full-ruleset-vs-minimum-ruleset.tex			\
-		build/include-sample-sql-output.tex					\
-		build/include-sample-sql-query.tex					\
-		build/include-timing-run-duration.tex					\
-		build/include-timing-run-throughput.tex					\
-		build/include-median-throughput-log-lines.tex				\
-		build/include-median-throughput-MB.tex					\
-		build/include-top-ten-hits.tex						\
-		build/include-optimal-ordering-parsing-time-reduction-other-logs.tex	\
-		build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex	\
-		build/include-perfect-best-and-optimal-and-reverse-and-perfect-worst-vs-shuffle.tex	\
-		build/include-per-file-action-invocation-numbers-table.tex
+logparser.deps:
 	touch "$@"
 
-# Additional dependencies are included from Makefile.deps-ps and
-# build/Makefile.graph-deps-pdf; which is generated from Makefile.deps-ps, to
-# avoid duplication.  Make will automatically rebuild
-# build/Makefile.graph-deps-pdf if it is missing or out of date.
-include build/Makefile.deps-pdf
-include Makefile.deps-ps
-build/Makefile.deps-pdf: Makefile.deps-ps
-	sed -e 's/\.ps/.pdf/g' "$<" > "$@"
+# We generate the lists of graphs and tables that are included.
+include build/Makefile.tables-included
+include build/Makefile.graphs-included
+include build/Makefile.other-included
+build/Makefile.graphs-included: logparser*.tex
+	sed -n -e 's/^[ ]*.showgraph{\([^}]\+\)}.*/logparser.ps.deps: \1.ps\nlogparser.pdf.deps: \1.pdf/p' $^ > "$@"
+build/Makefile.tables-included: logparser*.tex
+	sed -n -e 's/^[ ]*.showtable{\([^}]\+\)}.*/logparser.deps: \1.tex/p' $^ > "$@"
+build/Makefile.other-included: logparser*.tex
+	sed -n -e 's/.*\\input{\(build[^}]\+\)}.*/logparser.deps: \1.tex/p' $^ > "$@"
 
 # Graph dependencies are generated to avoid having to manually update
 # them every time a graph changes.
@@ -326,6 +312,10 @@ build/include-file-size-and-number-of-log-lines-vs-parsing-time.tex: 			\
 		build/stats-number-of-log-lines-vs-parsing-time-logs-22-62-68-stddev	\
 		build/stats-number-of-log-lines-vs-parsing-time-other-logs-stddev
 	perl mk-stats-cached-discarded-include $^ | sed -e 's/\\%//g' > "$@"
+
+# Average number of rules tried per log line
+build/stats-average-number-of-rules-tried-per-log-line: results/results-full-run/timing
+	awk '/num_lines_parsed:/ { lines_parsed = $$3 }; /num_rules_tried:/ { rules_tried = $$3; print rules_tried / lines_parsed; }' "$<" > "$@"
 
 # Optimal/shuffle/reverse ratios: stddev, mean, etc.
 build/stats-optimal-vs-shuffle-stddev: build/stats-optimal-and-reverse-vs-shuffle

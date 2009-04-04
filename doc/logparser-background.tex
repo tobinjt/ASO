@@ -309,13 +309,10 @@ details; the criminal can then use any details sent to him to help with
 identity theft.
 
 \begin{table}[ht]
-
     \caption{Example attributes sent to policy servers, taken
     from~\cite{policy-servers}}
     \empty{}\label{Example attributes sent to policy servers}
-
     \centering{}
-
     \begin{tabular}[]{ll}
         \tabletopline{}%
         Attribute name          & Attribute value           \\
@@ -334,7 +331,6 @@ identity theft.
         instance                & 123.456.7                 \\
         \tablebottomline{}%
     \end{tabular}
-
 \end{table}
 
 Some widely deployed policy servers:
@@ -377,11 +373,8 @@ Some widely deployed policy servers:
         temporary failure, or legitimate mail may be delayed, particularly
         when coming from a pool of servers.
 
-        \begin{table}[ht]
-            \caption{Most effective Postfix restrictions}
-            \empty{}\label{Most effective Postfix restrictions}
-            \input{build/include-restriction-summary-table}
-        \end{table}
+        \showtable{build/include-restriction-summary-table}{Most effective
+        Postfix restrictions}{Most effective Postfix restrictions}
 
     \item Scoring systems such as Policyd-weight~\cite{policyd-weight}
         perform tests on features of the delivery attempt (e.g.\
