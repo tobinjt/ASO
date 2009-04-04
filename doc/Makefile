@@ -478,6 +478,9 @@ build/stats-rules-tried-per-log-line: results/results-full-run/timing
 build/stats-number-of-action-invocations: results/results-full-run/timing
 	perl -Mstrict -w -n -E 'our %counts; if (m/^(\w+) lines_by_action: .*: (\d+)$$/) { $$counts{$$1} += $$2; } END { my $$i = 1; map { say lc qq{$$i $$_ $$counts{$$_}}; $$i++; } sort { $$counts{$$a} <=> $$counts{$$b} or $$a cmp $$b } keys %counts; }' "$<" > "$@"
 
+build/stats-number-of-action-invocations-excluding-22-and-62--68: results/results-full-run/timing
+	perl mk-number-of-action-invocations-excluding-22-and-62--68 "$<" > "$@"
+
 build/stats-per-file-action-invocation-numbers: results/results-full-run/timing
 	perl mk-per-file-action-invocation-numbers "$<" > "$@"
 

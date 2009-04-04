@@ -735,52 +735,38 @@ and handled by the \action{CONNECT} action.
 
 There is no correlation between how often an action is specified by rules
 and how often an action is invoked because a rule recognises a log line.
-\Graphref{Number of times each action was invoked} shows the number of
-times each action was invoked when parsing the \numberOFlogFILES{} log
-files used to generate the statistics in \sectionref{parser efficiency}.
-The action most commonly specified by rules, \action{DELIVERY\_REJECTED},
-is the sixth most commonly invoked, but the second and third most commonly
-specified actions are halfway down the list of most commonly invoked
-actions, with \action{SAVE\_DATA} being invoked for a mere 0.0903\% of
-recognised log lines.
+\Graphref{Number of times each action was invoked excluding 22 and 62--68}
+shows the number of times each action was invoked when parsing the
+\numberOFlogFILES{} log files used to generate the statistics in
+\sectionref{parser efficiency}, \textit{excluding\/} log files 22 and
+62--68, because their content is extremely skewed by two mail loops (see
+\sectionref{Explaining the peaks in log file size}).  The action most
+commonly specified by rules, \action{DELIVERY\_REJECTED}, is the third most
+commonly invoked action; the most commonly invoked actions,
+\action{CONNECT} and \action{DISCONNECT}, are each specified by only one
+rule.  The \action{UNINTERESTING} action, the third most commonly specified
+action, is halfway down the graph.
 
-The action invoked most often is \action{MAIL\_QUEUED}; there is only a
-0.0051\% difference between it and \action{CLEANUP\_PROCESSING}, and a
-further 0.5203\% drop to \action{COMMIT}.  The near equality of these
-numbers is to be expected, because every mail delivered by Postfix will be
-managed in the queue by \daemon{qmgr} (\action{MAIL\_QUEUED}), processed by
-\daemon{cleanup} (\action{CLEANUP\_PROCESSING}), and removed from the queue
-by \daemon{qmgr} (\action{COMMIT}); the reason for the small disparity
-between \action{MAIL\_QUEUED} and \action{COMMIT} is mainly because mails
-are sometimes manually deleted from the queue.  Similarly \action{CONNECT}
-and \action{DISCONNECT} have a mere 0.0004\% difference between their
-number of invocations, because every connection will have a matching
-disconnection unless the \daemon{smtpd} process is killed for some reason.
-Unexpectedly there were far fewer connections (\action{CONNECT}) than there
-were mails in the queue (\action{MAIL\_QUEUED}); this is because of two
-local mail loops (\sectionref{Explaining the peaks in log file size}),
-which did not involve delivery via \acronym{SMTP}, and skew the total
-numbers.
+As expected, some actions have been invoked almost exactly the same number
+of times: almost every \action{CONNECT} will have a \action{DISCONNECT},
+and there is only a 0.00042\% difference between the number of times the
+two were invoked; every mail that enters Postfix's queue will be managed by
+\daemon{qmgr} (\action{MAIL\_QUEUED}) and processed by \daemon{cleanup}
+(\action{CLEANUP\_PROCESSING}), and again there is only a 0.01648\%
+difference between their invocations.  Confusingly,
+\action{CLEANUP\_PROCESSING} is invoked more often than
+\action{MAIL\_QUEUED}: occasionally, accepted mail in the process of being
+transferred is interrupted by a timeout, and there is a log line from
+\daemon{cleanup} but not from \daemon{qmgr}, as described in
+\sectionref{discarding cleanup log lines}.
 
-XXX WRITE ABOUT THE TABLE\@.
-
-\showgraph{build/graph-action-distribution}{Distribution of rules per
+\showgraph{build/graph-action-distribution}{Number of rules specifying each
 action}{Distribution of rules per action}
 
-\showgraph{build/graph-number-of-action-invocations}{Number of times each
-action was invoked when parsing \numberOFlogFILES{} log files}{Number of times
-each action was invoked}
-
-\newlength{\tabcolsepORIG}
-\setlength{\tabcolsepORIG}{\tabcolsep}
-\addtolength{\tabcolsep}{-1pt}
-
-\showtable{build/include-per-file-action-invocation-numbers-table}{Mean and
-standard deviation of the number of invocations of each action, for
-different groups of log files}{Mean and standard deviation of the number of
-invocations of each action, for different groups of log files}
-
-\setlength{\tabcolsep}{\tabcolsepORIG}
+\showgraph{build/graph-number-of-action-invocations-excluding-22-and-62--68}{Number
+of times each action was invoked when parsing \numberOFlogFILES{} log
+files, excluding log files 22 and 62--68}{Number of times each action was
+invoked excluding 22 and 62--68}
 
 \subsection{Actions In The \parsernamelong{}}
 

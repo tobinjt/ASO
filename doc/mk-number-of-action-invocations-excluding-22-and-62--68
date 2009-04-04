@@ -1,0 +1,33 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use feature qw(say);
+
+my %counts;
+my $log_count = 1;
+my %logs_seen;
+my %skip_logs = map { $_ => 1 } 22, 62 .. 68;
+
+LINE:
+while (<>) {
+    m/^(\w+) lines_by_action: (.*): (\d+)$/ or next LINE;
+    my ($action, $filename, $count) = ($1, $2, $3);
+    if (not exists $logs_seen{$filename}) {
+        $logs_seen{$filename} = $log_count++;
+    }
+    if (exists $skip_logs{$logs_seen{$filename}}) {
+        next LINE;
+    }
+    $counts{$action} += $count;
+}
+
+my $i = 1;
+foreach my $action (sort { $counts{$a} <=> $counts{$b} or $a cmp $b }
+                        keys %counts) {
+    say lc qq{$i $action $counts{$action}};
+    $i++;
+} 
