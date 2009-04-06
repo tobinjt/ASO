@@ -196,6 +196,9 @@
 \newcommand{\urlprefix}[0]{\newline{}}
 % New formatting commands.
 
+% XXX WHY DOES USING \defaultplacement IN \showgraph AND \showtable CAUSE
+% PLACEMENT PROBLEMS\@?
+\newcommand{\defaultplacement}[0]{thbp}
 % \showgraph{filename}{caption}{label}
 \newcommand{\showgraph}[4][tbph]{%
     \begin{figure}[#1]%[hbt!]

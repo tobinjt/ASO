@@ -595,8 +595,8 @@ checking:
 
     \item That the specified action is registered with the framework.
 
-    \item The regex is valid and compiling it for efficiency
-        (\sectionref{Caching compiled regexes}).
+    \item That the regex is valid.  The regex will also be compiled for
+        efficiency (\sectionref{Caching compiled regexes}).
 
     \item For overlap between the data captured by the regex and additional
         data specified in either \texttt{connection\_data} or
@@ -640,20 +640,21 @@ for the results chapter (\sectionref{Results}); some of the techniques used
 to improve parsing speed can be turned off or altered to measure the effect
 they have.  Three sets of data are collected:
 
-XXX CARL SUGGESTS ADDING GRAPHS AND STATS TABLES FOR THESE\@.
+XXX ASK CARL IF I SHOULD HAVE MEAN, STANDARD DEVIATION, MORE GRAPHS\@?
 
 \begin{enumerate}
 
-    \item How long it takes to parse each log file.
+    \item How long it takes to parse each log file (\graphref{parsing time
+        vs file size vs number of log lines graph}).
 
-    \item The number of rules tried when recognising log lines; the
+    \item The number of rules tried when recognising log lines
+        (\graphref{Average number of rules tried per log line}); the
         framework may need to try multiple rules for a given log line
         before it finds one that recognises it.
 
-    \item How many log lines did the framework attempt to recognise, how
-        many were skipped because there were no rules whose condition was
-        equal to that log line's program, how many were successfully
-        recognised, and how many were not recognised.
+    \item The number of log lines and rules tried for each Postfix
+        component (\graphref{Average number of rules tried per log line for
+        each Postfix component}).
 
 \end{enumerate}
 
@@ -1539,9 +1540,14 @@ improvements that have been identified in \parsername{}.
     \item The solution to complication \sectionref{Mails deleted during
         delivery} involves discarding data.
 
-    \item XXX FURTHER COMPLICATIONS MAY ARISE\@.
+    \item Further complications may arise when parsing log files, and
+        \parsername{} will need to be modified to deal with them.
 
-    \item XXX DATABASE GROWS WITHOUT BOUNDS\@.
+    \item \parsername{} does not limit the size of the database, which will
+        grow without bounds unless the user deletes connections and results
+        from it.  This is both a limitation and a benefit: the benefit is
+        that data will never be unexpectedly deleted, but the limitation is
+        that the user must manage the size of the database.
 
 \end{enumerate}
 

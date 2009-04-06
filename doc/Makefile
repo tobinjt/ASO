@@ -432,6 +432,12 @@ build/stats-action-distribution: db.full-run.sq3
 	# Turn everything to lowercase.
 	sed -i -e 's/^\(.*\)$$/\L\1\E/' "$@"
 
+build/stats-number-of-rules-per-program: db.full-run.sq3
+	sqlite3 -separator ' & ' "$<" 'SELECT program, count(program) FROM rules GROUP BY program ORDER BY program;' > "$@"
+
+build/include-number-of-rules-per-program.tex: build/stats-number-of-rules-per-program
+	sed -e 's/$$/ \\\\/;' "$<" > "$@"
+
 # Minimum ruleset vs maximum ruleset.
 build/include-full-ruleset-vs-minimum-ruleset.tex: build/stats-optimal-full-ruleset-vs-minimum-ruleset
 	awk 'BEGIN { sum = 0; } { sum += $$2; } END { printf "%.3g\\%%%%\n", sum / NR }' "$<" > "$@" || (rm -f "$@"; false)
