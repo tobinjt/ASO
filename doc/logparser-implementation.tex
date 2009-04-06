@@ -121,7 +121,10 @@ to treating Postfix as a black box during parser development:
 
     \item Reading and understanding the source code would require a
         significant investment of time: Postfix 2.5.5 has 17MB of source
-        code.
+        code.  Each subsequent version would require further work to
+        investigate the changes; many of those changes, although they
+        improve Postfix's internals, would not have any effect on its
+        externally observable behaviour.
 
     \item \parsername{} is developed using real world log files rather than
         the idealised log files someone would naturally envisage when
@@ -181,15 +184,17 @@ configuration errors.
     \item This is followed by rejection of sender address, recipient
         addresses, client \acronym{IP} address or hostname, etc.\
         \flowchart{DELIVERY\_REJECTED}{4}; acceptance of one or more mails
-        \flowchart{CLONE}{5}; or some random interleaving of both.
+        \flowchart{CLONE}{5}; failure of the remote client's connection
+        \flowchart{DELIVERY\_ERROR}{6}; or some random interleaving of two
+        or more of the above.
 
-    \item The client disconnects \flowchart{DISCONNECT}{6}.  If Postfix has
-        rejected any \acronym{SMTP} commands the resulting data will be
-        saved to the database; if there were no rejections there will not
-        be any data to save.  Any mails accepted will already have been
-        cloned so their data is in another data structure, and will be
-        delivered in the same way as mails that entered the system by any
-        other route.
+    \item The client disconnects \flowchart{DISCONNECT, TIMEOUT}{6}, either
+        normally or with an error.  If Postfix has rejected any
+        \acronym{SMTP} commands the resulting data will be saved to the
+        database; if there were no rejections there will not be any data to
+        save.  Any mails accepted will already have been cloned so their
+        data is in another data structure, and will be delivered in the
+        same way as mails that entered the system by any other route.
 
 \end{enumerate}
 
@@ -199,19 +204,23 @@ All four are handled in exactly the same way:
 
 \begin{enumerate}
 
-    \item Postfix will log the sender and recipient addresses separately
-        \flowchart{SAVE\_DATA}{8}.
+    \item The mail will have one or more delivery attempts
+        \flowchart{MAIL\_SENT, SAVE\_DATA}{8}.
 
     \item Sometimes mail is re-injected and the child mail needs to be
         tracked with the parent mail \flowchart{TRACK}{9}; the handling of
         re-injected mails is described in \sectionref{tracking re-injected
         mail}.
 
-    \item Eventually the mail will be delivered, bounced, or deleted by the
-        administrator \flowchart{COMMIT}{11}.  This is the last log line
-        for this particular mail, though it may be indirectly referred to
-        if it was re-injected.  The mail is cleaned up and entered in the
-        database, then deleted from the state tables.
+    \item After one or more delivery attempts the mail will be delivered
+        \flowchart{MAIL\_SENT}{8}, bounced \flowchart{MAIL\_BOUNCED}{8},
+        expired \flowchart{EXPIRY}{8}, or deleted by the administrator
+        \flowchart{DELETE}{8}.
+
+    \item This is the last log line for this particular mail, though it may
+        be indirectly referred to if it was re-injected.  The mail is
+        cleaned up and entered in the database, then deleted from the state
+        tables \flowchart{COMMIT}{11}.
 
 \end{enumerate}
 
@@ -376,9 +385,9 @@ otherwise stated.
         lines this rule recognises.
 
     \item [restriction\_name] The name of the Postfix restriction that
-        caused the mail to be rejected.  Only applicable to rules that
-        recognise rejection log lines, i.e.\ rules that have an action of
-        \action{DELIVERY\_REJECTED}; other rules should not set this field.
+        caused the mail to be rejected.  This field is meaningful only for
+        rules that recognise rejection log lines, i.e.\ rules that have an
+        action of \action{DELIVERY\_REJECTED}.
 
     \item [program] The Postfix component (e.g.\ \daemon{smtpd}) whose log
         lines the rule applies to; see \sectionref{rule conditions in
@@ -519,7 +528,7 @@ hundreds.
         is similar to the \acronym{SMTP} code, but is intended to be
         interpreted by mail clients so that error messages can be clearly
         conveyed to the user.  Enhanced status code support was added to
-        Postfix in version 2.3; log files from previous versions will not
+        Postfix in version 2.3; log lines from previous versions will not
         contain any enhanced status codes.
 
     \item [sender] The sender's email address.  This may change during a
@@ -610,25 +619,28 @@ state tables are restored.
 
 The framework is now ready to begin parsing.  For each log line it will use
 those rules whose \texttt{program} field equals the program in the log line
-(see \sectionref{rule conditions in implementation}), falling back to
-generic rules if necessary, and warning if the log line is unrecognised.
-The rules are sorted for increased efficiency; see \sectionref{rule
-ordering for efficiency} for details.  The repetitive nature of log files
-gives them high compression ratios; the framework can read compressed log
-files, simplifying the process of parsing them because they do not have to
-be uncompressed to a temporary file before parsing begins.  When used
-interactively, the framework also displays a progress bar to show how far
-parsing has progressed through the log file and how long the remainder of
-the parsing process is likely to take.  The progress bar is not as reliable
-when parsing compressed log files, because a compressed block may
-uncompress to a variable number of log lines; there is also variation
-between the recognition and processing time of individual log lines, but
-overall the progress bar is a useful addition.
+(previously described in \sectionref{rule conditions in implementation}),
+falling back to generic rules if necessary, and warning if the log line is
+unrecognised.  The rules are sorted for increased efficiency; see
+\sectionref{rule ordering for efficiency} for details.  The repetitive
+nature of log files gives them high compression ratios; the framework uses
+a Perl module named \texttt{IO::Uncompress::AnyUncompress} to read
+compressed log files; this saves users the trouble of uncompressing them to
+a temporary file before parsing begins.  When used interactively, the
+framework also displays a progress bar to show how far parsing has
+progressed through the log file and how long the remainder of the parsing
+process is likely to take.  The progress bar is not as reliable when
+parsing compressed log files, because a compressed block may uncompress to
+a variable number of log lines; there is also variation between the
+recognition and processing time of individual log lines, but overall the
+progress bar is a useful addition.
 
 The framework collects data used when evaluating \parsernames{} efficiency
 for the results chapter (\sectionref{Results}); some of the techniques used
 to improve parsing speed can be turned off or altered to measure the effect
 they have.  Three sets of data are collected:
+
+XXX CARL SUGGESTS ADDING GRAPHS AND STATS TABLES FOR THESE\@.
 
 \begin{enumerate}
 
@@ -691,11 +703,8 @@ expected.  In increasing order of severity they are:
 
 \begin{enumerate}
 
-    \item The regex from the recognising rule and the log line it
-        recognised can be printed, so that the user can verify that the
-        correct rule recognised each log line.  Individual rules can also
-        set their debug field to true, and debugging information will be
-        printed each time they recognise a log line.
+    \item Individual rules can set their debug field to true, and debugging
+        information will be printed each time they recognise a log line.
 
     \item Each result can be extended with extra debugging information,
         which is useful when a warning dumps a mail's data for inspection.
@@ -704,6 +713,10 @@ expected.  In increasing order of severity they are:
         and the number of the log line within it.  This information is not
         stored in the database.
 
+    \item Every time a log line is recognised, the recognising rule's regex
+        and the log line can be printed, so that the user can verify that
+        the correct rule recognised each log line.
+
     \item Every connection and result added to the database can be dumped
         in a human readable form.  This will result in a huge amount of
         debugging information, so it is only useful for small log file
@@ -711,6 +724,24 @@ expected.  In increasing order of severity they are:
         overwhelming.
 
 \end{enumerate}
+
+A user, typically a mail administrator, would use these options when having
+difficulty adding or modifying rules to recognise log lines not recognised
+by \parsernames{} \numberOFrules{} rules.  Option 1 is useful for debugging
+a single rule, to check if it is recognising log lines it should not;
+figuring out that a rule is not recognising log lines that it should
+recognise is a more difficult task.  Option 2 is useful when \parsername{}
+is warning about parsing problems, because all the information about a mail
+will be present in the warning message: the full text of every log line
+that is part of the mail; the rule that recognised each log line; the
+filename of the log file and the line number within it for each log line.
+Option 3 is less useful because of the volume of data it produces, though
+for small log file snippets, e.g.\ 1000 log lines, it is possible to
+manually verify that the correct rule recognised each log line.  Option 4
+is not useful for most users: it is for debugging problems with the data
+that is saved to the database, and there are sufficient safeguards in place
+that there should be plenty of warning messages explaining what is wrong
+without using this option.
 
 \section{Actions}
 
@@ -879,14 +910,13 @@ recognising rule's regex.  Each action is passed the same arguments:
         the \action{DISCONNECT} action, so all this action does is save
         data from the log line.
 
-    \item [DELIVERY\_REJECTED] Deals with Postfix rejecting an
-        \acronym{SMTP} command from the remote client.  This is the action
-        most frequently specified by rules, because so many different
-        restrictions are used to reject delivery attempts.  This action is
-        quite simple: if the log line contains a queueid, save the data
-        captured by the rule's regex to the mail identified by that
-        queueid; otherwise save it to the connection identified by the
-        \acronym{pid} in the log line.
+    \item [DELIVERY\_REJECTED] Postfix rejected an \acronym{SMTP} command
+        from the remote client.  This is the action most frequently
+        specified by rules, because so many different restrictions are used
+        to reject delivery attempts.  This action is quite simple: if the
+        log line contains a queueid, save the data captured by the rule's
+        regex to the mail identified by that queueid; otherwise save it to
+        the connection identified by the \acronym{pid} in the log line.
 
     \item [DISCONNECT] Invoked when the remote client disconnects, it
         enters the connection in the database if it has any useful data,
@@ -1562,4 +1592,6 @@ the solutions developed to overcome them, are documented in depth; also
 documented are how some solutions interact, and which action or actions the
 solution is implemented in.  This chapter concludes with a list of the
 limitations identified in \parsername{}, followed by some possible
-improvements suggested by the author.
+improvements suggested by the author.  The next chapter will evaluate this
+implementation, examining both \parsernames{} efficiency and the coverage
+it achieves when parsing log files.

@@ -24,6 +24,30 @@ messages or mails incorrectly remaining in the state tables was always
 chosen, because that approach yielded the biggest improvement in the
 parser, and made the remaining problems more apparent.
 
+The fifteen complications documented in this section can be divided into
+three broad classes:
+
+\begin{description}
+
+    \item [Recreating Postfix behaviour] Three complications are caused by
+        \parsername{} accurately recreating Postfix's behaviour.
+
+    \item [Lack of information in the log files] Seven complications are
+        caused by lack of information in the log files.  In general some
+        extra logging by Postfix could remove these complications, and in
+        one case extra logging in later versions of Postfix does remove the
+        complication (\sectionref{identifying bounce notifications}); three
+        of the complications would be removed if Postfix generated a log
+        line whenever it discarded a mail.
+
+    \item [Order log lines are found in log files] Five complications are
+        caused by out of order log lines.  Postfix is not to blame for
+        these, they are caused by process scheduling, inter-process
+        communication delays, and are more likely to occur when the mail
+        server is heavily loaded.
+
+\end{description}
+
 \subsection{Queueid Vs Pid}
 
 \label{queueid vs pid}
@@ -40,8 +64,15 @@ but does require:
 
     \item Two state tables to hold data structures.
 
-    \item Most importantly: every section of code must know which state
-        table it should query.
+    \item Most importantly: each action needs to know whether it deals with
+        accepted mails, and should find the mail in the by\_queueid state
+        tables, or deals with delivery attempts, and thus will find the
+        connection in the by\_pid state tables.  Some actions, e.g.\
+        \action{DELIVERY\_REJECTED}, need to query both tables.  Support
+        functions fall into two groups: those that deal with state tables,
+        and so need to know which one to operate on; the other group are
+        passed a specific mail or connection to work with, and do not need
+        to know about state tables at all.
 
 \end{itemize}
 
@@ -261,9 +292,9 @@ QUIT
 221 2.0.0 Bye
 \end{verbatim}
 
-Once again Postfix does not log a message making the client's behaviour
-clear, so once again heuristics are required to identify when this
-behaviour occurs.  A list of all mails accepted during a connection is
+Postfix does not log a message making the client's behaviour clear, so
+again heuristics are required to identify when a delivery attempt is
+aborted in this way.  A list of all mails accepted during a connection is
 saved in the connection's state table entry, and the accepted mails are
 examined when the disconnection action is invoked.  Each mail is checked
 for the following:
@@ -315,9 +346,9 @@ maintained.
 Some mail clients disconnect abruptly if a second or subsequent recipient
 is rejected; they may also disconnect after other errors, but such
 disconnections are either unimportant or are handled elsewhere in the
-parser, e.g.\ \sectionref{timeouts during data phase}.  Sadly, Postfix does
-not log a message saying the mail has been discarded, as should be expected
-by now.  The checks to identify this happening are:
+parser, e.g.\ \sectionref{timeouts during data phase}.  Postfix does not
+log a message saying the mail has been discarded, as should be expected by
+now.  The checks to identify this happening are:
 
 \begin{itemize}
 
@@ -405,13 +436,14 @@ from the \action{CLONE} action.
 The author has only observed this complication occurring after a timeout,
 though there may be other circumstances that trigger it.  Sometimes the
 \daemon{cleanup} log line for a mail being accepted is logged after the
-timeout log line, by which time \parsername{} has discarded the mail;
-parsing the \daemon{cleanup} log line causes the
-\action{CLEANUP\_PROCESSING} action to create a new state table entry, to
-help deal with re-injected mails (\sectionref{Re-injected mails}).  This is
-incorrect because the log line actually belongs to the mail that has just
-been discarded; if the queueid is reused there will be a queueid clash,
-otherwise the new mail will just remain in the state tables.
+timeout log line, by which time \parsername{} has discarded the mail
+because it will not have enough data to satisfy the database schema (see
+\sectionref{timeouts during data phase}); parsing the \daemon{cleanup} log
+line causes the \action{CLEANUP\_PROCESSING} action to create a new state
+table entry, to help deal with re-injected mails (\sectionref{Re-injected
+mails}).  This is incorrect because the log line actually belongs to the
+mail that has just been discarded; if the queueid is reused there will be a
+queueid clash, otherwise the new mail will just remain in the state tables.
 
 During the \action{TIMEOUT} action, if the \daemon{cleanup} line is still
 pending, the action updates the \texttt{timeout\_queueids} state table,
@@ -517,7 +549,7 @@ is untouched.
 This complication is handled by several actions: \action{POSTFIX\_RELOAD} (1),
 \action{SMTPD\_DIED} (2 \& 3), and \action{SMTPD\_WATCHDOG} (4).
 
-\newpage{} % There's always a fucking varioref problem here
+% \newpage{} % There's always a fucking varioref problem here
 
 \subsection{Out Of Order Log Lines}
 
@@ -714,3 +746,16 @@ in the \numberOFlogFILES{} log files used for testing; if this complication
 occurred more frequently it might be desirable to find the mail in the
 database and add the log line to it.
 
+\subsection{Summary}
+
+This section has described the complications encountered while implementing
+\parsername{}.  Five of the fifteen complications are caused by log lines
+appearing in an unexpected or abnormal order in log files, often because of
+heavy system load: these complications typically caused warnings and a new
+state table entry.  Three of the fifteen complications are required to
+correctly recreate Postfix's behaviour.  The remaining seven complications
+are caused by deficiencies in Postfix's logging, and some could easily be
+resolved by adding additional logging to Postfix; these seven are
+dealt with by applying heuristics to specific log lines and/or mails, in
+some cases with the aid of information cached when mails are removed from
+the state tables.
