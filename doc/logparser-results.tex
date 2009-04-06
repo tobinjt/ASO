@@ -195,7 +195,8 @@ with normal log files,
 \input{build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68}\%
 when a mail loop occurs and the distribution of log lines is unusual.
 Optimal rule ordering has other benefits, described in
-\sectionref{scalability as the number of rules rises}.  Differences in rule
+\sectionref{scalability as the number of rules rises}.  \Tableref{Parsing
+time relative to shuffled ordering table} shows that differences in rule
 ordering have less effect on parsing time when parsing log files 22 and
 62--68, due to the different distribution of log lines in those log files.
 
@@ -215,22 +216,54 @@ table}
 
 \label{perfect rule ordering}
 
-XXX WRITE ABOUT PERFECT RULE ORDERING\@; DUNNO WHETHER TO PUT IT IN WITH
-RULE ORDERING FOR EFFICIENCY, OR IN ITS OWN SECTION\@.
+XXX WRITE ABOUT PERFECT RULE ORDERING\@.
 
-XXX ADD A TABLE SHOWING PERFECT WORST RELATIVE TO PERFECT BEST\@.
+Optimal rule ordering, as described in \sectionref{rule ordering for
+efficiency}, is the best rule ordering it is possible to achieve without
+having an oracle that magically divines which rule should be used to
+recognise each log line.  Such an oracle would give perfect performance,
+because only one rule needs to be used to recognise each log line.
+\parsername{} can save a list showing which rule recognised each log line,
+and use that list to simulate having an oracle and improve parsing speed
+the second time a log file is parsed.   This does not provide a practical
+benefit, but it does provide a means to evaluate the performance of optimal
+rule ordering in comparison to an oracle.  The knowledge can also be used
+to generate a perfect worst oracle, where every rule (subject to rule
+conditions) is used before the correct rule.
+
+\Graphref{Parsing time relative to shuffled ordering including perfect best
+and worst graph} shows the parsing times of the perfect best oracle and
+perfect worst oracle relative to shuffled ordering, in addition to the
+parsing times of optimal and reverse orderings.  As expected, the perfect
+best oracle is more efficient than optimal ordering, and likewise the
+perfect worst oracle is less efficient than reverse ordering.
+
+XXX REFER TO SECOND AND THIRD GRAPHS, AND ADD TABLES SHOWING MEAN AND
+STDDEV FOR THE THREE GROUPS OF LOGS FILES\@.
+
+XXX WRITE SOMETHING TO MAKE IT EASIER TO GENERATE MEAN AND STDDEV FOR THREE
+GROUPS OF LOG FILES\@.
+
+\Graphref{Parsing time of perfect best oracle relative to optimal ordering}
 
 \showgraph{build/graph-perfect-best-and-perfect-worst-and-optimal-and-reverse-vs-shuffled}{Parsing
-time including perfect best and worst relative to shuffled
-ordering}{Parsing time relative to shuffled ordering including perfect best
-and worst graph}
+times relative to shuffled ordering}{Parsing time relative to shuffled
+ordering including perfect best and worst graph}
+
+\showgraph{build/graph-perfect-best-vs-optimal}{Parsing time of perfect
+best oracle relative to optimal ordering}{Parsing time of perfect best
+oracle relative to optimal ordering}
+
+\showgraph{build/graph-perfect-worst-vs-reverse}{Parsing time of perfect
+worst oracle relative to reverse ordering}{Parsing time of perfect worst
+oracle relative to reverse ordering}
 
 \showtable{build/include-perfect-best-and-optimal-and-reverse-and-perfect-worst-vs-shuffle}{Parsing
-time including perfect best and worst relative to shuffled
-ordering}{Parsing time including perfect best and worst relative to
+time including perfect best and worst oracles relative to shuffled
+ordering}{Parsing time including perfect best and worst oracles relative to
 shuffled ordering table}
 
-% XXX \FloatBarrier{} MIGHT BE USEFUL TO CONTROL WHERE FLOATS ARE PLACED.
+\FloatBarrier{}
 
 \subsection{Where Is The Time Spent: Recognising Or Processing Log Lines?}
 

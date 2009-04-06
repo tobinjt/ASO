@@ -257,6 +257,13 @@ build/stats-optimal-and-reverse-vs-shuffle: build/results--optimal_ordering--max
 build/stats-perfect-best-and-perfect-worst-vs-shuffle: build/results--perfect_best--maximum_ruleset build/results--shuffle_ordering--maximum_ruleset build/results--perfect_worst--maximum_ruleset
 	paste -d ' ' $^ | awk 'BEGIN { print "# perfect-best/shuffle perfect-worst/shuffle"; } $$1 != "#" {print ($$3 * 100 / $$9), " ", ($$15 * 100 / $$9) }' > "$@"
 
+build/stats-perfect-best-vs-optimal: build/results--perfect_best--maximum_ruleset build/results--optimal_ordering--maximum_ruleset
+	paste -d ' ' $^ | awk 'BEGIN { print "# perfect-best/optimal"; } $$1 != "#" {print ($$3 * 100 / $$9) }' > "$@"
+
+build/stats-perfect-worst-vs-reverse: build/results--perfect_worst--maximum_ruleset build/results--reverse_ordering--maximum_ruleset
+	paste -d ' ' $^ | awk 'BEGIN { print "# perfect-worst/reverse"; } $$1 != "#" {print ($$3 * 100 / $$9) }' > "$@"
+
+
 # Hits per rule.
 build/stats-hits: db.full-run.sq3
 	sqlite3 -separator ' ' "$<" "select hits_total from rules order by hits_total;" > "$@.tmp"
@@ -554,6 +561,7 @@ check: lines-from-paragraphs
 	# Check for using an instead of a before \daemon{foo}
 	ack ' an \\daemon{' build/logparser*.tex
 	grep 'begin{table}' logparser-*.tex | grep -v -F 'begin{table}[thbp]' || true
+	grep 'set output.*pdf' graphs/* || true
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
