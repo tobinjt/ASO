@@ -553,6 +553,7 @@ check: lines-from-paragraphs
 	ack '\b(\w+)\b\s+\b\1\b' build/logparser*.tex
 	# Check for using an instead of a before \daemon{foo}
 	ack ' an \\daemon{' build/logparser*.tex
+	grep 'begin{table}' logparser-*.tex | grep -v -F 'begin{table}[thbp]' || true
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:

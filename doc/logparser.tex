@@ -183,7 +183,7 @@
 %\renewcommand{\refname}{Bibliography}
 
 % Reduce the space between items in a list; this is useful when each item
-% is a single line, because then the defaul spacing makes the list look
+% is a single line, because then the default spacing makes the list look
 % very sparse.  This command needs to be the first thing in a list to take
 % effect.
 \newcommand{\squeezeitems}[0]{%
@@ -196,20 +196,17 @@
 \newcommand{\urlprefix}[0]{\newline{}}
 % New formatting commands.
 
-% XXX WHY DOES USING \defaultplacement IN \showgraph AND \showtable CAUSE
-% PLACEMENT PROBLEMS\@?
-\newcommand{\defaultplacement}[0]{thbp}
 % \showgraph{filename}{caption}{label}
-\newcommand{\showgraph}[4][tbph]{%
-    \begin{figure}[#1]%[hbt!]
+\newcommand{\showgraph}[4][thbp]{%
+    \begin{figure}[#1]
         \caption{#3}\label{#4}
         \includegraphics{#2}
     \end{figure}
 }
 
 %\showtable{filename}{caption}{label}
-\newcommand{\showtable}[4][tbph]{
-    \begin{table}[#1]%[ht]
+\newcommand{\showtable}[4][thbp]{%
+    \begin{table}[#1]
         \caption{#3}\label{#4}
         \input{#2}
     \end{table}
