@@ -23,7 +23,7 @@ data in a normalised, simple to use representation.  The parser's task is
 to follow the journey each mail takes through Postfix, combining the data
 captured by rules into a coherent whole, saving it in a useful and
 consistent form, and performing housekeeping duties.  The intermingling of
-log entries from different mails immediately rules out the possibility of
+log lines from different mails immediately rules out the possibility of
 handling each mail in isolation; the parser must be able to handle multiple
 mails in parallel, each potentially at a different stage in its journey,
 without any interference between mails --- except in the minority of cases
@@ -967,9 +967,9 @@ recognising rule's regex.  Each action is passed the same arguments:
 
     \item [PICKUP] The \action{PICKUP} action corresponds to the
         \daemon{pickup} service dealing with a locally submitted mail.  A
-        new mail will be created, although out of order log entries may
-        have caused it to already exist, as documented in
-        \sectionref{pickup logging after cleanup}.
+        new mail will be created, although out of order log lines may have
+        caused it to already exist, as documented in \sectionref{pickup
+        logging after cleanup}.
 
     \item [POSTFIX\_RELOAD] When Postfix stops or reloads its
         configuration, it kills all \daemon{smtpd} processes, requiring all

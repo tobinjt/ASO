@@ -21,9 +21,9 @@ push    @logs_22_62_68, splice @other_logs, 61, 7;
 unshift @logs_22_62_68, splice @other_logs, 21, 1;
 
 my @rows = (
-	[qq{Row: $label (all log files)}        =>  \@logs],
-	[qq{Row: $label (log files 22, 62--68)} =>  \@logs_22_62_68],
-	[qq{Row: $label (all other log files)}  =>  \@other_logs],
+	[qq{Row: $label (all log files)}            =>  \@logs],
+	[qq{Row: $label (log files 22 \\& 62--68)}  =>  \@logs_22_62_68],
+	[qq{Row: $label (all other log files)}      =>  \@other_logs],
 );
 
 foreach my $row (@rows) {

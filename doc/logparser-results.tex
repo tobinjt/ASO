@@ -4,19 +4,10 @@
 
 \renewcommand{\figurename}{Graph}
 
+% Reduce the gap between columns in tables.
+\addtolength{\tabcolsep}{-1pt}
+
 XXX NEED AN INTRODUCTION\@.
-
-XXX USE THE DATA COLLECTED ABOUT NUMBER OF RULES TRIED\@.  MAYBE INCLUDE IN
-ORDERINGS SECTION\@?  MIX WITH RECOGNISING VS RECOGNISING + ACTION, AND
-KEEP COUNTERS FOR EACH PROGRAM TOO --- MAYBE SOMETHING USEFUL WILL COME
-FROM IT\@.  COMPARE NUMBER OF RULES TRIED FOR DIFFERENT RULE ORDERINGS\@.
-
-XXX SHOULD I USE $\backslash{}$clearpage{} OR SOMETHING TO AFFECT FLOAT
-PLACEMENT\@?  GRAPHS AND TABLES TEND TO MOVE QUITE FAR IN SOME OF THE
-SUBSECTIONS, THOUGH MAKING THE TEXT LONGER MIGHT HELP TOO\@.  IDEALLY I
-WANT TO HAVE TEXT, THEN ALL GRAPHS AND TABLES, THEN THE NEXT SECTION\@.
-
-\newpage{} % XXX VARIOREF PROBLEMS
 
 \section{Parser Efficiency}
 
@@ -48,6 +39,7 @@ SMTP per day}{Number of mails received per day: statistics}
 \begin{table}[thbp]
     \caption{Details of the computer used to generate statistics}
     \empty{}\label{Details of the computer used to generate statistics}
+    \centering{}
     \begin{tabular}[]{ll}
         \tabletopline{}%
         Component  & Component in use                                   \\
@@ -101,7 +93,7 @@ of log lines vs parsing time (higher is better in both cases);
 \tableref{parsing time vs file size vs number of log lines factor table}
 shows the same ratios for different groups of log files.  The ratios are
 quite tightly banded, showing that the algorithm scales linearly; the
-ratios increase (i.e.\ improve) for log files 22 and 62--68, despite their
+ratios increase (i.e.\ improve) for log files 22 \& 62--68, despite their
 larger than average size.  Both groups of log files are much larger than
 usual due to a mail loop caused by a user who set up mail forwarding
 incorrectly, resulting in a very different distribution of log lines:
@@ -197,7 +189,7 @@ when a mail loop occurs and the distribution of log lines is unusual.
 Optimal rule ordering has other benefits, described in
 \sectionref{scalability as the number of rules rises}.  \Tableref{Parsing
 time relative to shuffled ordering table} shows that differences in rule
-ordering have less effect on parsing time when parsing log files 22 and
+ordering have less effect on parsing time when parsing log files 22 \&
 62--68, due to the different distribution of log lines in those log files.
 
 \showgraph{build/graph-hits}{Log lines recognised per rule}{rule hits graph}
@@ -210,13 +202,13 @@ graph}
 relative to shuffled ordering}{Parsing time relative to shuffled ordering
 table}
 
+\FloatBarrier{}
 
-
-\subsection{Perfect Rule Ordering}
+\subsection{Comparing Optimal Ordering Against A Perfect Oracle}
 
 \label{perfect rule ordering}
 
-XXX WRITE ABOUT PERFECT RULE ORDERING\@.
+XXX SHOULD I BOTHER WITH PERFECT WORST\@?
 
 Optimal rule ordering, as described in \sectionref{rule ordering for
 efficiency}, is the best rule ordering it is possible to achieve without
@@ -232,36 +224,68 @@ to generate a perfect worst oracle, where every rule (subject to rule
 conditions) is used before the correct rule.
 
 \Graphref{Parsing time relative to shuffled ordering including perfect best
-and worst graph} shows the parsing times of the perfect best oracle and
-perfect worst oracle relative to shuffled ordering, in addition to the
-parsing times of optimal and reverse orderings.  As expected, the perfect
+and worst graph} shows the parsing times of the perfect best and perfect
+worst oracles, and the optimal and reverse orderings relative to shuffled
+ordering; \tableref{Parsing time relative to shuffled ordering, including
+oracles table} shows mean and standard deviation.  As expected, the perfect
 best oracle is more efficient than optimal ordering, and likewise the
 perfect worst oracle is less efficient than reverse ordering.
+\Graphref{Percentage increase in parsing time when using optimal ordering
+instead of perfect best oracle graph} and \graphref{Percentage decrease in
+parsing time when using reverse ordering instead of perfect worst oracle
+graph} show the percentage increase and decrease in parsing time when
+using, respectively, optimal ordering instead of the perfect best oracle,
+and reverse ordering instead of the perfect worst oracle; mean and standard
+deviation are given for different groups of log files in
+\tableref{Percentage increase in parsing time when using optimal ordering
+instead of perfect best oracle table} and \tableref{Percentage decrease in
+parsing time when using reverse ordering instead of perfect worst oracle
+table}.
 
-XXX REFER TO SECOND AND THIRD GRAPHS, AND ADD TABLES SHOWING MEAN AND
-STDDEV FOR THE THREE GROUPS OF LOGS FILES\@.
+Once again, the difference between the oracles and optimal or reversed
+orderings at its lowest when parsing log files resulting from a mail loop
+(log files 22 \& 62--68), because the average number of rules tried per log
+line is lower (see \graphref{Average number of rules tried per log line}).
+The performance when parsing the first log file is different to the
+remainder of the non-mail loop log files, because the hits field of every
+rule is zero; optimal ordering is less efficient, and reverse ordering is
+less inefficient.
 
-XXX WRITE SOMETHING TO MAKE IT EASIER TO GENERATE MEAN AND STDDEV FOR THREE
-GROUPS OF LOG FILES\@.
+Optimal ordering proves to be quite efficient: \tableref{Percentage
+increase in parsing time when using optimal ordering instead of perfect
+best oracle table} shows that optimal ordering is less than
+\input{build/include-perfect-best-vs-optimal-mean} slower than parsing
+using a magical oracle that divines the correct rule to use for each log
+line.
 
-\Graphref{Parsing time of perfect best oracle relative to optimal ordering}
 
 \showgraph{build/graph-perfect-best-and-perfect-worst-and-optimal-and-reverse-vs-shuffled}{Parsing
-times relative to shuffled ordering}{Parsing time relative to shuffled
-ordering including perfect best and worst graph}
-
-\showgraph{build/graph-perfect-best-vs-optimal}{Parsing time of perfect
-best oracle relative to optimal ordering}{Parsing time of perfect best
-oracle relative to optimal ordering}
-
-\showgraph{build/graph-perfect-worst-vs-reverse}{Parsing time of perfect
-worst oracle relative to reverse ordering}{Parsing time of perfect worst
-oracle relative to reverse ordering}
+time relative to shuffled ordering, including oracles}{Parsing time
+relative to shuffled ordering including perfect best and worst graph}
 
 \showtable{build/include-perfect-best-and-optimal-and-reverse-and-perfect-worst-vs-shuffle}{Parsing
-time including perfect best and worst oracles relative to shuffled
-ordering}{Parsing time including perfect best and worst oracles relative to
-shuffled ordering table}
+time relative to shuffled ordering, including oracles}{Parsing time
+relative to shuffled ordering, including oracles table}
+
+\showgraph{build/graph-perfect-best-vs-optimal}{Percentage increase in
+parsing time when using optimal ordering instead of perfect best
+oracle}{Percentage increase in parsing time when using optimal ordering
+instead of perfect best oracle graph}
+
+\showtable{build/include-perfect-best-vs-optimal-stddev}{Percentage
+increase in parsing time when using optimal ordering instead of perfect
+best oracle}{Percentage increase in parsing time when using optimal
+ordering instead of perfect best oracle table}
+
+\showgraph{build/graph-perfect-worst-vs-reverse}{Percentage decrease in
+parsing time when using reverse ordering instead of perfect worst
+oracle}{Percentage decrease in parsing time when using reverse ordering
+instead of perfect worst oracle graph}
+
+\showtable{build/include-perfect-worst-vs-reverse-stddev}{Percentage
+decrease in parsing time when using reverse ordering instead of perfect
+worst oracle}{Percentage decrease in parsing time when using reverse
+ordering instead of perfect worst oracle table}
 
 \FloatBarrier{}
 
@@ -279,18 +303,18 @@ PROCESSING THEM\@.
 How any architecture scales as the number of rules increases is important,
 but it is particularly important in this architecture because it is
 expected that the typical parser will have a large number of rules.  There
-are \numberOFrules{} rules in the full \parsername{} ruleset, whereas the minimum
-number of rules required to parse the \numberOFlogFILES{} log files used
-when generating the results in this thesis is \numberOFrulesMINIMUM{},
+are \numberOFrules{} rules in the full \parsername{} ruleset, whereas the
+minimum number of rules required to parse the \numberOFlogFILES{} log files
+used when generating the results in this thesis is \numberOFrulesMINIMUM{},
 \numberOFrulesMINIMUMpercentage{} of the full ruleset.  The full ruleset is
 larger because \parsername{} is tested with \numberOFlogFILESall{} log
-files, to improve its parsing and ensure it correctly parses logs generated
-by later Postfix versions.  A second set of test runs was performed using
-the minimum ruleset, and the parsing times compared to those generated
-using the full ruleset: the percentage parsing time increase when using the
-full ruleset instead of the minimal ruleset for optimal, shuffled and
-reverse orderings is shown in \graphref{Percentage parsing time increase of
-maximum ruleset over minimum ruleset}.
+files, to improve its parsing and ensure it correctly parses log files
+generated by later Postfix versions.  A second set of test runs was
+performed using the minimum ruleset, and the parsing times compared to
+those generated using the full ruleset: the percentage parsing time
+increase when using the full ruleset instead of the minimal ruleset for
+optimal, shuffled and reverse orderings is shown in \graphref{Percentage
+parsing time increase of maximum ruleset over minimum ruleset}.
 
 \showgraph{build/graph-full-ruleset-vs-minimum-ruleset}{Percentage parsing
 time increase of maximum ruleset over minimum ruleset}{Percentage parsing
@@ -385,6 +409,8 @@ less intrusive, as it just requires new rules to be written; improving the
 latter is much more intrusive as it requires changes to the parser
 algorithm, and it can also be much harder to notice a deficiency.
 
+\newpage{} % XXX
+
 \subsection{Log Lines Covered}
 
 \label{log-lines-covered}
@@ -467,6 +493,8 @@ a low hit rate is to be expected; the reader should also bear in mind that
 even when parsing all \numberOFlogFILES{} log files not all the rules are
 exercised (some of the rules are for parsing log lines that only appear in
 other log files).
+
+\newpage{} % XXX
 
 \subsection{Mails Covered}
 

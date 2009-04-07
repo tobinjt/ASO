@@ -258,11 +258,25 @@ build/stats-perfect-best-and-perfect-worst-vs-shuffle: build/results--perfect_be
 	paste -d ' ' $^ | awk 'BEGIN { print "# perfect-best/shuffle perfect-worst/shuffle"; } $$1 != "#" {print ($$3 * 100 / $$9), " ", ($$15 * 100 / $$9) }' > "$@"
 
 build/stats-perfect-best-vs-optimal: build/results--optimal_ordering--maximum_ruleset build/results--perfect_best--maximum_ruleset
-	paste -d ' ' $^ | awk 'BEGIN { print "# optimal/perfect-best"; } $$1 != "#" {print ($$3 * 100 / $$9) }' > "$@"
+	paste -d ' ' $^ | awk 'BEGIN { print "# optimal/perfect-best"; } $$1 != "#" {print ($$3 * 100 / $$9) - 100 }' > "$@"
 
 build/stats-perfect-worst-vs-reverse: build/results--reverse_ordering--maximum_ruleset build/results--perfect_worst--maximum_ruleset
-	paste -d ' ' $^ | awk 'BEGIN { print "# reverse/perfect-worst"; } $$1 != "#" {print ($$3 * 100 / $$9) }' > "$@"
+	paste -d ' ' $^ | awk 'BEGIN { print "# reverse/perfect-worst"; } $$1 != "#" {print 100 - ($$3 * 100 / $$9) }' > "$@"
 
+build/stats-perfect-best-vs-optimal-stddev: build/stats-perfect-best-vs-optimal
+	perl mk-mean-stddev-for-three-groups-of-log-files "Percentage increase" "$<" > "$@"
+
+build/stats-perfect-worst-vs-reverse-stddev: build/stats-perfect-worst-vs-reverse
+	perl mk-mean-stddev-for-three-groups-of-log-files "Percentage decrease" "$<" > "$@"
+
+build/include-perfect-best-vs-optimal-stddev.tex: build/stats-perfect-best-vs-optimal-stddev
+	perl mk-stats-cached-discarded-include "$^" > "$@"
+
+build/include-perfect-worst-vs-reverse-stddev.tex: build/stats-perfect-worst-vs-reverse-stddev
+	perl mk-stats-cached-discarded-include "$^" > "$@"
+
+build/include-perfect-best-vs-optimal-mean.tex: build/stats-perfect-best-vs-optimal-stddev
+	awk 'BEGIN { mean = 0 } /Mean:/ { if ($$2 > mean) { mean = $$2 } } END { printf "%.0f\\%%%%\n", mean }' "$<" > "$@"
 
 # Hits per rule.
 build/stats-hits: db.full-run.sq3
