@@ -1,0 +1,36 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use List::Util qw(sum);
+use IO::File;
+use feature qw(say);
+
+my $label = shift @ARGV;
+my @logs = <>;
+if ($logs[0] =~ m/^#/) {
+    shift @logs;
+}
+
+my @other_logs = @logs;
+my @logs_22_62_68 = ();
+push    @logs_22_62_68, splice @other_logs, 61, 7;
+unshift @logs_22_62_68, splice @other_logs, 21, 1;
+
+my @rows = (
+	[qq{Row: $label (all log files)}        =>  \@logs],
+	[qq{Row: $label (log files 22, 62--68)} =>  \@logs_22_62_68],
+	[qq{Row: $label (all other log files)}  =>  \@other_logs],
+);
+
+foreach my $row (@rows) {
+    say $row->[0];
+    my $fh = IO::File->new(q{| ../stats/stddev})
+        or die qq{$0: failed opening pipe to ../stats/stddev: $!\n};
+    print $fh @{$row->[1]};
+    $fh->close();
+    say q{};
+}

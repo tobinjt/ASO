@@ -1,0 +1,31 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use feature qw(say);
+
+my (%rules, %lines);
+
+while (<>) {
+    if (m/^(.*) rules_by_program: .*: (\d+)$/) {
+        $rules{$1} += $2;
+    }
+    if (m/^(.*) lines_by_program: .*: (\d+)$/) {
+        $lines{$1} += $2;
+    }
+}
+
+my %averages;
+foreach my $program (keys %rules) {
+    $averages{$program} = $rules{$program} / $lines{$program};
+}
+
+my $i = 1;
+foreach my $program (sort { $averages{$a} <=> $averages{$b} or $a cmp $b }
+                        keys %averages) {
+    say qq{$i $program $averages{$program}};
+    $i++;
+}

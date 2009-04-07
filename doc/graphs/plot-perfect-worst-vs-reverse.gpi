@@ -1,11 +1,11 @@
 load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
-set ylabel "Percentage increase in parsing time of\nperfect worst oracle relative to reverse ordering"
+set ylabel "Percentage decrease in parsing time of\nreverse ordering relative to perfect worst oracle"
 set output "../build/graph-perfect-worst-vs-reverse.ps"
 # Add a % sign on the y axis
 set format y "% g%%"
 # Remove the horizontal lines.
 set grid noy
 
-plot "../build/stats-perfect-worst-vs-reverse" using 1 with lines title "Perfect worst oracle relative to reverse ordering"
+plot "../build/stats-perfect-worst-vs-reverse" using 1 with lines title "Reverse ordering relative to perfect worst oracle"

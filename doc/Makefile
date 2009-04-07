@@ -257,11 +257,11 @@ build/stats-optimal-and-reverse-vs-shuffle: build/results--optimal_ordering--max
 build/stats-perfect-best-and-perfect-worst-vs-shuffle: build/results--perfect_best--maximum_ruleset build/results--shuffle_ordering--maximum_ruleset build/results--perfect_worst--maximum_ruleset
 	paste -d ' ' $^ | awk 'BEGIN { print "# perfect-best/shuffle perfect-worst/shuffle"; } $$1 != "#" {print ($$3 * 100 / $$9), " ", ($$15 * 100 / $$9) }' > "$@"
 
-build/stats-perfect-best-vs-optimal: build/results--perfect_best--maximum_ruleset build/results--optimal_ordering--maximum_ruleset
-	paste -d ' ' $^ | awk 'BEGIN { print "# perfect-best/optimal"; } $$1 != "#" {print ($$3 * 100 / $$9) }' > "$@"
+build/stats-perfect-best-vs-optimal: build/results--optimal_ordering--maximum_ruleset build/results--perfect_best--maximum_ruleset
+	paste -d ' ' $^ | awk 'BEGIN { print "# optimal/perfect-best"; } $$1 != "#" {print ($$3 * 100 / $$9) }' > "$@"
 
-build/stats-perfect-worst-vs-reverse: build/results--perfect_worst--maximum_ruleset build/results--reverse_ordering--maximum_ruleset
-	paste -d ' ' $^ | awk 'BEGIN { print "# perfect-worst/reverse"; } $$1 != "#" {print ($$3 * 100 / $$9) }' > "$@"
+build/stats-perfect-worst-vs-reverse: build/results--reverse_ordering--maximum_ruleset build/results--perfect_worst--maximum_ruleset
+	paste -d ' ' $^ | awk 'BEGIN { print "# reverse/perfect-worst"; } $$1 != "#" {print ($$3 * 100 / $$9) }' > "$@"
 
 
 # Hits per rule.
@@ -274,53 +274,19 @@ build/stats-hits-reversed: build/stats-hits
 	tac "$<" > "$@"
 
 # Stats for cached regexes vs discarded regexs: all logs, logs 22,62-68, all other logs.
-build/stats-cached-regexes-vs-discarded-regexes-stddev: build/stats-cached-regexes-vs-discarded-regexes
-	perl ../stats/stddev "$<" > "$@"
-	echo "Row: All log files" >> "$@"
-
-build/stats-cached-regexes-vs-discarded-regexes-logs-22-62-68-stddev: build/stats-cached-regexes-vs-discarded-regexes
-	sed -e '1,21d; 23,61d; 69,$$d;' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: Log files 22 and 62--68" >> "$@"
-
-build/stats-cached-regexes-vs-discarded-regexes-other-logs-stddev: build/stats-cached-regexes-vs-discarded-regexes
-	sed -e '22d; 62,68d;' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: All log files except 22 and 62--68" >> "$@"
-
-build/include-cached-regexes-vs-discarded-regexes.tex: build/stats-cached-regexes-vs-discarded-regexes-stddev build/stats-cached-regexes-vs-discarded-regexes-logs-22-62-68-stddev build/stats-cached-regexes-vs-discarded-regexes-other-logs-stddev
-	perl mk-stats-cached-discarded-include $^ > "$@"
+build/include-cached-regexes-vs-discarded-regexes.tex: build/stats-cached-regexes-vs-discarded-regexes
+	perl mk-mean-stddev-for-three-groups-of-log-files "Cached vs discarded" "$<" | perl mk-stats-cached-discarded-include > "$@"
 
 # File size and number of lines ratios: stddev, mean, etc.
 build/stats-file-size-vs-parsing-time-stddev: build/stats-input-size-vs-parsing-time
-	awk '!/#/ {print $$2}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: File size vs\\@. parsing time" >> "$@"
-
-build/stats-file-size-vs-parsing-time-logs-22-62-68-stddev: build/stats-input-size-vs-parsing-time
-	awk '!/#/ {print $$2}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: File size vs\\@. parsing time (log files 22, 62--68)" >> "$@"
-
-build/stats-file-size-vs-parsing-time-other-logs-stddev: build/stats-input-size-vs-parsing-time
-	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: File size vs\\@. parsing time (all other log files)" >> "$@"
+	awk '!/^#/ {print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "File size vs\\@. parsing time" > "$@"
 
 build/stats-number-of-log-lines-vs-parsing-time-stddev: build/stats-input-size-vs-parsing-time
-	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: No\\@. of log lines vs\\@. parsing time" >> "$@"
-
-build/stats-number-of-log-lines-vs-parsing-time-logs-22-62-68-stddev: build/stats-input-size-vs-parsing-time
-	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: No\\@. of log lines vs\\@. parsing time (log files 22, 62--68)" >> "$@"
-
-build/stats-number-of-log-lines-vs-parsing-time-other-logs-stddev: build/stats-input-size-vs-parsing-time
-	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: No\\@. of log lines vs\\@. parsing time (all other log files)" >> "$@"
+	awk '!/^#/ {print $$1}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "No\\@. of log lines vs\\@. parsing time" > "$@"
 
 build/include-file-size-and-number-of-log-lines-vs-parsing-time.tex: 			\
 		build/stats-file-size-vs-parsing-time-stddev				\
-		build/stats-file-size-vs-parsing-time-logs-22-62-68-stddev		\
-		build/stats-file-size-vs-parsing-time-other-logs-stddev 		\
-		build/stats-number-of-log-lines-vs-parsing-time-stddev			\
-		build/stats-number-of-log-lines-vs-parsing-time-logs-22-62-68-stddev	\
-		build/stats-number-of-log-lines-vs-parsing-time-other-logs-stddev
+		build/stats-number-of-log-lines-vs-parsing-time-stddev
 	perl mk-stats-cached-discarded-include $^ | sed -e 's/\\%//g' > "$@"
 
 # Average number of rules tried per log line
@@ -332,80 +298,30 @@ build/stats-average-number-of-rules-tried-per-program: results/results-full-run/
 
 # Optimal/shuffle/reverse ratios: stddev, mean, etc.
 build/stats-optimal-vs-shuffle-stddev: build/stats-optimal-and-reverse-vs-shuffle
-	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: Optimal (all log files)" >> "$@"
-
-build/stats-optimal-vs-shuffle-logs-22-62-68-stddev: build/stats-optimal-and-reverse-vs-shuffle
-	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: Optimal (log files 22, 62--68)" >> "$@"
-
-build/stats-optimal-vs-shuffle-other-logs-stddev: build/stats-optimal-and-reverse-vs-shuffle
-	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: Optimal (all other log files)" >> "$@"
+	awk '!/#/ {print $$1}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Optimal ordering" > "$@"
 
 build/stats-reverse-vs-shuffle-stddev: build/stats-optimal-and-reverse-vs-shuffle
-	awk '!/#/ {print $$2}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: Reverse (all log files)" >> "$@"
-
-build/stats-reverse-vs-shuffle-logs-22-62-68-stddev: build/stats-optimal-and-reverse-vs-shuffle
-	awk '!/#/ {print $$2}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: Reverse (log files 22, 62--68)" >> "$@"
-
-build/stats-reverse-vs-shuffle-other-logs-stddev: build/stats-optimal-and-reverse-vs-shuffle
-	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: Reverse (all other log files)" >> "$@"
+	awk '!/#/ {print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Reverse ordering" > "$@"
 
 build/include-optimal-and-reverse-vs-shuffle.tex: 			\
 		build/stats-optimal-vs-shuffle-stddev			\
-		build/stats-optimal-vs-shuffle-logs-22-62-68-stddev	\
-		build/stats-optimal-vs-shuffle-other-logs-stddev		\
-		build/stats-reverse-vs-shuffle-stddev			\
-		build/stats-reverse-vs-shuffle-logs-22-62-68-stddev	\
-		build/stats-reverse-vs-shuffle-other-logs-stddev	\
-		
-	perl mk-stats-cached-discarded-include $^ > "$@" || (rm -f "$@"; false)
+		build/stats-reverse-vs-shuffle-stddev
+	perl mk-stats-cached-discarded-include $^ > "$@"
 
 # Perfect-best/optimal/shuffle/reverse/perfect-worst ratios: stddev, mean, etc.
 # These partially depend on optimal/shuffle/reverse ratios generated above.
 build/stats-perfect-best-vs-shuffle-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
-	awk '!/#/ {print $$1}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: Perfect best (all log files)" >> "$@"
-
-build/stats-perfect-best-vs-shuffle-logs-22-62-68-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
-	awk '!/#/ {print $$1}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: Perfect best (log files 22, 62--68)" >> "$@"
-
-build/stats-perfect-best-vs-shuffle-other-logs-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
-	awk '!/#/ {print $$1}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: Perfect best (all other log files)" >> "$@"
+	awk '!/#/ {print $$1}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Perfect best oracle" > "$@"
 
 build/stats-perfect-worst-vs-shuffle-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
-	awk '!/#/ {print $$2}' "$<" | perl ../stats/stddev > "$@"
-	echo "Row: Perfect worst (all log files)" >> "$@"
-
-build/stats-perfect-worst-vs-shuffle-logs-22-62-68-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
-	awk '!/#/ {print $$2}' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | perl ../stats/stddev > "$@"
-	echo "Row: Perfect worst (log files 22, 62--68)" >> "$@"
-
-build/stats-perfect-worst-vs-shuffle-other-logs-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
-	awk '!/#/ {print $$2}' "$<" | sed -e '22d; 62,68d;' | perl ../stats/stddev > "$@"
-	echo "Row: Perfect worst (all other log files)" >> "$@"
+	awk '!/#/ {print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Perfect worst oracle" > "$@"
 
 build/include-perfect-best-and-optimal-and-reverse-and-perfect-worst-vs-shuffle.tex: 			\
 		build/stats-perfect-best-vs-shuffle-stddev			\
-		build/stats-perfect-best-vs-shuffle-logs-22-62-68-stddev	\
-		build/stats-perfect-best-vs-shuffle-other-logs-stddev		\
 		build/stats-optimal-vs-shuffle-stddev				\
-		build/stats-optimal-vs-shuffle-logs-22-62-68-stddev		\
-		build/stats-optimal-vs-shuffle-other-logs-stddev		\
 		build/stats-reverse-vs-shuffle-stddev				\
-		build/stats-reverse-vs-shuffle-logs-22-62-68-stddev		\
-		build/stats-reverse-vs-shuffle-other-logs-stddev		\
-		build/stats-perfect-worst-vs-shuffle-stddev			\
-		build/stats-perfect-worst-vs-shuffle-logs-22-62-68-stddev	\
-		build/stats-perfect-worst-vs-shuffle-other-logs-stddev		\
-		
-	perl mk-stats-cached-discarded-include $^ > "$@" || (rm -f "$@"; false)
+		build/stats-perfect-worst-vs-shuffle-stddev
+	perl mk-stats-cached-discarded-include $^ > "$@"
 
 # Summary of most effective restrictions
 build/include-restriction-summary-table.tex: db.full-run.sq3
@@ -415,14 +331,17 @@ build/include-restriction-summary-table.tex: db.full-run.sq3
 build/stats-mails-received-stddev: mails-received.txt
 	awk '{print $$2}' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: All days" >> "$@"
+	echo >> "$@"
 
 build/stats-mails-received-weekends-stddev: mails-received.txt
 	awk '((NR % 7) == 2) || ((NR % 7) == 3) { print $$2 }' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: Weekend days" >> "$@"
+	echo >> "$@"
 
 build/stats-mails-received-weekdays-stddev: mails-received.txt
 	awk '((NR % 7) != 2) && ((NR % 7) != 3) { print $$2 }' "$<" | perl ../stats/stddev > "$@"
 	echo "Row: Week days" >> "$@"
+	echo >> "$@"
 
 build/include-mails-received-table.tex:				\
 		build/stats-mails-received-stddev		\

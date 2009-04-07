@@ -5,8 +5,6 @@
 use strict;
 use warnings;
 
-use File::Slurp;
-
 print <<'HEADER';
 \centering{}
 \begin{tabular}[]{lrr}
@@ -15,20 +13,18 @@ print <<'HEADER';
     \tablemiddleline{}%
 HEADER
 
-my ($label, $mean, $stddev);
-
-foreach my $file (@ARGV) {
-    my @lines = read_file($file);
-    my %data;
-    foreach my $line (@lines) {
-        my ($key, $value) = split /: /, $line;
+my %data;
+while (<>) {
+    chomp;
+    if (length) {
+        my ($key, $value) = split /: /;
         $data{$key} = $value;
+    } else {
+        printf qq{    %s & %.2f\\%% & %.2f\\%% \\\\\n},
+                        $data{q{Row}},
+                        $data{q{Mean}},
+                        $data{q{Standard deviation}};
     }
-    $label  = $data{q{Row}};
-    chomp $label;
-    $mean   = sprintf q{%.2f\%%}, $data{q{Mean}};
-    $stddev = sprintf q{%.2f\%%}, $data{q{Standard deviation}};
-    print qq{    $label & $mean & $stddev \\\\\n};
 }
 
 print <<'FOOTER';
