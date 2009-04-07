@@ -208,48 +208,38 @@ table}
 
 \label{perfect rule ordering}
 
-XXX SHOULD I BOTHER WITH PERFECT WORST\@?
-
 Optimal rule ordering, as described in \sectionref{rule ordering for
 efficiency}, is the best rule ordering it is possible to achieve without
 having an oracle that magically divines which rule should be used to
 recognise each log line.  Such an oracle would give perfect performance,
 because only one rule needs to be used to recognise each log line.
 \parsername{} can save a list showing which rule recognised each log line,
-and use that list to simulate having an oracle and improve parsing speed
-the second time a log file is parsed.   This does not provide a practical
+and use that list to simulate an oracle and improve parsing speed the
+second time a log file is parsed.  This does not provide a practical
 benefit, but it does provide a means to evaluate the performance of optimal
-rule ordering in comparison to an oracle.  The knowledge can also be used
-to generate a perfect worst oracle, where every rule (subject to rule
-conditions) is used before the correct rule.
+rule ordering in comparison to an oracle.
 
-\Graphref{Parsing time relative to shuffled ordering including perfect best
-and worst graph} shows the parsing times of the perfect best and perfect
-worst oracles, and the optimal and reverse orderings relative to shuffled
-ordering; \tableref{Parsing time relative to shuffled ordering, including
-oracles table} shows mean and standard deviation.  As expected, the perfect
-best oracle is more efficient than optimal ordering, and likewise the
-perfect worst oracle is less efficient than reverse ordering.
-\Graphref{Percentage increase in parsing time when using optimal ordering
-instead of perfect best oracle graph} and \graphref{Percentage decrease in
-parsing time when using reverse ordering instead of perfect worst oracle
-graph} show the percentage increase and decrease in parsing time when
-using, respectively, optimal ordering instead of the perfect best oracle,
-and reverse ordering instead of the perfect worst oracle; mean and standard
-deviation are given for different groups of log files in
-\tableref{Percentage increase in parsing time when using optimal ordering
-instead of perfect best oracle table} and \tableref{Percentage decrease in
-parsing time when using reverse ordering instead of perfect worst oracle
-table}.
+\Graphref{Parsing time of perfect best oracle and optimal ordering relative
+to shuffled ordering graph} shows the parsing times of the perfect best
+oracle and the optimal ordering, relative to shuffled ordering;
+\tableref{Parsing time of perfect best oracle and optimal ordering relative
+to shuffled ordering table} shows mean and standard deviation.  As
+expected, the perfect best oracle is more efficient than optimal ordering.
+\Graphref{Percentage increase in parsing time when using optimal
+ordering instead of perfect best oracle graph} shows the percentage
+increase in parsing time when using optimal ordering instead of the perfect
+best oracle; mean and standard deviation are given for different groups of
+log files in \tableref{Percentage increase in parsing time when using
+optimal ordering instead of perfect best oracle table}.
 
-Once again, the difference between the oracles and optimal or reversed
-orderings at its lowest when parsing log files resulting from a mail loop
+Once again, the difference between the perfect best oracle and optimal
+ordering is at its lowest when parsing log files resulting from a mail loop
 (log files 22 \& 62--68), because the average number of rules tried per log
 line is lower (see \graphref{Average number of rules tried per log line}).
-The performance when parsing the first log file is different to the
-remainder of the non-mail loop log files, because the hits field of every
-rule is zero; optimal ordering is less efficient, and reverse ordering is
-less inefficient.
+The performance of optimal ordering when parsing the first log file is much
+worse than the remainder of the log files, because the hits field of every
+rule is zero, so optimal ordering performs similarly to shuffled ordering
+for that log file.
 
 Optimal ordering proves to be quite efficient: \tableref{Percentage
 increase in parsing time when using optimal ordering instead of perfect
@@ -259,13 +249,15 @@ using a magical oracle that divines the correct rule to use for each log
 line.
 
 
-\showgraph{build/graph-perfect-best-and-perfect-worst-and-optimal-and-reverse-vs-shuffled}{Parsing
-time relative to shuffled ordering, including oracles}{Parsing time
-relative to shuffled ordering including perfect best and worst graph}
+\showgraph{build/graph-perfect-best-and-optimal-vs-shuffled}{Parsing time
+of perfect best oracle and optimal ordering relative to shuffled
+ordering}{Parsing time of perfect best oracle and optimal ordering relative
+to shuffled ordering graph}
 
-\showtable{build/include-perfect-best-and-optimal-and-reverse-and-perfect-worst-vs-shuffle}{Parsing
-time relative to shuffled ordering, including oracles}{Parsing time
-relative to shuffled ordering, including oracles table}
+\showtable{build/include-perfect-best-and-optimal-vs-shuffle}{Parsing time
+of perfect best oracle and optimal ordering relative to shuffled
+ordering}{Parsing time of perfect best oracle and optimal ordering relative
+to shuffled ordering table}
 
 \showgraph{build/graph-perfect-best-vs-optimal}{Percentage increase in
 parsing time when using optimal ordering instead of perfect best
@@ -277,16 +269,6 @@ increase in parsing time when using optimal ordering instead of perfect
 best oracle}{Percentage increase in parsing time when using optimal
 ordering instead of perfect best oracle table}
 
-\showgraph{build/graph-perfect-worst-vs-reverse}{Percentage decrease in
-parsing time when using reverse ordering instead of perfect worst
-oracle}{Percentage decrease in parsing time when using reverse ordering
-instead of perfect worst oracle graph}
-
-\showtable{build/include-perfect-worst-vs-reverse-stddev}{Percentage
-decrease in parsing time when using reverse ordering instead of perfect
-worst oracle}{Percentage decrease in parsing time when using reverse
-ordering instead of perfect worst oracle table}
-
 \FloatBarrier{}
 
 \subsection{Where Is The Time Spent: Recognising Or Processing Log Lines?}
@@ -295,6 +277,8 @@ ordering instead of perfect worst oracle table}
 
 XXX EXAMINE THE TIME SPENT RECOGNISING LOG LINES VS THE TIME SPENT
 PROCESSING THEM\@.
+
+\showgraph{build/graph-percentage-time-spent-recognising-log-lines}{XXX}{XXX}
 
 \subsection{Scalability When The Number Of Rules Rises}
 

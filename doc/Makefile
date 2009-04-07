@@ -337,6 +337,11 @@ build/include-perfect-best-and-optimal-and-reverse-and-perfect-worst-vs-shuffle.
 		build/stats-perfect-worst-vs-shuffle-stddev
 	perl mk-stats-cached-discarded-include $^ > "$@"
 
+build/include-perfect-best-and-optimal-vs-shuffle.tex: 				\
+		build/stats-perfect-best-vs-shuffle-stddev			\
+		build/stats-optimal-vs-shuffle-stddev
+	perl mk-stats-cached-discarded-include $^ > "$@"
+
 # Summary of most effective restrictions
 build/include-restriction-summary-table.tex: db.full-run.sq3
 	perl mk-restriction-summary-table > "$@"
@@ -440,6 +445,10 @@ build/graph-per-file-action-invocation-numbers.ps: build/graph-per-file-action-i
 build/include-per-file-action-invocation-numbers-table.tex: build/stats-per-file-action-invocation-numbers
 	perl mk-per-file-action-invocation-numbers-table "$<" > "$@"
 
+# How much time is spent recognising log lines.
+build/stats-percentage-time-spent-recognising-log-lines: build/results--optimal_ordering--maximum_ruleset build/results--optimal_ordering--parse_lines_only
+	paste -d ' ' $^ | awk '!/#/ { print $$9 * 100 / $$3 }' > "$@"
+
 # Sample output from an SQL query.
 build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql
 	sqlite3.6.0 -separator ' & ' -bail "$<" < "generate-sample-sql-output.sql" > "$@"
@@ -493,6 +502,8 @@ check: lines-from-paragraphs
 	ack '\b(\w+)\b\s+\b\1\b' build/logparser*.tex
 	# Check for using an instead of a before \daemon{foo}
 	ack ' an \\daemon{' build/logparser*.tex
+	# Check for perfect best not followed by oracle.
+	ack -i 'perfect best (?!oracle)' build/logparser*.tex
 	grep 'begin{table}' logparser-*.tex | grep -v -F 'begin{table}[thbp]' || true
 	grep 'set output.*pdf' graphs/* || true
 
