@@ -19,18 +19,25 @@ solution of their own.
 
 \parsername{} deals with all the complications of parsing, the
 eccentricities and oddities of Postfix log files, presenting the resulting
-data in a normalised, simple to use representation.  The parser's task is
-to follow the journey each mail takes through Postfix, combining the data
-captured by rules into a coherent whole, saving it in a useful and
-consistent form, and performing housekeeping duties.  The intermingling of
-log lines from different mails immediately rules out the possibility of
-handling each mail in isolation; the parser must be able to handle multiple
-mails in parallel, each potentially at a different stage in its journey,
-without any interference between mails --- except in the minority of cases
-where intra-mail interference is required, e.g.\ mail re-injected for
-forwarding (\sectionref{Re-injected mails}).  The best way to deal with
-intermingling is to maintain state information for every unfinished mail
-and manipulate the appropriate mail correctly for each log line
+data in a normalised, simple to use representation.  Unfortunately dealing
+with the complications that arise sometimes requires the parser to discard
+log lines (e.g.\ \sectionref{aborted delivery attempts}), and, less
+frequently, to discard a data structure (e.g.\ \sectionref{timeouts during
+data phase}).  \parsername{} is capable of parsing log files from Postfix
+version 2.2 through to version 2.5, and should be capable of parsing log
+files from later versions with only minor modifications or an updated
+ruleset.  The parser's task is to follow the journey each mail takes
+through Postfix, combining the data captured by rules into a coherent
+whole, saving it in a useful and consistent form, and performing
+housekeeping duties.  The intermingling of log lines from different mails
+immediately rules out the possibility of handling each mail in isolation;
+the parser must be able to handle multiple mails in parallel, each
+potentially at a different stage in its journey, without any interference
+between mails --- except in the minority of cases where intra-mail
+interference is required, e.g.\ mail re-injected for forwarding
+(\sectionref{Re-injected mails}).  The best way to deal with intermingling
+of log lines is to maintain state information for every unfinished mail,
+and to manipulate the appropriate mail correctly for each log line
 encountered.
 
 This chapter begins with the assumptions under which \parsername{} was
@@ -146,10 +153,10 @@ to treating Postfix as a black box during parser development:
 \label{flow chart}
 
 The flow chart in \figureref{flow chart image} shows the most common paths
-a connection or mail can take through \parsername{}; the difficulties
-described in \sectionref{complications} are excluded for the sake of
-clarity.  The flow chart is intended to be a graphical overview of how a
-mail progresses through both Postfix and \parsername{}, providing an
+a connection or mail can take through \parsername{}; decision boxes and the
+difficulties described in \sectionref{complications} are excluded for the
+sake of clarity.  The flow chart is intended to be a graphical overview of
+how a mail progresses through both Postfix and \parsername{}, providing an
 overall context into which the detailed descriptions in the remainder of
 this chapter will fit, in particular the actions (\sectionref{actions in
 implementation}) and complications (\sectionref{complications}).  The
@@ -575,7 +582,7 @@ Each time the parser is run the framework performs some initialisation
 tasks, setting up data structures that will later be used by actions,
 including several state tables.  Data about the connections and mails being
 processed is held in \texttt{connections} and \texttt{queueids}
-respectively.  The other state tables used when working around
+respectively.  The other state tables are used when working around
 complications in parsing: \texttt{timeout\_queueids} is used when dealing
 with connections that time out during the DATA phase (\sectionref{timeouts
 during data phase}); \texttt{bounce\_queueids} is part of the solution to
@@ -633,14 +640,18 @@ process is likely to take.  The progress bar is not as reliable when
 parsing compressed log files, because a compressed block may uncompress to
 a variable number of log lines; there is also variation between the
 recognition and processing time of individual log lines, but overall the
-progress bar is a useful addition.
+progress bar is a useful addition.  \parsername{} is primarily intended for
+parsing complete log files, but with minor modifications it could be used
+to parse a live log file, periodically checking it for new log lines; this
+could be very useful for programs that work best with up to date data,
+e.g.\ a program for monitoring the health of the mail system.
 
 The framework collects data used when evaluating \parsernames{} efficiency
 for the results chapter (\sectionref{Results}); some of the techniques used
 to improve parsing speed can be turned off or altered to measure the effect
-they have.  Three sets of data are collected:
-
-XXX ASK CARL IF I SHOULD HAVE MEAN, STANDARD DEVIATION, MORE GRAPHS\@?
+they have.  In each case the data gathered with the optimisation disabled
+will be compared to the data gathered with it enabled, to quantify the
+benefit each optimisation provides.  Three sets of data are collected:
 
 \begin{enumerate}
 
@@ -659,8 +670,7 @@ XXX ASK CARL IF I SHOULD HAVE MEAN, STANDARD DEVIATION, MORE GRAPHS\@?
 \end{enumerate}
 
 There are five ways the framework can adapt its behaviour to demonstrate
-how effective the optimisations it uses are, and how efficient
-\parsername{} is:
+how effective each optimisation is:
 
 \begin{enumerate}
 
@@ -694,7 +704,9 @@ how effective the optimisations it uses are, and how efficient
     \item The framework can skip inserting data into the database, because
         that dominates the execution time of the parser; the evaluation
         chapter measures the speed of \parsername{}, not the speed of the
-        database or the disks it resides on.
+        database or the disks it resides on.  The impact of storing results
+        in the database is described at the beginning of
+        \sectionref{Results}.
 
 \end{enumerate}
 
@@ -1313,7 +1325,12 @@ original log files should be parsed again, and any remaining unparsed log
 lines used as input to this utility.
 
 This utility is not intended to create perfect regexes, but it greatly
-reduces the effort required to deal with unrecognised log lines.
+reduces the effort required to deal with unrecognised log lines.  The
+regexes it generates will be self-contained: a parser that relies on using
+cascaded parsing would require a modified algorithm, perhaps by replacing
+the pre-processing stage with one that applies existing cascading rules to
+each log line, and uses the resulting modified log lines for the remainder
+of the algorithm.
 
 \subsection{Rule Conditions}
 
@@ -1412,6 +1429,13 @@ Some of the keywords need more explanation:
 
 
 \end{eqlist}
+
+There is some similarity between regex components and cascaded parsing:
+each regex component resembles a rule that recognises part of a log line
+and consumes it, leaving the remainder to be recognised by other components
+or cascaded rules.  The major difference between the two is that regex
+components are explicitly used by the author of the ruleset, whereas
+cascaded parsing would be dynamically applied by the framework.
 
 \subsection{Overlapping Rules}
 

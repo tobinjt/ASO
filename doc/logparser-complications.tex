@@ -22,7 +22,15 @@ orders of magnitude more frequently than the last.  When deciding which
 problem to tackle next, the problem causing the highest number of warning
 messages or mails incorrectly remaining in the state tables was always
 chosen, because that approach yielded the biggest improvement in the
-parser, and made the remaining problems more apparent.
+parser, and made the remaining problems more apparent.  Several of the
+complications were discovered because \parsername{} is very careful to
+check the origin of each mail; if it does not know the origin of a mail,
+that mail will be tagged as fake, and a warning issued if the mail's origin
+has not been determined before trying to save it to the database.  Some of
+the solutions to these complications require discarding log lines because
+they are out of order, and, less frequently, discarding a data structure
+containing data gathered about a connection or a mail, because of the
+paucity of information contained in the data structure.
 
 The fifteen complications documented in this section can be divided into
 three broad classes:
