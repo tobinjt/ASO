@@ -5,7 +5,7 @@
 \renewcommand{\figurename}{Graph}
 
 % Reduce the gap between columns in tables.
-\addtolength{\tabcolsep}{-1pt}
+\addtolength{\tabcolsep}{-2pt}
 
 XXX NEED AN INTRODUCTION\@.
 
@@ -389,15 +389,50 @@ when not caching compiled regexes table}
 
 \label{recognising vs processing}
 
-XXX COMMENT THAT THE OPTIMISATION TIME HAS BEEN SPENT ON RULES, AND THAT IS
-GOOD BECAUSE THAT IS WHERE THE MAJORITY OF EXECUTION TIME IS SPENT\@.
-ALSO, RULE OPTIMISATION IS GENERIC, WHEREAS ACTION OPTIMISATION IS
-PARSER-SPECIFIC\@.
+The optimisations described in this chapter have optimised the process of
+recognising log lines, but have not affected the actions at all.  There are
+two reasons for this:
 
-XXX EXAMINE THE TIME SPENT RECOGNISING LOG LINES VS THE TIME SPENT
-PROCESSING THEM\@.
+\begin{enumerate}
 
-\showgraph{build/graph-percentage-time-spent-recognising-log-lines}{XXX}{XXX}
+    \item With the optimisations described in this chapter enabled,
+        recognising log lines still dominates the execution time of the
+        parser.  \Graphref{Percentage of parsing time spent recognising log
+        lines graph} shows the percentage of parsing time spent recognising
+        log lines for each of the \numberOFlogFILES{} log files, with mean
+        and standard deviation shown in \tableref{Percentage of parsing
+        time spent recognising log lines table}; for normal log files
+        \input{build/include-percentage-time-spent-recognising-log-lines-mean}
+        of parsing time is spent recognising log lines.  Optimal ordering
+        reduces parsing time by
+        \input{build/include-optimal-ordering-parsing-time-reduction-other-logs}\%
+        relative to shuffled ordering; processing recognised log lines
+        occupies
+        \input{build/include-percentage-time-spent-processing-log-lines-mean}
+        of parsing time, less if using shuffled ordering, so optimising
+        actions could not possibly provide as big a performance increase as
+        optimally ordering rules.
+
+    \item The process of recognising log lines is not parser-specific
+        (excluding evaluation of rule conditions), so the optimisations
+        described in this chapter are applicable to all parsers based on
+        this architecture.  Actions are parser-specific, so it is unlikely
+        that any optimisations made to actions would be portable to other
+        parsers.
+
+\end{enumerate}
+
+Individual actions or the framework could and have been optimised, but
+there is plenty of existing literature on optimising programs, so the
+subject will not be dealt with here.
+
+\showgraph{build/graph-percentage-time-spent-recognising-log-lines}{Percentage
+of parsing time spent recognising log lines}{Percentage of parsing time
+spent recognising log lines graph}
+
+\showtable{build/include-percentage-time-spent-recognising-log-lines-table}{Percentage
+of parsing time spent recognising log lines}{Percentage of parsing time
+spent recognising log lines table}
 
 \FloatBarrier{}
 

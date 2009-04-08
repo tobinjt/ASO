@@ -438,9 +438,13 @@ build/include-median-throughput-log-lines.tex: build/results--optimal_ordering--
 	paste -d ' ' $^ | awk '{ printf "%.3f\n", $$8 / ($$3 / 60); }' | perl ../stats/stddev | awk '/Median:/ { printf "%'\''.3f log lines%\n", $$2 }' > "$@"
 
 build/include-optimal-ordering-parsing-time-reduction-other-logs.tex: build/stats-optimal-and-reverse-vs-shuffle 
-	sed -e '/^#/d' "$<" | sed -e '22d; 62,68d;' | awk '{print $$1}' | ../stats/stddev | awk '/Median:/ { printf "%.3f%%\n", 100 - $$2 }' > "$@"
+	sed -e '/^#/d' "$<" | sed -e '22d; 62,68d;' | awk '{print $$1}' | ../stats/stddev | awk '/Mean:/ { printf "%.3f%%\n", 100 - $$2 }' > "$@"
+
 build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68.tex: build/stats-optimal-and-reverse-vs-shuffle 
-	sed -e '/^#/d' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | awk '{print $$1}' | ../stats/stddev | awk '/Median:/ { printf "%.3f%%\n", 100 - $$2 }' > "$@"
+	sed -e '/^#/d' "$<" | sed -e '1,21d; 23,61d; 69,$$d;' | awk '{print $$1}' | ../stats/stddev | awk '/Mean:/ { printf "%.3f%%\n", 100 - $$2 }' > "$@"
+
+build/include-100-minus-optimal-ordering-reduction.tex: build/include-optimal-ordering-parsing-time-reduction-other-logs.tex
+	awk '{ printf "%.3f%%\n", 100 - $$1}' "$<" > "$@"
 
 build/include-top-ten-hits.tex: build/stats-hits-reversed
 	awk 'BEGIN { sum = 0; topten = 0 }; { sum += $$2 }; NR <= 10 { topten += $$2 }; END { printf "%'\''.3f%\n", topten * 100 / sum };' "$<" > "$@"
@@ -469,6 +473,18 @@ build/include-per-file-action-invocation-numbers-table.tex: build/stats-per-file
 # How much time is spent recognising log lines.
 build/stats-percentage-time-spent-recognising-log-lines: build/results--optimal_ordering--maximum_ruleset build/results--optimal_ordering--parse_lines_only
 	paste -d ' ' $^ | awk '!/#/ { print $$9 * 100 / $$3 }' > "$@"
+
+build/stats-percentage-time-spent-recognising-log-lines-stddev: build/stats-percentage-time-spent-recognising-log-lines
+	perl mk-mean-stddev-for-three-groups-of-log-files "Recognising log lines" "$<" > "$@"
+
+build/include-percentage-time-spent-recognising-log-lines-table.tex: build/stats-percentage-time-spent-recognising-log-lines-stddev
+	perl mk-stats-cached-discarded-include "$<" > "$@"
+
+build/include-percentage-time-spent-recognising-log-lines-mean.tex: build/stats-percentage-time-spent-recognising-log-lines-stddev
+	awk '/Mean:/ { mean = $$2 } END { printf "%.3f\\%%%%\n", mean }' "$<" > "$@"
+
+build/include-percentage-time-spent-processing-log-lines-mean.tex: build/stats-percentage-time-spent-recognising-log-lines-stddev
+	awk '/Mean:/ { mean = $$2 } END { printf "%.3f\\%%%%\n", 100 - mean }' "$<" > "$@"
 
 # Sample output from an SQL query.
 build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.sql
