@@ -186,11 +186,15 @@ table}.  This optimisation provides a mean reduction in parsing time of
 with normal log files,
 \input{build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68}\%
 when a mail loop occurs and the distribution of log lines is unusual.
-Optimal rule ordering has other benefits, described in
-\sectionref{scalability as the number of rules rises}.  \Tableref{Parsing
-time relative to shuffled ordering table} shows that differences in rule
-ordering have less effect on parsing time when parsing log files 22 \&
-62--68, due to the different distribution of log lines in those log files.
+\Tableref{Parsing time relative to shuffled ordering table} shows that
+differences in rule ordering have less effect on parsing time when parsing
+log files 22 \& 62--68, due to the different distribution of log lines in
+those log files.  A careful examination of \graphref{Parsing time relative
+to shuffled ordering graph} shows that, for the first log file, optimal and
+reverse orderings perform identically: this is because the hits field of
+each rule is zero for the first log file, so optimal and reverse orderings
+are identical.  For the first log file, shuffled ordering is most
+efficient, but that is accidental and cannot be relied upon.
 
 \showgraph{build/graph-hits}{Log lines recognised per rule}{rule hits graph}
 
@@ -238,8 +242,8 @@ ordering is at its lowest when parsing log files resulting from a mail loop
 line is lower (see \graphref{Average number of rules tried per log line}).
 The performance of optimal ordering when parsing the first log file is much
 worse than the remainder of the log files, because the hits field of every
-rule is zero, so optimal ordering performs similarly to shuffled ordering
-for that log file.
+rule is zero, so optimal ordering does not provide any benefit for that log
+file.
 
 Optimal ordering proves to be quite efficient: \tableref{Percentage
 increase in parsing time when using optimal ordering instead of perfect
@@ -302,7 +306,11 @@ lines in those log files are produced by Postfix components with a small
 number of rules, so removing unnecessary rules has little effect on the
 total number of rules used; \tableref{Number of rules per Postfix component
 in the maximum and minimum rulesets} shows the number of rules per Postfix
-component for each ruleset.  The optimal ordering shows a mean increase of
+component for each ruleset.  Once again, for the first log file, optimal
+and reverse orderings have identical performance, because the hits field of
+every rule is zero.
+
+The optimal ordering shows a mean increase of just
 \input{build/include-full-ruleset-vs-minimum-ruleset-mean} in parsing time
 for a \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.
 These results show that the architecture scales very well as the number of
@@ -342,43 +350,40 @@ Before the Perl interpreter attempts to match a regex against a piece of
 text, the regex is compiled into an internal representation and optimised
 to improve the speed of matching.  This compilation and optimisation takes
 CPU time: in many cases it takes far more CPU time than the actual
-matching.  If the interpreter is certain that a regex will not change, it
-will automatically cache the compilation results for later use.   The
-results of compiling a dynamically generated regex can be cached and used
-in preference to the original regex, but it is the responsibility of the
-programmer to do this.  \parsername{} loads the rules it uses from a
-database, so it compiles each rule's regex and caches the result to reduce
-parsing time.
+matching.  If the interpreter is certain that a regex will not change while
+the program is running, it will automatically cache the results of
+compiling and optimising the regex for later use.  The results of compiling
+a dynamically generated regex can be cached and used in preference to the
+original regex, but it is the responsibility of the programmer to do this;
+\parsername{} does this with every rule's regex when the rules are loaded
+from the database.
 
 \Graphref{Increase in parsing time when not caching compiled regexes graph}
 shows the impact that not caching compiled regexes has on parser
-performance: on typical log files, the parsing time when not caching
-compiled regexes is 400--600\% of the parsing time when caching.  Caching
+performance, with mean and standard deviation in \tableref{Increase in
+parsing time when not caching compiled regexes table}.  For typical log
+files, the mean increase in parsing time when not caching compiled regexes
+is \input{build/include-cached-regexes-vs-discarded-regexes-mean}.  Caching
 compiled regexes is probably the single most effective optimisation
-possible in \parsername{}, and was quite simple to implement.
+possible in \parsername{}, and was quite simple to implement.  As with
+previous optimisations, log files 22 \& 62--68 do not suffer such a large
+increase in parsing time when not caching compiled regexes; this is
+because, on average, fewer regexes are compiled per log line for those log
+files.  The increase in parsing time when parsing the first log file is
+much greater than for the other log files; again, this is because every
+rule's hits field is zero, so optimal ordering is less efficient than
+usual, and the average number of rules tried for each log line will be
+higher than usual.
 
 \showgraph{build/graph-cached-regexes-vs-discarded-regexes}{Increase in
 parsing time when not caching compiled regexes}{Increase in parsing time
 when not caching compiled regexes graph}
 
-XXX UPDATE THIS\@.  Two large dips can be seen in \graphref{Increase in
-parsing time when not caching compiled regexes graph} at log files 22 \&
-62--68, corresponding to the spikes in log file size in \graphref{parsing
-time vs file size vs number of log lines graph}.  The distribution of log
-lines across rules when there is a mail loop is much different to the norm,
-and the average number of rules consulted per log line is much lower: this
-results in far fewer regex compilations per line when there is a mail loop,
-and a corresponding decrease in the average parsing time for a single log
-line.  The outcome is that caching compiled regexes is proportionally less
-important when the log file contents were created by a mail loop.  The
-increases in parsing time when not caching compiled regexes for different
-groups of log files are summarised in \tableref{Increase in parsing time
-when not caching compiled regexes table}.
-
 \showtable{build/include-cached-regexes-vs-discarded-regexes}{Increase in
 parsing time when not caching compiled regexes}{Increase in parsing time
 when not caching compiled regexes table}
 
+\FloatBarrier{}
 
 \subsection{Where Is The Time Spent: Recognising Or Processing Log Lines?}
 
@@ -393,6 +398,8 @@ XXX EXAMINE THE TIME SPENT RECOGNISING LOG LINES VS THE TIME SPENT
 PROCESSING THEM\@.
 
 \showgraph{build/graph-percentage-time-spent-recognising-log-lines}{XXX}{XXX}
+
+\FloatBarrier{}
 
 \subsection{Summary}
 

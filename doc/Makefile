@@ -289,7 +289,10 @@ build/stats-hits-reversed: build/stats-hits
 
 # Stats for cached regexes vs discarded regexs: all logs, logs 22,62-68, all other logs.
 build/include-cached-regexes-vs-discarded-regexes.tex: build/stats-cached-regexes-vs-discarded-regexes
-	perl mk-mean-stddev-for-three-groups-of-log-files "Cached vs discarded" "$<" | perl mk-stats-cached-discarded-include > "$@"
+	perl mk-mean-stddev-for-three-groups-of-log-files "Not caching compiled regexes" "$<" | perl mk-stats-cached-discarded-include > "$@"
+
+build/include-cached-regexes-vs-discarded-regexes-mean.tex: build/stats-cached-regexes-vs-discarded-regexes
+	perl mk-mean-stddev-for-three-groups-of-log-files "ignored" "$<" | awk '/Mean:/ { mean = $$2 } END { printf "%.3f\\%%%%\n", mean }' > "$@"
 
 # File size and number of lines ratios: stddev, mean, etc.
 build/stats-file-size-vs-parsing-time-stddev: build/stats-input-size-vs-parsing-time
