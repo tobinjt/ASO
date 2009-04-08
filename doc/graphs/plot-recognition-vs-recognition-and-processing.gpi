@@ -1,0 +1,11 @@
+load "plot-defaults-ps.gpi"
+
+set xlabel "Log file"
+set ylabel "Parsing time when recognising log lines,\nand when recognising and processing log lines"
+set output "../build/graph-recognition-vs-recognition-and-processing.ps"
+
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
+
+plot "../build/results--optimal_ordering--maximum_ruleset" using 3 with lines title "Parsing time when recognising and processing log lines", \
+    "../build/results--optimal_ordering--parse_lines_only" using 3 with lines title "Parsing time when recognising only log lines"

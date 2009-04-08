@@ -383,9 +383,15 @@ build/stats-number-of-rules-per-program: db.full-run.sq3
 build/include-number-of-rules-per-program.tex: build/stats-number-of-rules-per-program
 	sed -e 's/$$/ \\\\/;' "$<" > "$@"
 
+build/stats-number-of-rules-per-program-minimum-ruleset: ../sql/db.minimum-ruleset.sq3
+	sqlite3 -separator ' & ' "$<" 'SELECT program, count(program) FROM rules GROUP BY program ORDER BY program;' > "$@"
+
+build/include-number-of-rules-per-program-minimum-ruleset.tex: build/stats-number-of-rules-per-program build/stats-number-of-rules-per-program-minimum-ruleset
+	paste -d ' ' $^ | awk 'BEGIN { OFS = " & " } { print $$1, $$3, $$6 }' | sed -e 's/$$/ \\\\/;' > "$@"
+
 # Minimum ruleset vs maximum ruleset.
-build/include-full-ruleset-vs-minimum-ruleset.tex: build/stats-optimal-full-ruleset-vs-minimum-ruleset
-	awk 'BEGIN { sum = 0; } { sum += $$2; } END { printf "%.3g\\%%%%\n", sum / NR }' "$<" > "$@" || (rm -f "$@"; false)
+build/include-full-ruleset-vs-minimum-ruleset-mean.tex: build/stats-optimal-full-ruleset-vs-minimum-ruleset-stddev
+	awk 'BEGIN { mean = 0; } /Mean:/ && mean == 0 { mean = $$2; } END { printf "%.3g\\%%%%\n", mean }' "$<" > "$@"
 
 build/stats-optimal-full-ruleset-vs-minimum-ruleset: build/results--optimal_ordering--maximum_ruleset build/results--optimal_ordering--minimum_ruleset
 	INPUT="$^" OUTPUT="$@" make full-ruleset-vs-minimum-ruleset
@@ -400,6 +406,18 @@ full-ruleset-vs-minimum-ruleset:
 	# There deliberately aren't any quotes around INPUT because it will have 
 	# multiple file names
 	paste -d ' ' ${INPUT} | awk '!/^#/ { print $$1, (($$3 -$$9) * 100 / $$9)}' > "${OUTPUT}"
+
+build/stats-optimal-full-ruleset-vs-minimum-ruleset-stddev: build/stats-optimal-full-ruleset-vs-minimum-ruleset
+	awk '{print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Optimal ordering" > "$@"
+
+build/stats-reverse-full-ruleset-vs-minimum-ruleset-stddev: build/stats-reverse-full-ruleset-vs-minimum-ruleset
+	awk '{print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Reverse ordering" > "$@"
+
+build/stats-shuffle-full-ruleset-vs-minimum-ruleset-stddev: build/stats-shuffle-full-ruleset-vs-minimum-ruleset
+	awk '{print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Shuffled ordering" > "$@"
+
+build/include-full-ruleset-vs-minimum-ruleset.tex: build/stats-optimal-full-ruleset-vs-minimum-ruleset-stddev build/stats-shuffle-full-ruleset-vs-minimum-ruleset-stddev build/stats-reverse-full-ruleset-vs-minimum-ruleset-stddev
+	perl mk-stats-cached-discarded-include $^ > "$@"
 
 # Duration of the full run parsing all 93 log files.
 build/include-%-duration.tex: results/results-%/timing

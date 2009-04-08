@@ -6,7 +6,8 @@ set output "../build/graph-full-ruleset-vs-minimum-ruleset.ps"
 
 # Add a % sign on the y axis
 set format y "% g%%"
-set yrange [-4:*]
+# Put the legend outside the graph
+set key above invert
 
 plot "../build/stats-reverse-full-ruleset-vs-minimum-ruleset" using 2 with lines title "Reverse ordering", \
     "../build/stats-shuffle-full-ruleset-vs-minimum-ruleset" using 2 with lines title "Shuffled ordering", \
