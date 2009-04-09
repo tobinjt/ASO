@@ -1,0 +1,14 @@
+load "plot-defaults-ps.gpi"
+
+set xlabel "Log file"
+set ylabel "Parsing times relative to shuffled ordering"
+set output "../build/graph-perfect-best-and-optimal-vs-shuffled.ps"
+# Add a % sign on the y axis
+set format y "% g%%"
+# Remove the horizontal lines.
+set grid noy
+set yrange [0:120]
+
+plot "../build/stats-perfect-best-and-perfect-worst-vs-shuffle" using 1 with lines title "Perfect best oracle", \
+    "../build/stats-optimal-and-reverse-vs-shuffle" using 1 with lines title "Optimal ordering", \
+    100 with lines title "Shuffled ordering"
