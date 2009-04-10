@@ -1,7 +1,7 @@
-load "plot-defaults-ps.gpi"
+load "plot-defaults-larger-ps.gpi"
 
 set xlabel "Postfix component"
-set ylabel "Average number of rules"
+set ylabel "Mean number of rules per log line"
 set output "../build/graph-average-number-of-rules-tried-per-program.ps"
 
 # Put the legend at the top left, Left justified text.
@@ -11,4 +11,4 @@ set key top left Left reverse
 
 set xtics rotate
 plot "../build/stats-average-number-of-rules-tried-per-program" using 1:3:xticlabels(2) with lines \
-    title "Average number of rules"
+    title "Mean number of rules per log line"

@@ -40,18 +40,18 @@ XXX INTRODUCE COVERAGE\@.
 
 Parsing efficiency is an obvious concern when the parser routinely needs to
 parse large log files.  The server that generated the log files used in
-testing this parser accepts approximately 10,000 mails for 700 users per
-day; \graphref{Mails received per day} and \tableref{Number of mails
+testing this parser accepts approximately 10,000 mails for 700 users each
+weekday; \graphref{Mails received per day} and \tableref{Number of mails
 received per day: statistics} show that, as expected, far more mails are
 received on weekdays than at weekends.  Note that these figures count mails
 received by \acronym{SMTP} only, and the mail loops noticeable in later
-graphs are not included.  The mail server in question is a production mail
-server handling mail for a university department; the benefit of using this
-server is that its log files exhibit the idiosyncrasies and peculiarities a
-mail server in the wild must deal with, but the downside is that
-significantly altering the configuration to accommodate this project is not
-an option.  Median log file size is 50MB, containing 285,000 log lines;
-large scale mail servers would have much larger log files.
+graphs are not included.  Median log file size is 50MB, containing 285,000
+log lines; large scale mail servers would have much larger log files.  The
+mail server in question is a production mail server handling mail for a
+university department; the benefit of using this server is that its log
+files exhibit the idiosyncrasies and peculiarities a mail server in the
+wild must deal with, but the downside is that significantly altering the
+configuration to accommodate this project is not an option.
 
 \showgraph{build/graph-mails-received}{Number of mails received via SMTP
 per day}{Mails received per day}
@@ -78,27 +78,29 @@ SMTP per day}{Number of mails received per day: statistics}
 
 When generating the timing data used in this section, \numberOFlogFILES{}
 log files (totaling 10.08 GB, \numberOFlogLINEShuman{} log lines) were each
-parsed 10 times, and the times from the 10 runs averaged.  The computer
-used for test runs was a Dell Optiplex 745, shown in \tableref{Details of
-the computer used to generate statistics}; it was dedicated to the task of
-gathering statistics from test runs, and was not used for any other purpose
+parsed 10 times, and the mean parsing time used.  The computer used for
+test runs was a Dell Optiplex 745, shown in \tableref{Details of the
+computer used to generate statistics}; it was dedicated to the task of
+gathering statistics from test runs, and did not run any other programs
 while test runs were ongoing.  Saving results to the database was disabled
 for the test runs, because that dominates the run time of the parser, and
 the tests are aimed at measuring the speed of \parsername{} rather than the
 speed of the database and the disks the database is stored on.  Parsing all
 \numberOFlogFILES{} log files in one run without saving results to the
-database took \input{build/include-full-run-duration}, mean throughput was
-\input{build/include-full-run-throughput}; median throughput when parsing
-files separately was \input{build/include-median-throughput-MB}
-(\input{build/include-median-throughput-log-lines}) parsed per minute.  In
-contrast, when saving results to the database, parsing all
-\numberOFlogFILES{} log files took
+database took \input{build/include-full-run-duration}, with mean throughput
+of \input{build/include-full-run-throughput}.  In contrast, when saving
+results to the database, parsing all \numberOFlogFILES{} log files took
 \input{build/include-insert-results-duration}, with mean throughput of
 \input{build/include-insert-results-throughput} --- parsing makes up only
 \input{build/include-skip-inserting-as-percentage-of-inserting} of the
 execution time when saving results to the database.
 
 \subsection{Architecture Scalability: Input Size}
+
+XXX THIS SECTION DOES NOT SHOW ANY VARIETY IN INPUT SIZE, SO DOES NOT SHOW
+SCALABILITY\@.  MAYBE I SHOULD RENAME IT TO ``Characteristics Of The Input
+Log Files'' OR SOMETHING\@?  THE GRAPHS SHOW THAT LOGS HAVE CONSISTENT
+CONTENT EXCEPT WHEN THERE IS A MAIL LOOP\@.
 
 An important property of a parser is how parsing time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
@@ -114,7 +116,7 @@ of log lines vs parsing time (higher is better in both cases);
 shows the same ratios for different groups of log files.  The ratios are
 quite tightly banded, showing that the algorithm scales linearly; the
 ratios increase (i.e.\ improve) for log files 22 \& 62--68, despite their
-larger than average size.  Both groups of log files are much larger than
+larger than usual size.  Both groups of log files are much larger than
 usual due to a mail loop caused by a user who set up mail forwarding
 incorrectly, resulting in a very different distribution of log lines:
 normally most log lines are generated by mail delivery attempts from other
@@ -122,14 +124,14 @@ hosts, but when the mail loops occurred most of the log lines resulted from
 failed delivery of mail generated on the server itself.  The Postfix
 components that generated most of the log lines during the mail loop have
 fewer associated rules than the Postfix components whose log lines normally
-make up the bulk of each log file, so the average number of rules tried per
-log line reduces and so does the average parsing time per log line.
+make up the bulk of each log file, so the mean number of rules tried per
+log line reduces and so does the mean parsing time per log line.
 \Graphref{Number of rules per Postfix component} shows the number of rules
-per Postfix component, \graphref{Average number of rules tried per log
-line} shows the drop in the average number of rules tried per log line for
-log files containing a mail loop, and \graphref{Average number of rules
-tried per log line for each Postfix component} shows the average number of
-rules tried per log line for each Postfix component.
+per Postfix component, \graphref{Mean number of rules tried per log line}
+shows the drop in the mean number of rules tried per log line for log files
+containing a mail loop, and \graphref{Mean number of rules tried per log
+line for each Postfix component} shows the mean number of rules tried per
+log line for each Postfix component.
 
 \showtable{build/include-file-size-and-number-of-log-lines-vs-parsing-time}{Ratio
 of file size and number of log lines to parsing time}{parsing time vs file
@@ -140,16 +142,16 @@ and number of log lines for \numberOFlogFILES{} log files}{parsing time vs
 file size vs number of log lines graph}
 
 \showgraph{build/graph-input-size-vs-parsing-time-ratio}{Ratio of file size
-and number of log lines to parsing time}{parsing time vs file size vs
-number of log lines factor}
+and number of log lines to parsing time (higher is better)}{parsing time vs
+file size vs number of log lines factor}
 
-\showgraph{build/graph-average-number-of-rules-tried-per-log-line}{Average
-number of rules tried per log line}{Average number of rules tried per log
+\showgraph{build/graph-average-number-of-rules-tried-per-log-line}{Mean
+number of rules tried per log line}{Mean number of rules tried per log
 line}
 
-\showgraph{build/graph-average-number-of-rules-tried-per-program}{Average
-number of rules tried per log line for each Postfix component}{Average
-number of rules tried per log line for each Postfix component}
+\showgraph{build/graph-average-number-of-rules-tried-per-program}{Mean
+number of rules tried per log line for each Postfix component}{Mean number
+of rules tried per log line for each Postfix component}
 
 \begin{table}[thbp]
     \caption{Number of rules per Postfix component}
@@ -171,14 +173,14 @@ number of rules tried per log line for each Postfix component}
 \label{rule ordering for efficiency}
 
 \parsername{} has \numberOFrules{} rules: the top 10\% recognise
-\input{build/include-top-ten-hits}\% of the log lines, with the remaining
-log lines split across the other 90\% of the rules (as shown in
-\graphref{rule hits graph}).  Assuming that the distribution of log lines
-is reasonably consistent over time, \parsernames{} efficiency should
-benefit from trying rules that recognise log lines more frequently before
-those rules that recognise log lines less frequently.  To test this
-hypothesis, three full test runs were performed with different rule
-orderings:
+\input{build/include-top-ten-hits}\% of the log lines in the
+\numberOFlogFILES{} log files, with the remaining log lines split across
+the other 90\% of the rules, as shown in \graphref{rule hits graph}.
+Assuming that the distribution of log lines is reasonably consistent over
+time, \parsernames{} efficiency should benefit from trying rules that
+recognise log lines more frequently before those rules that recognise log
+lines less frequently.  To test this hypothesis, three full test runs were
+performed with different rule orderings:
 
 \begin{eqlist}
 
@@ -192,8 +194,8 @@ orderings:
         different rule orderings will be generated for each log file in the
         test run.
 
-    \item [Reverse] Hypothetically the worst order: the rules that
-        recognise log lines most frequently will be tried last.
+    \item [Reverse] Hypothetically the worst order: rules that recognise
+        log lines most frequently will be tried last.
 
 \end{eqlist}
 
@@ -213,8 +215,9 @@ those log files.  A careful examination of \graphref{Parsing time relative
 to shuffled ordering graph} shows that, for the first log file, optimal and
 reverse orderings perform identically: this is because the hits field of
 each rule is zero for the first log file, so optimal and reverse orderings
-are identical.  For the first log file, shuffled ordering is most
-efficient, but that is accidental and cannot be relied upon.
+produce identical rule orderings.  For the first log file, shuffled
+ordering is the most efficient of the three, but that is accidental and
+cannot be relied upon.
 
 \showgraph{build/graph-hits}{Log lines recognised per rule}{rule hits graph}
 
@@ -236,66 +239,63 @@ Optimal rule ordering, as described in \sectionref{rule ordering for
 efficiency}, is the best rule ordering it is possible to achieve without
 having an oracle that magically divines which rule should be used to
 recognise each log line.  Such an oracle would give perfect performance,
-because only one rule needs to be used to recognise each log line.
+because only one rule would need to be used to recognise each log line.
 \parsername{} can save a list showing which rule recognised each log line,
 and use that list to simulate an oracle and improve parsing speed the
-second time a log file is parsed.  This does not provide a practical
-benefit, but it does provide a means to evaluate the performance of optimal
-rule ordering in comparison to an oracle.
+\textit{second\/} time a log file is parsed.  This does not provide a
+practical benefit, but it does provide a means to evaluate the performance
+of optimal rule ordering in comparison to an oracle.
 
-\Graphref{Parsing time of perfect best oracle and optimal ordering relative
-to shuffled ordering graph} shows the parsing times of the perfect best
-oracle and the optimal ordering, relative to shuffled ordering;
-\tableref{Parsing time of perfect best oracle and optimal ordering relative
-to shuffled ordering table} shows mean and standard deviation.  As
-expected, the perfect best oracle is more efficient than optimal ordering.
-\Graphref{Percentage increase in parsing time when using optimal
-ordering instead of perfect best oracle graph} shows the percentage
-increase in parsing time when using optimal ordering instead of the perfect
-best oracle; mean and standard deviation are given for different groups of
-log files in \tableref{Percentage increase in parsing time when using
-optimal ordering instead of perfect best oracle table}.
+\Graphref{Parsing time of oracle and optimal ordering relative to shuffled
+ordering graph} shows the parsing times of the oracle and the optimal
+ordering, relative to shuffled ordering; \tableref{Parsing time of oracle
+and optimal ordering relative to shuffled ordering table} shows mean and
+standard deviation.  As expected, the oracle is more efficient than optimal
+ordering, but not by much.  \Graphref{Percentage increase in parsing time
+when using optimal ordering instead of oracle graph} shows the percentage
+increase in parsing time when using optimal ordering instead of the oracle,
+with mean and standard deviation in \tableref{Percentage increase in
+parsing time when using optimal ordering instead of oracle table}.
 
-Once again, the difference between the perfect best oracle and optimal
-ordering is at its lowest when parsing log files resulting from a mail loop
-(log files 22 \& 62--68), because the average number of rules tried per log
-line is lower (see \graphref{Average number of rules tried per log line}).
-The performance of optimal ordering when parsing the first log file is much
-worse than the remainder of the log files, because the hits field of every
-rule is zero, so optimal ordering does not provide any benefit for that log
-file.
+Once again, the difference between the oracle and optimal ordering is at
+its lowest when parsing log files resulting from a mail loop (log files 22
+\& 62--68), because the mean number of rules tried per log line is lower
+(see \graphref{Mean number of rules tried per log line}).  When parsing the
+first log file, the performance of optimal ordering relative to the oracle
+is much worse than for the remainder of the log files, because for the
+first log file the hits field of every rule is zero, so optimal ordering
+does not provide any benefit for that log file; the oracle, in contrast, is
+flawless for every log file.
 
 Optimal ordering proves to be quite efficient: \tableref{Percentage
-increase in parsing time when using optimal ordering instead of perfect
-best oracle table} shows that optimal ordering is less than
+increase in parsing time when using optimal ordering instead of oracle
+table} shows that optimal ordering is less than
 \input{build/include-perfect-best-vs-optimal-mean} slower than parsing
 using a magical oracle that divines the correct rule to use for each log
 line.
 
 
 \showgraph{build/graph-perfect-best-and-optimal-vs-shuffled}{Parsing time
-of perfect best oracle and optimal ordering relative to shuffled
-ordering}{Parsing time of perfect best oracle and optimal ordering relative
-to shuffled ordering graph}
+of oracle and optimal ordering relative to shuffled ordering}{Parsing time
+of oracle and optimal ordering relative to shuffled ordering graph}
 
 \showtable{build/include-perfect-best-and-optimal-vs-shuffle}{Parsing time
-of perfect best oracle and optimal ordering relative to shuffled
-ordering}{Parsing time of perfect best oracle and optimal ordering relative
-to shuffled ordering table}
+of oracle and optimal ordering relative to shuffled ordering}{Parsing time
+of oracle and optimal ordering relative to shuffled ordering table}
 
 \showgraph{build/graph-perfect-best-vs-optimal}{Percentage increase in
-parsing time when using optimal ordering instead of perfect best
-oracle}{Percentage increase in parsing time when using optimal ordering
-instead of perfect best oracle graph}
+parsing time when using optimal ordering instead of oracle}{Percentage
+increase in parsing time when using optimal ordering instead of oracle
+graph}
 
 \showtable{build/include-perfect-best-vs-optimal-stddev}{Percentage
-increase in parsing time when using optimal ordering instead of perfect
-best oracle}{Percentage increase in parsing time when using optimal
-ordering instead of perfect best oracle table}
+increase in parsing time when using optimal ordering instead of
+oracle}{Percentage increase in parsing time when using optimal ordering
+instead of oracle table}
 
 \FloatBarrier{}
 
-\subsection{Scalability When The Number Of Rules Rises}
+\subsection{Scalability As The Number Of Rules Rises}
 
 \label{scalability as the number of rules rises}
 
@@ -304,46 +304,47 @@ but it is particularly important in this architecture because it is
 expected that the typical parser will have a large number of rules.  There
 are \numberOFrules{} rules in the full \parsername{} ruleset, whereas the
 minimum number of rules required to parse the \numberOFlogFILES{} log files
-used when generating the data in this chapter is \numberOFrulesMINIMUM{}
-rules, \numberOFrulesMINIMUMpercentage{} of the full ruleset.  The full
-ruleset is larger because \parsername{} is tested with
+is \numberOFrulesMINIMUM{}, \numberOFrulesMINIMUMpercentage{} of the full
+ruleset.  The full ruleset is larger because \parsername{} is tested with
 \numberOFlogFILESall{} log files; testing with more log files increases the
 chance of finding bugs in the parser or new complications to be overcome.
 The \numberOFlogFILES{} log files were each parsed 10 times using the
 minimum ruleset, and the parsing times compared to those generated using
 the full ruleset: the percentage parsing time increase when using the full
-ruleset instead of the minimal ruleset for optimal, shuffled and reverse
-orderings is shown in \graphref{Percentage parsing time increase of maximum
-ruleset over minimum ruleset}; mean and standard deviation are shown in
-\tableref{Percentage parsing time increase of maximum ruleset over minimum
-ruleset table}.
+ruleset instead of the minimal ruleset for optimal, shuffled, and reverse
+orderings is shown in \graphref{Percentage parsing time increase when using
+the maximum ruleset instead of the minimum ruleset}, with mean and standard
+deviation in \tableref{Percentage parsing time increase when using the
+maximum ruleset instead of the minimum ruleset table}.
 
 Clearly the increased number of rules has a noticeable performance impact
 with reverse ordering, and a lesser impact with shuffled ordering, whereas
 optimal ordering shows very little change.  Log files 22 \& 62--68 show
-much smaller increases than other log files do, because the majority of log
-lines in those log files are produced by Postfix components with a small
-number of rules, so removing unnecessary rules has little effect on the
-total number of rules used; \tableref{Number of rules per Postfix component
-in the maximum and minimum rulesets} shows the number of rules per Postfix
-component for each ruleset.  Once again, for the first log file, optimal
-and reverse orderings have identical performance, because the hits field of
-every rule is zero.
+much smaller increases in parsing time than other log files do, because the
+majority of log lines in those log files are produced by Postfix components
+with a small number of rules, so removing unnecessary rules has little
+effect on the total number of rules used; \tableref{Number of rules per
+Postfix component in the maximum and minimum rulesets} shows the number of
+rules per Postfix component for each ruleset.  Once again, for the first
+log file, optimal and reverse orderings have identical performance, because
+the hits field of every rule is zero.
 
 The optimal ordering shows a mean increase of just
 \input{build/include-full-ruleset-vs-minimum-ruleset-mean} in parsing time
 for a \numberOFrulesMAXIMUMpercentage{} increase in the number of rules.
-These results show that the architecture scales very well as the number of
-rules increases, and that optimally sorting the rules is an important
-optimisation contributing to this scalability.
+These results show that both the architecture and \parsername{} scale very
+well as the number of rules increases, and that optimally sorting the rules
+is an important optimisation contributing to this scalability.
 
 \showgraph{build/graph-full-ruleset-vs-minimum-ruleset}{Percentage parsing
-time increase of maximum ruleset over minimum ruleset}{Percentage parsing
-time increase of maximum ruleset over minimum ruleset}
+time increase when using the maximum ruleset instead of the minimum
+ruleset}{Percentage parsing time increase when using the maximum ruleset
+instead of the minimum ruleset}
 
-\showtable{build/include-full-ruleset-vs-minimum-ruleset}{Percentage parsing
-time increase of maximum ruleset over minimum ruleset}{Percentage parsing
-time increase of maximum ruleset over minimum ruleset table}
+\showtable{build/include-full-ruleset-vs-minimum-ruleset}{Percentage
+parsing time increase when using the maximum ruleset instead of the minimum
+ruleset}{Percentage parsing time increase when using the maximum ruleset
+instead of the minimum ruleset table}
 
 \begin{table}[thbp]
     \caption{Number of rules per Postfix component in the maximum and
@@ -392,8 +393,8 @@ because, on average, fewer regexes are compiled per log line for those log
 files.  The increase in parsing time when parsing the first log file is
 much greater than for the other log files; again, this is because every
 rule's hits field is zero, so optimal ordering is less efficient than
-usual, and the average number of rules tried for each log line will be
-higher than usual.
+usual, and the mean number of rules tried for each log line will be higher
+than usual.
 
 \showgraph{build/graph-cached-regexes-vs-discarded-regexes}{Increase in
 parsing time when not caching compiled regexes}{Increase in parsing time
@@ -410,7 +411,7 @@ when not caching compiled regexes table}
 \label{recognising vs processing}
 
 The optimisations described in this chapter have optimised the process of
-recognising log lines, but have not affected the actions at all.  There are
+recognising log lines, but have not optimised actions at all.  There are
 two reasons for this:
 
 \begin{enumerate}
@@ -421,7 +422,7 @@ two reasons for this:
         lines graph} shows the percentage of parsing time spent recognising
         log lines for each of the \numberOFlogFILES{} log files, with mean
         and standard deviation shown in \tableref{Percentage of parsing
-        time spent recognising log lines table}; for normal log files
+        time spent recognising log lines table}; for normal log files,
         \input{build/include-percentage-time-spent-recognising-log-lines-mean}
         of parsing time is spent recognising log lines.  Optimal ordering
         reduces parsing time by
@@ -431,7 +432,16 @@ two reasons for this:
         \input{build/include-percentage-time-spent-processing-log-lines-mean}
         of parsing time, less if using shuffled ordering, so optimising
         actions could not possibly provide as big a performance increase as
-        optimally ordering rules.
+        optimally ordering rules.  Similarly, caching compiled regexes
+        provides an
+        \input{build/include-cached-regexes-vs-discarded-regexes-mean-reduction}
+        reduction in parsing time; not invoking actions at all reduces the
+        most optimised parsing time by less than half that.  If processing
+        of recognised log lines was optimised to 1\% of its original
+        parsing time, it would be slightly better than optimal ordering,
+        but it would be vastly harder to implement; optimising actions
+        would not provide a sufficient reduction in parsing time to justify
+        the amount of effort required.
 
     \item The process of recognising log lines is not parser-specific
         (excluding evaluation of rule conditions), so the optimisations

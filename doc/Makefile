@@ -294,6 +294,9 @@ build/include-cached-regexes-vs-discarded-regexes.tex: build/stats-cached-regexe
 build/include-cached-regexes-vs-discarded-regexes-mean.tex: build/stats-cached-regexes-vs-discarded-regexes
 	perl mk-mean-stddev-for-three-groups-of-log-files "ignored" "$<" | awk '/Mean:/ { mean = $$2 } END { printf "%.3f\\%%%%\n", mean }' > "$@"
 
+build/include-cached-regexes-vs-discarded-regexes-mean-reduction.tex: build/include-cached-regexes-vs-discarded-regexes-mean.tex
+	awk '{ non_cached_parsing_time = $$1 + 100; cached_percentage_parsing_time = 100 * 100 / non_cached_parsing_time; cached_percentage_reduction = 100 - cached_percentage_parsing_time; printf "%.3f\\%%%%\n", cached_percentage_reduction }' "$<" > "$@"
+
 # File size and number of lines ratios: stddev, mean, etc.
 build/stats-file-size-vs-parsing-time-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/^#/ {print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "File size vs\\@. parsing time" > "$@"
@@ -328,10 +331,10 @@ build/include-optimal-and-reverse-vs-shuffle.tex: 			\
 # Perfect-best/optimal/shuffle/reverse/perfect-worst ratios: stddev, mean, etc.
 # These partially depend on optimal/shuffle/reverse ratios generated above.
 build/stats-perfect-best-vs-shuffle-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
-	awk '!/#/ {print $$1}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Perfect best oracle" > "$@"
+	awk '!/#/ {print $$1}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Oracle" > "$@"
 
 build/stats-perfect-worst-vs-shuffle-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
-	awk '!/#/ {print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Perfect worst oracle" > "$@"
+	awk '!/#/ {print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Oracle" > "$@"
 
 build/include-perfect-best-and-optimal-and-reverse-and-perfect-worst-vs-shuffle.tex: 			\
 		build/stats-perfect-best-vs-shuffle-stddev			\

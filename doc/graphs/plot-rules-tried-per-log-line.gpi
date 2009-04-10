@@ -1,4 +1,4 @@
-load "plot-defaults-ps.gpi"
+load "plot-defaults-larger-ps.gpi"
 
 set xlabel "Log file"
 set ylabel "Mean number of rules tried per log line"

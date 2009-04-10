@@ -1,4 +1,4 @@
-load "plot-defaults-ps.gpi"
+load "plot-defaults-larger-ps.gpi"
 
 set xlabel "Action"
 set ylabel "Number of times each action was invoked,\nexcluding log files 22 and 62-68"
