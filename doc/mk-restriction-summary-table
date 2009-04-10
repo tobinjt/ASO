@@ -29,7 +29,7 @@ my $all_rejections = $data{q{All rejections}};
 $data{q{Other restrictions}} = $all_rejections
     - (sum(values %data) - $all_rejections);
 foreach my $key (sort { $data{$b} <=> $data{$a} || $a cmp $b } keys %data) {
-    my $percentage = sprintf q{%.2f\%%}, ($data{$key} * 100 / $all_rejections);
+    my $percentage = sprintf q{%.3f\%%}, ($data{$key} * 100 / $all_rejections);
     print qq{$key & $data{$key} & $percentage\\\\\n};
 }
 

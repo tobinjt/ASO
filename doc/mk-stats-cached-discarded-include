@@ -20,7 +20,7 @@ while (<>) {
         my ($key, $value) = split /: /;
         $data{$key} = $value;
     } else {
-        printf qq{    %s & %.2f\\%% & %.2f\\%% \\\\\n},
+        printf qq{    %s & %.3f\\%% & %.3f\\%% \\\\\n},
                         $data{q{Row}},
                         $data{q{Mean}},
                         $data{q{Standard deviation}};
