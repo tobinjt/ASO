@@ -521,7 +521,7 @@ veryclean: clean
 .PHONY: check
 check: lines-from-paragraphs
 	# Edit the log file to remove underfull hbox warnings I can't fix.
-	sed -i -e '/.\/.*.bbl$$/,$$s/^Underfull.*//' *.log
+	sed -i -e '/(.\/.*.bbl/,$$s/^Underfull.*//' *.log
 	make --silent join-lines | grep -i -E 'underfull|overfull|LaTeX Warning' || true
 	sed -n -e '/^Package .* Warning/,/^$$/p' *.log
 	grep '!!' *.?lg || true;

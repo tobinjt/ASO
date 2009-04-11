@@ -96,6 +96,13 @@ mail's journey through Postfix (\sectionref{mails-covered}) are described
 in detail, including the results of manually verifying the correct parsing
 of a subset of the test log files.
 
-\newpage
 
+Experience implementing \parsername{} shows that full input coverage is
+relatively easy to achieve with this architecture, and that with enough
+time and effort a full understanding of the input is possible.  Postfix log
+files would require substantial time and effort to correctly parse
+regardless of the architecture used; this architecture enables an iterative
+approach to be used (similar to Stepwise
+Refinement~\cite{stepwise-refinement}), as is practiced in many other
+software engineering disciplines.
 

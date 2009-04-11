@@ -1,6 +1,6 @@
-\chapter{Results And Evaluation}
+\chapter{Evaluation}
 
-\label{Results}
+\label{Evaluation}
 
 \renewcommand{\figurename}{Graph}
 
@@ -32,7 +32,13 @@ impact it has on parser efficiency, is the penultimate topic to be covered.
 The performance evaluation concludes by examining where the parsing time is
 spent: recognition of log lines or their subsequent processing?
 
-XXX INTRODUCE COVERAGE\@.
+The second criterion the parser is evaluated on is its coverage of Postfix
+log files.  This topic consists of two sections: what proportion of log
+lines are correctly recognised by the ruleset, and what proportion of mail
+delivery attempts are correctly understood and reconstructed by the
+actions?  The former is a requirement before the latter can be achieved,
+and the latter is important because the data provided by \parsername{} must
+be both complete and correct for it to be of use to others.
 
 \section{Parser Efficiency}
 
@@ -468,11 +474,6 @@ spent recognising log lines table}
 
 \section{Coverage}
 
-XXX IS THERE A BETTER WORD THAN ``coverage''?
-
-XXX I THINK THIS SECTION NEEDS SUBSTANTIAL WORK, IF NOT A RE-WRITE\@; START
-WITH THE PAPER'S CONTENT\@.
-
 \label{parsing coverage}
 
 The discussion of \parsernames{} coverage of Postfix log files is separated
@@ -610,7 +611,9 @@ entries, breaking down into:
         ended and had not yet been delivered.
 
     \item 9 mails whose initial log lines were not present in the log
-        files.  XXX WHY WERE THERE NO WARNINGS ABOUT THESE\@?
+        files.  There were no warnings for these mails because they were
+        resemble child mails waiting to be tracked with a parent, see
+        \sectionref{Re-injected mails} for details.
 
     \item 7 mails that had yet to be delivered due to repeated failures.
 
@@ -688,45 +691,41 @@ positive rate when reconstructing a mail delivery attempt from the
 
 \section{Summary}
 
-XXX EXTEND TO SUMMARISE PARSER EFFICIENCY TOO\@.
+This chapter evaluated \parsername{} on two criteria: efficiency, and
+coverage of Postfix log files.  The former began by describing the mail
+server the log files were taken from, the computer used to generate the
+statistics in this chapter, and how the parser scales as the size of log
+files increases, including why performance is better on the larger log
+files.  The framework optimises the order in which rules are used when
+trying to recognise each log line, and the effect that optimisation has is
+explored; this is followed by the impact that adding more rules to the
+ruleset has on parser performance.  The simplest and most effective of the
+optimisations, caching compiled regexes, is described next, and the
+efficiency evaluation concludes with an examination of where parsing time
+is spent: recognising log lines or processing them?
 
-XXX REWRITE WHEN THIS CHAPTER IS FINISHED\@.
+Coverage of Postfix log files is divided into two topics in this chapter:
+log lines correctly recognised, and mail delivery attempts correctly
+understood and reconstructed.  The former is initially more important,
+because the parser must correctly recognise every log line if it is to be
+complete, but subsequently the latter takes precedence because correctly
+reconstructing the journey a mail delivery attempt takes through Postfix is
+the aim of the parser.  Increasing the proportion of log lines correctly
+recognised is relatively simple and non-intrusive: adding new rules or
+modifying existing rules is very easy because of the separation of rules,
+actions, and framework.  Improving the understanding and reconstruction of
+mail delivery attempts is harder, because Postfix's behaviour must be
+analysed and figured out, and the new behaviour integrated into the actions
+without breaking the existing parsing.  Detecting a deficiency in the
+parser is also significantly harder, because the parser will warn about
+unrecognised log lines, whereas discovering a flaw in the parser requires
+careful study of any warnings produced and the entries remaining in the
+state table.  Rectifying a flaw in the parser requires a deep understanding
+of both the parser and Postfix's log files, investigative work to determine
+the cause of the deficiency, further examination of the log files to aid in
+developing a solution, and finally implementation, integration, and testing
+of the solution.
 
-This section began with parser scalability, showing the linear relationship
-between parsing time and input size.  Demonstrates the effect of rule
-ordering on parsing time, and the unexpected consequences of specific
-inputs.  The necessity of caching compiled regexes is attested to by the
-third group of graphs, where the difference between caching and not caching
-is staggering.  The penultimate section contains a breakdown of the rule
-hits accumulated during a single test run of the parser.  Miscellaneous
-graphs expected to be useful are collected in the final section.
-
-XXX REWRITE COVERAGE SUMMARY IF NECESSARY\@.
-
-Parser coverage is divided into two topics in this section: log lines
-covered and mails covered.  The former is initially more important, as the
-parser must successfully parse every line if it is to be complete, but
-subsequently the latter takes precedence because reproducing the path a
-mail takes through Postfix is the aim of the parser.  Increasing the
-percentage of log lines parsed is relatively simple and non-intrusive:
-adding new rules or modifying existing rules is simplified by the
-separation of rules, actions, and framework.  Improving the logical
-coverage is harder, as the actions taken by Postfix must be reconstructed
-by the author, and the new sequence of actions integrated into the existing
-model without breaking the existing parsing.  Detecting a deficiency in the
-parsing algorithm is also significantly harder than detecting unparsed log
-lines, as the parser will warn about any unparsed line, whereas discovering
-a flaw in the parser requires understanding of the warnings produced and
-the mails remaining in the state table.  Rectifying a flaw in the parser
-requires an understanding of both the parser and Postfix's log files, and
-investigative work to determine the cause of the deficiency, followed by
-further examination of the log files in developing a solution.
-
-Experience implementing the Postfix log parser shows that full input
-coverage is relatively easy to achieve with this architecture, and that
-with enough time and effort full understanding of the input is possible.
-Postfix log files would require substantial time and effort to correctly
-parse regardless of the architecture used; this architecture enables an
-iterative approach to be used (similar to Stepwise
-Refinement~\cite{stepwise-refinement}), as is practiced in many other
-software engineering disciplines.
+This chapter shows that it is possible to balance the conflicting goals of
+efficient and accurate parsing, and that one does not have to be sacrificed
+to achieve the other.
