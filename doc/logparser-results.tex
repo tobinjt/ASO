@@ -468,21 +468,27 @@ spent recognising log lines table}
 
 \section{Coverage}
 
+XXX IS THERE A BETTER WORD THAN ``coverage''?
+
 XXX I THINK THIS SECTION NEEDS SUBSTANTIAL WORK, IF NOT A RE-WRITE\@; START
 WITH THE PAPER'S CONTENT\@.
 
 \label{parsing coverage}
 
-The discussion of the parser's coverage of Postfix log files is separated
-into two parts: log lines covered and mails covered.  The first is
-important because the parser should handle all (relevant) log lines it is
-given; the second is equally important because the parser must properly
-deal with every mail if it is to be useful.  Improving the former is
-less intrusive, as it just requires new rules to be written; improving the
-latter is much more intrusive as it requires changes to the parser
-algorithm, and it can also be much harder to notice a deficiency.
+The discussion of \parsernames{} coverage of Postfix log files is separated
+into two parts: log lines correctly recognised, and mail delivery attempts
+correctly understood --- the former is a requirement for the latter to be
+achieved.  Correctly understanding and reconstructing every mail delivery
+attempt, whether it was successful or not, is important so that the
+information in the database is correct and complete.  Improving the
+proportion of log lines correctly recognised is the less difficult of the
+two, because usually it just requires new rules to be written or existing
+rules to be changed.  Improving the proportion of correctly understood and
+reconstructed mail delivery attempts is more difficult and intrusive,
+because it requires adding or changing actions, and it can be much harder
+to realise that a deficiency exists and needs to be addressed.
 
-\subsection{Log Lines Covered}
+\subsection{Log Lines Correctly Recognised}
 
 \label{log-lines-covered}
 
@@ -490,80 +496,70 @@ Parsing a log line is a three stage process:
 
 \begin{enumerate}
 
-    \item Check if there are any rules for the Postfix component that
-        produced the log line; if not then skip the log line.
+    \squeezeitems{}
+
+    \item Skip the log line if the ruleset does not contain any rules for
+        the Postfix component that produced the log line.
 
     \item Try each rule until a recognising rule is found; if the log line
-        is not recognised, issue a warning and move to the next log line.
+        is not recognised, issue a warning and move on to the next log
+        line.
 
-    \item Execute the action specified by the rule.
-
-\end{enumerate}
-
-Full coverage of log lines requires the following:
-
-\begin{enumerate}
-
-    \item Each Postfix component whose log lines are of interest must have
-        at least one rule or its log lines will be silently skipped; in the
-        extreme case of zero rules the parser would happily skip every log
-        line.  There may be any number of log lines from other programs
-        intermingled in the log file, and there are some Postfix programs
-        that do not produce any log lines of interest.
-
-    \item There must be a rule to recognise each different log line
-        produced by each program; if a log line is not successfully
-        recognised the parser will issue a warning.  Rules should be as
-        specific and tightly bound as possible to ensure accurate
-        parsing:\footnote{A rule with a regex that matches zero or more of
-        any character will successfully recognise every log line, but not
-        in a meaningful way.} most log lines contain fixed strings and have
-        a rigid pattern, so this is not a problem.
-
-    \item The appropriate action to take --- discussed in
-        \sectionref{mails-covered}.
+    \item Invoke the action specified by the recognising rule.
 
 \end{enumerate}
 
-Full coverage of log lines is easy to achieve yet hard to maintain.  It is
-easy to achieve full coverage for a limited set of log files (at the time
-of writing the parser is tested with \numberOFrules{} rules, fully parsing
-\numberOFlogFILESall{} contiguous log files from Postfix 2.2 through to
-Postfix 2.5), and new rules are easy to add.  Maintaining full coverage is
-hard because other servers have different restrictions with custom
-messages, \acronym{DNSBL} messages change over time, major releases of
-Postfix change warning messages (usually adding more information), etc.,\
-so over time the log lines drift and change.  \Graphref{rule hits graph}
-shows the number of hits for each rule over all \numberOFlogFILES{} log
-files.  The number of hits per rule is quite unevenly spread, resembling a
-Power Law distribution --- it is obvious that a small number of rules
-recognise the vast majority of the log lines, and more than half the rules
-recognise fewer than 100 log lines.
+Correctly recognising all log lines requires that each Postfix component
+whose log lines are of interest must have at least one rule, or its log
+lines will be silently skipped; in the extreme case of an empty ruleset the
+parser would skip every log line.  \parsername{} skips those log lines
+because there may be any number of log lines from other programs
+intermingled in the log file, and there are some Postfix components that do
+not produce any log lines of interest.  There must be a rule to recognise
+each log line variant produced by each Postfix component; if a log line is
+not recognised the parser will issue a warning, to inform the user that
+they need to extend their ruleset.  Currently, \parsername{} does not parse
+log lines from non-Postfix programs, e.g.\ Amavisd-new or SpamAssassin; it
+could easily be extended to do so, if a method could be developed to
+correctly associate such log lines with existing state table entries.  Each
+rule's regex should be as specific and precise as possible, to ensure
+accurate parsing: a rule with a regex that matches zero or more of any
+character will recognise every log line, but not in a meaningful way.  Most
+log lines contain fixed strings, so this is not a problem in practice.
 
-Warnings are issued for any log lines that are not parsed; no warnings are
-issued for unparsed log lines while testing with the \numberOFlogFILES{}
-test log files, so it can be safely concluded that there are zero false
-negatives.  False positives are harder to quantify: short of examining each
-of the 60,721,709 log lines and determining which regex parsed it, there
-is no way to be sure that every line was parsed by the correct regex,
-making it impossible to quantify the false positive rate; however a random
-sample of 6,039 log lines was parsed and the results checked manually to
-ensure that the correct regex parsed each log line.\footnote{Each log
-line was examined and the correct regex identified from the
-\numberOFrules{} rules in the database; the correct regex was then
-compared to the regex that was used by the parser.}  The sample was
-generated by running the following command:
-
-\verb!    perl -e 'print if (rand 1 < 0.0001)' -n LOG_FILES!
-
-\noindent{}to randomly extract roughly one line in every 10,000.  Although
-on initial appearances exercising only 36 rules (from a total of
-\numberOFrules{}) when parsing 6039 log lines seems quite low, after
-examining \graphref{rule hits graph} it becomes apparent that such
-a low hit rate is to be expected; the reader should also bear in mind that
-even when parsing all \numberOFlogFILES{} log files not all the rules are
-exercised (some of the rules are for parsing log lines that only appear in
-other log files).
+Full coverage of log lines is easy to achieve, yet hard to maintain.  It is
+easy to achieve full coverage for a limited set of log files; \parsername{}
+has \numberOFrules{} rules, fully parsing \numberOFlogFILESall{} log files
+from Postfix 2.2 through to Postfix 2.5.  Maintaining full coverage is hard
+because log lines change over time, e.g.\ administrators add restrictions
+with custom messages, \acronym{DNSBL} messages change, or major releases of
+Postfix change log lines (usually adding more information).  Warnings are
+issued for any log lines that are not recognised; no warnings are issued
+for unrecognised log lines while parsing the \numberOFlogFILES{} log files,
+so it can be safely concluded that there are zero false negatives.  False
+positives are harder to quantify: short of examining each of the 60,721,709
+log lines and determining which rule recognised it, there is no way to be
+sure that every log line was recognised by the correct rule, making it
+impossible to quantify the false positive rate.  However, a random sample
+of 6,039 log lines was parsed, and the results manually verified by
+inspection to ensure that the correct rule recognised each log line.  The
+sample was generated by running the command: \texttt{perl -n -e
+\singlequote{}print if (rand 1 < 0.0001)\singlequote{} LOG\_FILES} to
+randomly extract roughly one log line in every 10,000 (it actually
+extracted 0.00994\% instead of 0.001\%).  Each log line was examined and
+the correct rule identified from the \numberOFrules{} rules in the
+database; the correct rule was then compared to the rule that recognised
+the log line when parsing.  The sample results contained zero false
+positives, and this check has been automated to ensure continued accuracy.
+Based on this, the author is confident that zero false positives occur when
+parsing the \numberOFlogFILES{} log files.  On initial appearances,
+exercising only 36 rules from a total of \numberOFrules{} when parsing
+6,039 log lines seems low, but after examining \graphref{rule hits graph}
+it becomes apparent that parsing using such a low number of rules is to be
+expected.  The reader should also bear in mind that even when parsing all
+\numberOFlogFILES{} log files, only \numberOFrulesMINIMUM{} are used,
+because some of the rules are for recognising log lines that only appear in
+other log files.
 
 \subsection{Mails Covered}
 
