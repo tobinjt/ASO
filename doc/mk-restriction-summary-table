@@ -19,6 +19,7 @@ while (<$data_pipe>) {
 }
 
 print <<'HEADER';
+\centering{}
 \begin{tabular}[]{lrr}
     \tabletopline{}%
     Restriction type & Number of rejections & Percentage\\

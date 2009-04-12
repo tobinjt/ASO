@@ -669,9 +669,9 @@ It is important that the log lines are contiguous, so that all log lines
 are present for as many of the mail delivery attempts contained in the
 block as possible.  This log segment was parsed with all debugging options
 enabled, resulting in 167,448 lines of output.\footnote{A mean of 27.908
-lines of output per line of input; each connection has 30 debugging lines,
-plus 21 debugging lines per result.  Connections which have been cloned
-will have the cloned connection in their debugging output, plus another 33
+lines of output per log line; each connection has 30 debugging lines, plus
+21 debugging lines per result.  Connections which have been cloned will
+have the cloned connection in their debugging output, plus another 33
 debugging lines.  Those numbers are approximate, and may vary $\pm{}$ 2.
 An approximate linear relationship between the number of log lines and
 debugging lines is: $33(connections) + 30(accepted~~mails) + 21(results)$.}

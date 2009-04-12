@@ -347,10 +347,6 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 
     XXX MAIL MADS ABOUT EXAMINERS\@.
 
-    XXX SPELL CHECK\@.
-    
-    XXX RUN make log-lines-files
-
 \end{abstract}
 
 % Pull in the acronyms early, so they can be used throughout the text.
@@ -370,11 +366,22 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 \input{ipamacs}
 
 \input{logparser-introduction}
+% Reset the list of acronyms that have been used, so they will be expanded
+% again the first time they are used.  The idea is to have them expanded
+% once per chapter; I do not reset them before the appendices, but some may
+% not have been used since they were reset, and thus will be expanded
+% again.
+\glsresetall{}
 \input{logparser-background}
+\glsresetall{}
 \input{logparser-other-parsers-review}
+\glsresetall{}
 \input{logparser-architecture}
+\glsresetall{}
 \input{logparser-implementation}
+\glsresetall{}
 \input{logparser-results}
+\glsresetall{}
 \input{logparser-conclusion}
 
 \appendix

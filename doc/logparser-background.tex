@@ -2,7 +2,7 @@
 
 \label{background}
 
-This section provides background information helpful in understanding the
+This chapter provides background information helpful in understanding the
 remainder of this thesis.  It begins with a discussion of the motivation
 underlying the project, followed by a brief introduction to \acronym{SMTP},
 and finishes with a longer introduction to Postfix, concentrating on
@@ -87,7 +87,7 @@ fashion proposed, implemented, and tested herein.
 
 \section{Simple Mail Transfer Protocol (SMTP)}
 
-\SMTPglossaryDescription{} Despite the simplicity of the protocol many
+\SMTPglossaryDescription{} Despite the simplicity of the protocol, many
 virus and spam sending programs fail to implement it properly, so requiring
 strict adherence to the protocol specification is beneficial in protecting
 against spam and viruses.\footnote{Originally all mail servers adhered to
@@ -147,9 +147,12 @@ particularly newer programs, were written by competent programmers or send
 mail using well written programs (e.g.\ Postfix or Sendmail on Unix hosts,
 Microsoft Outlook on Windows hosts).  Traditionally a mail server would
 have done its best to deal with deficient clients, with the intention of
-accepting as much mail sent to its users as possible, e.g.\ by ignoring the
-absence of a HELO command, or by accepting sender or recipient addresses
-that were not enclosed in \texttt{<>}.
+accepting as much mail sent to its users as possible, e.g.\ by accepting
+sender or recipient addresses that were not enclosed in \texttt{<>}, or by
+ignoring the absence of a HELO command.  The HELO command is the first
+command sent by the client in the \acronym{SMTP} conversation; it is
+required by the protocol, but its original purpose was to detect a server
+trying to deliver mail to itself, so some implementations omitted it.
 
 \section{Postfix}
 
