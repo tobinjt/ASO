@@ -23,10 +23,10 @@
         A DNS Blacklist is a simple collaborative anti-spam technique used
         to reject or penalise mail sent from mail servers believed to be
         the source of large volumes of spam.  The criteria used when
-        deciding whether or not to include an IP address on a DNSBL vary
-        widely between DNSBLs, so before using one it is very important to
-        check their listing policies.  To use a DNSBL the mail server makes
-        a DNS request incorporating the IP address of the client; if the
+        deciding if an IP address should be included on a DNSBL vary widely
+        between DNSBLs, so before using one it is very important to check
+        their listing policies.  To use a DNSBL the mail server makes a DNS
+        request incorporating the IP address of the client; if the
         requested hostname exists the client is on the DNSBL, and the mail
         server can decide what course of action to take.
     }
@@ -47,7 +47,7 @@
         of the existing code, and acts as a contract between the user and
         the provider: if the user adheres to the API the provider
         guarantees it will work, but is free to change the implementation
-        as long as the API is preserved.
+        if the API is preserved.
     }
 }
 
@@ -269,7 +269,7 @@
     name={Finite Automata},
     description={
         Finite automata are computing devices that accept or recognize
-        regular languages.  They lack any form of storage, so while they
+        regular languages.  They lack any form of storage, so although they
         can recognise languages such as ${(ab)}^{*}$ or
         $a^{*}{(b^{*}|c)}b$, they cannot count and so cannot recognise
         languages such as $a^{n}b^{n}$.
@@ -287,7 +287,7 @@
     description={
         A CFG is a grammar in which every transition or production takes
         the form $L\rightarrow{}R$, where $L$ is a single non-terminal
-        symbol, and $R$ is a (possibly empty) string of terminal and/or
+        symbol, and $R$ is a (possibly empty) string of terminal or
         non-terminal symbols.  Every CFG can be recognised by a
         \acronym{PDA}, and \acronyms{PDA} cannot recognise more complicated
         grammars, so \acronyms{CFG} and \acronyms{PDA} are equivalent.

@@ -28,9 +28,9 @@
 
 \newglossaryentry{Epoch}{name={Epoch},description={
     Most operating systems store the current time and timestamps of files
-    etc.\ as seconds elapsed since the epoch, the beginning of time as far
-    as the operating system is concerned.  On Unix and Unix-derived systems
-    the epoch is 1970/01/01 00:00:00; on other operating systems it may be
+    as seconds elapsed since the epoch, the beginning of time as far as the
+    operating system is concerned.  On Unix and Unix-derived systems the
+    epoch is 1970/01/01 00:00:00; on other operating systems it may be
     different.
 }}
 
@@ -53,11 +53,10 @@
 }}
 
 \newglossaryentry{hash}{name={hash},description={
-    A hashing function transforms a string of characters to a number.
-    There are many possible uses for the resulting number: a common usage
-    is to maintain a data structure indexed by strings in an efficient
-    manner.  A full description is beyond the scope of this paper, further
-    information can be found at~\cite{hash-functions}.
+    A hashing function transforms a string of characters to a number.  A
+    common usage is to maintain a data structure indexed by strings in an
+    efficient manner.  A full description is beyond the scope of this
+    paper, further information can be found at~\cite{hash-functions}.
 }}
 
 \newglossaryentry{awk}{name={AWK},description={
@@ -76,20 +75,19 @@
     A mail bomb occurs when an attacker sends a huge volume of mail to a
     victim.  At best a mail bomb is irritating to the victim; at worst the
     deluge of mail can be severe enough to interrupt service for the victim
-    and/or other users, by causing mail to be delayed or rejected because
-    the victim or the server has reached a limit, e.g.\ too many mails in
-    their mailbox, or too much disk space consumed by the mail queue.
+    or other users, by causing mail to be delayed or rejected because the
+    victim or the server has reached a limit, e.g.\ too many mails in their
+    mailbox, or too much disk space consumed by the mail queue.
 }}
 
 \newglossaryentry{mail loop}{name={Mail Loop},description={
     Sometimes mail sent to one address must be forwarded to a different
     address instead, e.g.\ because a person has changed jobs.  A mail loop
     occurs when the chain of recipient addresses constitute a cyclic
-    directed graph; the simplest example is when mail for
-    \texttt{alice@example.net} is delivered to \texttt{bob@example.com},
-    and mail for \texttt{bob@example.com} is delivered to
-    \texttt{alice@example.net}.  Postfix adds a \texttt{Delivered-To:}
-    header to all mails it delivers locally to detect mail loops, but in
-    some cases this header is removed by the program that forwards the
-    mail.
+    directed graph; e.g.\ mail for \texttt{alice@example.net} is delivered
+    to \texttt{bob@example.com}, and mail for \texttt{bob@example.com} is
+    delivered to \texttt{alice@example.net}.  Postfix adds a
+    \texttt{Delivered-To:} header to all mails it delivers locally to
+    detect mail loops, but in some cases this header is removed by the
+    program that forwards the mail.
 }}

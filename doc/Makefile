@@ -528,6 +528,7 @@ check: lines-from-paragraphs
 	chktex -I0 -q *.tex *.bbl build/include-*.tex
 	# Check for contractions.
 	ack -i 'it'\''s|\w'\''(?!s)\w' logparser*.tex
+	ack 'etc\.' logparser*.tex
 	# Check for uncapitalised words in section headings, and then in bibliography entries.
 	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? [[:lower:]])' logparser*.tex
 	ack '(address|author|publisher|title)\s+=\s+.* (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]]' logparser-bibliography.tt2
@@ -546,6 +547,9 @@ check: lines-from-paragraphs
 	ack -i 'perfect best (?!oracle)' build/logparser*.tex
 	grep 'begin{table}' logparser-*.tex | grep -v -F 'begin{table}[thbp]' || true
 	grep 'set output.*pdf' graphs/* || true
+
+check-contractions:
+	ACK_PAGER=less ack "(?!(Postfix|mail|client|server|rule|parser|regex|user|program|architecture|restriction|sender|connection|word|line|framework)'s)\b\w+'s" logparser*.tex
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
@@ -603,7 +607,7 @@ log-files-lines: lines-from-paragraphs
 diction:
 	# Is -a a good option for untex?
 	for file in *.tex; do \
-		untex -e "$$file" | diction --suggest --file diction-rules --no-default-file | less -M -w "-PM$$file %lt/%L"; \
+		untex -e "$$file" | diction --ignore-double-words --suggest --file diction-rules --no-default-file | less -M -w "-PM$$file %lt/%L"; \
 	done
 
 slides-xpdf: sgai-2008-slides.pdf

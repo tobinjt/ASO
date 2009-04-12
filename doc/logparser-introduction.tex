@@ -67,10 +67,10 @@ line was added on an ad hoc basis as a requirement was discovered or new
 functionality was added.\footnote{A history of all changes made to Postfix
 is distributed with the source code, available from
 \urlLastChecked{http://www.postfix.org/}{2009/02/23}.}  Further
-complication arises because the set of log lines is not fixed, and there
-are many ways in which log lines may differ between servers, even within
-the same organisation, where servers may be configured differently or even
-running different versions of Postfix.
+complication arises because the set of log lines is not fixed, and log
+lines can differ in many ways between servers, even within the same
+organisation, where servers may be configured differently or running
+different versions of Postfix.
 
 It was hoped to reuse an existing parser rather than writing one from
 scratch, but the effort required to adapt and improve an existing parser
@@ -123,8 +123,8 @@ attention, rather than being forced to fix the first error that arises.
 
 This thesis documents the difficult process of parsing Postfix log files,
 presenting an architecture designed to enable the users of a parser to
-easily extend it to parse their particular inputs, without requiring a lot
-of work or a high level of understanding of the parsing process and the
+easily extend it to parse their particular inputs, without requiring much
+work or a high level of understanding of the parsing process and the
 parser's internal workings.  This architecture is the basis of
 \parsername{}, a program that parses Postfix log files and places the
 resulting data into a database for later analysis.  The gathered data can

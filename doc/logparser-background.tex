@@ -159,7 +159,7 @@ Postfix is a \glsfirst{MTA} with the following design aims (in order of
 importance): security, flexibility of configuration, scalability, and high
 performance.  It features extensive optional anti-spam restrictions,
 allowing an administrator to employ those restrictions which they judge
-suitable for their site's needs, rather than a fixed set chosen by
+suitable for their server's needs, rather than a fixed set chosen by
 Postfix's author.  These restrictions can be selectively applied, combined,
 and bypassed on a per-client, per-recipient, or per-sender basis, allowing
 different levels of stricture and permissiveness.  Administrators can
@@ -169,23 +169,22 @@ provide a simple way to write new restrictions without having to modify
 Postfix's source code.  Unfortunately this flexibility has a cost:
 complexity in the log files generated.  Although it is relatively simple in
 most cases to use standard Unix text processing utilities to determine the
-fate of an individual mail, in some cases it can be quite difficult.  For
+fate of an individual mail, sometimes it can be quite difficult.  For
 most mails the journey is simple and brief, but the remainder can have
 quite complex journeys (see \sectionref{complications} for details).
 
 Postfix's design follows the Unix philosophy of \textit{``Write programs
 that do one thing and do it well''\/}~\cite{unix-philosophy}, and it is
 separated into multiple components that each perform one of the tasks
-required of an \acronym{MTA}\@: receive mail, send mail, local delivery of
-mail, etc.;\ full details can be found in~\cite{postfix-overview}.
-Postfix's design is strongly influenced by security concerns: those
-components that interact with other hosts are not
-privileged,\footnote{Privilege means the power to perform actions that are
-limited to the administrator, and not available to ordinary users.} so bugs
-in those components will not give an attacker extra privileges; those
-components that are privileged do not interact with other hosts, making it
-much more difficult for an attacker to exploit any bugs that may exist in
-those components.
+required of an \acronym{MTA}, e.g.\ receive mail, send mail, local delivery
+of mail;\ full details can be found in~\cite{postfix-overview}.  Postfix's
+design is strongly influenced by security concerns: those components that
+interact with other hosts are not privileged,\footnote{Privilege means the
+power to perform actions that are limited to the administrator, and not
+available to ordinary users.} so bugs in those components will not give an
+attacker extra privileges; those components that are privileged do not
+interact with other hosts, making it much more difficult for an attacker to
+exploit any bugs that may exist in those components.
 
 \subsection{Mixing And Matching Postfix Restrictions}
 
@@ -255,7 +254,7 @@ authentication support; this configuration example shows how:
     192.0.2.0/24    reject "Please authenticate to send mail"
 \end{verbatim}
 
-That example also shows how easy it is to supply a custom rejection
+That example also shows that it is trivial to supply a custom rejection
 message.  When the result is the name of another restriction Postfix will
 evaluate that restriction, allowing restrictions to be chosen based on the
 client \acronym{IP} address, client hostname, HELO hostname, sender
