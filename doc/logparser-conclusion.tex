@@ -76,17 +76,18 @@ appears to be missing is much more grueling.  Trawling through the log
 files, looking for something out of the ordinary, possibly hundreds or even
 thousands of log lines away from the last mention of the queueid in
 question, is extremely time consuming and error prone.  Sometimes the task
-is not to spot the line that is unusual, but to spot that a line that is
-normally present is missing, i.e.\ to realise that one line amongst
-thousands is absent.  In all cases the evidence must be used to construct a
-hypothesis to explain the irregularities, and that hypothesis must then be
-tested in the parser; if successful, the parser must be modified to deal
-with the irregularities, without adversely affecting the existing
-functionality.  The complications described in \sectionref{complications}
-were solved in the order they are described in, and that order closely
-resembles the frequency with which they occur; the most frequently
-occurring complications dominate the warning messages produced, and so
-naturally they are the first complications to be dealt with.
+is not to spot the log line that is unusual, but to spot that a log line
+that is normally present is missing, i.e.\ to realise that one log line
+amongst thousands is absent.  In all cases the evidence must be used to
+construct a hypothesis to explain the irregularities, and that hypothesis
+must then be tested in the parser; if successful, the parser must be
+modified to deal with the irregularities, without adversely affecting the
+existing functionality.  The complications described in
+\sectionref{complications} were solved in the order they are described in,
+and that order closely resembles the frequency with which they occur; the
+most frequently occurring complications dominate the warning messages
+produced, and so naturally they are the first complications to be dealt
+with.
 
 A parser's ability to correctly parse its input is extremely important; the
 parser's coverage of its test log files is discussed in \sectionref{parsing
@@ -105,4 +106,58 @@ regardless of the architecture used; this architecture enables an iterative
 approach to be used (similar to Stepwise
 Refinement~\cite{stepwise-refinement}), as is practiced in many other
 software engineering disciplines.
+
+
+This architecture's greatest strength is the ease with which it can be
+adapted to deal with new requirements and inputs.  Parsing a variation of
+an existing input is a trivial task: simply modify an existing rule or add
+a new rule with an appropriate regex and the task is complete.  Parsing a
+new category of input is achieved by writing a new action and appropriate
+rules; quite often the new action will not need to interact with existing
+actions, but when interaction is required the framework provides the
+necessary facilities.  The decoupling of rules from actions allows
+different sets of rules to be used with the same actions, e.g.\ a parser
+might have actions to process versions one and two of a file format; by
+choosing the appropriate ruleset the parser will parse version one, or
+version two, or both versions.  Decoupling also allows other approaches to
+rule management, as discussed in \sectionref{rules in architecture}.  The
+architecture makes it possible to apply commonly used programming
+techniques (such as object orientation, inheritance, composition,
+delegation, roles, modularisation, or closures) when designing and
+implementing a parser, simplifying the process of working within a team or
+when developing and testing additional functionality.  This architecture is
+ideally suited to parsing inputs where the input is not fully understood or
+does not follow a fixed grammar: the architecture warns about unparsed
+inputs and other errors, but continues parsing as best it can, allowing the
+developer of a new parser to decide which deficiencies are most important
+and require attention first, rather than being forced to fix the first
+error that arises.
+
+The data gathered by the Postfix log parser provides the foundation for the
+future of this project: applying machine-learning algorithms to the data to
+analyse and optimise the set of anti-spam defences in use, followed by
+identifying patterns in the data that could be used to write new filters to
+recognise and reject spam rather than accepting it.  The parser provides
+the data in a normalised form that is far easier to use as input to new or
+existing algorithm implementations than trying to adapt each algorithm to
+extract data directly from the log files.  The current focus is on
+clustering and decision trees to optimise the order in which rules are
+applied; future efforts will involve using data gathered by the parser to
+train and test new filters.  This task is similar to analysing a black
+box application based on its inputs and outputs, and this approach could be
+applied to analyse the behaviour of any system given sufficient log
+messages to parse.  An alternate approach to black box optimisation that
+uses application profiling in conjunction with the application's error
+messages to improve the error messages shown to users is described
+in~\cite{black-box-error-reporting}; profiling data may be useful in
+supplementing systems that fail to provide adequate log messages.
+
+The Postfix log file parser based on this architecture provides a basis for
+systems administrators to monitor the effectiveness of their anti-spam
+measures and adapt their defences to combat new techniques used by those
+sending spam.  This parser is a fully usable application, built to address
+a genuine need, rather than a proof of concept whose sole purpose is to
+illustrate a new idea; it deals with the oddities and difficulties that
+occur in the real world, rather than a clean, idealised scenario developed
+to showcase the best features of a new approach.
 
