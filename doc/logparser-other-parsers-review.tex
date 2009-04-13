@@ -488,8 +488,8 @@ for a second time.  This may or may not be a useful feature for
 \parsername{}.} There did not appear to be an option to ensure the log
 files would be processed in the order they were created, though this may be
 neither necessary nor beneficial with Splunk.  Subsequently the author was
-successful in adding a single file at a time using the \acronym{CLI} and
-the command ``\texttt{splunk add tail }\textit{filename\/}''.  A simple
+successful in adding a single log file at a time using the \acronym{CLI}
+and the command ``\texttt{splunk add tail }\textit{filename\/}''.  A simple
 loop using that command was enough to add all the desired log files.
 Splunk will periodically check all indexed log files for updates unless
 they are manually removed from its list; this may or may not be useful
@@ -526,7 +526,7 @@ to and from addresses, HELO hostname, and protocol (\acronym{SMTP} or
 server \acronym{IP} address and hostname, queueid, start and end times,
 timestamps for each log line, \acronym{SMTP} and enhanced status codes,
 delivery delays, and message ID), though it does not make the full text of
-the line available (this could be trivially added if desired, but would
+the log line available (this could be trivially added if desired, but would
 greatly increase the size of the resulting database).  The full power of
 \acronym{SQL} is available when searching the data extracted by
 \parsername{}, allowing the user to search on arbitrarily complicated

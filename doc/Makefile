@@ -602,7 +602,8 @@ build/logparse%.tex: logparse%.tex
 lines-from-paragraphs: $(patsubst %,build/%,$(wildcard logparser*.tex))
 
 log-files-lines: lines-from-paragraphs
-	ACK_PAGER="$$PAGER" ack -i '(?<!log[- ])(?<!CSV\} )\b(lines|files)\b(?!\{)' build/logparser*.tex
+	ACK_PAGER="$$PAGER" ack -i '(?<!log[- ])(?<!CSV\} )\b(line|file)s?\b(?!\{)' build/logparser*.tex
+	ACK_PAGER="$$PAGER" ack -i '(?<!log[- ])(?<!CSV\} )(?<!with )\b(line|file)s?\b' graphs/plot-*
 
 diction:
 	# Is -a a good option for untex?

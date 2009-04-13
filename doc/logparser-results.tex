@@ -111,17 +111,17 @@ CONTENT EXCEPT WHEN THERE IS A MAIL LOOP\@.
 
 An important property of a parser is how parsing time scales relative to
 input size: does it scale linearly, polynomially, or exponentially?
-\Graphref{parsing time vs file size vs number of log lines graph} shows the
-parsing time in seconds, file size in MB, and number of log lines in tens
-of thousands, for each of the \numberOFlogFILES{} log files.  The three
-lines run roughly in parallel, giving the impression that the algorithm
-scales linearly with input size.  This impression is borne out by
-\graphref{parsing time vs file size vs number of log lines factor}, which
-plots both the ratio of file size vs parsing time, and the ratio of number
-of log lines vs parsing time (higher is better in both cases);
-\tableref{parsing time vs file size vs number of log lines factor table}
-shows the same ratios for different groups of log files.  The ratios are
-quite tightly banded, showing that the algorithm scales linearly; the
+\Graphref{parsing time vs log file size vs number of log lines graph} shows
+the parsing time in seconds, log file size in MB, and number of log lines
+in tens of thousands, for each of the \numberOFlogFILES{} log files.  The
+three lines run roughly in parallel, giving the impression that the
+algorithm scales linearly with input size.  This impression is borne out by
+\graphref{parsing time vs log file size vs number of log lines factor},
+which plots both the ratio of log file size vs parsing time, and the ratio
+of number of log lines vs parsing time (higher is better in both cases);
+\tableref{parsing time vs log file size vs number of log lines factor
+table} shows the same ratios for different groups of log files.  The ratios
+are quite tightly banded, showing that the algorithm scales linearly; the
 ratios increase (i.e.\ improve) for log files 22 \& 62--68, despite their
 larger than usual size.  Both groups of log files are much larger than
 usual because of a mail loop caused by a user who set up mail forwarding
@@ -141,16 +141,16 @@ line for each Postfix component} shows the mean number of rules tried per
 log line for each Postfix component.
 
 \showtable{build/include-file-size-and-number-of-log-lines-vs-parsing-time}{Ratio
-of file size and number of log lines to parsing time}{parsing time vs file
-size vs number of log lines factor table}
+of log file size and number of log lines to parsing time}{parsing time vs
+log file size vs number of log lines factor table}
 
-\showgraph{build/graph-input-size-vs-parsing-time}{Parsing time, file size,
-and number of log lines for \numberOFlogFILES{} log files}{parsing time vs
-file size vs number of log lines graph}
+\showgraph{build/graph-input-size-vs-parsing-time}{Parsing time, log file
+size, and number of log lines for \numberOFlogFILES{} log files}{parsing
+time vs log file size vs number of log lines graph}
 
-\showgraph{build/graph-input-size-vs-parsing-time-ratio}{Ratio of file size
-and number of log lines to parsing time (higher is better)}{parsing time vs
-file size vs number of log lines factor}
+\showgraph{build/graph-input-size-vs-parsing-time-ratio}{Ratio of log file
+size and number of log lines to parsing time (higher is better)}{parsing
+time vs log file size vs number of log lines factor}
 
 \showgraph{build/graph-average-number-of-rules-tried-per-log-line}{Mean
 number of rules tried per log line}{Mean number of rules tried per log

@@ -315,9 +315,9 @@ for the following:
 
     \item Is \daemon{smtpd} the only Postfix component that produced a log
         line for this mail?  Every mail that passes normally through
-        Postfix will have a \daemon{cleanup} line, and later a
-        \daemon{qmgr} log line; lack of a \daemon{cleanup} line is a sure
-        sign the mail did not make it too far.
+        Postfix will have a \daemon{cleanup} log line, and later a
+        \daemon{qmgr} log line; lack of a \daemon{cleanup} log line is a
+        sure sign the mail did not make it too far.
 
     \item Can the mail be found in the state tables?  If not it cannot be
         an aborted delivery attempt.
@@ -451,12 +451,12 @@ mails}).  This is incorrect because the log line actually belongs to the
 mail that has just been discarded; if the queueid is reused there will be a
 queueid clash, otherwise the new mail will just remain in the state tables.
 
-During the \action{TIMEOUT} action, if the \daemon{cleanup} line is still
-pending, the action updates the \texttt{timeout\_queueids} state table,
-adding the queueid and the timestamp from the log line.  When the next
-\daemon{cleanup} line is parsed for that queueid, the list will be checked
-and if the log line meets the following requirements it will be deemed part
-of the mail where the timeout occurred and discarded.
+During the \action{TIMEOUT} action, if the \daemon{cleanup} log line is
+still pending, the action updates the \texttt{timeout\_queueids} state
+table, adding the queueid and the timestamp from the log line.  When the
+next \daemon{cleanup} log line is parsed for that queueid, the list will be
+checked and if the log line meets the following requirements it will be
+deemed part of the mail where the timeout occurred and discarded.
 
 \begin{itemize}
 
