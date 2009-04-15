@@ -26,7 +26,7 @@ developed is to divide the architecture into three parts: Framework,
 Actions, and Rules.  Each will be discussed separately, but first an
 overview:
 
-\begin{eqlist}[\def\makelabel#1{\bfseries#1}]
+\begin{boldeqlist}
 
     \item [Framework]  The framework is the structure that actions and
         rules plug into.  It manages the parsing process, providing shared
@@ -44,7 +44,7 @@ overview:
         to be invoked when an input has been recognised; rules thus provide
         an extensible method of associating inputs with actions.
 
-\end{eqlist}
+\end{boldeqlist}
 
 For each input, the framework tries each rule in turn until it finds a rule
 that recognises the input, then invokes the action specified by that rule.
@@ -366,6 +366,8 @@ restrict which rules will be used to recognise each input, imposing a
 context of sorts.
 
 \subsection{Adding New Rules}
+
+\label{adding new rules in architecture}
 
 The framework issues a warning for each unparsed input, so it is clearly
 evident when the ruleset needs to be augmented.  Parsing new inputs is

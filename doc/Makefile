@@ -278,6 +278,16 @@ build/include-perfect-worst-vs-reverse-stddev.tex: build/stats-perfect-worst-vs-
 build/include-perfect-best-vs-optimal-mean.tex: build/stats-perfect-best-vs-optimal-stddev
 	awk 'BEGIN { mean = 0 } /Mean:/ { if ($$2 > mean) { mean = $$2 } } END { printf "%.0f\\%%%%\n", mean }' "$<" > "$@"
 
+# Median file size and number of log lines
+build/include-median-file-size.tex: file-sizes.txt
+	awk '{print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "ignored" | awk '/Median/ { printf "%.3f MB%%\n", $$2 / (1024 * 1024); exit; }' > "$@"
+
+build/include-median-number-of-log-lines.tex: wc.txt
+	awk '{print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "ignored" | awk '/Median/ { printf "%'\''d%%\n", $$2; exit; }' > "$@"
+
+build/include-total-size-of-93-log-files.tex: file-sizes.txt
+	awk 'BEGIN { total_size = 0 } { total_size += $$2 } END { printf "%.3f GB%%\n", total_size / (1024 * 1024 * 1024) }' "$<" > "$@"
+
 # Hits per rule.
 build/stats-hits: db.full-run.sq3
 	sqlite3 -separator ' ' "$<" "select hits_total from rules order by hits_total;" > "$@.tmp"
@@ -537,7 +547,8 @@ check: lines-from-paragraphs
 	# * trailing spaces or lines containing only spaces
 	# * repeated .
 	# * . not followed by two spaces
-	ack '\\url{|[ \t]+$$|\.{2,}|\. [^ ]' logparser-*.tex
+	# * three or more spaces separating sentences
+	ack '\\url{|[ \t]+$$|\.{2,}|\. [^ ]|\. {3,}\w' logparser-*.tex
 	ack -i 'XX[X]' logparser.bbl
 	# Check for repeated words
 	ack '\b(\w+)\b\s+\b\1\b' build/logparser*.tex
