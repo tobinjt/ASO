@@ -1,7 +1,7 @@
 load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
-set ylabel "Percentage of parsing time spent recognising log lines"
+set ylabel "Percentage of parsing time\nspent recognising log lines"
 set output "../build/graph-percentage-time-spent-recognising-log-lines.ps"
 
 # Put the legend at the top left, Left justified text.
