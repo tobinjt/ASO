@@ -1,6 +1,5 @@
 % $Id$
 \documentclass[a4paper,12pt,draft]{report}
-\pagestyle{headings}
 
 % Useful stuff for math mode.
 \usepackage{amstext}
@@ -306,16 +305,98 @@
 \newcommand{\parsernamelong}{Postfix Log Parser}
 \newcommand{\parsernameshort}{PLP}
 
+\newcommand{\specialpage}[1]{%
+    \phantomsection{}
+    \addcontentsline{toc}{chapter}{#1}%
+}
+\newcommand{\specialpageheading}[1]{%
+    \begin{center}
+        \textbf{\Large #1}
+    \end{center}
+}
+\newcommand{\specialpageandheading}[1]{%
+    \specialpage{#1}
+    \specialpageheading{#1}
+}
+
 \begin{document}
 
-\title{Parsing Postfix Log Files}
-\author{John Tobin \\ School of Computer Science and Statistics \\
-Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
-\maketitle
+\pagestyle{empty}
+
+\specialpage{Title}
+
+\begin{center}
+
+    {\Huge Parsing Postfix Log Files}
+
+    \vfill{}
+
+    {\LARGE John Tobin}
+
+    \vfill{}
+
+    A thesis submitted to the University of Dublin, in fulfilment of the
+    requirements for the degree of Master of Science in Computer Science.
+
+    \vfill{}
+
+    April 2009
+
+
+    \vfill{}
+
+    \vfill{}
+
+    \vfill{}
+
+\end{center}
+
+\newpage{}
+
+
+% Declaration
+\specialpageandheading{Declaration}
+
+\vfill{}
+
+\noindent{}I declare that this thesis, and the work described herein, is
+entirely my own work, and has not been submitted as an exercise for a
+degree at this or any other university.  This thesis may be borrowed or
+copied upon request with the permission of the Librarian, Trinity College,
+University of Dublin.
+
+\vfill{}
+
+\begin{flushright}
+    \underline{\hspace*{10em}} \\~\\
+    John Tobin \\
+    \today{}
+\end{flushright}
+
+\vfill{}
+
+\vfill{}
+
+\vfill{}
+
+\vfill{}
+
+\newpage{}
+
+% Acknowledgements
+\specialpageandheading{Acknowledgements}
+
+\noindent{}I would like to express my appreciation to my supervisor, Dr.\
+Carl Vogel, for his advice, assistance, and guidance.
+
+\bigskip{}
+
+\noindent{}I would like to thank my wife, Ariane Tobin, for her patience,
+good will, and encouragement.
 
 \begin{abstract}
 
-    \setcounter{page}{2}
+    \setcounter{page}{4}
     \phantomsection{}
     \addcontentsline{toc}{chapter}{Abstract}
 
@@ -338,19 +419,21 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
     architecture is designed to make the process of parsing new inputs as
     simple as possible, enabling users to trivially add new rules (to parse
     variants of known inputs) and relatively easily add new actions (to
-    process a previously unknown category of inputs).  The architecture
-    scales linearly or better as the number of rules and size of input
-    increases, making it suitable for parsing large corpora or months of
-    accumulated data.
+    process a previously unknown category of inputs).  The parser
+    implemented for this project is evaluated on the criteria of efficiency
+    and coverage of Postfix log files, demonstrating that the conflicting
+    goals of efficiency and accuracy can be balanced, and one need not be
+    sacrificed to achieve the other.
 
     \SVN$Id$
     \begin{center}
         \SVNId{}
     \end{center}
 
-    XXX MAIL MADS ABOUT EXAMINERS\@.
-
 \end{abstract}
+
+% Include the header across the top of each page, after the declaration.
+\pagestyle{headings}
 
 % Pull in the acronyms early, so they can be used throughout the text.
 \input{logparser-acronyms}
@@ -358,7 +441,7 @@ Trinity College \\ Dublin 2 \\ Ireland \\ tobinjt@cs.tcd.ie}
 \input{logparser-postfix-daemons}
 \glsaddall[types={postfix}]
 
-\setcounter{page}{3}
+\setcounter{page}{5}
 \tableofcontents
 \listoffigures
 \listoftables
