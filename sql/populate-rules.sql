@@ -101,12 +101,11 @@ INSERT INTO rules(name, description, program, regex, action)
         'UNINTERESTING'
 );
 
-INSERT INTO rules(name, description, program, regex, action, debug)
+INSERT INTO rules(name, description, program, regex, action)
     VALUES('Fatal error', 'Fatal error of some sort',
         'postfix/smtpd',
         '^fatal: .*$',
-        'UNINTERESTING',
-        1
+        'UNINTERESTING'
 );
 
 -- NOTE: SEE big-regex-rule ALSO.
@@ -218,7 +217,7 @@ INSERT INTO rules(name, description, program, regex, action, restriction_name, c
         'postfix/smtpd',
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using sbl-xbl.spamhaus.org;(?:(__DATA__(?:(?:(?: http://www.spamhaus.org/SBL/sbl.lasso\?query=\w+)|(?: http://www.spamhaus.org/query/bl\?ip=\k<client_ip>))(?: /)?)*);)? (?>from=<(__SENDER__)>) to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
-        'reject_rbl_client',
+        'reject_rbl_client SpamHaus SBL-XBL',
         6
 );
 
@@ -231,7 +230,7 @@ INSERT INTO rules(name, description, program, regex, action, restriction_name, c
         'postfix/smtpd',
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using zen.spamhaus.org; (?:(__DATA__(?:http://www.spamhaus.org/(?:query/bl\?ip=\k<client_ip>|SBL/sbl.lasso\?query=[^\s]+))| / )+; )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
-        'reject_rbl_client',
+        'reject_rbl_client SpamHaus Zen',
         6
 );
 
@@ -242,7 +241,7 @@ INSERT INTO rules(name, description, program, regex, action, restriction_name, c
         'postfix/smtpd',
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using list.dsbl.org; (?:(?>(__DATA__http://dsbl.org/listing\?\k<client_ip>);) )?from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
-        'reject_rbl_client',
+        'reject_rbl_client DSBL',
         6
 );
 
@@ -252,7 +251,7 @@ INSERT INTO rules(name, description, program, regex, action, restriction_name, c
         'postfix/smtpd',
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using relays.ordb.org; (?>(__DATA__This mail was handled by an open relay - please visit <http://ORDB.org/lookup/\?host=\k<client_ip>>);) from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
-        'reject_rbl_client',
+        'reject_rbl_client ordb.org',
         6
 );
 
@@ -263,7 +262,7 @@ INSERT INTO rules(name, description, program, regex, action, restriction_name, c
         'postfix/smtpd',
         '^__RESTRICTION_START__ Service unavailable; Client host (?>\[(__CLIENT_IP__)\]) blocked using cbl.abuseat.org;(?>(__DATA__ Blocked - see http://cbl.abuseat.org/lookup.cgi\?ip=\k<client_ip>);)? from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
-        'reject_rbl_client',
+        'reject_rbl_client CBL',
         6
 );
 
