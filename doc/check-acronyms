@@ -1,0 +1,61 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use Term::ANSIColor;
+
+my (@files_defining_acronyms, @files_using_acronyms);
+
+my $array = \@files_defining_acronyms;
+my $seen_dash_dash = 0;
+foreach my $filename (@ARGV) {
+    if ($filename eq q{--}) {
+        if ($seen_dash_dash) {
+            usage();
+        }
+        $array = \@files_using_acronyms;
+        $seen_dash_dash = 1;
+    } else {
+        push @{$array}, $filename;
+    }
+}
+
+if (not @files_defining_acronyms or not @files_using_acronyms) {
+    usage();
+}
+
+@ARGV = @files_defining_acronyms;
+my %acronyms;
+while (<>) {
+    m/^\\newglossaryentry\{(\w+)\}\{$/ or next;
+    my $word = $1;
+    $acronyms{$word} = colored($word, q{red});
+}
+
+@ARGV = @files_using_acronyms;
+my ($filename, $linenumber) = (q{}, q{});
+while (<>) {
+    my $line = $_;
+    if ($filename ne $ARGV) {
+        $filename = $ARGV;
+        $linenumber = 0;
+    }
+    $linenumber++;
+
+    chomp $line;
+    WORD:
+    foreach my $word (split /\s+/) {
+        if (not exists $acronyms{$word}) {
+            next WORD;
+        }
+        $line =~ s/\b$word\b/$acronyms{$word}/;
+        warn qq{$filename:$linenumber: $line\n};
+    }
+}
+
+sub usage {
+    die qq{Usage: $0 FILES-DEFINING-ACRONYMS -- FILES-DEFINING-ACRONYMS\n};
+}
