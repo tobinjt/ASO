@@ -264,7 +264,7 @@ the individual fields will be described in \sectionref{connections table}.
 The results table will have at least one entry for each entry in the
 connections table; its fields will be covered in detail in
 \sectionref{results table}.  A diagram of the database schema is provided
-in \figureref{Diagram of the Database Schema picture}, to complement the
+in \figureref{Diagram of the database schema picture}, to complement the
 in-depth descriptions of each table.
 
 An important but easily overlooked benefit of storing the rules in the
@@ -366,8 +366,8 @@ with no access to the original log files.
 \newlength{\belowcaptionskipORIG}
 \setlength{\belowcaptionskipORIG}{\belowcaptionskip}
 \setlength{\belowcaptionskip}{10pt}
-\showgraph{build/database-schema}{Diagram of the Database Schema}{Diagram
-of the Database Schema picture}
+\showgraph{build/database-schema}{Diagram of the database schema}{Diagram
+of the database schema picture}
 \setlength{\belowcaptionskip}{\belowcaptionskipORIG}
 
 Rules are discussed in detail in \sectionref{rules in implementation}, but
@@ -389,8 +389,8 @@ otherwise stated.
     \item [name] A short name for the rule.
 
     \item [description] Something must have occurred to cause Postfix to
-        log each line, this field should describe the event causing the log
-        lines this rule recognises.
+        output each log line; this field should describe the event causing
+        the log lines this rule recognises.
 
     \item [restriction\_name] The name of the Postfix restriction that
         caused the mail to be rejected.  This field is valid only for rules
@@ -463,19 +463,19 @@ the following fields:
 
     \item [id] This field uniquely identifies the row.
 
-    \item [server\_ip] The \acronym{IP} address of the server: the local
-        address when receiving mail, the remote address when sending mail.
+    \item [server\_ip] The IP address of the server: the local address when
+        receiving mail, the remote address when sending mail.
 
     \item [server\_hostname] The hostname of the server, it will be
-        \texttt{unknown} if the \acronym{IP} address could not be resolved
-        to a hostname via DNS\@.
+        \texttt{unknown} if the IP address could not be resolved to a
+        hostname via DNS\@.
 
-    \item [client\_ip] The client \acronym{IP} address: the remote address
-        when receiving mail, the local address when sending mail.
+    \item [client\_ip] The client IP address: the remote address when
+        receiving mail, the local address when sending mail.
 
     \item [client\_hostname] The hostname of the client, it will be
-        \texttt{unknown} if the \acronym{IP} address could not be resolved
-        to a hostname via DNS\@.
+        \texttt{unknown} if the IP address could not be resolved to a
+        hostname via DNS\@.
 
     \item [helo] The hostname used in the HELO command.  The HELO hostname
         occasionally changes during a connection, presumably because spam
@@ -659,14 +659,14 @@ the benefit each optimisation provides.  Three sets of data are collected:
     \item How long it takes to parse each log file (\graphref{parsing time
         vs log file size vs number of log lines graph}).
 
-    \item The number of rules tried when recognising log lines
-        (\graphref{Mean number of rules tried per log line}); the framework
+    \item The number of rules used when recognising log lines
+        (\graphref{Mean number of rules used per log line}); the framework
         may need to try multiple rules for a given log line before it finds
         one that recognises it.
 
-    \item The number of log lines and rules tried for each Postfix
-        component (\graphref{Mean number of rules tried per log line for
-        each Postfix component}).
+    \item The number of log lines and rules used for each Postfix component
+        (\graphref{Mean number of rules used per log line for each Postfix
+        component}).
 
 \end{enumerate}
 
@@ -1228,12 +1228,12 @@ five steps:
     \item [Pre-process the file.]  The new algorithm leverages the
         knowledge gained when writing rules and developing \parsername{};
         it performs many substitutions on the input log lines, replacing
-        commonly occurring variable terms (e.g.\ email addresses,
-        \acronym{IP} addresses, the standard start of rejection messages)
-        with keywords described in \sectionref{regex components}.  The
-        purpose of this step is to utilise existing knowledge to create
-        more accurate regexes; it replaces many variable words with fixed
-        words, improving the subsequent classification of words as fixed or
+        commonly occurring variable terms (e.g.\ email addresses, IP
+        addresses, the standard start of rejection messages) with keywords
+        described in \sectionref{regex components}.  The purpose of this
+        step is to utilise existing knowledge to create more accurate
+        regexes; it replaces many variable words with fixed words,
+        improving the subsequent classification of words as fixed or
         variable.  The altered log lines are written to a temporary file,
         which subsequent stages will use instead of the original input
         file.

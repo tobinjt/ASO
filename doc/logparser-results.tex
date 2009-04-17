@@ -130,9 +130,9 @@ fewer associated rules than the Postfix components whose log lines normally
 make up the bulk of each log file, so the mean number of rules tried per
 log line reduces, as does the mean parsing time per log line.
 \Tableref{Number of rules per Postfix component} shows the number of rules
-for each Postfix component; \graphref{Mean number of rules tried per log
+for each Postfix component; \graphref{Mean number of rules used per log
 line} shows the drop in the mean number of rules tried per log line for log
-files containing a mail loop, and \graphref{Mean number of rules tried per
+files containing a mail loop, and \graphref{Mean number of rules used per
 log line for each Postfix component} shows the mean number of rules tried
 per log line for each Postfix component.
 
@@ -149,12 +149,11 @@ size and number of log lines to parsing time (higher is more
 efficient)}{parsing time vs log file size vs number of log lines factor}
 
 \showgraph{build/graph-average-number-of-rules-tried-per-log-line}{Mean
-number of rules tried per log line}{Mean number of rules tried per log
-line}
+number of rules used per log line}{Mean number of rules used per log line}
 
 \showgraph{build/graph-average-number-of-rules-tried-per-program}{Mean
-number of rules tried per log line for each Postfix component}{Mean number
-of rules tried per log line for each Postfix component}
+number of rules used per log line for each Postfix component}{Mean number
+of rules used per log line for each Postfix component}
 
 \begin{table}[thbp]
     \caption{Number of rules per Postfix component}
@@ -202,19 +201,21 @@ performed with different rule orderings:
 
 \end{boldeqlist}
 
-\Graphref{Parsing time relative to shuffled ordering graph} shows the
-parsing times of optimal and reverse orderings relative to shuffled
-ordering; the mean relative parsing times for different groupings of log
-files are given in \tableref{Parsing time relative to shuffled ordering
-table}.  This optimisation provides a mean reduction in parsing time of
+\Graphref{Parsing time of optimal and reverse orderings relative to
+shuffled ordering graph} shows the parsing times of optimal and reverse
+orderings relative to shuffled ordering; the mean relative parsing times
+for different groupings of log files are given in \tableref{Parsing time of
+optimal and reverse orderings relative to shuffled ordering table}.  This
+optimisation provides a mean reduction in parsing time of
 \input{build/include-optimal-ordering-parsing-time-reduction-other-logs}\%
 with normal log files,
 \input{build/include-optimal-ordering-parsing-time-reduction-logs-22-62-68}\%
 when a mail loop occurs and the distribution of log lines is unusual.
-\Tableref{Parsing time relative to shuffled ordering table} shows that
-differences in rule ordering have less effect on parsing time when parsing
-log files 22 \& 62--68, because of the different distribution of log lines
-in those log files.  A careful examination of \graphref{Parsing time
+\Tableref{Parsing time of optimal and reverse orderings relative to
+shuffled ordering table} shows that differences in rule ordering have less
+effect on parsing time when parsing log files 22 \& 62--68, because of the
+different distribution of log lines in those log files.  A careful
+examination of \graphref{Parsing time of optimal and reverse orderings
 relative to shuffled ordering graph} shows that, for the first log file
 only, optimal and reverse orderings perform identically: this is because
 the hits field of each rule is zero for the first log file, so optimal and
@@ -224,13 +225,13 @@ accidental and cannot be relied upon.
 
 \showgraph{build/graph-hits}{Log lines recognised per rule}{rule hits graph}
 
-\showgraph{build/graph-optimal-and-reverse-vs-shuffle}{Parsing time
-relative to shuffled ordering}{Parsing time relative to shuffled ordering
-graph}
+\showgraph{build/graph-optimal-and-reverse-vs-shuffle}{Parsing time of
+optimal and reverse orderings relative to shuffled ordering}{Parsing time
+of optimal and reverse orderings relative to shuffled ordering graph}
 
-\showtable{build/include-optimal-and-reverse-vs-shuffle}{Parsing time
-relative to shuffled ordering}{Parsing time relative to shuffled ordering
-table}
+\showtable{build/include-optimal-and-reverse-vs-shuffle}{Parsing time of
+optimal and reverse orderings relative to shuffled ordering}{Parsing time
+of optimal and reverse orderings relative to shuffled ordering table}
 
 \FloatBarrier{}
 
@@ -263,7 +264,7 @@ using optimal ordering instead of oracle table}.
 Once again, the difference between the oracle and optimal ordering is at
 its lowest when parsing log files resulting from a mail loop (log files 22
 \& 62--68), because the mean number of rules tried per log line is lower
-(see \graphref{Mean number of rules tried per log line}).  The performance
+(see \graphref{Mean number of rules used per log line}).  The performance
 of optimal ordering relative to the oracle is much worse when parsing the
 first log file than for the remainder of the log files, because for the
 first log file the hits field of every rule is zero, so optimal ordering
@@ -298,7 +299,7 @@ instead of oracle table}
 
 \FloatBarrier{}
 
-\subsection{Scalability As The Number Of Rules Rises}
+\subsection{Scalability As The Ruleset Grows}
 
 \label{scalability as the number of rules rises}
 
@@ -610,8 +611,7 @@ entries:
     \item 9 mails whose initial log lines were not present in the log
         files.  These mails did not produce warnings because they resemble
         child mails waiting to be tracked with a parent; see
-        \sectionref{Re-injected mails} for details.  XXX CHECK IF THERE IS
-        ANY MENTION OF THIS IN THE COMPLICATION, AND ADD IF MISSING\@.
+        \sectionref{Re-injected mails} for details.
 
     \item 7 mails that had yet to be delivered because of repeated
         failures.

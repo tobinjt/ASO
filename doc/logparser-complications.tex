@@ -163,7 +163,19 @@ their final log line is processed, and \parsername{} cannot warn the user;
 instead they must be marked as ready for entry and subsequently entered
 once their origin has been identified.  The crux of this complication is
 that re-injected mails appear in the log files without explicit logging
-indicating their source.
+indicating their source.  Unfortunately, it is not possible to distinguish
+between child mails waiting to be tracked and other mails whose origin is
+unknown (except for bounce notifications, as described in
+\sectionref{identifying bounce notifications}); postponing the entry into
+the database of mails whose origin is unknown can result in those mails
+remaining indefinitely in the state tables, causing a queueid clash if the
+queueid is reused, resource usage for the period they remain in the state
+tables, and, most importantly, \parsernames{} understanding of such mails
+is incorrect.  This problem has only been observed when a state table entry
+is missing its initial log line, usually because it is in an earlier log
+file; this specific instance is not a serious problem, because
+\parsername{} can not be expected to fully understand and reconstruct a
+mail when it is lacking some of that mail's log lines.
 
 Tracking re-injected mail requires \parsername{} to do the following in the
 \action{COMMIT} action:
@@ -333,12 +345,12 @@ aborted delivery attempt and is discarded.  There will be no further
 entries logged for such mails, so without identifying and discarding them
 they accumulate in the state table and will cause clashes if the queueid is
 reused.  The mail cannot be entered in the database as the only data
-available is the client hostname and \acronym{IP} address, but the database
-schema requires many more fields be populated (see \sectionref{connections
-table} and \sectionref{results table}).  These heuristics are quite
-restrictive, and it appears to have little scope for false positives; any
-false positives will cause a warning when the next log line for that mail
-is parsed.  False negatives are less likely to be detected: there may be
+available is the client hostname and IP address, but the database schema
+requires many more fields be populated (see \sectionref{connections table}
+and \sectionref{results table}).  These heuristics are quite restrictive,
+and it appears to have little scope for false positives; any false
+positives will cause a warning when the next log line for that mail is
+parsed.  False negatives are less likely to be detected: there may be
 queueid clashes (and warnings) if mails remain in the state tables after
 they should have been removed, otherwise the only way to detect false
 negatives is to examine the state tables after each parsing run.
@@ -361,7 +373,8 @@ now.  The checks to identify this happening are:
 
     \item Is the mail missing its \daemon{cleanup} log line?  Every mail
         that passes normally through Postfix will have a \daemon{cleanup}
-        line; lack of one is a sure sign the mail did not make it too far.
+        log line; lack of one is a sure sign the mail did not make it too
+        far.
 
     \item Were there three or more \daemon{smtpd} log lines for the mail?
         There should be a connection log line and a mail acceptance log

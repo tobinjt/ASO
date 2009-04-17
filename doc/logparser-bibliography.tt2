@@ -46,6 +46,15 @@
         checked = "2008/05/29",
     },
 
+    "access-man-page" = {
+        author  = "Wietse Venema",
+        url     = "http://www.postfix.org/access.5.html",
+        title   = "Access --- Postfix SMTP Server Access Table",
+        year    = 2008,
+        journal = "Postfix documentation",
+        checked = "2008/08/20",
+    },
+
     "policy-servers" = {
         author  = "Wietse Venema",
         url     = "http://www.postfix.org/SMTPD_POLICY_README.html",

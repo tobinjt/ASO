@@ -564,8 +564,7 @@ check-contractions:
 
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
-	sed -n -e '/newacronym/!d; s/}.*//; s/.*{//; s/$$/[^{e]/; p;' logparser-acronyms.tex \
-		| grep -f - -n $$(ls logparser*.tex | grep -v ^logparser-acronyms.tex)
+	perl check-acronyms logparser-acronyms.tex -- logparser*.tex
 
 todo:
 	grep    -n -E '[T]ODO|[X]XX|[x]xx' Makefile *.tex *.tt2 || true
@@ -614,6 +613,7 @@ lines-from-paragraphs: $(patsubst %,build/%,$(wildcard logparser*.tex))
 
 log-files-lines: lines-from-paragraphs
 	ACK_PAGER="$$PAGER" ack -i '(?<!log[- ])(?<!CSV\} )\b(line|file)s?\b(?!\{)' build/logparser*.tex
+	ACK_PAGER="$$PAGER" ack -i '\blogs\b' build/logparser*.tex
 	ACK_PAGER="$$PAGER" ack -i '(?<!log[- ])(?<!CSV\} )(?<!with )\b(line|file)s?\b' graphs/plot-*
 
 diction:

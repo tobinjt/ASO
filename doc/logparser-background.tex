@@ -23,9 +23,9 @@ gathered data can be used to optimise current anti-spam measures, to
 provide a baseline to test new anti-spam measures against, or to produce
 statistics showing how effective those measures are.
 
-A short example of the optimisation possible using data from the database
-is determining which Postfix restrictions reject the highest number of
-mails:
+Determining which Postfix restrictions reject the highest number of
+delivery attempts is a short example of the optimisation possible using
+data from the database:
 
 \begin{verbatim}
 SELECT name, description, restriction_name, hits_total
@@ -36,13 +36,18 @@ SELECT name, description, restriction_name, hits_total
 
 If the database supports sub-selects (where the results of one query are
 used as a parameter in another), percentages can be obtained for the top
-ten restrictions (sample output shown in \tableref{Sample output from SQL
-query}):
+ten restrictions using the query in \figureref{Sample SQL query}, producing
+output similar to \tableref{Sample output from SQL query}.
 
-\input{build/include-sample-sql-query}
+\begin{figure}[thbp]
+    \caption{Sample SQL query showing the percentage of delivery attempts
+    rejected by the top ten restrictions}
+    \empty{}\label{Sample SQL query}
+    \input{build/include-sample-sql-query}
+\end{figure}
 
 \begin{table}[thbp]
-    \caption{Sample output from SQL query, showing the percentage of
+    \caption{Sample output from an SQL query showing the percentage of
     delivery attempts rejected by the top ten restrictions}
     \empty{}\label{Sample output from SQL query}
     \begin{tabular}[]{lrr}
@@ -54,33 +59,38 @@ query}):
         \tablebottomline{}%
     \end{tabular}
 
-    All percentages above are exclusive, i.e.\ the first restriction's
-    number of rejections does not include the second restriction's number
-    of rejections.
+    All percentages in \tableref{Sample output from SQL query} are
+    exclusive, i.e.\ the first restriction's number of rejections does not
+    include the second restriction's number of rejections.
 
 \end{table}
 
 
-Another example is determining which restrictions are not effective: this
-sample query shows which restrictions had fewer than 100 rejections in the
-last log file parsed, and the percentage of total rejections each of those
-restrictions represents.
+Another example is determining which restrictions are not effective:
+\figureref{Sample SQL query showing ineffective restrictions} shows which
+restrictions rejected fewer than 100 delivery attempts in the last log file
+parsed, and the percentage of total rejections in that log file that each
+of those restrictions represents.
 
-\begin{verbatim}
-SELECT name, description, restriction_name, hits,
-        (hits * 100.0 /
-            (SELECT SUM(hits)
-                FROM rules
-                WHERE action = 'DELIVERY_REJECTED'
-            )
-        ) || '%' AS percentage
-    FROM rules
-    WHERE action = 'DELIVERY_REJECTED'
-        AND hits < 100
-    ORDER BY hits ASC;
-\end{verbatim}
+\begin{figure}[thbp]
+    \caption{Sample SQL query showing ineffective restrictions}
+    \empty{}\label{Sample SQL query showing ineffective restrictions}
+    \begin{verbatim}
+    SELECT name, description, restriction_name, hits,
+            (hits * 100.0 /
+                (SELECT SUM(hits)
+                    FROM rules
+                    WHERE action = 'DELIVERY_REJECTED'
+                )
+            ) || '%' AS percentage
+        FROM rules
+        WHERE action = 'DELIVERY_REJECTED'
+            AND hits < 100
+        ORDER BY hits ASC;
+    \end{verbatim}
+\end{figure}
 
-The database queries above yield summary statistics about the efficiency of
+The sample database queries yield summary statistics about the efficiency of
 anti-spam techniques.  These statistics are far less feasible to assess
 directly from log files without prior pre-processing into a database in the
 fashion proposed, implemented, and tested herein.
@@ -133,26 +143,24 @@ RCPT TO: Bob in Sales/Marketing bob@example.com
 DATA
 503 5.5.1 Error: need RCPT command
 Message headers and body sent here.
-.
 502 5.5.2 Error: command not recognized
-QUIT
-221 2.0.0 Bye
 \end{verbatim}
 
 This example client is so poorly written that not only does it present the
 sender and recipient addresses improperly, it ignores the error messages
 returned by the server and carries on regardless.  Many spam and virus
-sending programs have serious deficiencies; unfortunately, other programs,
-particularly newer programs, were written by competent programmers or send
-mail using well written programs (e.g.\ Postfix or Sendmail on Unix hosts,
-Microsoft Outlook on Windows hosts).  Traditionally a mail server would
-have done its best to deal with deficient clients, with the intention of
-accepting as much mail sent to its users as possible, e.g.\ by accepting
-sender or recipient addresses that were not enclosed in \texttt{<>}, or by
-ignoring the absence of a HELO command.  The HELO command is the first
-command sent by the client in the \acronym{SMTP} conversation; it is
-required by the protocol, but its original purpose was to detect a server
-trying to deliver mail to itself, so some implementations omitted it.
+sending programs have serious deficiencies; unfortunately, newer programs
+tend to be written by competent programmers or send mail using well written
+programs (e.g.\ Postfix or Sendmail on Unix hosts, Microsoft Outlook on
+Windows hosts).  Traditionally a mail server would have done its best to
+deal with deficient clients, with the intention of accepting as much mail
+sent to its users as possible, e.g.\ by accepting sender or recipient
+addresses that were not enclosed in \texttt{<>}, or by ignoring the absence
+of a HELO command.\footnote{The HELO command is the first command sent by
+the client in the \acronym{SMTP} conversation; it is required by the
+protocol, but its original purpose was to detect a server trying to deliver
+mail to itself, so some implementations omitted it.}  Given the volume of
+spam sent daily, this liberal approach is no longer viable.
 
 \section{Postfix}
 
@@ -166,15 +174,15 @@ suitable for their server's needs, rather than a fixed set chosen by
 Postfix's author.  These restrictions can be selectively applied, combined,
 and bypassed on a per-client, per-recipient, or per-sender basis, allowing
 different levels of stricture and permissiveness.  Administrators can
-supply their own rejection messages to make it clear to senders exactly why
-their mail was rejected.  Policy servers (\sectionref{policy servers})
-provide a simple way to write new restrictions without having to modify
-Postfix's source code.  Unfortunately this flexibility has a cost:
-complexity in the log files generated.  Although it is relatively simple in
-most cases to use standard Unix text processing utilities to determine the
-fate of an individual mail, sometimes it can be quite difficult.  For
-most mails the journey is simple and brief, but the remainder can have
-quite complex journeys (see \sectionref{complications} for details).
+supply their own rejection messages to make it clear to senders why their
+mail was rejected.  Policy servers (\sectionref{policy servers}) provide a
+simple way to write new restrictions without having to modify Postfix's
+source code.  Unfortunately this flexibility has a cost: the complexity
+Postfix's log files.  Although it is usually relatively simple to use
+standard Unix text processing utilities to determine the fate of an
+individual mail, sometimes it can be quite difficult.  For most mails the
+journey is simple and brief, but the remainder can be quite complex (see
+\sectionref{complications} for details).
 
 Postfix's design follows the Unix philosophy of \textit{``Write programs
 that do one thing and do it well''\/}~\cite{unix-philosophy}, and it is
@@ -193,8 +201,8 @@ exploit any bugs that may exist in those components.
 
 \label{Mixing and matching Postfix restrictions}
 
-Postfix restrictions are documented fully in~\cite{smtpd_access_readme,
-smtpd_per_user_control, policy-servers}; the following is only a brief
+Postfix restrictions are documented fully in~\cite{smtpd_per_user_control,
+policy-servers, smtpd_access_readme}; the following is only a brief
 introduction.
 
 Postfix uses one restriction list (containing zero or more restrictions)
@@ -211,7 +219,7 @@ Postfix uses simple lookup tables to make decisions when evaluating some
 restrictions, e.g.\newline{}
 \tab{}\texttt{check\_client\_access~cidr:/etc/postfix/client\_access}
 
-\begin{eqlist}
+\begin{boldeqlist}
 
     \item [check\_client\_access] The name of the restriction to evaluate.
 
@@ -220,29 +228,34 @@ restrictions, e.g.\newline{}
     \item [/etc/postfix/client\_access] The file containing the lookup
         table.
 
-\end{eqlist}
+\end{boldeqlist}
 
-The restriction \texttt{check\_client\_access} checks if the \acronym{IP}
-address of the connected client is found in the specified table and returns
-the associated action if found; the method of searching the file is
-dependant on the type of the file (\texttt{cidr} in the example) --- see
-\cite{postfix-lookup-tables} for more details.  Other restrictions
-determine their result by consulting external sources, e.g.\newline{}
-\tab{}\texttt{reject\_rbl\_client dnsbl.example.com}\newline{} checks the
-\acronym{DNSBL} \texttt{dnsbl.example.com} and rejects the command if the
-client's \acronym{IP} address is listed.
+The restriction \texttt{check\_client\_access} checks if the IP address of
+the connected client is found in the specified table and returns the
+associated action if found; the method of searching the file is dependant
+on the type of the lookup table~\cite{postfix-lookup-tables}.  Other
+restrictions determine their result by consulting external sources,
+e.g.\newline{} \tab{}\texttt{reject\_rbl\_client
+dnsbl.example.com}\newline{} checks the \acronym{DNSBL}
+\texttt{dnsbl.example.com} and rejects the command if the client's IP
+address is listed.
 
 Each restriction is evaluated to produce a result of \textit{reject},
 \textit{permit}, \textit{dunno}, or the name of another restriction to be
 evaluated; other less commonly used results are possible as described
-in~\cite{smtpd_access_readme,smtpd_per_user_control,policy-servers}.  The
-meaning of \textit{permit\/} and \textit{reject\/} is fairly obvious;
-\textit{dunno\/} means to stop evaluating the current restriction and
-continue processing the remainder of the restriction list, allowing
-exceptions to more general rules.  E.g.\ the general rule is that machines
-on the local network must authenticate before sending mail, except for the
-web server, because the legacy applications running on it lack
-authentication support; this configuration example shows how:
+in~\cite{access-man-page}.  The meaning of \textit{permit\/} and
+\textit{reject\/} is obvious; \textit{dunno\/} means to stop evaluating the
+current restriction and continue processing the remainder of the
+restriction list, allowing exceptions to more general rules.  The
+configuration example below shows how to require that all machines on the
+local network except for the web server authenticate before sending mail;
+the web server is exempt because the legacy applications running on it lack
+authentication support.  The restriction list is evaluated from top to
+bottom: \texttt{permit\_sasl\_authenticated} permits authenticated clients;
+an exception is made for the web server in the
+\texttt{check\_client\_access} check, and other local machines are
+rejected, because they must be unauthenticated to reach that point in the
+restriction list.
 
 \begin{verbatim}
   main.cf:
@@ -260,10 +273,10 @@ authentication support; this configuration example shows how:
 That example also shows that it is trivial to supply a custom rejection
 message.  When the result is the name of another restriction Postfix will
 evaluate that restriction, allowing restrictions to be chosen based on the
-client \acronym{IP} address, client hostname, HELO hostname, sender
-address, or recipient address.  E.g.\ the administrator may require that
-all clients on the local network have valid DNS entries, to prevent people
-sending mail from unknown machines; one example of how to achieve this is:
+client IP address, client hostname, HELO hostname, sender address, or
+recipient address.  E.g.\ the administrator may require that all clients on
+the local network have valid DNS entries, to prevent people sending mail
+from unknown machines; one example of how to achieve this is:
 
 \begin{verbatim}
   main.cf:
@@ -298,7 +311,7 @@ A policy server~\cite{policy-servers} is an external program consulted by
 Postfix to determine the fate of an \acronym{SMTP} command.  The policy
 server is given state information by Postfix (sample state information is
 shown in \tableref{Example attributes sent to policy servers}) and returns
-a result (reject, permit, dunno, a rejection name) as described in
+a result (reject, permit, dunno, or a rejection name) as described in
 \sectionref{Mixing and matching Postfix restrictions}.  A policy server can
 perform more complex checks than those provided by Postfix: a trivial
 example is allowing addresses associated with the payroll system to send
@@ -350,43 +363,42 @@ Some widely deployed policy servers:
 
     \item Greylisting~\cite{greylisting} is a technique that temporarily
         rejects a delivery attempt when the triple of \newline{}
-        \tab{}\texttt{(sender address, recipient address, remote
-        \acronym{IP} address)}\newline{} has not been seen before; on
-        second and subsequent delivery attempts from that triple the mail
-        will be accepted.  This blocks spam from some senders because
-        maintaining a list of failed addresses and retrying after a
-        temporary failure is uneconomical for a spam sender, but a
-        legitimate mail server must retry deliveries that failed
-        temporarily.  Sadly spam senders are using increasingly complex and
-        well written programs to distribute spam, frequently using an ISP
-        provided \acronym{SMTP} server from a compromised machine on the
-        ISP's network.  Greylisting will slowly become less effective as
-        spam senders adapt, but it does block a large percentage of spam
-        mail at the moment; the most effective restrictions from the
-        \numberOFlogFILES{} log files used when generating the results in
-        \sectionref{Evaluation} are shown in \tableref{Most effective
-        Postfix restrictions}.  The table shows that greylisting is worth
-        using at the moment, particularly when you take into account its
-        position as the final restriction that a mail must overcome in the
-        configuration used on the mail server that generated the log files:
-        on that server greylisting only takes effect for mails that have
-        passed all other restrictions.  Some problems may be encountered
-        when using greylisting: some servers fail to retry after a
-        temporary failure, or legitimate mail may be delayed, particularly
-        when coming from a pool of servers.
+        \tab{}\texttt{(sender address, recipient address, remote IP
+        address)}\newline{} has not been seen before; on second and
+        subsequent delivery attempts from that triple the mail will be
+        accepted.  This blocks spam from some senders because maintaining a
+        list of failed addresses and retrying after a temporary failure is
+        uneconomical for a spam sender, but a legitimate mail server must
+        retry deliveries that fail temporarily.  Sadly spam senders are
+        using increasingly complex and well written programs to distribute
+        spam, frequently using an ISP provided \acronym{SMTP} server from a
+        compromised machine on the ISP's network.  Greylisting will slowly
+        become less effective as spam senders adapt, but it does block a
+        large percentage of spam mail at the moment; the most effective
+        restrictions from the \numberOFlogFILES{} log files used when
+        generating the results in \sectionref{Evaluation} are shown in
+        \tableref{Most effective Postfix restrictions}.  The table shows
+        that greylisting is worth using at the moment, particularly when
+        you take into account its position as the final restriction that a
+        mail must overcome in the configuration used on the mail server
+        that generated the log files: on that server greylisting only takes
+        effect for mails that have passed all other restrictions.  Some
+        problems may be encountered when using greylisting: some servers
+        fail to retry after a temporary failure, or legitimate mail may be
+        delayed, particularly when coming from a pool of servers.
 
         \showtable{build/include-restriction-summary-table}{Most effective
         Postfix restrictions}{Most effective Postfix restrictions}
 
     \item Scoring systems such as Policyd-weight~\cite{policyd-weight}
-        perform tests on features of the delivery attempt (e.g.\
-        \acronym{IP} address, sender address), incrementing or decrementing
-        a score based on the results; if the eventual score is higher than
-        a threshold the mail is rejected.  The administrator must manually
+        perform tests on features of the delivery attempt (e.g.\ IP
+        address, sender address), incrementing or decrementing a score
+        based on the results; if the final score is higher than a threshold
+        the delivery attempt is rejected.  The administrator must manually
         whitelist clients if they are to bypass a Postfix restriction,
         whereas using a threshold that requires a delivery attempt to hit
         several scored restrictions will allow mail from clients that would
-        fall foul of one binary restriction only.
+        be rejected by a binary restriction.
 
 \end{itemize}
 
