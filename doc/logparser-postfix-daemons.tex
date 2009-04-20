@@ -83,9 +83,9 @@
     domains.  When \daemon{local} delivers mail the destination is
     determined only by the portion of the email address on the left side of
     the \texttt{@}, whereas with \daemon{virtual} delivery the destination
-    is determined by the entire email address.  E.g.\ if the server is
-    responsible for both the \texttt{example.org} and \texttt{example.net}
-    domains: \daemon{local} would deliver mail for
+    is determined by the entire email address.  For example, if the server
+    is responsible for both the \texttt{example.org} and
+    \texttt{example.net} domains: \daemon{local} would deliver mail for
     \texttt{john@example.org} and \texttt{john@example.net} to the same
     mailbox, whereas \daemon{virtual} would deliver mail for those
     addresses to different mailboxes.  Virtual delivery is used where the

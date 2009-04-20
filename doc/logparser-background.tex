@@ -274,9 +274,9 @@ That example also shows that it is trivial to supply a custom rejection
 message.  When the result is the name of another restriction Postfix will
 evaluate that restriction, allowing restrictions to be chosen based on the
 client IP address, client hostname, HELO hostname, sender address, or
-recipient address.  E.g.\ the administrator may require that all clients on
-the local network have valid DNS entries, to prevent people sending mail
-from unknown machines; one example of how to achieve this is:
+recipient address.  For example, the administrator may require that all
+clients on the local network have valid DNS entries, to prevent people
+sending mail from unknown machines; one example of how to achieve this is:
 
 \begin{verbatim}
   main.cf:
@@ -316,12 +316,12 @@ a result (reject, permit, dunno, or a rejection name) as described in
 perform more complex checks than those provided by Postfix: a trivial
 example is allowing addresses associated with the payroll system to send
 mail on the third Tuesday after pay day only, to help prevent problems from
-phishing mails using faked sender addresses.  E.g.\ a phishing mail might
-claim that the payroll system had a disastrous disk failure, and until the
-server is replaced all salary payments will have to be processed manually,
-so please reply to this mail with your name, address, and bank account
-details; the criminal can then use any details sent to him to help with
-identity theft.
+phishing mails using faked sender addresses.  For example, a phishing mail
+might claim that the payroll system had a disastrous disk failure, and
+until the server is replaced all salary payments will have to be processed
+manually, so please reply to this mail with your name, address, and bank
+account details; the criminal can then use any details sent to him to help
+with identity theft.
 
 \begin{table}[thbp]
     \caption{Example attributes sent to policy servers, taken

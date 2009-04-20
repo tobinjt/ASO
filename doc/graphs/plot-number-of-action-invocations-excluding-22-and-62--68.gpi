@@ -1,7 +1,7 @@
 load "plot-defaults-larger-ps.gpi"
 
 set xlabel "Action"
-set ylabel "Number of times each action was invoked,\nexcluding log files 22 and 62-68"
+set ylabel "Number of times each action was invoked,\nexcluding log files 22 & 62-68"
 set output "../build/graph-number-of-action-invocations-excluding-22-and-62--68.ps"
 
 # Put the legend at the top left, Left justified text.

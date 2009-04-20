@@ -2,15 +2,15 @@
 
 \label{parser architecture}
 
-To avoid cluttering the explanation of the parser architecture with the
-details involved in implementing a parser for Postfix log files, the two
-topics have been separated.  This chapter presents the architecture
+To avoid cluttering the description of the parser architecture with the
+details involved in implementing a parser for Postfix log files, each topic
+has been given its own chapter.  This chapter presents the architecture
 developed for this project, beginning with the overall architecture and
-design, followed by the three components of the architecture: Framework,
-Actions, and Rules.  This chapter centers on the theoretical,
-implementation-independent aspects of the architecture; the practical
-difficulties of writing a parser for Postfix log files are covered in
-detail in \sectionref{Postfix Parser Implementation}.
+design, followed by detailed documentation of the three components of the
+architecture: Framework, Actions, and Rules.  This chapter centers on the
+theoretical, implementation-independent aspects of the architecture; the
+practical difficulties of writing a parser for Postfix log files are
+covered in detail in \sectionref{Postfix Parser Implementation}.
 
 \section{Architecture Overview}
 
@@ -18,13 +18,11 @@ detail in \sectionref{Postfix Parser Implementation}.
 
 It should be clear from the earlier Postfix background (\sectionref{postfix
 background}) that log files produced by Postfix may vary widely from host
-to host, depending on the set of restrictions chosen by the administrator.
-With this in mind, one of the architecture's design aims was to make adding
-new rules to parse new inputs as effortless as possible, to enable
-administrators to properly parse their own log files.  The solution
-developed is to divide the architecture into three parts: Framework,
-Actions, and Rules.  Each will be discussed separately, but first an
-overview:
+to host.  With this in mind, one of the architecture's design aims was to
+make parsing new inputs as effortless as possible, to enable administrators
+to properly parse their own log files.  The solution developed is to divide
+the architecture into three parts: Framework, Actions, and Rules.  Each
+will be discussed separately, but first an overview:
 
 \begin{boldeqlist}
 
@@ -33,7 +31,7 @@ overview:
         data storage, loading and validation of rules, storage of results,
         and other support functions.
 
-    \item [Actions] Each action performs the work required to deal with a
+    \item [Actions] Each action performs the processing required for a
         single \textit{category\/} of inputs, e.g.\ rejecting a delivery
         attempt.  Actions are invoked to process an input once it has been
         recognised by a rule.
@@ -49,8 +47,8 @@ overview:
 For each input, the framework tries each rule in turn until it finds a rule
 that recognises the input, then invokes the action specified by that rule.
 If the input is not recognised by any of the rules, the framework issues a
-warning; the framework can continue parsing after this, although for some
-inputs stopping immediately may be preferable.
+warning; the framework will usually continue parsing after this, although
+for some inputs stopping immediately may be preferable.
 
 Decoupling the parsing rules from their associated actions allows new rules
 to be written and tested without requiring modifications to the parser
@@ -62,34 +60,34 @@ the framework, actions, and rules simplifies all three and creates a clear
 separation of functionality: the framework manages the parsing process and
 provides services to the actions; actions benefit from having services
 provided by the framework, freeing them to concentrate on the task of
-accurately and correctly processing the inputs and the information provided
-by rules; rules are responsible for classifying inputs, and extracting data
+accurately and correctly processing inputs and the information provided by
+rules; rules are responsible for recognising inputs, and extracting data
 from those inputs for processing by actions.
 
 Separating the rules from the actions and framework makes it possible to
 parse new inputs without modifying the core parsing algorithm.  Adding a
-new rule with the action to invoke and a regex to recognise the inputs is
+new rule with the action to invoke and a regex to recognise inputs is
 trivial in comparison to understanding an entire parser, identifying the
-correct location to change, and making the appropriate changes.  Additions
-to a parser must be made without adversely affecting existing parsing,
+correct location to change, and making the appropriate changes.  Changes to
+a parser must be made without adversely affecting existing parsing,
 including any edge cases that are not immediately obvious; an edge case
 that occurs only four times in \numberOFlogFILES{} log files is described
-in Yet More Aborted Delivery Attempts
-(\sectionref{yet more aborted delivery attempts}).  More intrusive changes
-are more likely to introduce a bug, so reducing the extent of the changes
-is important.  Requiring changes to a parser's source code also complicates
+in Yet More Aborted Delivery Attempts (\sectionref{yet more aborted
+delivery attempts}).  The more intrusive the changes are, the more likely
+they are to introduce a bug, so reducing the extent of the changes is
+important.  Requiring changes to a parser's source code also complicates
 upgrades of the parser, because the changes must be preserved during the
 upgrade, and they may clash with changes made by the developer.  This
-architecture allows the user to add new rules without having to edit a
-parser, unless the new inputs cannot be processed by the existing actions.
+architecture allows the user to add new rules to a parser without having to
+edit it, unless the new inputs cannot be processed by the existing actions.
 If the new inputs do require new functionality, new actions can be added to
-the parser without having to modify existing actions; only in the rare
-event that the new actions need to cooperate with existing actions will
-more extensive changes be required.
+the parser without having to modify existing actions; only when the new
+actions need to cooperate with existing actions will more extensive changes
+be required.
 
-Some similarity exists between this architecture and William Wood's
-\acronym{ATN}~\cite{atns,nlpip}, used in Computational Linguistics for
-creating grammars to parse or generate sentences.  The resemblance between
+Some similarity exists between this architecture and William A.\ Wood's
+\acronym{ATN}~\cite{nlpip,atns}, used in Computational Linguistics to
+create grammars that parse or generate sentences.  The resemblance between
 the two (shown in \tableref{Similarities between ATN and this
 architecture}) is accidental, but clearly the two different approaches
 share a similar division of responsibilities, despite having different
@@ -139,27 +137,27 @@ arises.
 
 \label{framework in architecture}
 
-The framework manages the parsing process and provides support functions,
-freeing the programmers writing actions to concentrate on writing
-productive code.  It links actions and rules, allowing either to be
+The framework manages the parsing process and provides support functions
+for the actions, freeing the programmers writing actions to concentrate on
+writing productive code.  It links actions and rules, allowing either to be
 improved independently of the other, and allows new rules to be written
 without needing changes to the source code of a parser.  The framework is
 the core of the architecture and is deliberately quite simple: the rules
 deal with the variation in inputs, and the actions deal with the
 intricacies and complications encountered during parsing.  The function
-that finds the rule recognising the input and invokes the requested action
-can be expressed in pseudo-code as:
+that finds the rule that recognises the input and invokes the requested
+action can be expressed in pseudo-code as:
 
 \begin{verbatim}
 INPUT:
 for each input {
     for each rule defined by the user {
         if this rule recognises the input {
-            perform the action specified by the rule
+            invoke the action specified by the rule
             next INPUT
         }
     }
-    warn the user that the input was not parsed
+    warn the user that the input was not recognised
 }
 \end{verbatim}
 
@@ -193,18 +191,17 @@ which will generally involve the following:
 
             \item Checking that the regex in the rule is valid.
 
-            \item Some optimisation steps may also be performed during
-                loading of rules, as discussed in \sectionref{parser
-                efficiency}.
-
         \end{itemize}
+
+        Some optimisation steps may also be performed during loading of
+        rules, as discussed in \sectionref{parser efficiency}.
 
     \item [Convert physical inputs to logical inputs] Each rule recognises
         a single input at a time: there is no facility for rules to consume
         more input or push unused input back onto the input stream,
         although actions may use cascaded parsing (explained in
         \sectionref{actions in architecture}) to effectively push input
-        back onto the input stream.  A physical input (i.e.\ a single line
+        back onto the input stream.  A physical input (e.g.\ a single line
         read from the input stream) may contain multiple or partial logical
         inputs, and the framework must pre-process these to provide a
         logical input for the rules to recognise.  This simplifies the
@@ -217,9 +214,8 @@ which will generally involve the following:
         between physical and logical inputs may be more difficult for other
         types of input.  Some input types may require pre-processing
         equivalent to parsing the physical inputs; in those cases the
-        framework should behave similarly to other architectures: present
-        the entire input stream at once, and discard the portion recognised
-        by the successful rule.
+        framework present the entire input stream at once, and discard the
+        recognised portion.
 
     \item [Classify the input]  The pseudo-code above shows how rules are
         successively tried until one is found that recognises the current
@@ -244,13 +240,12 @@ which will generally involve the following:
         identifiers, or ensuring at a higher level that the input being
         parsed meets requirements.
 
-    \item [Save and load state]  The architecture can save its current
-        state, i.e.\ the shared storage it provides for actions, and reload
-        it later, so that information is not lost between parsing runs.
-        \parsername{} uses this functionality because mails may take some
-        time to deliver and thus have their log lines split between log
-        files; a compiler might store data structures it builds as it
-        parses different files.
+    \item [Save and load state]  The architecture can save the contents of
+        the shared storage it provides for actions, and reload it later, so
+        that information is not lost between parsing runs.  \parsername{}
+        uses this functionality because mails may take some time to deliver
+        and thus have their log lines split between log files; a compiler
+        might store data structures it builds as it parses different files.
 
     \item [Specialised support functions]  Actions may need support or
         utility functions; the framework may be a good location for support
@@ -265,28 +260,28 @@ which will generally involve the following:
 \label{actions in architecture}
 
 Each action is a separate procedure written to process a particular
-category of input, e.g.\ rejecting a delivery attempt.  There may be many
-input variants within one input category; in general each action will
+category of input, e.g.\ rejection of a delivery attempt.  There may be
+many input variants within one input category; in general each action will
 handle one input category, with each rule recognising one input variant.
 It is anticipated that parsers based on this architecture will have many
 actions, and each action may be specified by many rules, with the aim of
 having simple rules and tightly focused actions.  An action may need to
 process different input variants in slightly different ways, but large
-changes in processing indicate the need for a new action and a new category
-of input; if an action becomes overly complicated it starts to turn into a
-monolithic parser, with too much logic contained in a single procedure.
+changes in processing within an action indicate the need for a new action
+and a new category of input; if an action becomes overly complicated it
+starts to turn into a monolithic parser, with too much logic contained in a
+single procedure.
 
 The ability to easily add special purpose actions to deal with difficulties
 and new requirements that are discovered during parser development is one
-of the strengths of this architecture.  Instead of writing a single
-monolithic function that processes every input and must be modified to
-support any new behaviour, with all the attendant risks of adversely
-affecting the existing parsing, when a new requirement arises an
-independent action can be written to satisfy it.  Sometimes the new action
-will require the cooperation of other actions, e.g.\ to set or check a
-flag, so actions are not always self-contained, but there will still be a
-far lower degree of coupling and interdependency than in a monolithic
-parser.
+of the strengths of this architecture.  When a new requirement arises an
+independent action can be written to satisfy it, instead of writing a
+single monolithic function that processes every input and must be modified
+to support any change in behaviour, with all the attendant risks of
+adversely affecting the existing parsing.  Sometimes the new action will
+require the cooperation of other actions, e.g.\ to set or check a flag, so
+actions are not always self-contained, but there will still be a far lower
+degree of coupling and interdependency than in a monolithic parser.
 
 During development of \parsername{} it became apparent that in addition to
 the obvious variety in log lines there were many complications to be
@@ -304,18 +299,18 @@ data.  Every architecture should aim to make the easy things easy and the
 hard things possible; the successful implementation of \parsername{}
 demonstrates that this architecture achieves that aim.
 
-Actions may return a modified input line to the framework that will be
-parsed as if read from the input stream, allowing for a simplified version
-of cascaded parsing~\cite{cascaded-parsing}.  This powerful facility allows
-several rules and actions to parse a single input, potentially simplifying
-both rules and actions.  A simple example is to have one rule and action
-removing comments from inputs, so that other rules and actions do not
-have to handle comments at all; obviously if comment characters can be
-escaped or embedded in quoted strings the implementation must be careful
-not to remove those.  For some inputs this kind of pre-processing can
-greatly simplify parsing, echoing the simplification provided by the
-framework presenting rules and actions with logical inputs rather than
-physical inputs.  A more complex example use of cascaded parsing is
+Actions may modify the input they process and return it to the framework,
+where it will be parsed as if read from the input stream, allowing for a
+simplified version of cascaded parsing~\cite{cascaded-parsing}.  This
+powerful facility allows several rules and actions to parse a single input,
+potentially simplifying both rules and actions.  A simple example is to
+have one rule and action removing comments from inputs, so that other rules
+and actions do not have to handle comments at all; obviously if comment
+characters can be escaped or embedded in quoted strings the implementation
+must be careful not to remove those.  For some inputs this kind of
+pre-processing can greatly simplify parsing, echoing the simplification
+provided by the framework presenting rules and actions with logical inputs
+rather than physical inputs.  A more complex example of cascaded parsing is
 evaluating simple arithmetic expressions, where sub-expressions enclosed in
 parentheses must be evaluated first; cascaded parsing can be used to parse
 and evaluate the sub-expressions, substituting the result into the original
@@ -341,24 +336,24 @@ attributes they require; \sectionref{rules table} describes the attributes
 used in \parsername{}, and some generally useful attributes will be
 discussed later in this section.
 
-Classifying inputs using the rules is simple: the first
-rule to recognise the input determines the action that will be invoked;
-there is no backtracking to try alternate rules; no attempt is made to pick
-a \textit{best\/} rule.  \sectionref{attaching conditions to rules}
-contains an example which requires that the rules are used in a specific
-order to correctly parse the input, so a mechanism is needed to allow the
-author of the rules to specify that ordering.  The framework should sort
-the rules according to a priority attribute specified by the rule author,
-allowing fine-grained control over the order that rules are used in.  The
-priority attribute may be implemented as a number, or as a range of values,
-e.g.\ low, medium, and high, or in a different fashion entirely if it suits
-the implementation.  Rule ordering for efficiency is a separate topic that
-is covered in \sectionref{rule ordering for efficiency}; overlapping rules
-are discussed in \sectionref{overlapping rules in architecture}.
+Using the rules is simple: the first rule to recognise the input determines
+the action that will be invoked; there is no backtracking to try alternate
+rules; no attempt is made to pick a \textit{best\/} rule.
+\sectionref{attaching conditions to rules} contains an example which
+requires that the rules are used in a specific order to correctly parse the
+input, so a mechanism is needed to allow the author of the rules to specify
+that ordering.  The framework should sort the rules according to a priority
+attribute specified by the rule author, allowing fine-grained control over
+the order that rules are used in.  The priority attribute may be
+implemented as a number, or as a range of values, e.g.\ low, medium, and
+high, or in a different fashion entirely if it suits the implementation.
+Rule ordering for efficiency is a separate topic that is covered in
+\sectionref{rule ordering for efficiency}; overlapping rules are discussed
+in \sectionref{overlapping rules in architecture}.
 
 In \acronym{CFG} terms the rules could be described as:
 
-$\text{\textless{}input\textgreater{}}~\mapsto{}~\text{rule-1}~|~\text{rule-2}~|~\text{rule-3}~|~\dots~|~\text{rule-n}$
+\tab{}$\text{\textless{}input\textgreater{}}~\mapsto{}~\text{rule-1}~|~\text{rule-2}~|~\text{rule-3}~|~\dots~|~\text{rule-n}$
 
 This is not entirely correct because the rules are not truly context free:
 rule conditions (described in \sectionref{attaching conditions to rules})
@@ -381,7 +376,7 @@ achieved in one of three ways:
     \item Write a new rule that pairs an existing action with a new regex,
         adding a new variant to an existing category.
 
-    \item Create a new category of inputs and a new action to process
+    \item Create a new category of inputs, write a new action to process
         inputs from the new category, and write a new rule pairing the new
         action with a new regex.
 
@@ -420,11 +415,11 @@ complexity of conditions increases so will the complexity of the code
 required to evaluate them.  Beyond a certain level of complexity,
 conditions should probably be written in a proper programming language,
 e.g.\ taking advantage of dynamic languages' support for evaluating code at
-run-time, or embedding a language like Lua.  If an implementation is going
-to use conditions so complex that they will require a programming language
-capable of implementing a Turing machine, the design may need to be
-re-thought, including the decision to use this architecture --- there may
-be other architectures more suitable.
+run-time, or embedding a language like Lua into the parser.  If an
+implementation is going to use conditions so complex that they will require
+a programming language capable of implementing a Turing machine, the design
+may need to be revisited, including the decision to use this architecture
+--- there may be other architectures more suitable.
 
 Conditions that examine the input will be the easiest to understand,
 because they can be understood in isolation; they do not depend on
@@ -433,27 +428,28 @@ can be complex if required, but simple conditions can be quite useful too,
 e.g.\ every Postfix log line contains the name of the Postfix component
 that produced it, so every rule used in \parsername{} has a condition
 specifying the component whose log lines it recognises, reducing the number
-of rules that will be used when classifying an input (see \sectionref{rules
-in implementation} for details) and increasing the chance that the input
-will be correctly recognised.
+of rules that will be used when classifying a log line (see
+\sectionref{rules in implementation} for details) and increasing the chance
+that the log line will be correctly recognised.
 
 Conditions can also check the value of variables that have been set by
 either actions or rules; it is easier to understand how a variable's value
-will be used and changed if it is set by rules only rather than by actions,
-because the chain of checking and setting can be followed from rule to
-rule.  The downside to actions setting variables used in rule conditions is
-action at a distance: understanding when a rule's condition will be true or
-false requires understanding not just every other rule but also every
-action.  The framework probably does not need to support a high level of
-complexity and flexibility when rules are setting variables; however, if
-the framework supports complex conditions, that code can probably be easily
-extended to support complex variable assignments too.  The level of
-complexity the framework supports when evaluating conditions and setting
-variables has two costs that must be taken into account when designing a
-parser: the difficulty of implementation, and the difficulty of
-understanding writing correct rules; the flexibility provided by complex
-conditions may be outweighed by the difficulty in understanding the
-interactions between rules that use complex conditions.
+will be used and changed if it is set by rules only, rather than by
+actions, because the chain of checking and setting variables can be
+followed from rule to rule.  The downside to actions setting variables that
+are used in rule conditions is action at a distance: understanding when a
+rule's condition will be true or false requires understanding not just
+every other rule but also every action.  The framework probably does not
+need to support a high level of complexity and flexibility when rules are
+setting variables; however, if the framework supports complex conditions,
+that code can probably be easily extended to support complex variable
+assignments too.  The level of complexity the framework supports when
+evaluating conditions and setting variables has two costs that must be
+taken into account when designing a parser: the difficulty of
+implementation, and the difficulty of understanding or writing correct
+rules; the flexibility provided by complex conditions may be outweighed by
+the difficulty in understanding the interactions between rules that use
+them.
 
 An example of how rule conditions can be useful is parsing C-style
 comments, which start with \texttt{/*} and end with \texttt{*/}; the start
@@ -463,12 +459,11 @@ and state changes of the four rules required to parse C-style comments.
 These rules are somewhat simplified, e.g.\ rules one and two will recognise
 the comment start token even if it is within a quoted string, which is
 incorrect; the rules could be extended with new rules to parse quoted
-strings, excluding comments from within strings.
-
-Rules one and two will be used when the parser is parsing code, not
-comments: rule one recognises a comment that is contained within one line
-and leaves the parser's state unchanged; rule two recognises the start of a
-comment and changes the parser's state to parsing comments.  Rules three
+strings, excluding comments from within strings.  Rules one and two will be
+used when the parser is parsing code, not comments: rule one recognises a
+comment that is contained within one line and leaves the parser's state
+unchanged; rule two recognises the start of a comment and changes the
+parser's state to parsing comments instead of parsing code.  Rules three
 and four will be used when the parser is parsing a comment: rule three
 recognises the end of a comment and switches the parser's state back to
 parsing code; rule four recognises a comment line without an end token and
@@ -485,14 +480,18 @@ and difficulties of using overlapping rules.
     \empty{}\label{Rules to parse C-style comments}
     \begin{tabular}{llll}
         \tabletopline{}%
-        No.   & Regex             & Condition             & Variable Changes    \\
+        No.   & Regex             & Condition                 & Variable Changes          \\
         \tablemiddleline{}%
-        1     & \verb!/\*.*?\*/!  & expecting == code     & expecting = code      \\
-        2     & \verb!/\*.*!      & expecting == code     & expecting = comment   \\
-        3     & \verb!.*\*/!      & expecting == comment  & expecting = code      \\
-        4     & \verb!.*!         & expecting == comment  & expecting = comment   \\
+        1     & \verb!/\*.*?\*/!  & state == parsing code     & state = parsing code      \\
+        2     & \verb!/\*.*!      & state == parsing code     & state = parsing comment   \\
+        3     & \verb!.*\*/!      & state == parsing comment  & state = parsing code      \\
+        4     & \verb!.*!         & state == parsing comment  & state = parsing comment   \\
         \tablebottomline{}%
     \end{tabular}
+
+    Note that ``state'' is merely a descriptive name for the variable; the
+    variable can called anything at all.
+
 \end{table}
 
 \subsection{Overlapping Rules}
@@ -503,22 +502,22 @@ When adding new rules, the rule author must be aware that the new rule may
 overlap with one or more existing rules, i.e.\ some inputs could be parsed
 by more than one rule.  Unintentionally overlapping rules lead to
 inconsistent parsing and data extraction because the first rule to
-recognise the input wins, and the order in which rules are tried against
-each input might change between parser invocations.  Overlapping rules are
-frequently a requirement, allowing a more specific rule to recognise some
-inputs and a more general rule to recognise the remainder, e.g.\ separating
+recognise the input wins, and the order in which rules are used might
+change between parser invocations.  Overlapping rules are frequently a
+requirement, allowing a more specific rule to recognise some inputs and a
+more general rule to recognise the remainder, e.g.\ separating
 \acronym{SMTP} delivery to specific sites from \acronym{SMTP} delivery to
-the rest of the world.  Allowing overlapping rules simplifies both the
-general rule and the more specific rule; additionally rules from different
-sources can be combined with a minimum of prior cooperation or modification
+the rest of the world.  Using overlapping rules simplifies both the general
+rule and the more specific rule; additionally rules from different sources
+can be combined with a minimum of prior cooperation or modification
 required.  Overlapping rules should have a priority attribute to specify
 their relative ordering; negative priorities may be useful for catchall
 rules.  The architecture does not try to detect overlapping rules: that
 responsibility is left to the author of the rules.
 
 Overlapping rules can be detected by visual inspection, or a program may be
-written to analyse the rule's regexes.  Traditional regexes are equivalent
-in computational power to \acronym{FA} and can be converted to
+written to analyse the regexes in a ruleset.  Traditional regexes are
+equivalent in computational power to \acronym{FA} and can be converted to
 \acronym{FA}, so regex overlap can be detected by finding a non-empty
 intersection of two \acronym{FA}\@.  Perl 5.10 regexes~\cite{perlre} are
 more powerful than traditional regexes: it is possible to match correctly
@@ -530,7 +529,7 @@ equivalent in computational power to \acronym{PDA}; detecting overlap may
 require calculating the intersection of two \acronym{PDA} instead of two
 \acronym{FA}.  \acronym{PDA} intersection is not closed, i.e.\ the result
 cannot always be implemented using a \acronym{PDA}, so intersection may be
-intractable for some combinations, e.g.:
+intractable sometimes, e.g.:
 $a^{*}b^{n}c^{n}~\cap~a^{n}b^{n}c^{*}~\rightarrow~a^{n}b^{n}c^{n}$.
 Detecting overlap amongst $n$ regexes requires calculating
 $\frac{n\left(n-1\right)}{2}$ intersections, resulting in
@@ -540,14 +539,13 @@ to be performed every time a parser runs: naive detection of overlap
 amongst \parsernames{} \numberOFrules{} rules would require calculating
 \numberOFruleINTERSECTIONS{} intersections.
 
-When detecting overlap any conditions attached to rules must be taken into
+When detecting overlap, any conditions attached to rules must be taken into
 account, because two rules whose regexes overlap may have conditions
 attached that prevent the rules overlapping.  A less naive approach to
 overlap detection would first check for overlapping conditions amongst
 rules, and then check for overlap between the regexes of each pair of rules
-with overlapping conditions.  Depending on the conditions employed a rule
-may overlap with multiple rules, and rule overlap is not transitive, e.g.\
-given these three artificial conditions:
+with overlapping conditions.  Rule overlap is not transitive, e.g.\ given
+these three conditions:
 
 \begin{enumerate}
 
@@ -569,95 +567,94 @@ detecting overlap amongst $n$ rules is $O\left(n^{2}y+|o|x\right)$, where:
 
 \begin{tabular}[]{rcl}
 
-    $x$ & = & cost of checking for overlap between two regexes    \\
     $y$ & = & cost of checking for overlap between two conditions \\
     $o$ & = & set of pairs of rules with overlapping conditions   \\
+    $x$ & = & cost of checking for overlap between two regexes    \\
 
 \end{tabular}
 
-In the worst case no overlap will be found between conditions, so all pairs
-or regexes must be checked for overlap and $|o|$ above will be equal to
-$n^{2}$.  For this approach to be more efficient than the naive approach
-$y$ must be significantly lower than $x$.  If $y$ is higher than $x$ then
-the checks for overlap should be performed in the opposite order: check for
-regex overlap first, then check for condition overlap only between pairs of
-rules with overlapping regexes.
+In the worst case $|o|$ above will be equal to $n^{2}$.  For this approach
+to be more efficient than the naive approach, $y$ must be significantly
+lower than $x$.  If $y$ is higher than $x$ then the checks for overlap
+should be performed in the opposite order: check for regex overlap first,
+then check for condition overlap only between pairs of rules with
+overlapping regexes.
 
-Once conditions pass a certain level of complexity determining if two
+Once conditions pass a certain level of complexity, determining if two
 conditions overlap becomes intractable, because it requires so much
-knowledge of other rules and possibly even actions.  E.g.\ given two rules
-with conditions \verb!verbose == true! and \verb!silent == true!, logically
-these rules should not overlap, yet there is nothing to stop both variables
-being set to true by one or more rules or actions.  If variables used in
-conditions can be set by actions, determining if two conditions overlap is
-impossible: the Halting Problem show that it is impossible for one program
-to answer questions about another program's behaviour if the inquiring
-program is implemented on a computational machine of the equal or lesser
-power to the program being inquired into.
+knowledge of other rules and possibly even actions.  For example, given two
+rules with conditions \verb!verbose == true! and \verb!silent == true!,
+logically these rules should not overlap, yet there is nothing to stop both
+variables being set to true by one or more rules or actions.  If variables
+used in conditions can be set by actions, determining if two conditions
+overlap is impossible: the Halting Problem shows that it is impossible for
+one program to answer questions about another program's behaviour if the
+inquiring program is implemented on a computational machine whose power is
+equal or less than the power of the computational machine the other program
+is implemented upon.
 
 \subsection{Pathological Rules}
 
-It is possible to define pathological regexes, which fall into two main
+It is possible to write pathological regexes, which fall into two main
 categories: regexes that match inputs they should not, and regexes that
 consume excessive amounts of CPU time during matching.  Defining a regex
 that matches inputs it should not is trivial: \verb!/^/! matches the start
 of every input.  This regex would be found by a tool that detects
 overlapping rules, and would easily be noticed by visual inspection, but
-more complex regexes would be harder to spot.  Regexes that match more than
-they should are a problem not because of excessive resource usage, but
-because they may prevent the correct rule from recognising the input.  If
-an adaptive ordering system is used that prioritises rules that frequently
-recognise inputs (see \sectionref{rule ordering for efficiency}), then a
-rule with a regex that matches inputs it should not may be promoted up
-through the list, displacing an increasing number of correct rules as it
-moves.
+more complex regexes would be harder to find.  Regexes that match inputs
+more than they should are a problem not because of excessive resource
+usage, but because they may prevent the correct rule from recognising the
+input.  If an adaptive ordering system is used that prioritises rules that
+frequently recognise inputs (see \sectionref{rule ordering for
+efficiency}), then a rule with a regex that matches inputs it should not
+may be promoted up through the list, displacing an increasing number of
+correct rules as it rises.
 
-Usually excessive CPU time is consumed when a regex fails to match, and the
-regex engine backtracks many times because of alteration or nested
-quantifiers; successful matching is generally quite fast with such regexes,
-so problematic regexes may go unnoticed for some time.  E.g.\ with most
-regex engines matching double quoted strings with \verb!"([^"\\]+|\\.)*"!
-is very fast when there is a match, but when the match fails its
-computational complexity for a string of length $n$ is $O(2^{n})$;
-see~\cite{mastering-regular-expressions} for in-depth discussion of nested
-quantifiers, backtracking, alteration, and capturing groups.  Pathological
-regexes that consume excessive CPU time can be difficult to detect, both by
-visual inspection and by machine inspection, but if a regex is converted to
-a \acronym{FA} or the internal representation used by the regex engine, it
-may be possible to determine if nested quantifiers or other troublesome
-constructs are present.  Modern regex engines have addressed many of these
-problems, e.g.\ the regex to match double quoted strings given above fails
-immediately with Perl 5.10, regardless of the input length, because the
-regex engine looks for both of the required double quotes first.  Similarly
-Perl 5.10's regex engine optimises alterations starting with literal text
-into a trie, which has matching time proportional to the length of the
-alternatives, rather than the number of alternatives.  Perl regexes can use
-\verb!(?>pattern)!, which matches \verb!pattern! the first time the regex
-engine passes over it, and does not change what it originally matched if
-the regex engine backtracks over it, so troublesome regexes can use this to
-reduce the impact of backtracking; Prolog users will notice a similarity to
-the \verb'!' (cut) operator.  A presentation showing some of Perl 5.10's
-new regex features is available at
+Excessive CPU time is usually consumed when a regex fails to match an
+input, and the regex engine backtracks many times because of alteration or
+nested quantifiers; successful matching is generally quite fast with such
+regexes, so problematic regexes may go unnoticed for a long time.  For
+example, with most regex engines matching double quoted strings with
+\verb!"([^"\\]+|\\.)*"!  is very fast when there is a match, but when the
+match fails its computational complexity for a string of length $n$ is
+$O(2^{n})$; see~\cite{mastering-regular-expressions} for in-depth
+discussion of nested quantifiers, backtracking, alteration, and capturing
+groups.  Pathological regexes that consume excessive CPU time can be
+difficult to detect, both by visual inspection and by machine inspection,
+but if a regex is converted to a \acronym{FA} or the internal
+representation used by the regex engine, it may be possible to determine if
+nested quantifiers or other troublesome constructs are present.  Modern
+regex engines have addressed many of these problems, e.g.\ the regex to
+match double quoted strings given above fails immediately with Perl 5.10,
+regardless of the input length, because the regex engine looks for both of
+the required double quotes first.  Similarly, Perl 5.10's regex engine
+optimises alterations starting with literal text into a trie, which has
+matching time proportional to the length of the alternatives, rather than
+the number of alternatives.  Perl regexes can use \verb!(?>pattern)!, which
+matches \verb!pattern! the first time the regex engine passes over it, and
+does not change what it originally matched if the regex engine backtracks
+over it, alleviating problems caused by excessive backtracking; Prolog
+users will notice a similarity to the \verb'!' (cut) operator.  A
+presentation showing some of Perl 5.10's new regex features is available at
 \urlLastChecked{http://www.regex-engineer.org/slides/perl510_regex.html}{2009/03/03}.
 
 Conditions can vary in complexity from simple equality through to a
 Turing-equivalent language, so enumerating pathological conditions is
-difficult if not pointless.  Conditions that examine the input using
-regexes can suffer from the same problems as rule regexes; conditions that
-check variables in uncomplicated ways may exhibit unexpected or incorrect
-behaviour, but are unlikely to exhibit pathological behaviour.  Deciding if
-a more complex condition's behaviour is pathological or simply a bug is
-difficult and to some extent is a matter of opinion.  When this
-architecture has received more widespread usage consensus should be reached
-on the topic of pathological conditions.
+difficult if not pointless.  Conditions that check variables or the input
+in uncomplicated ways may exhibit unexpected or incorrect behaviour, but
+are unlikely to exhibit pathological behaviour.  Deciding if a more complex
+condition's behaviour is pathological or simply a bug is difficult and to
+some extent is a matter of opinion.  When this architecture has received
+more widespread usage, consensus should be reached on the topic of
+pathological conditions.
 
 \section{Summary}
 
 This chapter has presented the parser architecture developed for this
 project.  It started with a high level view of the architecture, describing
 how it achieves its design aim of being easily extensible for users, and
-the advantages that being easily extensible brings to parser authors too.
-The three main components of the architecture were documented in detail,
+the advantages that being easily extensible brings to parser authors.  The
+three main components of the architecture were documented in detail,
 explaining each component's responsibilities and the functionality it
 provides, plus any difficulties associated with the components.  The
 framework provides several support functions and manages the parsing
@@ -667,22 +664,22 @@ structure or requirements upon them: parser authors are free to do anything
 they want within an action.  The architecture's support for cascaded
 parsing was described in the actions section, with an example to illustrate
 how it can be useful for general parsing.  The rules section was the
-longest, because although the rules appear conceptually simple ---
+longest in this chapter, because although the rules appear to be simple ---
 recognise an input and specify the action that handles that input --- they
 have subtle behaviour that needs to be clearly explained.  When extending a
-ruleset a decision needs to be taken about whether the input should be
+ruleset, a decision needs to be taken about whether the input should be
 recognised by extending an existing rule, by adding a new rule to an
-existing rule category, or by adding a new rule category, rule, and action.
-Rules can have conditions attached to them, restricting the set of rules
-used to recognise an input; the complexity of the conditions used greatly
-influences the difficulty of writing a correct ruleset or understanding and
-extending an existing ruleset.  Overlapping rules are frequently a
-requirement in a parser, and their use can greatly simplify some rules, but
-they can be a source of bugs because they can recognise inputs
-unexpectedly.  The framework does not try to detect overlapping rules,
-because overlap amongst rules may be valid and is quite often intentional;
-that responsibility falls to the author of the rules.  The difficulty
-involved in detecting overlap is proportional to the complexity of a
-ruleset's regexes and conditions, and may be possible for a human yet
-intractable or impossible for a program.  The rules section finishes with a
-discussion of pathological rules, concentrating on pathological regexes.
+existing rule category, or by adding a new input category, rule, and
+action.  Rules can have conditions attached to them, restricting the set of
+rules used to recognise an input; the complexity of the conditions used
+greatly influences the difficulty of writing a correct ruleset or
+understanding and extending an existing ruleset.  Overlapping rules are
+frequently a requirement in a parser, and their use can greatly simplify
+some rules, but they can be a source of bugs because they can recognise
+inputs unexpectedly.  The framework does not try to detect overlapping
+rules, because overlap amongst rules may be valid and is quite often
+intentional; that responsibility falls to the author of the rules.  The
+difficulty involved in detecting overlap is proportional to the complexity
+of a ruleset's regexes and conditions, and may be possible for a human yet
+intractable or impossible for a program.  The rules section concludes with
+a discussion of pathological rules, concentrating on pathological regexes.

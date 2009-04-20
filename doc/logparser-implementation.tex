@@ -2,47 +2,46 @@
 
 \label{Postfix Parser Implementation}
 
-This chapter documents the implementation of \parsername{}, based on the
-architecture described in \sectionref{parser architecture}.  Any design may
-look good when examined in the abstract, but the real test of the design
-comes with the first concrete implementation; only then do any practical
-difficulties come to light.  Implementing this architecture was relatively
-straightforward: the difficulties came not from the architecture and
-design, but from anomalies in the log files and Postfix's behaviour, as
+This chapter documents the implementation of \parsername{}, a parsed based
+on the architecture described in \sectionref{parser architecture}.  Any
+design may look good when examined in the abstract, but the real test of
+the design comes with the first concrete implementation; only then do any
+practical difficulties come to light.  Implementing this architecture was
+relatively straightforward: the difficulties came not from the architecture
+and design, but from anomalies in the log files and Postfix's behaviour, as
 described in \sectionref{complications}.  \parsername{} successfully deals
 with all the difficulties that were discovered during its development, but
 further difficulties may arise during future usage; unfortunately solving
 all potential difficulties that may arise is an intractable task, but the
-descriptions of the solutions developed thus far (see
-\sectionref{complications}) should help if someone needs to develop a
-solution of their own.
+descriptions of the solutions developed thus far should help if someone
+needs to develop a solution of their own.
 
-\parsername{} deals with all the complications of parsing, the
-eccentricities and oddities of Postfix log files, presenting the resulting
-data in a normalised, simple to use representation.  Unfortunately dealing
-with the complications that arise sometimes requires the parser to discard
-log lines (e.g.\ \sectionref{aborted delivery attempts}), and, less
-frequently, to discard a data structure (e.g.\ \sectionref{timeouts during
-data phase}).  \parsername{} can parse log files from Postfix version 2.2
-through to version 2.5, and should be capable of parsing log files from
-later versions with only minor modifications or an updated ruleset.  The
-parser's task is to follow the journey each mail takes through Postfix,
-combining the data captured by rules into a coherent whole, saving it in a
-useful and consistent form, and performing housekeeping duties.  The
-intermingling of log lines from different mails immediately rules out the
-possibility of handling each mail in isolation; the parser must handle
-multiple mails in parallel, each potentially at a different stage in its
-journey, without any interference between mails --- except in the minority
-of cases where intra-mail interference is required, e.g.\ mail re-injected
-for forwarding (\sectionref{Re-injected mails}).  The best way to deal with
-intermingling of log lines is to maintain state information for every
-unfinished mail, and to manipulate the appropriate mail correctly for each
-log line encountered.
+\parsername{} deals with all the eccentricities and oddities of parsing
+Postfix log files, presenting the resulting data in a normalised, simple to
+use representation.  Unfortunately, dealing with the complications that
+arise sometimes requires the parser to discard log lines (e.g.\
+\sectionref{aborted delivery attempts}), and, less frequently, to discard a
+data structure (e.g.\ \sectionref{timeouts during data phase}).
+\parsername{} can parse log files from Postfix version 2.2 through to
+version 2.5, and should be capable of parsing log files from later versions
+with only minor modifications or an updated ruleset.  The parser's task is
+to follow the journey each mail takes through Postfix, combining the data
+captured by rules into a coherent whole, saving it in a useful and
+consistent form, and performing housekeeping duties.  The intermingling of
+log lines from different mails immediately rules out the possibility of
+handling each mail in isolation; the parser must handle multiple mails in
+parallel, each potentially at a different stage in its journey, without any
+interference between mails --- except in the minority of cases where
+intra-mail interference is required, e.g.\ mail re-injected for forwarding
+(\sectionref{Re-injected mails}).  The best way to deal with intermingling
+of log lines is to maintain state information for every unfinished mail,
+and to manipulate the appropriate mail correctly for each log line
+encountered.
 
 This chapter begins with the assumptions under which \parsername{} was
 designed and written, followed by a flowchart showing the most common paths
 taken through Postfix and \parsername{}, with a description of the stages
-and transitions.  The topic of the next section is the database that
+and stage transitions.  The second topic is the \acronym{SQL} database that
 provides storage for the parser: any future work that analyses gathered
 data will do so using the database, so the database schema acts as an
 \acronym{API}.  A diagram of the database schema is provided, plus
@@ -50,28 +49,28 @@ documentation for every table and field.
 
 The next three sections document the implementation of the three components
 of the architecture.  First is the framework, including its initialisation
-phase, the parsing process, and the conveniences it offers to users; that
-section finishes with the features that are important for this thesis but
-not strictly necessary for parsing: the performance data collected by the
-framework, the optimisations that can be disabled to show their effect, and
-the debugging options it provides.  The second component of the
-architecture is the actions: their implementation is documented, with a
-graph of how often each action is specified by rules, and a description of
-why some actions are more popular than others.  Every action that is part
-of \parsername{} is documented, and the actions section concludes with the
-process of adding a new action, and how to determine the values for each of
-the required fields.  Rules are the final component of the architecture,
-and also the most visible to advanced users, e.g.\ systems administrators,
-because it is likely that they will need to add their own rules to
-recognise their log lines.  An example rule used by \parsername{} is shown,
-with every field clearly documented; this is followed by a description of
-adding new rules, and how to determine the value of each of the fields.
-\parsername{} provides a utility to create regexes from unrecognised log
-lines; the algorithm it uses is documented, including the differences
-between it and the original algorithm.  The rules section finishes with a
-discussion of how \parsername{} uses rule conditions and overlapping rules,
-plus a description of the regex snippets provided to ease the process of
-writing regexes.
+phase, the parsing process, and the conveniences it offers to users of
+\parsername{}; that section finishes with the features that are important
+for this thesis but not strictly necessary for parsing: the performance
+data collected by the framework, the optimisations that can be disabled to
+show their effect, and the debugging options it provides.  The second
+component of the architecture is the actions, starting with a graph of how
+often each action is specified by rules, a description of why some actions
+are more popular than others, and how this popularity has no influence on
+how often an action is invoked.  Every action that is part of \parsername{}
+is documented, and the actions section concludes with a description of the
+process of adding a new action.  Rules are the final component of the
+architecture, and also the most visible to advanced users, e.g.\ systems
+administrators, because it is likely that they will need to add their own
+rules to recognise their log lines.  An example rule used by \parsername{}
+is examined, with every field clearly documented; that is followed by a
+description of adding new rules, and how to determine the value of each of
+the fields.  \parsername{} provides a utility to create regexes from
+unrecognised log lines; the algorithm it uses is documented, including the
+differences between it and the original algorithm it is based on.  The
+rules section finishes with a discussion of how \parsername{} uses rule
+conditions and overlapping rules, plus a description of the regex snippets
+provided to ease the process of writing regexes.
 
 On first inspection, Postfix log files look like they will be simple to
 parse, but this impression turns out to be incorrect.  The many
@@ -91,13 +90,13 @@ assumptions:
     \item The log files are whole and complete: nothing has been removed,
         either deliberately or accidentally (e.g.\ log file rotation gone
         awry, file system filling up, logging system unable to cope with
-        the volume of log messages).  On a well run system it is extremely
-        unlikely that any of these problems will arise, though it is of
-        course possible, particularly when suffering from a deluge of spam
-        or a mail loop.  When parsing individual log files in isolation,
-        it is highly likely that some mails will have log lines in previous
-        log files, and others will have log lines in subsequent log files;
-        to alleviate this problem \parsername{} supports saving and loading
+        the volume of log messages).  On a well run mail server it is
+        extremely unlikely that any of these problems will arise, though
+        the likelihood increases when suffering from a deluge of spam or a
+        mail loop.  When parsing individual log files in isolation, it is
+        highly likely that some mails will have log lines in previous log
+        files, and others will have log lines in subsequent log files; to
+        alleviate this problem \parsername{} supports saving and loading
         its state tables, so they can be preserved between log files.
 
     \item Postfix logs enough information to make it possible to accurately
@@ -121,7 +120,7 @@ assumptions:
 In some ways this task is similar to reverse engineering or replicating a
 black box system based solely on its inputs and outputs.  Thus far,
 analysis of the log files has been enough to reconstruct Postfix's
-behaviour, but for more difficult programs the techniques described in
+behaviour, but for other programs the techniques described in
 \cite{black-box-error-reporting} may be useful.  Some advantages come from
 treating Postfix as a black box during parser development:
 
@@ -140,10 +139,10 @@ treating Postfix as a black box during parser development:
         variety of orderings in which log lines are found in log files.
 
     \item The parser acts as a second source of information about Postfix's
-        operation, based on empirical evidence.  A separate project could
-        compare the empirical knowledge inherent in \parsername{} with
-        Postfix's documentation and source code to see how closely the two
-        agree.
+        operation, based on empirical evidence from log files.  A separate
+        project could compare the empirical knowledge inherent in
+        \parsername{} with Postfix's documentation and source code to see
+        how closely the two agree.
 
 \end{itemize}
 
@@ -161,8 +160,8 @@ how a mail progresses through both Postfix and \parsername{}, providing an
 overall context into which the detailed descriptions in the remainder of
 this chapter will fit, in particular the actions (\sectionref{actions in
 implementation}) and complications (\sectionref{complications}).  The
-states and transitions shown in \figureref{flow chart image} will be
-explained later in this section.
+states and state transitions shown in the flow chart will be explained
+later in this section.
 
 \showgraph{build/logparser-flow-chart-part-1}{\parsernamelong{} flow
 chart}{flow chart image}
@@ -188,8 +187,7 @@ configuration errors.
 
     \item The remote client connects \flowchart{CONNECT}{1}.
 
-    \item This is followed by rejection of \acronym{SMTP} commands by the
-        restrictions configured by the administrator
+    \item This is followed by rejection of one or more mail delivery attempts
         \flowchart{DELIVERY\_REJECTED}{4}; acceptance of one or more mails
         \flowchart{CLONE}{5}; failure of the remote client's connection
         \flowchart{DELIVERY\_ERROR}{6}; or some random interleaving of two
@@ -197,46 +195,48 @@ configuration errors.
 
     \item The client disconnects \flowchart{DISCONNECT, TIMEOUT}{6}, either
         normally or with an error.  If Postfix has rejected any
-        \acronym{SMTP} commands the resulting data will be saved to the
-        database; if there were no rejections there will not be any data to
-        save.  Any mails accepted will already have been cloned so their
-        data is in another data structure, and will be delivered in the
-        same way as mails that entered the system by any other route.
+        \acronym{SMTP} commands the data gathered from those rejections
+        will be saved to the database; if there were no rejections there
+        will not be any data to save.  Any mails accepted will already have
+        been cloned so their data is in another data structure, and will be
+        delivered in the same way as mails that entered the system by any
+        other route.
 
 \end{enumerate}
 
 The obvious counterpart to mail entering the system is mail leaving the
-system, whether by deletion, bouncing, local delivery, or remote delivery.
-All four are handled in exactly the same way:
+system, whether by deletion, bouncing, expiry, local delivery, or remote
+delivery.  All five are handled in the same way:
 
 \begin{enumerate}
 
     \item The mail will have one or more delivery attempts
         \flowchart{MAIL\_SENT, SAVE\_DATA}{8}.
 
-    \item Sometimes mail is re-injected and the child mail needs to be
-        tracked with the parent mail \flowchart{TRACK}{9}; the handling of
-        re-injected mails is described in \sectionref{tracking re-injected
-        mail}.
+    \item Sometimes mail is re-injected for forwarding and the child mail
+        needs to be tracked with the parent mail \flowchart{TRACK}{9}; the
+        handling of re-injected mails is described in \sectionref{tracking
+        re-injected mail}.
 
     \item After one or more delivery attempts the mail will be delivered
         \flowchart{MAIL\_SENT}{8}, bounced \flowchart{MAIL\_BOUNCED}{8},
         expired \flowchart{EXPIRY}{8}, or deleted by the administrator
         \flowchart{DELETE}{8}.
 
-    \item This is the last log line for this particular mail, though it may
-        be indirectly referred to if it was re-injected.  The mail is
-        cleaned up and entered in the database, then deleted from the state
-        tables \flowchart{COMMIT}{11}.
+    \item The mail is removed from the Postfix queue.  This is the last log
+        line for this particular mail, though it may be indirectly referred
+        to if it was re-injected.  The mail is cleaned up and entered in
+        the database, then deleted from the state tables
+        \flowchart{COMMIT}{11}.
 
 \end{enumerate}
 
-It should be emphasised that the mail delivery process above happens
-whether the mail is delivered to a mailbox, piped to a command, delivered
-to a remote server, bounced (because of a mail loop, delivery failure, or
-five day timeout), or deleted by the administrator, \textit{unless\/} the
-mail is either parent or child of re-injection, as explained in
-\sectionref{tracking re-injected mail}.
+It should be emphasised that the sequence above happens whether the mail is
+delivered to a mailbox, piped to a command, delivered to a remote server,
+bounced (because of a mail loop, delivery failure, or five day timeout), or
+deleted by the administrator, \textit{unless\/} the mail is either parent
+or child of re-injection, as explained in \sectionref{tracking re-injected
+mail}.
 
 \section{Database}
 
@@ -245,8 +245,8 @@ mail is either parent or child of re-injection, as explained in
 A database is used to store both the rules and the data gleaned by parsing
 Postfix log files.  Understanding the database schema is important in
 understanding the actions of the parser, and essential to developing
-further applications that utilise the data gathered; \sectionref{database
-as API} describes how the database schema functions as an \acronym{API}.
+further applications that utilise the data; \sectionref{database as API}
+describes how the database schema functions as an \acronym{API}.
 
 The database schema can be conceptually divided in two: the rules used to
 recognise log lines, and the data saved from the parsing of log files.
@@ -257,11 +257,11 @@ the log lines recognised by each rule.  The rules are described in detail
 in \sectionref{rules in implementation}, but the rules table is documented
 in \sectionref{rules table} with the rest of the database schema.
 
-The data saved from parsing the log files is also divided into two tables:
+The data saved from parsing the log files is divided into two tables:
 connections and results.  The connections table contains an entry for every
-mail accepted and every connection that rejected an \acronym{SMTP} command;
-the individual fields will be described in \sectionref{connections table}.
-The results table will have at least one entry for each entry in the
+mail accepted and every connection that rejected a delivery attempt; the
+individual fields will be described in \sectionref{connections table}.  The
+results table will have at least one entry for each entry in the
 connections table; its fields will be covered in detail in
 \sectionref{results table}.  A diagram of the database schema is provided
 in \figureref{Diagram of the database schema picture}, to complement the
@@ -271,13 +271,12 @@ An important but easily overlooked benefit of storing the rules in the
 database is the link between rules and results: if more information is
 required when examining a result, the rule that produced the result is
 available for inspection because each result references the rule that
-created it.  No ambiguity or confusion is possible about which rule
-resulted in a particular result, eliminating one potential source of
-confusion.
+created it.  No ambiguity is possible about which rule resulted in a
+particular result, eliminating one potential source of confusion.
 
 A clear, comprehensible schema is essential when using the data extracted
 from log lines; it is more important when using the data than when storing
-it, because storing the data is a write-once operation, whereas utilising
+it, because storing the data is a once-off operation, whereas utilising
 the data requires frequent searching, sorting, and manipulation of the data
 to produce customised reports or statistics.
 
@@ -287,12 +286,12 @@ to produce customised reports or statistics.
 
 The database populated by \parsername{} provides a simple interface to
 Postfix log files.  Although the interface is a database schema rather than
-a set of functions in a library, it gives the same benefits as any other
-\acronym{API}: it provides a stable interface between the user and the
-creator of the data, allowing code on either side of the interface to be
-changed without adverse effects, as long as the interface is adhered to.
-Programs that use the database can range from the simple examples in
-\sectionref{motivation} to far more complex data mining tools.
+a set of functions in a library, it provides the same benefits as any other
+\acronym{API}: a stable interface between the user and the creator of the
+data, allowing code on either side of the interface to be changed without
+adverse effects, as long as the interface is adhered to.  Programs that use
+the database can range from the simple examples in \sectionref{motivation}
+to far more complex data mining tools and machine learning algorithms.
 
 Using a database simplifies writing programs that need to interact with the
 data in several ways:
@@ -306,7 +305,7 @@ data in several ways:
 
     \item Databases provide complex querying and sorting functionality for
         the user without requiring large amounts of programming.  All
-        databases provide a program, of varying complexity and
+        databases have one or more programs, of varying complexity and
         sophistication, that can be used for ad hoc queries with minimal
         investment of time.
 
@@ -327,13 +326,14 @@ data in several ways:
 \begin{verbatim}
 CREATE TRIGGER ON INSERT INTO results
     WHERE sender = "boss@example.com"
-        AND action = "DELIVERY_REJECTED"
+        AND rule_id = rules.id
+        AND rules.action = "DELIVERY_REJECTED"
     SEND PANIC EMAIL TO "postmaster@example.com";
 \end{verbatim}
 
             \item Other tables can be added to the database, e.g.\ to cache
-                historical or computed data, or to link in data from other
-                sources.
+                historical or computed data, or to incorporate data from
+                other sources.
 
         \end{itemize}
 
@@ -355,9 +355,9 @@ CREATE TRIGGER ON INSERT INTO results
 \end{enumerate}
 
 Storing the results in a database will also increase the efficiency of
-using those results, because the log files need only be parsed once rather
-than each time the data is used; indeed the results may be used by someone
-with no access to the original log files.
+using those results, because the log files only need to be parsed once
+rather than each time the data is used; indeed the database may be used by
+someone with no access to the original log files.
 
 \subsection{Rules Table}
 
@@ -371,58 +371,58 @@ of the database schema picture}
 \setlength{\belowcaptionskip}{\belowcaptionskipORIG}
 
 Rules are discussed in detail in \sectionref{rules in implementation}, but
-the structure of the rules table is documented here along with the other
-tables in the database.  Rules are created by the user, not the parser, and
-will not be modified by \parsername{} (except for the hits and hits\_total
-fields).  Rules classify the individual log lines, capturing data to be
+the structure of the rules table is documented here alongside the other
+tables in the database.  Rules are created by the user, and will not be
+modified by \parsername{}, except when it updates the hits and hits\_total
+fields.  Rules recognise the individual log lines, capturing data to be
 saved in the connections and results tables, and specifying the action to
-take for each recognised log line.
+invoke for each recognised log line.
 
-Each rule some or all of these fields; all fields are required unless
-otherwise stated.
+Each rule must provide values for most of the fields below; all fields are
+required unless otherwise stated in the description.
 
 \begin{boldeqlist}
 
-    \item [id] A unique identifier for each rule that other tables can use
-        when referring to a specific rule.
+    \item [id] A unique identifier that other tables can use when referring
+        to a specific rule.
 
     \item [name] A short name for the rule.
 
-    \item [description] Something must have occurred to cause Postfix to
-        output each log line; this field should describe the event causing
-        the log lines this rule recognises.
+    \item [description] This field should describe the event causing the
+        log lines this rule recognises, e.g.\ ``Mail has been delivered to
+        the LDA (typically procmail)''.
 
     \item [restriction\_name] The name of the Postfix restriction that
-        caused the mail to be rejected.  This field is valid only for rules
-        that recognise rejection log lines, i.e.\ rules that have an action
-        of \action{DELIVERY\_REJECTED}.
+        caused the rejection of the mail delivery attempt.  This field is
+        valid only for rules that recognise rejection log lines, i.e.\
+        rules that have an action of \action{DELIVERY\_REJECTED}.
 
     \item [program] The Postfix component (e.g.\ \daemon{smtpd}) whose log
-        lines the rule applies to; see \sectionref{rule conditions in
+        lines the rule recognises; see \sectionref{rule conditions in
         implementation} for full details of how this attribute is used.
 
     \item [regex] The regex to recognise log lines with, as documented in
         \sectionref{regex components}.
 
     \item [connection\_data] Sometimes rules need to provide data that is
-        not present in the log line: e.g.\ setting \texttt{client\_ip} when
-        a mail is being delivered to another server.  Any field in the
+        not present in the log line, e.g.\ setting \texttt{client\_ip} when
+        a mail is being delivered to another server; any field in the
         connections table can be set in this way.  The format is:
         \newline{} \tab{} \texttt{ client\_hostname = localhost,}
         \newline{} \tab{} \tab{} \texttt{client\_ip = 127.0.0.1} \newline{}
         i.e.\ semi-colon or comma separated assignment statements.  Commas
         and semi-colons cannot be escaped and thus cannot be included in
-        data, this feature is intended for use with small amounts of data,
-        so dealing with escape sequences was deemed unnecessary.  This
-        field is optional.
+        data, because this feature is intended for use with small amounts
+        of data and dealing with escape sequences was deemed unnecessary.
+        This field is optional.
 
     \item [result\_data] The result table equivalent of
         \texttt{connection\_data}, also optional.
 
-    \item [action] The action that will be invoked when this rule
-        recognises a log line; a full list of actions and the parameters
-        they are invoked with can be found in \sectionref{actions in detail
-        in implementation}.
+    \item [action] The action to be invoked when this rule recognises a log
+        line; a full list of actions and the parameters they are invoked
+        with can be found in \sectionref{actions in detail in
+        implementation}.
 
     \item [hits] This counter is maintained for every rule and incremented
         each time the rule successfully recognises a log line.  At the
@@ -434,16 +434,16 @@ otherwise stated.
         discussed in \sectionref{rule ordering for efficiency}.  This field
         will be set by the parser rather than the rule author.
 
-    \item [hits\_total] The total number of hits for this rule over all
-        runs of the parser; hits is reset to zero each time the parser is
-        run, but hits\_total is not.  This field will be set by the parser
-        rather than the rule author.
+    \item [hits\_total] The total number of log lines recognised by this
+        rule over all runs of the parser; hits is reset to zero each time
+        the parser is run, but hits\_total is not.  This field will be set
+        by the parser rather than the rule author.
 
     \item [priority] This is the user-configurable companion to hits: when
-        the list of rules is sorted, priority overrides hits.  This allows
-        more specific rules to take precedence over more general rules, as
-        described in \sectionref{rules in architecture}.  This field is
-        optional.
+        the list of rules is sorted by the parser, priority overrides hits.
+        This allows more specific rules to take precedence over more
+        general rules, as described in \sectionref{rules in architecture}.
+        This field is optional.
 
     \item [debug] If this field is true, a warning will be issued with
         information about the rule and the log line every time this rule
@@ -455,23 +455,23 @@ otherwise stated.
 
 \label{connections table}
 
-Every accepted mail and every connection that rejected an \acronym{SMTP}
-command will have a single entry in the connections table containing all of
-the following fields:
+Every accepted mail and every connection that rejected a mail delivery
+attempt will have a single entry in the connections table containing all of
+the following below.  For an incoming connection, the client is the remote
+machine, and the server is the local machine; for outbound mail delivery
+attempts, the roles are reversed.
 
 \begin{boldeqlist}
 
     \item [id] This field uniquely identifies the row.
 
-    \item [server\_ip] The IP address of the server: the local address when
-        receiving mail, the remote address when sending mail.
+    \item [server\_ip] The IP address of the server.
 
     \item [server\_hostname] The hostname of the server, it will be
         \texttt{unknown} if the IP address could not be resolved to a
         hostname via DNS\@.
 
-    \item [client\_ip] The client IP address: the remote address when
-        receiving mail, the local address when sending mail.
+    \item [client\_ip] The client IP address.
 
     \item [client\_hostname] The hostname of the client, it will be
         \texttt{unknown} if the IP address could not be resolved to a
@@ -480,8 +480,8 @@ the following fields:
     \item [helo] The hostname used in the HELO command.  The HELO hostname
         occasionally changes during a connection, presumably because spam
         or virus senders think it is a good idea.  By default Postfix only
-        logs the HELO hostname when it rejects an \acronym{SMTP} command,
-        but it is quite simple to rectify this as described in
+        logs the HELO hostname when it rejects a mail delivery attempt, but
+        it is quite simple to rectify this as described in
         \sectionref{logging helo}.
 
     \item [queueid] The queueid of the mail if the connection represents an
@@ -499,8 +499,7 @@ the following fields:
 
 Every recognised log line will have a row in the results table, associated
 with a single connection; a single connection will have at least one result
-associated with it, but will usually have several more, and may have
-hundreds.
+associated with it, but will usually have several, and may have hundreds.
 
 \begin{boldeqlist}
 
@@ -508,18 +507,17 @@ hundreds.
         result is associated with.
 
     \item [rule\_id] The id of the rule in the rules table that recognised
-        the log line and created this result.
+        the log line.
 
     \item [id] A unique identifier for this result.
 
     \item [warning] Administrators can configure Postfix to log a warning
-        instead of enforcing a restriction that would reject an
-        \acronym{SMTP} command --- a mechanism that is quite useful for
-        testing new restrictions.  This field will be false for a real
-        rejection, or true if the log line was a warning.  This field
-        should be ignored if the result is not a rejection, i.e.\ the
-        action field of the associated rule is not
-        \action{DELIVERY\_REJECTED}.
+        instead of enforcing a restriction that would reject a mail
+        delivery attempt --- a mechanism that is quite useful for testing
+        new restrictions.  This field will be false for a real rejection,
+        or true if the log line was a warning.  This field should be
+        ignored if the result is not a rejection, i.e.\ the action field of
+        the associated rule is not \action{DELIVERY\_REJECTED}.
 
     \item [smtp\_code] The \acronym{SMTP} code associated with the log
         line.  In general an \acronym{SMTP} code is only present in a log
@@ -527,7 +525,7 @@ hundreds.
         line did not contain an \acronym{SMTP} code will duplicate the
         \acronym{SMTP} code of other results in that connection.  Some
         final delivery log lines do not contain an \acronym{SMTP} code,
-        e.g.\ when Postfix delivers to a command; in those cases the
+        e.g.\ when Postfix delivers to a user's mailbox; in those cases the
         \acronym{SMTP} code is specified by the rule's
         \texttt{result\_data} field, based on the success or failure
         represented by the log line.
@@ -541,15 +539,13 @@ hundreds.
 
     \item [sender] The sender's email address.  This may change during a
         connection if the client uses different sender addresses for
-        multiple rejected delivery attempts; however there should not be
+        multiple rejected delivery attempts; however there will not be
         different sender addresses in the results for one accepted mail.
-        Mails sent over the same connection can be distinguished by their
-        queueids.
 
     \item [recipient] The recipient address; there may be multiple
         recipient addresses per mail or connection.
 
-    \item [size] The size of the mail, present for delivered mails only.
+    \item [size] The size of the mail, only available for delivered mails.
 
     \item [delay] How long the mail was delayed while it was being
         delivered.  This will only be present for delivered mails.
@@ -562,10 +558,10 @@ hundreds.
         for delivered mails only.
 
     \item [data] A field available to store a piece of captured data that
-        does not have a specific field, e.g.\ the rejection message from a
-        \acronym{DNSBL}\@.
+        does not have its own specific field, e.g.\ the rejection message
+        from a \acronym{DNSBL}\@.
 
-    \item [timestamp] The time at which the log line was logged.
+    \item [timestamp] The log line's timestamp.
 
 \end{boldeqlist}
 
@@ -580,21 +576,21 @@ manages the parsing process, taking care of the drudgery and boring tasks,
 provides services to the actions, and implements some efficiency measures.
 
 Each time the parser is run the framework performs some initialisation
-tasks, setting up data structures that will later be used by actions,
-including several state tables.  Data about the connections and mails being
-processed is held in \texttt{connections} and \texttt{queueids}
-respectively.  The other state tables are used when working around
-complications in parsing: \texttt{timeout\_queueids} is used when dealing
-with connections that time out during the DATA phase (\sectionref{timeouts
-during data phase}); \texttt{bounce\_queueids} is part of the solution to
-bounce notification mails being delivered before their creation is logged
-(\sectionref{Bounce notification mails delivered before their creation is
-logged}); and \texttt{postsuper\_deleted\_queueids} caches information
-about mails recently deleted by the administrator so that subsequent log
-lines processed by the \action{SAVE\_DATA} action can be discarded
+tasks, setting up several state tables that will later be used by actions.
+Data about the connections and mails being processed is held in
+\texttt{connections} and \texttt{queueids} respectively.  The other state
+tables are used when working around complications in parsing:
+\texttt{timeout\_queueids} is used when dealing with connections that time
+out during the DATA phase (\sectionref{timeouts during data phase});
+\texttt{bounce\_queueids} is part of the solution to bounce notification
+mails being delivered before their creation is logged (\sectionref{Bounce
+notification mails delivered before their creation is logged}); and
+\texttt{postsuper\_deleted\_queueids} caches information about mails that
+were recently deleted by the administrator so that subsequent log lines
+processed by the \action{SAVE\_DATA} action can be discarded
 (\sectionref{Mail deleted before delivery is attempted}).
 
-When the framework loads the ruleset, it verifies each of the rules,
+The framework verifies each of the rules when it loads the ruleset,
 checking:
 
 \begin{itemize}
@@ -603,8 +599,9 @@ checking:
 
     \item That the specified action is registered with the framework.
 
-    \item That the regex is valid.  The regex will also be compiled for
-        efficiency (\sectionref{Caching compiled regexes}).
+    \item That the regex is valid.  The regex will have regex components
+        expanded (see \sectionref{regex components}), and will also be
+        compiled for efficiency (\sectionref{Caching compiled regexes}).
 
     \item For overlap between the data captured by the regex and additional
         data specified in either \texttt{connection\_data} or
@@ -619,33 +616,33 @@ State tables from a previous \parsername{} run, if any, will be loaded now;
 the framework supports saving state at any time, without adversely
 affecting the parsing process.  The need to track re-injected mail
 (\sectionref{Re-injected mails}) complicates the process of saving state,
-as the relationships between mails must be maintained; loading state is
-also complicated by dealing with aborted delivery attempts
+because the relationships between mails must be maintained; loading state
+is also complicated by dealing with aborted delivery attempts
 (\sectionref{aborted delivery attempts}), because a separate set of
 relationships between connections and mails must be re-created when the
-state tables are restored.
+state tables are restored.  The last step in loading the ruleset is to sort
+the rules as described in \sectionref{rule ordering for efficiency}.
 
 The framework is now ready to begin parsing.  For each log line it will use
 those rules whose \texttt{program} field equals the program in the log line
 (previously described in \sectionref{rule conditions in implementation}),
-falling back to generic rules if necessary, and warning if the log line is
-unrecognised.  The rules are sorted for increased efficiency; see
-\sectionref{rule ordering for efficiency} for details.  The repetitive
-nature of log files gives them high compression ratios; the framework uses
-a Perl module named \texttt{IO::Uncompress::AnyUncompress} to read
-compressed log files; this saves users the trouble of uncompressing them to
-a temporary file before parsing begins.  When used interactively, the
-framework also displays a progress bar to show how far parsing has
-progressed through the log file and how long the remainder of the parsing
-process is likely to take.  The progress bar is not as reliable when
-parsing compressed log files, because a compressed block may uncompress to
-a variable number of log lines; variation between the recognition and
-processing time of individual log lines also affects its accuracy, but
-overall the progress bar is a useful addition.  \parsername{} is primarily
-intended for parsing complete log files, but with minor modifications it
-could be used to parse a live log file, periodically checking it for new
-log lines; this could be very useful for programs that work best with up to
-date data, e.g.\ a program for monitoring the health of the mail system.
+falling back to generic rules if necessary, and finally warning if the log
+line is unrecognised.  The repetitive nature of log files gives them high
+compression ratios; the framework uses a Perl module named
+\texttt{IO::Uncompress::AnyUncompress} to read compressed log files, saving
+users the trouble of uncompressing them to a temporary file before parsing
+begins.  When used interactively, the framework displays a progress bar to
+show how far parsing has progressed through the log file and how long the
+remainder of the parsing process is likely to take.  The progress bar is
+not as accurate when parsing compressed log files, because a compressed
+block uncompresses to a variable number of log lines; variation between the
+recognition and processing time of individual log lines also affects its
+accuracy, but overall the progress bar is a useful addition.  \parsername{}
+is primarily intended for parsing complete log files, but with minor
+modifications it could be used to parse a live log file, periodically
+checking it for new log lines; this could be very useful for programs that
+work best with up to date data, e.g.\ a program for monitoring the health
+of the mail system, or graphs showing activity over the last five minutes.
 
 The framework collects data used when evaluating \parsernames{} efficiency
 for the evaluation chapter (\sectionref{Evaluation}); some of the
@@ -661,7 +658,7 @@ the benefit each optimisation provides.  Three sets of data are collected:
 
     \item The number of rules used when recognising log lines
         (\graphref{Mean number of rules used per log line}); the framework
-        may need to try multiple rules for a given log line before it finds
+        may need to try multiple rules for each log line before it finds
         one that recognises it.
 
     \item The number of log lines and rules used for each Postfix component
@@ -684,17 +681,16 @@ how effective each optimisation is:
     \item The framework can record which rule recognised each log line, and
         then on a subsequent run consult that information so that it uses
         the correct rule for each log line.  This gives the best possible
-        running time, because only one rule is used for each log line.  A
-        variation of this is to use the correct rule last, to get the worst
-        possible running time.  \sectionref{perfect rule ordering}
-        discusses this in detail.
+        running time, because only one rule is used to recognise each log
+        line, as discussed in \sectionref{perfect rule ordering}.
 
-    \item Each regex is compiled and the result cached when the rules are
-        loaded; this can be disabled and the regex compiled every time it
-        is used when recognising log lines.  The effect of this
-        optimisation is shown in \sectionref{Caching compiled regexes}.
+    \item Each regex is compiled and the result cached when the ruleset is
+        loaded; this optimisation can be disabled and the regex compiled
+        every time it is used when recognising log lines.  The effect of
+        this optimisation is shown in \sectionref{Caching compiled
+        regexes}.
 
-    \item Normally when a log line has been recognised the framework
+    \item Normally, when a log line has been recognised the framework
         invokes the action specified by the rule.  Invoking the action can
         be skipped if desired, so the timing information shows how long is
         spent recognising log lines only; this time can be subtracted from
@@ -707,7 +703,7 @@ how effective each optimisation is:
         chapter measures the speed of \parsername{}, not the speed of the
         database or the disks it resides on.  The effect on parsing time of
         storing results in the database is described at the beginning of
-        \sectionref{Evaluation}.
+        \sectionref{parser efficiency}.
 
 \end{enumerate}
 
@@ -722,14 +718,15 @@ expected.  In increasing order of severity they are:
 
     \item Each result can be extended with extra debugging information,
         which is useful when a warning dumps a mail's data for inspection.
-        The information that is added is: the log line's timestamp in human
+        The extra information added is: the log line's timestamp in human
         readable form; the entire log line; the name of the log file and
         the number of the log line within it.  This information is not
         stored in the database.
 
     \item Every time a log line is recognised, the recognising rule's regex
         and the log line can be printed, so that the user can verify that
-        the correct rule recognised each log line.
+        the correct rule recognised each log line.  This is equivalent to
+        setting every rule's debug field to true.
 
     \item Every connection and result added to the database can be dumped
         in a human readable form.  This will result in a huge amount of
@@ -740,22 +737,19 @@ expected.  In increasing order of severity they are:
 \end{enumerate}
 
 A user, typically a mail administrator, would use these options when having
-difficulty adding or modifying rules to recognise log lines not recognised
-by \parsernames{} \numberOFrules{} rules.  Option 1 is useful for debugging
-a single rule, to check if it is recognising log lines it should not;
+difficulty extending the ruleset to recognise log lines not recognised by
+\parsernames{} \numberOFrules{} rules.  Option 1 is useful for debugging a
+single rule, to check if it is recognising log lines it should not;
 figuring out that a rule is not recognising log lines that it should
 recognise is a more difficult task.  Option 2 is useful when \parsername{}
-is warning about parsing problems, because all the information about a mail
-will be present in the warning message: the full text of every log line
-that is part of the mail; the rule that recognised each log line; the
-filename of the log file and the line number within it for each log line.
-Option 3 is less useful because of the volume of data it produces, though
-for small log file snippets, e.g.\ 1000 log lines, it is possible to
-manually verify that the correct rule recognised each log line.  Option 4
-is not useful for most users: it is for debugging problems with the data
-that is saved to the database, and sufficient safeguards are in place that
-there should be plenty of warning messages explaining what is wrong without
-using this option.
+is warning about parsing problems, because extra information about a mail
+will be present in the warning message.  Option 3 is less useful because of
+the volume of data it produces, though for small log file snippets, e.g.\
+1000 log lines, it is possible to manually verify that the correct rule
+recognised each log line.  Option 4 is not useful for most users: it is for
+debugging problems with the data that is saved to the database, and
+sufficient safeguards are in place that there should be plenty of warning
+messages explaining what is wrong without using this option.
 
 \section{Actions}
 
@@ -773,23 +767,23 @@ rejecting a mail delivery attempt; next is \action{SAVE\_DATA}, the action
 that saves useful information without doing any other processing.  The
 third most common action is, perhaps surprisingly, \action{UNINTERESTING}:
 this action does nothing when invoked, allowing uninteresting log lines to
-be parsed without any effects (it does not imply that the input is
-ungrammatical or unparsed).  Generally rules specifying the
+be parsed without any effects; it does not imply that the input is
+ungrammatical or unparsed.  Generally rules specifying the
 \action{UNINTERESTING} action recognise log lines that are not associated
 with a specific mail, e.g.\ notices about configuration files changing;
 these log lines are recognised and processed so that the framework can warn
-about unrecognised log lines, informing the user that they need to add to
-or extend their ruleset.  Most of the remaining actions have only one or
-two associated rules, because they will only ever have one or two log line
-variants, e.g.\ all log lines showing that a remote client has connected
-are recognised by a single rule and handled by the \action{CONNECT} action.
+about unrecognised log lines, informing the user that they need to extend
+the ruleset.  Most of the remaining actions have only one or two associated
+rules, because they will only ever have one or two log line variants, e.g.\
+all log lines showing that a remote client has connected are recognised by
+a single rule and processed by the \action{CONNECT} action.
 
 No correlation exists between how often an action is specified by rules and
 how often an action is invoked because a rule recognises a log line.
 \Graphref{Number of times each action was invoked excluding 22 and 62--68}
 shows the number of times each action was invoked when parsing the
 \numberOFlogFILES{} log files used to generate the statistics in
-\sectionref{parser efficiency}, \textit{excluding\/} log files 22 and
+\sectionref{parser efficiency}, \textit{excluding\/} log files 22 \&
 62--68, because their content is extremely skewed by two mail loops.  The
 action most commonly specified by rules, \action{DELIVERY\_REJECTED}, is
 the third most commonly invoked action; the most commonly invoked actions,
@@ -803,10 +797,10 @@ with only a 0.00042\% difference between the number of times the two were
 invoked; every mail that enters Postfix's queue will be managed by
 \daemon{qmgr} (\action{MAIL\_QUEUED}) and processed by \daemon{cleanup}
 (\action{CLEANUP\_PROCESSING}), and again the two have only a 0.01648\%
-difference between their invocations.  Confusingly,
-\action{CLEANUP\_PROCESSING} is invoked more often than
-\action{MAIL\_QUEUED}: occasionally, accepted mail in the process of being
-transferred is interrupted by a timeout, and there is a log line from
+difference between their number of invocations.
+\action{CLEANUP\_PROCESSING} is invoked slightly more often than
+\action{MAIL\_QUEUED}: occasionally, an accepted mail in the process of
+being transferred is interrupted by a timeout, and there is a log line from
 \daemon{cleanup} but not from \daemon{qmgr}, as described in
 \sectionref{discarding cleanup log lines}.
 
@@ -815,14 +809,14 @@ action}{Distribution of rules per action}
 
 \showgraph{build/graph-number-of-action-invocations-excluding-22-and-62--68}{Number
 of times each action was invoked when parsing \numberOFlogFILES{} log
-files, excluding log files 22 and 62--68}{Number of times each action was
+files, excluding log files 22 \& 62--68}{Number of times each action was
 invoked excluding 22 and 62--68}
 
 \subsection{Actions In The \parsernamelong{}}
 
 \label{actions in detail in implementation}
 
-This section explains the actions found in \parsername{}; it may help to
+This section documents the actions found in \parsername{}; it may help to
 revisit the flow chart in \sectionref{flow chart} to see how a mail passes
 from one action to another as its log lines are recognised.  The words
 \textit{mail\/} and \textit{connection\/} are used in the actions
@@ -840,7 +834,9 @@ the action descriptions.
 
 If the log line has enough information to identify the correct connection
 or mail, each action will save all the data captured by the recognising
-rule's regex.  Each action is passed the same arguments:
+rule's regex; usually, log lines that lack identifying information will be
+processed by the \action{UNINTERESTING} action.  Each action is passed the
+same arguments:
 
 \begin{boldeqlist}
 
@@ -876,13 +872,14 @@ rule's regex.  Each action is passed the same arguments:
 \begin{description}
 
     \item [BOUNCE\_CREATED] Postfix 2.3 and subsequent versions log the
-        creation of bounce messages.  This action creates a new mail if
-        necessary; if the mail already exists the unknown origin flag will
-        be removed from it.  The action also marks the mail as a bounce
-        notification.  To deal with complication \sectionref{Bounce
-        notification mails delivered before their creation is logged} this
-        action checks a cache of recent bounce mails, to avoid creating
-        bogus bounce mails when log lines are out of order.
+        creation of bounce messages, and this action processes those log
+        lines.  This action creates a new mail if necessary; if the mail
+        already exists the unknown origin flag will be removed from it.
+        The mail will be marked as a bounce notification.  To deal with
+        complication \sectionref{Bounce notification mails delivered before
+        their creation is logged}, this action checks a cache of recent
+        bounce mails, to avoid incorrectly creating bounce mails when log
+        lines are out of order.
 
     \item [CLEANUP\_PROCESSING] \daemon{cleanup} processes every mail that
         passes through Postfix; details of what it does are available in
@@ -902,10 +899,10 @@ rule's regex.  Each action is passed the same arguments:
         will be postponed if the mail is a child waiting to be tracked
         (\sectionref{Re-injected mails}).  Once entered in the database,
         the mail will be usually be deleted from the state tables, but
-        deletion will be postponed if the mail is the parent of re-injected
-        mail (\sectionref{Re-injected mails}).
+        deletion will be postponed if the mail is the parent of mail
+        re-injected for forwarding (\sectionref{Re-injected mails}).
 
-    \item [CONNECT] Handle a remote client connecting: create a new
+    \item [CONNECT] Process a remote client connecting: create a new
         connection, indexed by \daemon{smtpd} \acronym{pid}.  If a
         connection already exists it is treated as a symptom of a bug in
         \parsername{}, and the action will issue a warning containing the
@@ -924,7 +921,7 @@ rule's regex.  Each action is passed the same arguments:
         the \action{DISCONNECT} action, so all this action does is save
         data from the log line.
 
-    \item [DELIVERY\_REJECTED] Postfix rejected an \acronym{SMTP} command
+    \item [DELIVERY\_REJECTED] Postfix rejected a mail delivery attempt
         from the remote client.  This is the action most frequently
         specified by rules, because so many different restrictions are used
         to reject delivery attempts.  This action is quite simple: if the
@@ -971,25 +968,25 @@ rule's regex.  Each action is passed the same arguments:
         delivery attempts.
 
     \item [MAIL\_TOO\_LARGE] When a client tries to send a mail larger than
-        the local server accepts, the mail will be discarded and the client
-        informed of the problem.  The mail may have been accepted and
-        partially transferred; if so a data structure must be disposed of.
-        See \sectionref{timeouts during data phase} for full details;
-        although that describes timeouts the processing is the same for
-        mails that are too large.
+        the local server accepts, the mail will be discarded by Postfix and
+        the client informed of the problem.  The mail may have been
+        accepted and partially transferred; if so the parser will have a
+        data structure that must be disposed of.  See \sectionref{timeouts
+        during data phase} for full details; although that describes
+        timeouts, the processing is the same for mails that are too large.
 
     \item [PICKUP] The \action{PICKUP} action corresponds to the
-        \daemon{pickup} service dealing with a locally submitted mail.  A
-        new mail will be created, although out of order log lines may have
-        caused it to already exist, as documented in \sectionref{pickup
-        logging after cleanup}.
+        \daemon{pickup} service processing a locally submitted mail.  A new
+        mail will usually be created, although out of order log lines may
+        have caused it to already exist, as documented in
+        \sectionref{pickup logging after cleanup}.
 
-    \item [POSTFIX\_RELOAD] When Postfix stops or reloads its
+    \item [POSTFIX\_RELOAD] When Postfix stops running or reloads its
         configuration, it kills all \daemon{smtpd} processes, requiring all
-        connections to be cleaned up, entered in the database, and deleted
-        from the state tables.  Postfix probably kills all the other
-        components too, but \parsername{} is only affected by
-        \daemon{smtpd} processes exiting.
+        of the connections in \parsernames{} state tables to be cleaned up,
+        entered in the database, and deleted from the state tables.
+        Postfix probably kills all the other components too, but
+        \parsername{} is only affected by \daemon{smtpd} processes exiting.
 
     \item [SAVE\_DATA] Every action that can locate the correct entry in
         the state tables saves any data captured by the recognising rule's
@@ -1003,22 +1000,23 @@ rule's regex.  Each action is passed the same arguments:
         deleted from the state tables.  Sometimes the connection will not
         have enough data to satisfy the database schema, so it cannot be
         entered into the database for future analysis; unfortunately this
-        means that the small amount of data that has been gathered will be
-        lost.
+        means that the small amount of data that has been gathered by
+        \parsername{} will be lost.
 
     \item [SMTPD\_WATCHDOG] \daemon{smtpd} processes have a watchdog timer
         to deal with unusual situations; after five hours the timer will
         expire and the \daemon{smtpd} will exit.  This occurs very
-        infrequently, as there are many other timeouts that should occur in
-        the intervening hours, e.g.\ timeouts for DNS requests or timeouts
-        reading data from the client.  The active connection for that
-        \daemon{smtpd} must be cleaned up, entered in the database, and
-        deleted from the state tables.
+        infrequently, because there are many other timeouts that should
+        occur in the intervening hours, e.g.\ timeouts for DNS requests or
+        timeouts reading data from the client.  The active connection for
+        that \daemon{smtpd} must be cleaned up, entered in the database,
+        and deleted from the state tables.
 
     \item [TIMEOUT] The connection with the remote client timed out, so the
-        mail being transferred must be discarded.  The mail may have been
-        accepted: if so there is a data structure to dispose of.  See
-        \sectionref{timeouts during data phase} for full details.
+        mail being transferred must be discarded by Postfix.  The mail may
+        have been accepted: if so the parser will have a data structure to
+        dispose of.  See \sectionref{timeouts during data phase} for full
+        details.
 
     \item [TRACK] Track a mail when it is re-injected for forwarding to
         another mail server; this happens when a local address is aliased
@@ -1030,9 +1028,9 @@ rule's regex.  Each action is passed the same arguments:
         warnings if so.
 
     \item [UNINTERESTING] This action just returns successfully: it is used
-        when a log line needs to be parsed for completeness, but does not
-        either provide any useful data to be saved or require anything to
-        be done.
+        when a log line needs to be recognised to avoid warning about
+        unrecognised log lines, but does not either provide any useful data
+        to be saved or require any processing.
 
 \end{description}
 
@@ -1062,13 +1060,13 @@ components that \parsername{} does not have rules for, e.g.\
 
 \label{rules in implementation}
 
-The rules are responsible for classifying each log line and specifying the
-correct action to be invoked.  In any parser implemented using this
-architecture, the rules will be the most visible component and most likely
-to be modified by users.  Rules need to be as simple as possible so that
-users can easily modify or add to them, but the implementation must balance
-that simplicity with the need to provide enough flexibility and power to
-successfully parse inputs.
+The rules are responsible for recognising each log line and specifying the
+correct action to be invoked.  The rules will be the most visible component
+in any parser implemented using this architecture, and also the component
+most likely to be modified by users.  Rules need to be as simple as
+possible so that users can easily modify them or add new rules, but each
+implementation must balance that simplicity with the need to provide enough
+flexibility and power to successfully parse inputs.
 
 The role of the rules in the architecture is covered in detail in
 \sectionref{rules in architecture}; this section is concerned with the
@@ -1077,32 +1075,34 @@ The structure of the rules table has already been documented in
 \sectionref{rules table}; that description will not be repeated here, but
 should be fleshed out by the example rule in \sectionref{example rule in
 implementation}.  The process of creating new rules from unparsed log lines
-is dealt with in \sectionref{creating new rules in implementation}; the
-implementation of the utility supplied with \parsername{} to create regexes
-from unparsed log lines is also described in that section.  The rule
-conditions used in \parsername{} are explained next, and the final portion
-of this section provides some suggestions for how to detect overlapping
-rules.
+is dealt with in \sectionref{creating new rules in implementation},
+followed by the implementation of the utility supplied with \parsername{}
+to create regexes from unparsed log lines; the regex components provided by
+\parsername{} to ease writing of complex regexes are covered in
+\sectionref{regex components}.  The rule conditions used in \parsername{}
+are the penultimate topic (\sectionref{rule conditions in implementation}),
+and the section concludes with some suggestions for how to detect
+overlapping rules.
 
 \subsection{Example Rule}
 
 \label{example rule in implementation}
 
 The example rule in \tableref{Example rule in implementation table}
-recognises the log line resulting from Postfix rejecting a delivery attempt
-because the domain in the sender address does not have an A, AAAA, or MX
-DNS entry, i.e.\ mail could not be delivered to any address in the sender's
-domain (for full details see~\cite{reject-unknown-sender-domain}).
-
-Example log line recognised by this rule:
+recognises the log line that results from Postfix rejecting a delivery
+attempt because the domain part of the sender address does not have an A,
+AAAA, or MX DNS entry, i.e.\ mail could not be delivered to any address in
+the sender's domain (for full details
+see~\cite{reject-unknown-sender-domain}).  A sample log line that would be
+recognised by this rule:
 
 % RFC 3330 says that 192.0.2.0/24 is reserved for example use.
 
 \begin{verbatim}
 NOQUEUE: reject: RCPT from smtp.example.com[192.0.2.1]:
-  550 5.1.8 <foo@example.com>:
+  550 5.1.8 <alice@example.com>:
   Sender address rejected: Domain not found;
-  from=<foo@example.com> to=<info@example.net>
+  from=<alice@example.com> to=<bob@example.net>
   proto=SMTP helo=<smtp.example.com>
 \end{verbatim}
 
@@ -1134,8 +1134,8 @@ NOQUEUE: reject: RCPT from smtp.example.com[192.0.2.1]:
     \end{tabular}
 \end{table}
 
-The fields in \tableref{Example rule in implementation table} are used as
-follows:
+\noindent{}The fields in \tableref{Example rule in implementation table}
+are used as follows:
 
 \begin{description}
 
@@ -1147,13 +1147,14 @@ follows:
         conditions in implementation} for details.  The regex does the
         actual recognition of the log lines, and data captured by the regex
         (e.g.\ sender, recipient) will be automatically saved to the
-        results and connections tables.
+        results and connections tables.  The regex components used in the
+        regex are described in \sectionref{regex components}.
 
     \item [action:] The action to be invoked when the rule recognises a log
         line.  See \sectionref{actions in detail in implementation} for
         details of the actions implemented by \parsername{}, and
         \sectionref{actions in architecture} for the role of actions in the
-        parser architecture.
+        architecture.
 
     \item [result\_data and connection\_data:] are used to provide data not
         present in the log line, and are unused in this rule.
@@ -1165,7 +1166,7 @@ follows:
         the rule.  Hits\_total is the sum of hits over every parsing run,
         but is otherwise unused by the parser.
 
-    \item [debug] controls the debugging information that can be generated
+    \item [debug] enables or disables printing of debugging information
         when this rule recognises a log line.
 
 \end{description}
@@ -1179,35 +1180,36 @@ because administrators have the freedom to choose the subset of available
 restrictions that suits their needs, including using different
 \acronym{DNSBL} services, policy servers, or custom rejection messages.  To
 ease the process of parsing new log lines, the architecture separates rules
-from actions: adding new actions can be difficult, but adding new rules to
-recognise new log lines is trivial, and occurs much more frequently.
+from actions: adding new actions requires some effort, but adding new rules
+to recognise new log lines is trivial, and occurs much more frequently.
 
 To add a new rule a new row must be added to the rules table in the
 database, containing all the required attributes: action, name,
-description, program, and regex.  The name and description fields should be
-set based on the meaning of the log line, to help others understand which
-log lines this rule will recognise; the program will be obvious from the
-unrecognised log lines.  The action depends on the what the log line
-represents, e.g.\ a delivery rejection, a mail being delivered, some useful
-information, or something else; examine the list of actions in
-\sectionref{actions in detail in implementation} to determine the correct
-one.  The regex needs to be constructed based on the log line, but see
-below for a tool to ease the process.
+description, program, and regex; all the other attributes are either
+optional, set by the parser, or have sensible defaults.  The name and
+description fields should be set based on the meaning of the log line, to
+help others understand which log lines this rule will recognise; the
+program will be obvious from the unrecognised log lines.  The action
+depends on the what the log line represents, e.g.\ a delivery rejection, a
+mail being delivered, some useful information, or something else; examine
+the list of actions in \sectionref{actions in detail in implementation} to
+determine the correct one.  The regex needs to be constructed based on the
+log line, but see below for a tool to ease the process.
 
 Other attributes may be required to make a rule work correctly:
 connection\_data, result\_data, priority, or restriction\_name.  In general
 it will only become clear that connection\_data or result\_data are
 required when \parsername{} warns about an entry in the connections or
-results tables that is missing some required fields, because values for the
-missing fields are not present in any of the log lines.  For example, the
-rule recognising the \daemon{pickup} component processing a mail sets the
-client\_hostname to \texttt{localhost} and the client\_ip to
-\texttt{127.0.0.1}, because the mail originates on the local server.  If
-the new rule deliberately uses the architecture's overlapping rules feature
-it will be obvious that the priority field needs to be set, on this rule
-and possibly others; the priority field may be needed on unintentionally
-overlapping rules too, but that is more difficult to determine.  Finally
-the restriction\_name field should be set when the rule's action is
+results tables that is missing some required fields, because values for
+those fields are not present in any of the log lines for that connection or
+mail.  For example, the rule that recognises the \daemon{pickup} component
+processing a mail sets client\_hostname to \texttt{localhost} and
+client\_ip to \texttt{127.0.0.1}, because the mail originates on the local
+server.  If the new rule deliberately uses the architecture's overlapping
+rules feature the priority field needs to be set, on this rule and possibly
+others; the priority field may be needed on unintentionally overlapping
+rules too, but that is more difficult to determine.  Finally, the
+restriction\_name field should be set if the rule's action is
 \action{DELIVERY\_REJECTED}; the name of the restriction should be clear
 from the content of the log line.
 
@@ -1225,18 +1227,19 @@ five steps:
 
 \begin{description}
 
-    \item [Pre-process the file.]  The new algorithm leverages the
-        knowledge gained when writing rules and developing \parsername{};
-        it performs many substitutions on the input log lines, replacing
-        commonly occurring variable terms (e.g.\ email addresses, IP
-        addresses, the standard start of rejection messages) with keywords
-        described in \sectionref{regex components}.  The purpose of this
-        step is to utilise existing knowledge to create more accurate
-        regexes; it replaces many variable words with fixed words,
-        improving the subsequent classification of words as fixed or
-        variable.  The altered log lines are written to a temporary file,
-        which subsequent stages will use instead of the original input
-        file.
+    \item [Pre-process the file.]  The modified algorithm begins by
+        leveraging the knowledge gained when writing rules and developing
+        \parsername{}; it performs many substitutions on the input log
+        lines, replacing commonly occurring variable terms (e.g.\ email
+        addresses, IP addresses, the standard start of rejection messages)
+        with keywords described in \sectionref{regex components}.  The
+        purpose of this step is to utilise existing knowledge to create
+        more accurate regexes; it replaces many variable words with fixed
+        words, improving the subsequent classification of words as fixed or
+        variable.  Regex metacharacters in the log line will be escaped, to
+        avoid generating invalid or incorrect regexes.  The altered log
+        lines are written to a temporary file, which the next stage will
+        use instead of the original input file.
 
         In the original algorithm the purpose of the pre-processing stage
         was to reduce the memory consumption of the program.  In the first
@@ -1244,9 +1247,10 @@ five steps:
         small range of values) for each word of each log line, incrementing
         a counter for each hash.  The counters will be used in the next
         pass to filter out words: if the word's hash does not have a high
-        frequency, the word itself cannot have a high frequency, so there
-        is no need to maintain a counter for it, reducing the number of
-        counters required and thus the program's memory consumption.
+        frequency, the word itself cannot have a high frequency, so it must
+        be variable and does not need a counter maintained for it, reducing
+        the number of counters required and thus the program's memory
+        consumption.
 
     \item [Calculate word frequencies.]  The position of words within a log
         line is important: a word occurring in two log lines does not
@@ -1256,27 +1260,27 @@ five steps:
         This will alter the position of subsequent words, so a word
         occurring in different positions in two log lines \textit{may\/}
         indicate similarity, but the algorithm does not attempt to deal
-        with this possibility.  The algorithm maintains a counter for each
-        \texttt{(word, word's position within the log line)} tuple,
-        incrementing it each time that word occurs in that position.
+        with this possibility.  The modified algorithm maintains a counter
+        for each \texttt{(word, word's position within the log line)}
+        tuple, incrementing it each time that word occurs in that position.
 
         The original algorithm hashes each word and checks that result's
-        counter from the previous pass; if that counter has a high
+        counter from the previous pass: if that counter has a high
         frequency a separate counter will be maintained for this
-        \texttt{(word, word's position within the log line)} tuple.  This
-        reduces the number of counters maintained by the algorithm in this
-        step, reducing the memory requirements of the algorithm at the cost
-        of increased CPU usage.
+        \texttt{(word, word's position within the log line)} tuple; if not,
+        the tuple will not have a counter.  This reduces the number of
+        counters maintained in this step, reducing memory requirements at
+        the cost of increased CPU usage.
 
-        As time goes by the amount of memory typically available to a
+        As time goes by, the amount of memory typically available to a
         program or algorithm increases, and the need to reduce memory
         requirements correspondingly decreases, so the modified algorithm
-        omits the hashing step and maintains counters for all tokens.  Most
+        omits the hashing step and maintains counters for all tuples.  Most
         of the infrequently occurring words will have been substituted with
         keywords during the first step, vastly reducing the number of
         tuples to maintain counters for; the original algorithm does not
-        have the detailed knowledge leveraged by the new algorithm, because
-        it is a generic tool.
+        have the detailed knowledge leveraged by the modified algorithm,
+        because it is a generic tool.
 
     \item [Classify words based on their frequency.]  The frequency of each
         \texttt{(word, word's position within the log line)} tuple is
@@ -1294,11 +1298,11 @@ five steps:
         matching the log line, and a counter is maintained for each regex.
         Contiguous sequences of \texttt{.+} in the newly assembled regexes
         are collapsed to a single \texttt{.+}; any resulting duplicate
-        regexes are combined, and their counters added together.  If a
-        regex's counter is lower than the threshold supplied by the user
-        the regex is discarded; this second threshold is independent of the
-        threshold used to differentiate between fixed and variable words,
-        but once again 1\% of log lines is a good starting point.
+        regexes and their counters are combined.  If a regex's counter is
+        lower than the threshold supplied by the user the regex is
+        discarded; this second threshold is independent of the threshold
+        used to differentiate between fixed and variable words, but once
+        again 1\% of log lines is a good starting point.
 
     \item [Test the new regexes.]  The final step replaces keywords in the
         new regexes in the same way as \parsername{} does, and compiles
@@ -1315,16 +1319,16 @@ five steps:
 
 \end{description}
 
-The new regexes are displayed for the user to add to the database, either
-as new rules or merged into the regexes of existing rules; also displayed
-are the number of log lines each regex was expected to match, and the
-number it actually matched, to help the user notice problems in the new
-regexes.  Discarding regexes will result in some of the log lines not being
-matched; when the rules have been augmented with the new regexes, the
-original log files should be parsed again, and any remaining unparsed log
-lines used as input to this utility.
+The new regexes are displayed for the user to add to the ruleset, either as
+new rules or merged into the regexes of existing rules; also displayed are
+the number of unrecognised log lines each regex was expected to match, and
+the number it actually matched, to help the user notice problems in the new
+regexes.  Discarding regexes will result in some of the unrecognised log
+lines not being matched; when the ruleset has been augmented with the new
+regexes, the original log files should be parsed again, and any remaining
+unparsed log lines used as input to this utility.
 
-This utility is not intended to create perfect regexes, but it greatly
+This utility is not expected to create perfect regexes, but it greatly
 reduces the effort required to deal with unrecognised log lines.  The
 regexes it generates will be self-contained: a parser that relies on using
 cascaded parsing would require a modified algorithm, perhaps by replacing
@@ -1332,45 +1336,26 @@ the pre-processing stage with one that applies existing cascading rules to
 each log line, and uses the resulting modified log lines for the remainder
 of the algorithm.
 
-\subsection{Rule Conditions}
-
-\label{rule conditions in implementation}
-
-Rule conditions as part of the architecture have already been documented in
-\sectionref{rule conditions in architecture}, and they can be very complex
-and difficult to evaluate.  In contrast, \parsername{} uses quite simple
-rule conditions: each rule has a \texttt{program} attribute that specifies
-the Postfix component whose log lines it recognises, and each log line
-contains the name of the Postfix component that produced it; when trying to
-recognise log lines, the framework will only use rules where the two are
-equal.  This avoids needlessly trying rules that will not recognise the log
-line, or worse, might recognise it unintentionally.  In addition the
-framework supports generic rules, whose program attribute is ``*''; these
-will be used if none of the program-specific rules recognise the log line.
-If none of the rules are successful the framework will warn the user,
-informing them that they need to augment their ruleset, and alerting them
-that because \parsername{} failed to recognise some of their log lines, the
-results stored in the database may be incomplete.
-
 \subsection{Regex Components}
 
 \label{regex components}
 
-Each rule's regex will have keywords expanded when the rules are loaded,
+Each rule's regex will have keywords expanded when the ruleset is loaded,
 for several reasons:
 
 \begin{itemize}
 
-    \item It simplifies both reading and writing of regexes and makes each
-        regex largely self-documenting.  E.g.\ the meaning of
-        \_\_CLIENT\_HOSTNAME\_\_ is immediately clear, whereas
-        \verb!(?:unknown|(?:[-.\w]+))! needs to be deciphered each time it
-        is encountered.
+    \item It simplifies both reading and writing of regexes and helps to
+        make each regex largely self-documenting.  For example, the meaning
+        of \_\_CLIENT\_HOSTNAME\_\_ is immediately clear, whereas its
+        expansion \verb!(?:unknown|(?:[-.\w]+))! needs to be deciphered
+        each time it is encountered.
 
     \item It avoids needless repetition of complex regex components, and
         allows the components to be corrected or improved in one location.
-        E.g.\ \_\_SENDER\_\_ is used in 68 rules; if a mistake is
-        discovered it only needs to be corrected in one place.
+        For example, \_\_SENDER\_\_ is used in 68 rules; if a mistake is
+        discovered in it the mistake only needs to be corrected in one
+        place.
 
     \item It enables automatic extraction and saving of captured data.  The
         regex snippets use Perl 5.10's named capture buffers~\cite{perlre}
@@ -1379,18 +1364,18 @@ for several reasons:
 
 \end{itemize}
 
-For efficiency the keywords are expanded and every rule's regex is compiled
-before attempting to parse the log file, otherwise every regex would be
-recompiled each time it was used, resulting in a large, data dependent
-slowdown, as described in \sectionref{Caching compiled regexes}.  Most of
-the keywords are named after the fields in the connections or results
-tables they populate: \_\_CLIENT\_HOSTNAME\_\_, \_\_CLIENT\_IP\_\_,
+To improve efficiency, the keywords are expanded and every rule's regex is
+compiled before attempting to parse the log file, otherwise every regex
+would be recompiled each time it was used, resulting in a large, data
+dependent slowdown, as described in \sectionref{Caching compiled regexes}.
+Most of the keywords are named after the fields in the connections or
+results tables they populate: \_\_CLIENT\_HOSTNAME\_\_, \_\_CLIENT\_IP\_\_,
 \_\_DELAY\_\_, \_\_DELAYS\_\_, \_\_ENHANCED\_STATUS\_CODE\_\_,
-\_\_HELO\_\_, \_\_MESSAGE\_ID\_\_, \_\_QUEUEID\_\_, \_\_RECIPIENT\_\_,
-\_\_SENDER\_\_, \_\_SERVER\_HOSTNAME\_\_, \_\_SERVER\_IP\_\_, \_\_SIZE\_\_,
-and \_\_SMTP\_CODE\_\_.
+\_\_HELO\_\_, \_\_MESSAGE\_ID\_\_, \newline{} \_\_QUEUEID\_\_,
+\_\_RECIPIENT\_\_, \_\_SENDER\_\_, \_\_SERVER\_HOSTNAME\_\_,
+\_\_SERVER\_IP\_\_, \_\_SIZE\_\_, and \_\_SMTP\_CODE\_\_.
 
-Some of the keywords need more explanation:
+The other keywords need more explanation:
 
 \begin{eqlist}
 
@@ -1405,13 +1390,13 @@ Some of the keywords need more explanation:
         Postfix tries to reuse connections whenever possible to reduce the
         load on both the sending and receiving servers.
 
-    \item [\_\_DATA\_\_]  This snippet is special: it matches a zero-length
-        string, so it needs to be followed by a pattern that matches
-        appropriately, but it captures whatever is matched so that it can
-        be saved.  E.g.\ \verb!/(__DATA__connection (?:refused|reset!
-        \newline{} \tab{}\verb!by peer))/! matches either ``connection
-        refused'' or ``connection reset by peer'' and causes it to be saved
-        to the data field of that log line's result.
+    \item [\_\_DATA\_\_]  This snippet is special: it does not match
+        anything by itself, so it must be followed by a pattern written by
+        the rule author, but it captures whatever is matched by that
+        pattern.  For example, \verb!/(__DATA__connection! \newline{}
+        \tab{}\verb!(?:refused|reset by peer))/! matches either
+        ``connection refused'' or ``connection reset by peer'' and causes
+        it to be saved to the data field of that log line's result.
 
     \item [\_\_PID\_\_]  The \acronym{pid} of a \daemon{smtpd} process that
         dies or is killed; see the \action{SMTPD\_DIED} action in
@@ -1437,6 +1422,26 @@ cascaded rules.  The major difference between the two is that regex
 components are explicitly used by the author of the ruleset, whereas
 cascaded parsing would be dynamically applied by the framework.
 
+\subsection{Rule Conditions}
+
+\label{rule conditions in implementation}
+
+Rule conditions as part of the architecture have already been documented in
+\sectionref{rule conditions in architecture}, and they can be very complex
+and difficult to evaluate.  In contrast, \parsername{} uses quite simple
+rule conditions: each rule has a \texttt{program} attribute that specifies
+the Postfix component whose log lines it recognises, and each log line
+contains the name of the Postfix component that produced it; when trying to
+recognise log lines, the framework will only use rules where the two are
+equal.  This avoids needlessly trying rules that will not recognise the log
+line, or worse, might recognise it unintentionally.  In addition the
+framework supports generic rules, whose program attribute is ``*''; these
+will be used if none of the program-specific rules recognise the log line.
+If none of the rules are successful the framework will warn the user,
+informing them that they need to augment their ruleset, and alerting them
+that because \parsername{} failed to recognise some of their log lines, the
+results stored in the database may be incomplete.
+
 \subsection{Overlapping Rules}
 
 \label{overlapping rules in implementation}
@@ -1454,15 +1459,15 @@ be helpful:
 \begin{itemize}
 
     \item Sort rules by program and regex, then visually inspect the list,
-        e.g.\ with \acronym{SQL} similar to:    \newline{}
-        \verb!SELECT program, regex!            \newline{}
-        \verb!    FROM rules!                   \newline{}
-        \verb!    ORDER BY program, regex;!     \newline{}
+        e.g.\ with an \acronym{SQL} query similar to:   \newline{}
+        \verb!SELECT program, regex!                    \newline{}
+        \verb!    FROM rules!                           \newline{}
+        \verb!    ORDER BY program, regex;!             \newline{}
         The rules are sorted first by program, then by regex, because rules
-        with overlapping regexes will not overlap if their programs are
-        different.  Note that this does not properly deal with generic
-        rules whose program is \texttt{*}; those rules will be used on all
-        log lines that have not been recognised by program-specific rules.
+        cannot overlap if their programs are different.  Note that this
+        query does not properly deal with generic rules whose program is
+        \texttt{*}; those rules will be used on all log lines that have not
+        been recognised by program-specific rules.
 
     \item Compare the results of parsing using different rule orderings, as
         described in \sectionref{rule ordering for efficiency}.  Parse
@@ -1499,7 +1504,7 @@ improvements that have been identified in \parsername{}.
 
     \item Each new Postfix release requires writing new rules or modifying
         existing rules to cope with the new or changed log lines.
-        Similarly using a new \acronym{DNSBL}, a new policy server, or new
+        Similarly, using a new \acronym{DNSBL}, a new policy server, or new
         administrator-defined rejection messages also requires new rules.
 
     \item The hostname used in the HELO command is not logged if the
@@ -1534,30 +1539,21 @@ improvements that have been identified in \parsername{}.
         Logging the HELO hostname in this fashion also partially prevents
         the complication described in \sectionref{Mail deleted before
         delivery is attempted} from occurring, but only when the mail has a
-        single recipient; when a mail has a single recipient address it
+        single recipient.  When a mail has a single recipient address it
         will be logged, but when a mail has multiple recipients no
         addresses are logged.
-
-    \item \parsername{} does not create separate mails where one or more
-        delivery attempts are rejected and subsequently a mail is accepted;
-        it will appear in the database as one mail with lots of rejections
-        followed by acceptance (this has already been mentioned in
-        \sectionref{connection reuse}).  It does not appear to be possible
-        to make this distinction given the data Postfix logs, though it
-        might be possible to write a policy server to provide additional
-        logging.
 
     \item \parsername{} will not detect that it is parsing the same log file
         twice, resulting in the database containing duplicate entries.
 
     \item \parsername{} does not distinguish between log files produced by
-        different sources when parsing; all results will be saved to the
+        different servers when parsing; all results will be saved to the
         same database.  This may be viewed as an advantage, because log
-        files from different sources can be combined in the same database,
+        files from different servers can be combined in the same database,
         or it may be viewed as a limitation because it is impossible to
-        distinguish between log files from different sources in the same
+        distinguish between log files from different servers in the same
         database.  If the results of parsing log files from different
-        sources must remain separate, \parsername{} can easily be
+        servers must remain separate, \parsername{} can easily be
         instructed to use a different database.
 
     \item The solution to complication \sectionref{Mails deleted during
@@ -1578,9 +1574,6 @@ improvements that have been identified in \parsername{}.
 
 \begin{enumerate}
 
-    \item Investigate and write the policy server referred to in limitation
-        3 above.
-
     \item Improve the solution to complication \sectionref{Mails deleted
         during delivery} so that data is not discarded.
 
@@ -1596,8 +1589,8 @@ simplified flowchart shows the most common paths taken through Postfix and
 A database provides storage for rules and for data gathered from log files;
 any further use of that data is dependent on a clear understanding of the
 database schema, so the resemblance between a database schema and an
-\acronym{API} is described, followed by a detailed description and a
-diagram of the database schema.  The framework is documented next,
+\acronym{API} is described, followed by a diagram and a detailed
+description of the database schema.  The framework is documented next,
 including the steps it takes during initialisation, the parsing process,
 and the conveniences it offers to users.  The performance data collected by
 the framework is described, as are the ways in which various optimisations
@@ -1609,18 +1602,18 @@ the actions that are part of \parsername{} are described in detail,
 followed by the process of adding a new action to the parser.  The final
 component of the architecture, the rules, is also the most visible
 component, and its implementation is examined in detail with: an example
-rule and an explanation of every field; a description of how to add new
-rules and determine the values that should be used for each field; an
-explanation of the algorithm used by the utility that creates new regexes
-based on unparsed log lines, and how it differs from the original algorithm
-it is based on.  How \parsername{} uses rule conditions and overlapping
-rules is discussed, accompanied by a description of the regex snippets the
-framework provides to simplify the regexes used in rules.  The many
-complications and difficulties encountered while writing \parsername{}, and
-the solutions developed to overcome them, are documented in depth; also
-documented are how some solutions interact, and which action or actions the
-solution is implemented in.  This chapter concludes with a list of the
-limitations identified in \parsername{}, followed by some possible
-improvements suggested by the author.  The next chapter will evaluate this
-implementation, examining both \parsernames{} efficiency and the coverage
-it achieves when parsing log files.
+rule and an explanation of how every field in that rule is used; a
+description of how to add new rules and determine the values that should be
+used for each field; an explanation of the algorithm used by the utility
+that creates new regexes based on unparsed log lines, and how it differs
+from the original algorithm it is based on.  How \parsername{} uses rule
+conditions and overlapping rules is discussed, accompanied by a description
+of the regex snippets the framework provides to simplify the regexes used
+in rules.  The many complications and difficulties encountered while
+writing \parsername{}, and the solutions developed to overcome them, are
+documented in depth; also documented are how some solutions interact, and
+which action or actions the solution is implemented in.  This chapter
+concludes with a list of the limitations identified in \parsername{},
+followed by some possible improvements suggested by the author.  The next
+chapter will evaluate this implementation, examining both \parsernames{}
+efficiency and the coverage it achieves when parsing log files.

@@ -15,7 +15,7 @@ digraph logparser {
     ]
     edge [
         color = blue
-        fontcolor = red
+        fontcolor = black
         minlen = 2
     ]
 
@@ -49,12 +49,8 @@ digraph logparser {
     save_by_queueid                 -> { save_by_queueid } [dir = back, headport = s, tailport = nw]
     save_by_queueid                 -> { commit } [weight = 10]
 
-    /* Expired mails */
-    save_by_queueid                 -> { expiry }
-    expiry                          -> { commit } [weight = 0]
-
     /* NODE LABELS */
-    rejection                       [label = "4: Postfix rejects an\nSMTP command."]
+    rejection                       [label = "4: Postfix rejects a\nmail delivery attempt"]
     connect                         [label = "1: Connection from\nremote host."]
     clone                           [label = "5: Clone data when\nmail is accepted"]
 
@@ -72,12 +68,9 @@ digraph logparser {
     save_by_queueid                 [label = "8: Save data from\ndelivery attempts."]
     track                           [label = "9: Track child of this mail."]
 
-    /* Expiry */
-    expiry                          [label = "10: Mark mail as expired."]
-
     /* Commit is complicated */
     /* Neither parent nor child. */
-    commit                          [label = "11: Mail has been delivered,\nbounced, or deleted."]
+    commit                          [label = "10: Mail has been delivered,\nbounced, or deleted."]
 
     /* SUB-GRAPHS */
     subgraph sources {
