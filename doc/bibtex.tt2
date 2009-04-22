@@ -15,6 +15,9 @@
 \label{bibliography}
 
 [% PROCESS "logparser-bibliography.tt2" -%]
+[% FOREACH entry IN bibliography.values -%]
+    [% entry.sortby = entry.title FILTER lower -%]
+[% END -%]
 [% PROCESS "citations.tt2" -%]
 [% FOREACH citation IN citations.keys -%]
     [% IF NOT bibliography.exists(citation) -%]
@@ -24,7 +27,7 @@
         [% bibliography.$citation.citation_name = citation -%]
     [% END -%]
 [% END -%]
-[% sorted_bibliography = bibliography.values.sort("title") -%]
+[% sorted_bibliography = bibliography.values.sort("sortby") -%]
 [% FOREACH entry IN sorted_bibliography -%]
     [% IF not entry.exists("citation_name") -%]
         [% IF 1 == 0 -%]

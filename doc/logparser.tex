@@ -476,10 +476,12 @@ good will, and encouragement.
 % Add some glossary entries that should be present, but lack an appropriate
 % place in the text to mark them.
 \glsadd{queueid}
+\glsresetall{}
 \renewcommand{\glossarypostamble}{\label{Glossary}}
 \printglossary[style=nospacelist]{}
 \renewcommand{\glossarypostamble}{\label{Acronyms}}
 \printglossary[type=\acronymtype,style=eqlist]{}
+\glsresetall{}
 \renewcommand{\glossarypostamble}{\label{Postfix Daemons}}
 \printglossary[type=postfix,style=nospacelist]{}
 

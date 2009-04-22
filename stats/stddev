@@ -18,7 +18,7 @@ foreach my $value (@values) {
     $sum_of_differences += (($value - $mean) ** 2);
 }
 my $stddev = sqrt ($sum_of_differences / $num_values);
-my @sorted_values = sort @values;
+my @sorted_values = sort {$a <=> $b } @values;
 my $median;
 if (@sorted_values % 2) {
     my $index = int (@sorted_values / 2);

@@ -461,7 +461,7 @@ automated queries, and it does not appear to be possible to write
 independent tools to utilise the Splunk database, whereas \parsername{}
 provides the database and leaves it to the user to utilise it without limit
 or restriction.  Some additional Postfix reports are supposedly available
-on \urlLastChecked{http://www.splunkbase.com/}{2008/11/23}, but the author
+on \urlLastChecked{http://www.splunkbase.com/}{2009/04/21}, but the author
 was unable to find any Postfix reports, or indeed reports for any other log
 file types: every category was empty, even those that the web site claimed
 had numerous reports available.  Many types of graphs can be generated,
@@ -506,7 +506,7 @@ they are given; periodic parsing of log files is a task an administrator
 can easily achieve with \texttt{cron(8)} and \texttt{logrotate(8)}.
 
 Copious documentation is made available on
-\urlLastChecked{http://www.splunk.com/}{2008/11/23}, but the abundance of
+\urlLastChecked{http://www.splunk.com/}{2009/04/21}, but the abundance of
 material and lack of organisation makes it hard to find the topic being
 sought, and searches confusingly tended to return results from old
 documentation rather than new.  In general the documentation appears to
@@ -598,7 +598,7 @@ limits its functionality.  The data it can extract from Postfix log files
 is limited in comparison to \parsername{}: time2, email, email\_r, host,
 host\_r, method, url, code, and bytesd.  No explanation for any of those
 fields is provided in the documentation at
-\urlLastChecked{http://awstats.sourceforge.net/docs/awstats_faq.html\#MAIL}{2008/11/23},
+\urlLastChecked{http://awstats.sourceforge.net/docs/awstats_faq.html\#MAIL}{2009/04/21},
 so the author could neither understand what data is extracted, nor
 determine what data is missing in comparison to \parsername{}, which fully
 documents all the data it extracts.  AWStats coerces Postfix log files into
@@ -728,8 +728,8 @@ deal with the complications explained in \sectionref{complications}, except
 that it does correlate log lines by queueid.
 
 YAALA provides a mini-language based on \acronym{SQL} that is used when
-generating reports; sample reports can be seen
-at~\urlLastChecked{http://www.yaala.org/samples.html}{2008/11/23}.  Example
+generating reports; sample reports can be seen at
+\urlLastChecked{http://www.yaala.org/samples.html}{2009/04/21}.  Example
 query for HTTP proxy servers: \newline{} \tab{} \texttt{requests BY file
 WHERE host =\~{} Google} \newline{} The mini-language is quite limited and
 cannot be used to extract data for external use, merely to create reports.

@@ -1,11 +1,11 @@
 load "plot-defaults-ps.gpi"
 
 set xlabel "Log file"
-set ylabel "Percentage increase in parsing time when using\noptimal ordering instead of oracle"
+set ylabel "Percentage increase in parsing time when\nusing optimal ordering instead of oracle"
 set output "../build/graph-perfect-best-vs-optimal.ps"
 # Add a % sign on the y axis
 set format y "% g%%"
 # Remove the horizontal lines.
 set grid noy
 
-plot "../build/stats-perfect-best-vs-optimal" using 1 with lines title "Optimal ordering instead of oracle"
+plot "../build/stats-perfect-best-vs-optimal" using 1 with lines title "Using optimal ordering instead of oracle"

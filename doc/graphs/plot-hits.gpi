@@ -1,7 +1,7 @@
 load "plot-defaults-ps.gpi"
 
 set xlabel "Rule"
-set ylabel "Number of log lines"
+set ylabel "Number of log lines recognised"
 set output "../build/graph-hits.ps"
 
 # Put the legend at the top left, Left justified text.

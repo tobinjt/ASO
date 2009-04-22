@@ -15,15 +15,16 @@
 }}
 
 \newglossaryentry{Backscatter}{name={Backscatter},description={
-    When a spam sender or worm sends mail with forged sender addresses,
-    innocent sites are flooded with undeliverable mail notifications; this
-    is called backscatter mail.
+    When a spam sender or virus sends mail with forged sender addresses,
+    innocent servers are flooded with undeliverable mail notifications;
+    this is called backscatter.
 }}
 
 \newglossaryentry{Joe-job}{name={Joe~Job},description={
-    A joe~job describes spam mail sent using a faked sender address with
-    the intention of sullying the good name of the user of that address.
-    Joe~jobs are one cause of backscatter\glsadd{Backscatter}.
+    A joe~job describes a large amount of spam mail sent using a faked
+    sender address with the intention of sullying the good name of the user
+    of that address.  Joe~jobs are one cause of
+    backscatter\glsadd{Backscatter}.
 }}
 
 \newglossaryentry{Epoch}{name={Epoch},description={
@@ -36,32 +37,31 @@
 
 
 \newglossaryentry{<>}{name={$<>$},sort={<>},description={
-    $<>$ is the sender address used for mail that should not be replied to,
-    e.g.\ bounce notifications.  In the \acronym{SMTP} dialog all addresses
-    are enclosed in $<>$, so \texttt{username@domain} is sent as
-    \texttt{$<$username@domain$>$}; thus $<>$ is actually an empty address,
-    but is always written as $<>$ for clarity.  All mail servers must
-    accept mail sent from $<>$, or they are in violation of
-    \acronym{RFC}~2821~\cite{RFC2821}.
+    $<>$ is the sender address used for sending bounce notifications.  In
+    the \acronym{SMTP} conversation all addresses are enclosed in $<>$, so
+    \texttt{username@domain} is sent as \texttt{$<$username@domain$>$};
+    thus $<>$ is actually an empty address, but it is always written as
+    $<>$ for clarity.  All mail servers must accept mail sent from $<>$, or
+    they are in violation of \acronym{RFC}~2821~\cite{RFC2821}.
 }}
 
 \newglossaryentry{queueid}{name={queueid},description={
     Each mail in Postfix's queue is assigned a queueid to uniquely identify
     it.  Queueids are assigned from a limited pool, so although they are
-    guaranteed to be unique for the lifetime of the mail, they may be
-    reused later.
+    guaranteed to be unique for the lifetime of the mail they are assigned
+    to, they may be reused later.
 }}
 
 \newglossaryentry{hash}{name={hash},description={
     A hashing function transforms a string of characters to a number.  A
     common usage is to maintain a data structure indexed by strings in an
     efficient manner.  A full description is beyond the scope of this
-    paper, further information can be found at~\cite{hash-functions}.
+    thesis, further information can be found at~\cite{hash-functions}.
 }}
 
 \newglossaryentry{awk}{name={AWK},description={
     AWK is a general purpose programming language that is designed for
-    processing text, and is available as a standard utility on all Unix
+    processing text and is available as a standard utility on all Unix
     systems.
 }}
 

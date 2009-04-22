@@ -352,53 +352,58 @@ Some widely deployed policy servers:
 
 \begin{itemize}
 
-    \item \acronym{SPF}~\cite{openspf}.  \acronym{SPF} records specify
-        which mail servers are allowed to send mail using sender addresses
-        from a particular domain.  The intention is to reduce spam from
-        faked sender addresses, backscatter~\cite{postfix-backscatter}, and
+    \item \acronym{SPF} checks:
+        \urlLastChecked{http://www.openspf.org/}{2009/04/21}.
+        \acronym{SPF} records specify which mail servers are allowed to
+        send mail using sender addresses from a particular domain.  The
+        intention is to reduce spam from faked sender addresses,
+        backscatter~\cite{postfix-backscatter}, and
         Joe~jobs~\glsadd{Joe-job}.  There has been considerable resistance
         to \acronym{SPF} because it breaks or vastly complicates some
         commonly-used features of \acronym{SMTP}, e.g.\ forwarding mail
         from one domain to another when a user moves.
 
-    \item Greylisting~\cite{greylisting} is a technique that temporarily
-        rejects a delivery attempt when the triple of \newline{}
-        \tab{}\texttt{(sender address, recipient address, remote IP
-        address)}\newline{} has not been seen before; on second and
-        subsequent delivery attempts from that triple the mail will be
-        accepted.  This blocks spam from some senders because maintaining a
-        list of failed addresses and retrying after a temporary failure is
-        uneconomical for a spam sender, but a legitimate mail server must
-        retry deliveries that fail temporarily.  Sadly spam senders are
-        using increasingly complex and well written programs to distribute
-        spam, frequently using an ISP provided \acronym{SMTP} server from a
-        compromised machine on the ISP's network.  Greylisting will slowly
-        become less effective as spam senders adapt, but it does block a
-        large percentage of spam mail at the moment; the most effective
-        restrictions from the \numberOFlogFILES{} log files used when
-        generating the results in \sectionref{Evaluation} are shown in
-        \tableref{Most effective Postfix restrictions}.  The table shows
-        that greylisting is worth using at the moment, particularly when
-        you take into account its position as the final restriction that a
-        mail must overcome in the configuration used on the mail server
-        that generated the log files: on that server greylisting only takes
-        effect for mails that have passed all other restrictions.  Some
-        problems may be encountered when using greylisting: some servers
-        fail to retry after a temporary failure, or legitimate mail may be
-        delayed, particularly when coming from a pool of servers.
+    \item Greylisting,
+        \urlLastChecked{http://www.greylisting.org/}{2009/04/21}, is a
+        technique that temporarily rejects a delivery attempt when the
+        triple of \newline{} \tab{}\texttt{(sender address, recipient
+        address, remote IP address)}\newline{} has not been seen before; on
+        second and subsequent delivery attempts from that triple the mail
+        will be accepted.  This blocks spam from some senders because
+        maintaining a list of failed addresses and retrying after a
+        temporary failure is uneconomical for a spam sender, but a
+        legitimate mail server must retry deliveries that fail temporarily.
+        Sadly spam senders are using increasingly complex and well written
+        programs to distribute spam, frequently using an ISP provided
+        \acronym{SMTP} server from a compromised machine on the ISP's
+        network.  Greylisting will slowly become less effective as spam
+        senders adapt, but it does block a large percentage of spam mail at
+        the moment; the most effective restrictions from the
+        \numberOFlogFILES{} log files used when generating the results in
+        \sectionref{Evaluation} are shown in \tableref{Most effective
+        Postfix restrictions}.  The table shows that greylisting is worth
+        using at the moment, particularly when you take into account its
+        position as the final restriction that a mail must overcome in the
+        configuration used on the mail server that generated the log files:
+        on that server greylisting only takes effect for mails that have
+        passed all other restrictions.  Some problems may be encountered
+        when using greylisting: some servers fail to retry after a
+        temporary failure, or legitimate mail may be delayed, particularly
+        when coming from a pool of servers.
 
         \showtable{build/include-restriction-summary-table}{Most effective
         Postfix restrictions}{Most effective Postfix restrictions}
 
-    \item Scoring systems such as Policyd-weight~\cite{policyd-weight}
-        perform tests on features of the delivery attempt (e.g.\ IP
-        address, sender address), incrementing or decrementing a score
-        based on the results; if the final score is higher than a threshold
-        the delivery attempt is rejected.  The administrator must manually
-        whitelist clients if they are to bypass a Postfix restriction,
-        whereas using a threshold that requires a delivery attempt to hit
-        several scored restrictions will allow mail from clients that would
-        be rejected by a binary restriction.
+    \item Scoring systems such as postfwd,
+        \urlLastChecked{http://postfwd.org/}{2009/04/21}, perform tests on
+        features of the delivery attempt (e.g.\ IP address, sender
+        address), incrementing or decrementing a score based on the
+        results; if the final score is higher than a threshold the delivery
+        attempt is rejected.  The administrator must manually whitelist
+        clients if they are to bypass a Postfix restriction, whereas using
+        a threshold that requires a delivery attempt to hit several scored
+        restrictions will allow mail from clients that would be rejected by
+        a binary restriction.
 
 \end{itemize}
 

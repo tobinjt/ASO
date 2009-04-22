@@ -1,4 +1,4 @@
-load "plot-defaults-ps.gpi"
+load "plot-defaults-larger-ps.gpi"
 
 set xlabel "Log file"
 set ylabel "Percentage parsing time increase when using the \nmaximum ruleset instead of the minimum ruleset"

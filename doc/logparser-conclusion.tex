@@ -2,147 +2,146 @@
 
 \label{conclusion}
 
-Parsing Postfix log files appears at first sight to be an almost trivial
+Parsing Postfix log files appears at first sight to be an uncomplicated
 task, especially if one has previous experience in parsing log files, but
 it turns out to be a much more taxing project than initially expected.  The
 variety and breadth of log lines produced by Postfix is quite surprising,
 because a quick survey of sample log files gives the impression that the
 number of distinct log line variants is quite small; this mistaken
-impression is because of the uneven distribution exhibited by log lines
-produced in normal operation, vividly illustrated by \graphref{rule hits
-graph}.
+impression comes from the uneven distribution exhibited by log lines
+produced in normal operation, vividly illustrated in \graphref{rule hits
+graph}.  Given the diverse nature of Postfix log lines, and the ease with
+which administrators can cause new log lines to be logged
+(\sectionref{postfix background}), enabling users to easily extend the
+parser to deal with new log lines is a design imperative
+(\sectionref{parser design}).  Providing a tool to ease the generation of
+regexes from unrecognised log lines (\sectionref{creating new rules in
+implementation}) should greatly help users who need to extend their ruleset
+to recognise previously unrecognised log lines.
 
 
-Given the diverse nature of Postfix log lines, and the ease with which
-administrators can cause new log lines to be logged (\sectionref{postfix
-background}), enabling users to easily extend the parser to deal with new
-log lines is a design imperative (\sectionref{parser design}).  Providing a
-tool to ease the generation of regexes from unrecognised log lines should
-greatly help users to extend their ruleset to recognise previously
-unrecognised log lines (\sectionref{creating new rules in implementation}).
-The architecture developed for this project not only makes it trivial to
-recognise new inputs, adding new actions requires the minimum effort
-possible, allowing the implementer to focus on correctly implementing their
-new action.  The separation of the architecture into rules, actions, and
-framework (\sectionref{parser design}) is unusual, partly because the three
-are separated so completely.  Although parsers are often divided into
+This architecture's greatest strength is the ease with which parsers based
+on it can be adapted to deal with new requirements and inputs.  Parsing a
+variation of an existing input is a trivial task: simply modify an existing
+rule or add a new rule and the task is complete.  Parsing a new category of
+input is achieved by writing a new action and a rule for each input
+variant; quite often the new action will not need to interact with existing
+actions, but when interaction is required the framework provides the
+necessary facilities.  The architecture imposes very little red tape when
+writing new actions, allowing the implementer to focus their time and
+energy on correctly implementing their new action (\sectionref{actions in
+architecture}).  The separation of the architecture into rules, actions,
+and framework (\sectionref{parser design}) is unusual, partly because the
+three are separated so completely.  Although parsers are often divided into
 separate source code files (the combination of lex \&
 yacc~\cite{lex-and-yacc-book} being a common example), the parts are
 usually quite internally interdependent, and will be combined into a
 complete parser by the compilation process; in contrast \parsername{} keeps
-the rules and actions separate until the parser runs.
+the rules and actions separate until the parser runs.  This separation
+enables the optimisations discussed in \sectionref{parser efficiency}, and
+it also allows different approaches to ruleset management, e.g.\ using
+machine learning techniques to seamlessly create or alter rules to
+recognise new inputs (\sectionref{adding new rules in architecture}).  The
+decoupling of rules from actions allows different sets of rules to be used
+with one set of actions, e.g.\ a parser might have actions to process
+versions one and two of a file format; by choosing the appropriate ruleset
+the parser will parse version one, or version two, or both versions.  A
+general purpose framework can be written, so that writing a parser just
+requires writing actions and rules.  The architecture makes it possible to
+apply commonly used programming techniques (such as object orientation,
+inheritance, composition, delegation, roles, modularisation, or closures)
+when designing and implementing a parser, simplifying the process of
+working within a team or developing and testing additional functionality.
+This architecture is ideally suited to parsing inputs that are not fully
+understood or do not follow a fixed grammar: the architecture warns about
+unrecognised inputs and errors encountered by actions, but continues
+parsing as best it can, allowing the developer of a new parser to decide
+which deficiencies are most important and require attention first, rather
+than being forced to fix the first error that arises.
 
 The flow of control in this architecture is quite different from most other
 architectures.  Most traditional parsers have a current state: each state
-has a fixed set of acceptable next states, and processing is determined by
-the state transition that takes place; unacceptable state transitions cause
-parsing to fail.  For example, when a \textbf{C} parser sees the keyword
-\textbf{for} it expects to immediately see a left parenthesis, with any
-other input causing parsing to fail (comments will already have been
-removed by the preprocessor).  This architecture is different: the rule
-that recognises the input dictates the action that will be invoked.  Rule
-conditions (\sectionref{rule conditions in architecture}) allow a stateful
-implementation of this architecture, where the list of rules used to
-recognise an input is constrained by the parser's current state, but the
-recognising rule still dictates the action that is invoked, and whether
-directly or indirectly, the next state.
+has a fixed set of acceptable next states, processing is determined by the
+state transition that takes place, and unacceptable state transitions cause
+parsing to fail.  This architecture is different: the rule that recognises
+the input dictates the action that will be invoked.  Rule conditions
+(\sectionref{rule conditions in architecture}) enable stateful parsing,
+where the list of rules used to recognise an input is constrained by the
+parser's current state, but the recognising rule still dictates the action
+that is invoked and, whether directly or indirectly, the next state.
 
-XXX SHOULD THIS NEXT PARAGRAPH BE IN THE PAST TENSE\@?
+When writing \parsername{}, the real difficulties arose once the parser was
+successfully recognising almost all of the log lines, because most of the
+irregularities and complications explained in \sectionref{complications}
+started to become apparent then.  Adding new rules to deal with numerous
+infrequently occurring log line variants was a simple if tiresome task,
+whereas dealing with mails that were missing information or where Postfix's
+actions were not being correctly reconstructed was much more grueling.
+Trawling through log files was extremely time consuming and quite error
+prone, searching for something out of the ordinary that might help diagnose
+the problem, and eventually finding it --- sometimes hundreds or even
+thousands of log lines away from the last occurrence of the queueid for the
+mail in question.  Sometimes the task was not to identify the unusual log
+line, but to spot that a log line normally present was missing, i.e.\ to
+realise that one log line amongst thousands was absent.  In all cases the
+evidence was used to construct a hypothesis to explain the irregularities,
+and that hypothesis was tested in \parsername{}; if successful, the parser
+was modified to deal with the irregularities, without adversely affecting
+existing parsing.  The complications documented in
+\sectionref{complications} are presented in the order they were solved in,
+and that order closely resembles the frequency in which they occur; the
+most frequently occurring complications dominate the warning messages
+produced, and so naturally they were the first complications to be dealt
+with.
 
-The real difficulties arose once the parser was successfully dealing with
-90\% of the log lines, because most of the irregularities and complications
-explained in \sectionref{complications} only became apparent when the vast
-majority of log lines were being parsed successfully.  Adding new rules to
-deal with the numerous infrequently occurring log line variants is a simple
-if tiresome task, whereas dealing with mails that are missing information
-or where Postfix's actions are not being correctly reconstructed is much
-more grueling.  Trawling through log files, searching for something out of
-the ordinary, possibly hundreds or even thousands of log lines away from
-the last occurrence of the queueid for the mail in question, is extremely
-time consuming and quite error prone.  Sometimes the task is not to spot
-the unusual log line, but to spot that a log line that is normally present
-is missing, i.e.\ to realise that one log line amongst thousands is absent.
-In all cases the evidence must be used to construct a hypothesis to explain
-the irregularities, and that hypothesis has to be tested in \parsername{};
-if successful, the parser will be modified to deal with the irregularities,
-without adversely affecting the existing parsing.  The complications
-described in \sectionref{complications} are described in the order they
-were solved in, and that order closely resembles the frequency with which
-they occur; the most frequently occurring complications dominate the
-warning messages produced, and so naturally they were the first
-complications to be dealt with.
+\parsername{} is not merely a proof of concept: it is intended to be used
+for parsing real-world log files from production mail servers, and the
+resulting data used to improve anti-spam defences.  This means that
+efficiency is important: parsing must complete in an reasonable period of
+time, so that the results can be used in a timely manner.  \parsernames{}
+efficiency is evaluated in \sectionref{parser efficiency}, where
+optimisations and the effect they have are explored.
 
-XXX WRITE ABOUT EFFICIENCY\@.
-
-A parser's ability to correctly parse its input is extremely important; the
-parser's coverage of \numberOFlogFILES{} log files is discussed in
+A parser's ability to correctly parse its inputs is extremely important;
+\parsernames{} coverage of \numberOFlogFILES{} log files is discussed in
 \sectionref{parsing coverage}.  Both its success at recognising individual
-log lines (\sectionref{log-lines-covered}) and its correctness in
-reconstructing each mail's journey through Postfix
-(\sectionref{mails-covered}) are described in detail, including the results
-of manually verifying the correct parsing of a subset of a log file.
-Experience implementing \parsername{} shows that full input coverage is
-relatively easy to achieve with this architecture, and that with enough
-time and effort a full understanding of the input is possible.  Postfix log
-files would require substantial time and effort to correctly parse
-regardless of the architecture used; this architecture enables an iterative
-approach to be used (similar to Stepwise
-Refinement~\cite{stepwise-refinement}), as is practiced in many other
-software engineering disciplines.
-
-
-This architecture's greatest strength is the ease with which
-implementations of it can be adapted to deal with new requirements and
-inputs.  Parsing a variation of an existing input is a trivial task: simply
-modify an existing rule or add a new rule and the task is complete.
-Parsing a new category of input is achieved by writing a new action and
-appropriate rules; quite often the new action will not need to interact
-with existing actions, but when interaction is required the framework
-provides the necessary facilities.  The decoupling of rules from actions
-allows different sets of rules to be used with one set of actions, e.g.\ a
-parser might have actions to process versions one and two of a file format;
-by choosing the appropriate ruleset the parser will parse version one, or
-version two, or both versions.  Decoupling also allows other approaches to
-rule management, as discussed in \sectionref{adding new rules in
-architecture}.  The architecture makes it possible to apply commonly used
-programming techniques (such as object orientation, inheritance,
-composition, delegation, roles, modularisation, or closures) when designing
-and implementing a parser, simplifying the process of working within a team
-or when developing and testing additional functionality.  This architecture
-is ideally suited to parsing inputs that are not fully understood or do not
-follow a fixed grammar: the architecture warns about unparsed inputs and
-other errors, but continues parsing as best it can, allowing the developer
-of a new parser to decide which deficiencies are most important and require
-attention first, rather than being forced to fix the first error that
-arises.
+log lines  and its correctness in reconstructing each mail's journey
+through Postfix are described in detail, including the results of manually
+verifying that a randomly selected portion of a log file was correctly
+parsed.  Experience implementing \parsername{} shows that full input
+coverage is relatively easy to achieve with this architecture, and that
+with enough time and effort a full understanding of the input is possible.
+Postfix log files would require substantial time and effort to correctly
+parse regardless of the architecture used; this architecture enables an
+iterative approach to be used~\cite{stepwise-refinement}, as is practiced
+in many other software engineering disciplines.
 
 The data gathered by \parsername{} provides the foundation for the future
-of this project: applying machine-learning algorithms to the data to
-analyse and optimise the set of anti-spam defences in use, followed by
-identifying patterns in the data that could be used to write new anti-spam
-techniques to recognise and reject spam rather than accepting it.  The
-parser provides the data in a normalised form that is far easier to use as
-input to new or existing implementations of machine-learning algorithms
-than trying to adapt each algorithm to extract data directly from the log
-files.  New policy servers (\sectionref{policy servers}), written to
-implement new anti-spam measures, could be tested or trained by using the
-data to simulate mail delivery attempts; this would allow simple, fast,
-reproducible testing, without the risk of adversely affecting a production
-mail server.  Development of \parsername{} is complete, i.e.\ it correctly
-parses Postfix log files, and in future it will require only maintenance;
-however, one avenue of future development under consideration is to extend
-it to parse non-Postfix log lines, e.g.\ SpamAssassin or Amavisd-new log
-lines.  \parsername{} can easily be extended to do this, but it lacks a
-method of associating the non-Postfix log lines with the existing data
-structures and state tables, so that all of the data for a mail delivery
-attempt can be stored together.
+of this project: using machine-learning algorithms to analyse the data and
+optimise the set of anti-spam defences in use, followed by identifying
+patterns in the data that could be used to write new anti-spam techniques
+to recognise and reject spam rather than accepting it.  The database
+provides the data in a normalised form that is far easier to use as input
+to new or existing implementations of machine-learning algorithms than
+trying to adapt each algorithm to extract data directly from log files.
+New policy servers, written to implement new anti-spam measures, can be
+tested or trained by using the collected data to simulate mail delivery
+attempts; this would allow simple, fast, reproducible testing, without the
+risk of adversely affecting a production mail server.  Development of
+\parsername{} is finished, i.e.\ it correctly parses Postfix log files, and
+in future it will only require maintenance; however, one avenue of future
+development under consideration is to extend it to parse non-Postfix log
+lines, e.g.\ SpamAssassin or Amavisd-new log lines.  \parsername{} can
+easily be extended to do this, but it requires a method of associating the
+non-Postfix log lines with the existing data structures and state tables,
+so that all of the data for a mail delivery attempt can be stored together.
 
-The Postfix log file parser based on this architecture provides a basis for
-systems administrators to monitor the effectiveness of their anti-spam
-measures and adapt their defences to combat new techniques used by those
-sending spam.  \parsername{} is a fully usable application, built to
-address a genuine need, rather than a proof of concept whose sole purpose
-is to illustrate a new idea; it deals with the oddities and difficulties
-that occur in the real world, rather than a clean, idealised scenario
-developed to showcase the best features of a new approach.
+\parsername{} provides a basis for systems administrators to monitor the
+effectiveness of their anti-spam measures and adapt their defences to
+combat new techniques used by those sending spam.  \parsername{} is a fully
+usable application, built to address a genuine need, rather than a proof of
+concept whose sole purpose is to illustrate a new idea; it deals with the
+oddities and difficulties that occur in the real world, rather than a
+clean, idealised scenario developed to showcase the best features of a new
+approach.
 

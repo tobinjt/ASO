@@ -207,7 +207,7 @@ build_loop:
 	set -e; \
 	for i in $$( seq 1 4 ); do \
 		echo "iteration $$i starting"; \
-		if grep -q -f latex-warnings "${BASENAME}.log"; then \
+		if grep -f latex-warnings "${BASENAME}.log"; then \
 			echo "warnings found" >> build/run-latex-again; \
 		fi; \
 		if [ -e build/run-latex-again ]; then \
@@ -288,6 +288,9 @@ build/include-median-number-of-log-lines.tex: wc.txt
 build/include-total-size-of-93-log-files.tex: file-sizes.txt
 	awk 'BEGIN { total_size = 0 } { total_size += $$2 } END { printf "%.3f GB%%\n", total_size / (1024 * 1024 * 1024) }' "$<" > "$@"
 
+build/include-median-mails-accepted-over-smtp.tex: mails-received.txt
+	awk '((NR % 7) != 2) && ((NR % 7) != 3) { print $$2 }' "$<" | perl ../stats/stddev | awk '/Median/ { printf "%'\''d%%\n", $$2 }' > "$@"
+
 # Hits per rule.
 build/stats-hits: db.full-run.sq3
 	sqlite3 -separator ' ' "$<" "select hits_total from rules order by hits_total;" > "$@.tmp"
@@ -309,7 +312,7 @@ build/include-cached-regexes-vs-discarded-regexes-mean-reduction.tex: build/incl
 
 # File size and number of lines ratios: stddev, mean, etc.
 build/stats-file-size-vs-parsing-time-stddev: build/stats-input-size-vs-parsing-time
-	awk '!/^#/ {print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "File size vs\\@. parsing time" > "$@"
+	awk '!/^#/ {print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Log file size vs\\@. parsing time" > "$@"
 
 build/stats-number-of-log-lines-vs-parsing-time-stddev: build/stats-input-size-vs-parsing-time
 	awk '!/^#/ {print $$1}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "No\\@. of log lines vs\\@. parsing time" > "$@"
@@ -403,11 +406,11 @@ build/stats-number-of-rules-per-program-minimum-ruleset: ../sql/db.minimum-rules
 	sqlite3 -separator ' & ' "$<" 'SELECT program, count(program) FROM rules GROUP BY program ORDER BY program;' > "$@"
 
 build/include-number-of-rules-per-program-minimum-ruleset.tex: build/stats-number-of-rules-per-program build/stats-number-of-rules-per-program-minimum-ruleset
-	paste -d ' ' $^ | awk 'BEGIN { OFS = " & " } { print $$1, $$3, $$6 }' | sed -e 's/$$/ \\\\/;' > "$@"
+	paste -d ' ' $^ | awk 'BEGIN { OFS = " & " } { print $$1, $$3, $$6, $$3 - $$6 }' | sed -e 's/$$/ \\\\/;' > "$@"
 
 # Minimum ruleset vs maximum ruleset.
 build/include-full-ruleset-vs-minimum-ruleset-mean.tex: build/stats-optimal-full-ruleset-vs-minimum-ruleset-stddev
-	awk 'BEGIN { mean = 0; } /Mean:/ && mean == 0 { mean = $$2; } END { printf "%.3g\\%%%%\n", mean }' "$<" > "$@"
+	awk 'BEGIN { mean = 0; } /Mean:/ && mean == 0 { mean = $$2; } END { printf "%.3f\\%%%%\n", mean }' "$<" > "$@"
 
 build/stats-optimal-full-ruleset-vs-minimum-ruleset: build/results--optimal_ordering--maximum_ruleset build/results--optimal_ordering--minimum_ruleset
 	INPUT="$^" OUTPUT="$@" make full-ruleset-vs-minimum-ruleset
@@ -437,7 +440,7 @@ build/include-full-ruleset-vs-minimum-ruleset.tex: build/stats-optimal-full-rule
 
 # Duration of the full run parsing all 93 log files.
 build/include-%-duration.tex: results/results-%/timing
-	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes and %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@"
+	awk -F': ' '/^Total time:/ { printf "%d hours, %d minutes, and %.3f seconds%\n", $$3 / (60 * 60), ($$3 / 60) % 60, $$3 % 60 }' "$<" > "$@"
 build/include-%-throughput.tex: results/results-%/timing
 	awk -F': ' '/^Total time:/ { printf "%.3f~MB (%'\''.3f log lines) parsed per minute%%\n", (10076909581 / (1024 * 1024)) / ($$3 / 60), 60721709 / ($$3 / 60)}' "$<" > "$@"
 build/include-skip-inserting-as-percentage-of-inserting.tex: results/results-full-run/timing results/results-insert-results/timing
@@ -541,7 +544,7 @@ check: lines-from-paragraphs
 	ack 'etc\.' logparser*.tex
 	# Check for uncapitalised words in section headings, and then in bibliography entries.
 	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? [[:lower:]])' logparser*.tex
-	ack '(address|author|publisher|title)\s+=\s+.* (?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]]' logparser-bibliography.tt2
+	ack '(address|author|publisher|title)\s+=\s+.*[ "](?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]]' logparser-bibliography.tt2
 	# Check for:
 	# * using a bare \url{} command
 	# * trailing spaces or lines containing only spaces
@@ -562,14 +565,15 @@ check: lines-from-paragraphs
 check-contractions:
 	ACK_PAGER=less ack "(?!(Postfix|mail|client|server|rule|parser|regex|user|program|architecture|restriction|sender|connection|word|line|framework)'s)\b\w+'s" logparser*.tex
 
+.PHONY: check-acronyms
 # List all acronyms not followed by {}, for visual inspection.
 check-acronyms:
 	perl check-acronyms logparser-acronyms.tex -- logparser*.tex
 
 todo:
-	grep    -n -E '[T]ODO|[X]XX|[x]xx' Makefile *.tex *.tt2 || true
-	grep -c -n -E '[T]ODO|[X]XX|[x]xx' Makefile *.tex *.tt2 | grep -v ':0$$'
-	grep    -n -E '[T]ODO|[X]XX|[x]xx' Makefile *.tex *.tt2 | wc -l
+	( grep    -n -E '[T]ODO|[X]XX|[x]xx' Makefile *.tex *.tt2 || true )
+	( grep -c -n -E '[T]ODO|[X]XX|[x]xx' Makefile *.tex *.tt2 || true ) | ( grep -v ':0$$' || true )
+	( grep    -n -E '[T]ODO|[X]XX|[x]xx' Makefile *.tex *.tt2 || true ) |  wc -l
 
 join-lines:
 	perl -p -E 'if (m/LaTeX Warning:/ and not m/\.$$/) { chomp; }' *.log

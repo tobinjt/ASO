@@ -7,7 +7,7 @@
         title   = "Postfix Backscatter Howto",
         year    = 2007,
         journal = "Postfix documentation",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "postfix-lookup-tables" = {
@@ -16,7 +16,7 @@
         title   = "Postfix Lookup Table Overview",
         year    = 2008,
         journal = "Postfix documentation",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
             
     "openspf" = {
@@ -25,7 +25,7 @@
         title   = "SPF\\@: Project Overview",
         year    = 2007,
         journal = "SPF Website",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "greylisting" = {
@@ -34,7 +34,7 @@
         title   = "Greylisting",
         year    = 2007,
         journal = "Greylisting information",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "policyd-weight" = {
@@ -43,7 +43,7 @@
         title   = "Policyd-weight --- A Policy Daemon for Postfix",
         year    = 2006,
         journal = "Policyd-weight website",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "access-man-page" = {
@@ -52,7 +52,7 @@
         title   = "Access --- Postfix SMTP Server Access Table",
         year    = 2008,
         journal = "Postfix documentation",
-        checked = "2008/08/20",
+        checked = "2009/04/21",
     },
 
     "policy-servers" = {
@@ -61,7 +61,7 @@
         title   = "Postfix SMTP Access Policy Delegation",
         year    = 2008,
         journal = "Postfix documentation",
-        checked = "2008/08/20",
+        checked = "2009/04/21",
     },
 
     "reject-unknown-sender-domain" = {
@@ -70,7 +70,7 @@
         title   = "Postfix Configuration Parameters",
         year    = 2007,
         journal = "Postfix documentation",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "smtpd_access_readme" = {
@@ -79,16 +79,16 @@
         title   = "Postfix SMTP Relay and Access Control",
         year    = 2007,
         journal = "Postfix documentation",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "smtpd_per_user_control" = {
         author  = "Wietse Venema",
         url     = "http://www.postfix.org/RESTRICTION_CLASS_README.html",
-        title   = "Postfix Per-Client/User/etc. Access Control",
+        title   = "Postfix Per-Client/User/etc.\\ Access Control",
         year    = 2007,
         journal = "Postfix documentation",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "rfc760" = {
@@ -97,7 +97,7 @@
         title   = "RFC 760 --- DOD Standard Internet Protocol",
         year    = 1980,
         journal = "The Internet Society Requests for Comment",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "RFC2821" = {
@@ -106,7 +106,7 @@
         title   = "RFC 2821 --- Simple Mail Transfer Protocol",
         year    = 2001,
         journal = "The Internet Society Requests for Comment",
-        checked = "2008/08/20",
+        checked = "2009/04/21",
     },
 
     "RFC821" = {
@@ -115,7 +115,7 @@
         title   = "RFC 821 --- Simple Mail Transfer Protocol",
         year    = 1982,
         journal = "The Internet Society Requests for Comment",
-        checked = "2008/08/20",
+        checked = "2009/04/21",
     },
 
     "RFC1869" = {
@@ -124,7 +124,7 @@
         title   = "RFC 1869 --- SMTP Service Extensions",
         year    = 1995,
         journal = "The Internet Society Requests for Comment",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "RFC3463" = {
@@ -133,7 +133,7 @@
         title   = "RFC 3463 --- Enhanced Mail System Status Codes",
         year    = 2003,
         journal = "The Internet Society Requests for Comment",
-        checked = "2009/02/24",
+        checked = "2009/04/21",
     },
 
     "log-mail-analyser" = {
@@ -142,7 +142,7 @@
         title   = "Log Mail Analyzer: Architecture and Practical Utilizations",
         year    = 2006,
         journal = "Trans-European Research and Education Networking Association",
-        checked = "2008/08/20",
+        checked = "2009/04/21",
     },
 
     "smtp-intro-01" = {
@@ -151,7 +151,7 @@
         title   = " A Quick Overview of SMTP\\@",
         year    = 2003,
         journal = "University of Toronto Computing and Network Services: Unix Systems Group",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "smtp-intro-02" = {
@@ -160,7 +160,7 @@
         title   = "Introduction to SMTP\\@",
         year    = 2000,
         journal = "Indian GNU/Linux Users Group of Mumbai",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "lmtp-rfc" = {
@@ -169,16 +169,16 @@
         title   = "Local Mail Transfer Protocol",
         year    = 1996,
         journal = "The Internet Society Requests for Comment",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "perlre" = {
         author  = "Perl 5 Porters",
         url     = "http://perldoc.perl.org/perlre.html",
-        title   = "perlre",
+        title   = "Perl Regular Expressions",
         year    = 2006,
         journal = "Perl 5 Documentation",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "unix-philosophy" = {
@@ -187,7 +187,7 @@
         title   = "Unix Philosophy",
         year    = 2007,
         journal = "Wikipedia, the free encyclopedia",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "postfix-overview" = {
@@ -196,7 +196,7 @@
         title   = "Postfix Architecture Overview",
         year    = 2007,
         journal = "Postfix documentation",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "a-plan-for-spam" = {
@@ -216,7 +216,7 @@
         journal = "3rd IEEE Workshop on IP Operations and Management, 2003", 
         year    = "2003", 
         url     = "http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=1251233",
-        checked = "2008/08/20",
+        checked = "2009/04/21",
     },
 
     "hash-functions" = {
@@ -225,20 +225,20 @@
         title   = "Performance in Practice of String Hashing Functions",
         year    = 1997,
         journal = "Proceedings of the 5th International Conference on Database Systems for Advanced Applications",
-        checked = "2008/05/29",
+        checked = "2009/04/21",
     },
 
     "atns" = {
         author  = "W. A. Woods",
         url     = "http://portal.acm.org/citation.cfm?id=362773",
         title   = "Transition Network Grammars for Natural Language Analysis",
-        journal = "Commun. ACM",
+        journal = "Communications of the ACM",
         volume  = "13",
         number  = "10",
         year    = "1970",
         note    = "ISSN 0001--0782",
         pages   = "591--606",
-        checked = "2008/08/20",
+        checked = "2009/04/21",
     },
 
     "nlpip" = {
@@ -255,7 +255,7 @@
     "stepwise-refinement" = {
         author    = "Niklaus Wirth",
         title     = "Program Development by Stepwise Refinement",
-        journal   = "Commun. ACM",
+        journal   = "Communications of the ACM",
         volume    = "14",
         number    = "4",
         year      = "1971",
@@ -265,13 +265,13 @@
         publisher = "ACM",
         address   = "New York, NY, USA\\@",
         url       = "http://portal.acm.org/citation.cfm?doid=362575.362577",
-        checked   = "2008/08/20",
+        checked   = "2009/04/21",
     },
 
     "cascaded-parsing" = {
         author    = "Steven Abney",
         title     = "Partial Parsing Via Finite-State Cascades",
-        journal   = "Nat. Lang. Eng.",
+        journal   = "Natural Language Engineering",
         volume    = "2",
         number    = "4",
         year      = "1996",
@@ -281,7 +281,7 @@
         publisher = "Cambridge University Press",
         address   = "New York, NY, USA\\@",
         url       = "http://portal.acm.org/citation.cfm?coll=GUIDE&dl=GUIDE&id=974705",
-        checked   = "2008/08/20",
+        checked   = "2009/04/21",
     },
 
     "word-stemming" = {
@@ -290,7 +290,7 @@
         title   = "Word Stemming to Enhance Spam Filtering",
         year    = 2004,
         journal = "First Conference on Email and Anti-Spam CEAS 2004",
-        checked = "2008/08/20",
+        checked = "2009/04/21",
     },
 
     "relaxed-online-svms" = {
@@ -299,13 +299,13 @@
         title   = "Relaxed Online SVMs in the TREC Spam Filtering Track",
         year    = 2007,
         journal = "Text REtrieval Conference (TREC)",
-        checked = "2008/08/20",
+        checked = "2009/04/21",
     },
 
     "black-box-error-reporting" = {
         author      = "Jungwoo Ha and Christopher J. Rossbach and Jason V. Davis and Indrajit Roy and Hany E. Ramadan and Donald E. Porter and David L. Chen and Emmett Witchel",
         title       = "Improved Error Reporting for Software That Uses Black-Box Components",
-        journal     = "SIGPLAN Not.",
+        journal     = "ACM SIGPLAN Notices",
         volume      = "42",
         number      = "6",
         year        = "2007",
@@ -315,13 +315,13 @@
         publisher   = "ACM",
         address     = "New York, NY, USA\\@",
         url         = "http://portal.acm.org/citation.cfm?id=1250747",
-        checked     = "2008/08/20",
+        checked     = "2009/04/21",
     },
 
     "instance-based-learning" = {
         author      = "David W. Aha and Dennis Kibler and Marc K. Albert",
         title       = "Instance-Based Learning Algorithms",
-        journal     = "Mach. Learn.",
+        journal     = "Machine Learning",
         volume      = "6",
         number      = "1",
         year        = "1991",
@@ -331,7 +331,7 @@
         publisher   = "Kluwer Academic Publishers",
         address     = "Hingham, MA, USA\\@",
         url         = "http://portal.acm.org/citation.cfm?id=104717",
-        checked     = "2008/07/29",
+        checked     = "2009/04/21",
     },
 
     "mastering-regular-expressions" = {
@@ -351,7 +351,7 @@
         title   = "Construction of Intersection of Nondeterministic Finite Automata Using Z Notation",
         year    = 2008,
         journal = "Proceedings of World Academy of Science, Engineering and Technology",
-        checked = "2008/08/16",
+        checked = "2009/04/21",
         volume  = 30,
         note    = "ISSN 1307--6884",
         pages   = "591--596",
@@ -359,8 +359,9 @@
 
     "lex-and-yacc-book" = {
         author      = "John Levine and Tony Mason and Doug Brown",
-        # Adding \empty{} fools my check for lowercase words in titles.
-        title       = "\\empty{}lex \\& \\empty{}yacc",
+        # Splitting this over two lines fools my check for lowercase words in titles.
+        title       = 
+                      "lex \\& yacc",
         year        = "1992",
         isbn        = "1--56592--000--7",
         publisher   = "O'Reilly \\& Associates, Inc.",
@@ -375,7 +376,7 @@
         doi         = "10.1016/j.knosys.2008.10.011",
         #url         = "http://xrl.us/behoe4",
         url         = "http://dx.doi.org/10.1016/j.knosys.2008.10.011",
-        checked     = "2009/02/26",
+        checked     = "2009/04/21",
         #volume      = "",
         #number      = "",
         #pages       = "",
@@ -386,10 +387,10 @@
         title       = "A User-Extensible and Adaptable Parser Architecture",
         journal     = "Research and Development in Intelligent Systems",
         year        = "2008",
-        note        = "Proceedings of AI-2008, the Twenty-eight SGAI International Conference on Innovative Techniques and Applications of Artificial Intelligence",
+        note        = "Proceedings of AI-2008, the Twenty-eighth SGAI International Conference on Innovative Techniques and Applications of Artificial Intelligence",
         isbn        = "978--1--84882--170--5",
         #url         = "http://xrl.us/behoe4",
-        #checked     = "2009/02/26",
+        #checked     = "2009/04/21",
         volume      = "25",
         #number      = "",
         pages       = "191--204",

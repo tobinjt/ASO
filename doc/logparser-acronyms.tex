@@ -20,15 +20,15 @@
 \newglossaryentry{DNSBL glossary}{
     name={DNS Blacklist},
     description={
-        A DNS Blacklist is a simple collaborative anti-spam technique used
-        to reject or penalise mail sent from mail servers believed to be
-        the source of large volumes of spam.  The criteria used when
-        deciding if an IP address should be included on a DNSBL vary widely
-        between DNSBLs, so before using one it is very important to check
-        their listing policies.  To use a DNSBL the mail server makes a DNS
-        request incorporating the IP address of the client; if the
-        requested hostname exists the client is on the DNSBL, and the mail
-        server can decide what course of action to take.
+        A \acronym{DNSBL} is a simple collaborative anti-spam technique
+        used to reject or penalise mail sent from IP addresses believed to
+        be the source of large volumes of spam.  The criteria used when
+        deciding if an IP address should be included vary widely between
+        \acronym[s]{DNSBL}, so before using one it is very important to
+        check their listing policies.  To use a \acronym{DNSBL}, Postfix
+        makes a DNS request incorporating the IP address of the client; if
+        the requested hostname is found the client is on the
+        \acronym{DNSBL}.
     }
 }
 
@@ -43,11 +43,11 @@
     description={
         One of the fundamental concepts when writing programs is the reuse
         of existing code, so that each new program does not reinvent
-        existing wheels.  An API defines the interface provided to the user
-        of the existing code, and acts as a contract between the user and
-        the provider: if the user adheres to the API the provider
-        guarantees it will work, but is free to change the implementation
-        if the API is preserved.
+        existing wheels.  An \acronym{API} defines the interface provided
+        to the user of the existing code, and acts as a contract between
+        the user and the provider: if the user adheres to the \acronym{API}
+        the provider guarantees it will work, but is free to change the
+        underlying implementation if the \acronym{API} is preserved.
     }
 }
 
@@ -58,13 +58,13 @@
     first={Simple Mail Transfer Protocol (SMTP)}
 }
 \newcommand{\SMTPglossaryDescription}[0]{%
-    \acronym{SMTP} is the protocol used for transferring mail between the
-    sending and receiving \acronym{MTA}\@.  It is a simple, human readable,
-    plain text protocol, making it quite simple to test and debug problems
-    with it.  A detailed description of SMTP is beyond the scope of this
-    thesis: the original protocol definition is in
-    \acronym{RFC}~821~\cite{RFC821}, which was superceded by
-    \acronym{RFC}~2821~\cite{RFC2821}.%
+    \glsreset{SMTP}\acronym{SMTP} is the protocol used for transferring
+    mail between the sending and receiving \acronym{MTA}\@.  It is a
+    simple, human readable, plain text protocol, making it quite simple to
+    test and debug problems with it.  A detailed description of
+    \acronym{SMTP} is beyond the scope of this thesis: the original
+    protocol definition is in \acronym{RFC}~821~\cite{RFC821}, which was
+    superceded by \acronym{RFC}~2821~\cite{RFC2821}.%
 }
 \newglossaryentry{SMTP glossary}{
     name={Simple Mail Transfer Protocol},
@@ -82,11 +82,11 @@
 \newglossaryentry{LMTP glossary}{
     name={Local Mail Transfer Protocol},
     description={
-        LMTP is a protocol derived from SMTP that removes the need for the
-        server to maintain a mail delivery queue, instead relying on the
-        client to maintain it.  Typically the client is an MTA, and the
-        server a delivery agent or a mail store.  Full details are
-        available in~\cite{lmtp-rfc}.
+        \acronym{LMTP} is a protocol derived from \acronym{SMTP} that
+        removes the need for the server to maintain a mail delivery queue,
+        instead relying on the client to maintain it.  Typically the client
+        is an \acronym{MTA}, and the server a delivery agent or a mail
+        store.  Full details are available in~\cite{lmtp-rfc}.
     }
 }
 
@@ -99,11 +99,11 @@
 \newglossaryentry{MTA glossary}{
     name={Mail Transfer Agent},
     description={
-        A Mail Transfer Agent sends and receives mail via SMTP\@.  Users
-        submit mail to an MTA via their mail client (e.g.\ Microsoft
-        Outlook, Thunderbird, webmail services); the sending MTA transfers
-        the mail to the receiving MTA (which may in turn forward it to
-        another MTA).
+        \glsreset{MTA}A \acronym{MTA} sends and receives mail via
+        \acronym{SMTP}\@.  Users submit mail to an \acronym{MTA} via their
+        mail client (e.g.\ Microsoft Outlook, Thunderbird, webmail
+        services); the sending \acronym{MTA} transfers the mail to the
+        receiving \acronym{MTA}.
     }
 }
 
@@ -116,11 +116,11 @@
 \newglossaryentry{RFC glossary}{
     name={Request For Comments},
     description={
-        The Request For Comments series is a series of proposals defining
-        various protocols and file formats, e.g.\ SMTP\@.  The name is
-        somewhat misleading nowadays: initially the authors were asking for
-        peer review, but these documents are now the de facto standards the
-        Internet runs on.
+        \glsreset{RFC}The \acronym{RFC} series is a series of proposals
+        defining various protocols and file formats, e.g.\
+        \acronym{SMTP}\@.  The name is somewhat misleading nowadays:
+        initially the authors were asking for peer review, but these
+        documents are now the de facto standards the Internet runs on.
     }
 }
 
@@ -154,10 +154,10 @@
 \newglossaryentry{FQDN glossary}{
     name={Fully Qualified Domain Name},
     description={
-        An FQDN is a hostname plus domain name, e.g.\ \newline{}
-            example.com     is a domain name          \newline{}
-            www             is a hostname             \newline{}
-            www.example.com is a FQDN
+        An \acronym{FQDN} is a hostname plus domain name, e.g.\ \newline{}
+            example.com     is a domain name                    \newline{}
+            www             is a hostname                       \newline{}
+            www.example.com is a \acronym{FQDN}
     }
 }
 
@@ -172,10 +172,10 @@
     description={
         There may be multiple copies of any program executing at any one
         time, so the program's name is not suitable as a distinguishing
-        identifier; instead each process executing is given a pid that is
+        identifier; instead, each process is given a \acronym{pid} that is
         guaranteed to be unique for the lifetime of the process.  Once the
-        process has completed, the pid may be reused, as they are drawn
-        from a finite pool.
+        process has completed, the pid may be reused, because they are
+        drawn from a finite pool.
     }
 }
 
@@ -188,10 +188,11 @@
 \newglossaryentry{UCE glossary}{
     name={Unsolicited Commercial Email},
     description={
-        UCE is a more restrictive definition of spam than most people use:
-        it only covers mail that is explicitly commercial, thus excluding
-        viruses, Bayesian poisoning mails, backscatter\glsadd{Backscatter},
-        and those annoying chain letters you get from friends.
+        \acronym{UCE} is a more restrictive definition of spam than most
+        people use: it only covers mail that is explicitly commercial, thus
+        excluding viruses, Bayesian poisoning mails,
+        backscatter\glsadd{Backscatter}, and those annoying chain letters
+        you get from friends.
     }
 }
 
@@ -204,7 +205,7 @@
 \newglossaryentry{ESMTP glossary}{
     name={Extended SMTP},
     description={
-        \acronym{ESMTP}~\cite{RFC1869}, provides a flexible mechanism for
+        \acronym{ESMTP}~\cite{RFC1869} provides a flexible mechanism for
         \acronym{SMTP} to be extended with new functionality, allowing new
         features to be tested without having to be included in the standard
         protocol.  \acronym{ESMTP} is backwards compatible with
@@ -259,7 +260,7 @@
 \newglossaryentry{FA glossary}{
     name={Finite Automata},
     description={
-        Finite automata are computing devices that accept or recognize
+        \acronym{FA} are computing devices that accept or recognize
         regular languages.  They lack any form of storage, so although they
         can recognise languages such as ${(ab)}^{*}$ or
         $a^{*}{(b^{*}|c)}b$, they cannot count and so cannot recognise
@@ -276,12 +277,13 @@
 \newglossaryentry{CFG glossary}{
     name={Context Free Grammar},
     description={
-        A CFG is a grammar in which every transition or production takes
-        the form $L\rightarrow{}R$, where $L$ is a single non-terminal
-        symbol, and $R$ is a (possibly empty) string of terminal or
-        non-terminal symbols.  Every CFG can be recognised by a
-        \acronym{PDA}, and \acronyms{PDA} cannot recognise more complicated
-        grammars, so \acronyms{CFG} and \acronyms{PDA} are equivalent.
+        A \acronym{CFG} is a grammar in which every transition or
+        production takes the form $L\rightarrow{}R$, where $L$ is a single
+        non-terminal symbol, and $R$ is a (possibly empty) string of
+        terminal or non-terminal symbols.  Every \acronym{CFG} can be
+        recognised by a \acronym{PDA}, and \acronyms{PDA} cannot recognise
+        more complicated grammars, so \acronyms{CFG} and \acronyms{PDA} are
+        equivalent.
     }
 }
 
@@ -294,14 +296,15 @@
 \newglossaryentry{PDA glossary}{
     name={Push-Down Automata},
     description={
-        A Push-Down Automation is a computational device similar to a
-        \acronym{FA}, but it can additionally use a stack to store data.  A
-        \acronym{PDA} can manipulate the stack during state transitions
-        (adding or removing a single piece of data), and when determining
-        which state transition to take it can use the piece of data on the
-        top of the stack in addition to the input.  \acronyms{PDA} can
-        recognise languages of the form $a^{n}b^{n}$, i.e.\ any number of
-        one symbol followed by the same number of another symbol.
+        \glsreset{PDA}A \acronym{PDA} is a computational device similar to
+        a \acronym{FA}, but it can additionally use a stack to store data.
+        A \acronym{PDA} can manipulate the stack during state transitions
+        by adding or removing a single piece of data, and when determining
+        which state transition to take, the piece of data on the top of the
+        stack can be used in addition to the input.  In addition to the
+        languages recognised by \acronyms{FA}, \acronyms{PDA} can recognise
+        languages of the form $a^{n}b^{n}$, i.e.\ any number of one symbol
+        followed by the same number of another symbol.
     }
 }
 
