@@ -98,11 +98,12 @@ semantics.
 \begin{table}[thbp]
     \caption{Similarities between ATN and this architecture}
     \empty{}\label{Similarities between ATN and this architecture}
+    \centering{}
     \begin{tabular}[]{lll}
         \tabletopline{}%
         \acronym{ATN}   & Architecture  & Similarity                  \\
         \tablemiddleline{}%
-        Networks        & Parser        & Determines the sequence
+        Networks        & Framework     & Determines the sequence
                                           of transitions              \\
                         &               & or actions that
                                           constitutes a valid input.  \\
@@ -118,7 +119,7 @@ semantics.
 
 The architecture can be thought of as implementing transduction: it takes
 data in one form and transforms it to another form; \parsername{}
-transforms log files to a database.
+transforms log files to a \acronym{SQL} database.
 
 Unlike traditional parsers such as those used when compiling a programming
 language, this architecture does not require a fixed grammar specification
@@ -146,8 +147,12 @@ the core of the architecture and is deliberately quite simple: the rules
 deal with the variation in inputs, and the actions deal with the
 intricacies and complications encountered during parsing.  The function
 that finds the rule that recognises the input and invokes the requested
-action can be expressed in pseudo-code as:
+action can be expressed in pseudo-code as shown in \figureref{Pseudo-code
+describing how inputs are recognised}.
 
+\begin{figure}[thbp]
+    \caption{Pseudo-code describing how inputs are recognised}
+    \empty{}\label{Pseudo-code describing how inputs are recognised}
 \begin{verbatim}
 INPUT:
 for each input {
@@ -160,6 +165,7 @@ for each input {
     warn the user that the input was not recognised
 }
 \end{verbatim}
+\end{figure}
 
 Most parsers will require the same basic functionality from the framework;
 it is responsible for managing the parsing process from start to finish,
@@ -217,7 +223,8 @@ which will generally involve the following:
         framework present the entire input stream at once, and discard the
         recognised portion.
 
-    \item [Classify the input]  The pseudo-code above shows how rules are
+    \item [Classify the input]  The pseudo-code in \figureref{Pseudo-code
+        describing how inputs are recognised} shows how rules are
         successively tried until one is found that recognises the current
         input.  That pseudo-code is very simple: there may be efficiency
         concerns (\sectionref{parser efficiency}), rule conditions

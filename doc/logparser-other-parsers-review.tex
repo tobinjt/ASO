@@ -30,7 +30,8 @@ project's parser, to show how much effort would have been required to use
 one of those parsers to fulfil the aims and requirements of this project.
 It is important to compare and contrast newly developed algorithms and
 parsers against those already available, to accurately judge what
-improvements, if any, are delivered by the newcomers.
+improvements, if any, are delivered by the newcomers.  \Tableref{Summary of
+parsers' features} summarises the results of this review.
 
 Some important differences exist between \parsername{} and most or all of
 the parsers reviewed in this chapter:
@@ -39,7 +40,9 @@ the parsers reviewed in this chapter:
 
     \item None of the reviewed parsers perform the kind of advanced parsing
         required for this project, or deal with the complications described
-        in \sectionref{complications}.
+        in \sectionref{complications}.  Some correlate log lines by
+        queueid, but none correlate log lines by \acronym{pid}
+        (\sectionref{queueid vs pid}).
 
     \item Only \parsername{} enables parsing of new log lines without
         extensive and intrusive modifications to the parser; the
@@ -78,16 +81,19 @@ the parsers reviewed in this chapter:
 
 \end{enumerate}
 
-Each of the reviewed parsers was tested with the \numberOFlogFILES{} test
-log files described in \sectionref{parser efficiency}; \tableref{Summary of
-parsers' features} summarises the results of this review.
+Each of the reviewed parsers was tested with the three months
+(\numberOFlogFILES{} days) of contiguous log files described in
+\sectionref{parser efficiency}.
 
 The data extracted by \parsername{} is documented in
 \sectionref{connections table} and \sectionref{results table}; for
 convenience that list is repeated here: client and server IP address and
 hostname, HELO hostname, queueid, start time, end time, \acronym{SMTP}
 code, enhanced status code, sender, recipient, size, message-id, delay, and
-delays.
+delays.  Note: \parsername{} correlates log lines by both queueid and
+\acronym{pid} (\sectionref{queueid vs pid}), and it stores each mail's
+queueid, but it does not store each connection's \acronyms{pid}, because a
+use has not been identified for that data.
 
 \section{Log Mail Analyser}
 
@@ -114,8 +120,8 @@ standard mechanism to document the fields or the separator, unlike
 \acronym{SQL} where every database includes a schema naming the fields and
 the type of data they store (e.g.\ integer, text, timestamp).  The
 \acronym{CSV} record format used by \acronym{LMA} is not documented, but
-the output file contains a comment giving the format:\newline{} \texttt{\#
-Timestamp|Nome Client|IP Client|IP Server|From|To|Status|Size}
+the output file contains a comment in Italian giving the format:\newline{}
+\texttt{\# Timestamp|Nome Client|IP Client|IP Server|From|To|Status|Size}
 \newline{}\acronym{LMA} treats \acronym{CSV} lines starting with
 \texttt{\#} as comments, but not all \acronym{CSV} parsers will.
 
@@ -145,7 +151,8 @@ embedding one would not provide any benefit; it only provides \textbf{(key,
 value)} pairs, so any additional structuring of the data is imposed by the
 application, and it is the responsibility of the author of the application
 to document this structure.  MySQL support was not tested because the
-schema is not documented, so the required tables could not be created.
+schema is not documented, and no existing database was available to extract
+the schema from, so the required tables could not be created.
 
 Whether a MySQL database or Berkeley DB table is chosen in addition to the
 \acronym{CSV} output, \acronym{LMA} stores the following data: time and
@@ -200,7 +207,7 @@ subroutine \&main::LIST called at queryDB.pl line
 called at queryDB.pl line 379.}} after correcting the errors in the code it
 worked, producing \acronym{CSV} lines for the specified day where the
 \acronym{SMTP} code signifies a rejection.  All of these reports are
-trivially simple to produce from the \acronym{CSV} file using the standard
+extremely simple to produce from the \acronym{CSV} file using the standard
 Unix tool \texttt{awk}\glsadd{awk}; the most complicated, DAILY-REJECT, is
 merely:
 
@@ -400,12 +407,13 @@ requiring a \euros{100} + VAT licence per report, with discounts available
 when buying multiple licences (correct as of 2008/11/23); in contrast,
 \parsername{} is free to use and the code is freely available.  Sawmill is
 supplied with thorough and well written documentation; everything the
-author searched for was documented, except the MySQL database schema and
-some details of the data extracted by the parser.  A commercial version of
-MySQL is required because of MySQL licensing restrictions, but Sawmill's
-documentation explains why and includes instructions on how to compile
-Sawmill so that it can use a non-commercial version of MySQL (this was not
-attempted during the review process).
+author looked for was documented, except for the MySQL database schema and
+some details of the data extracted by the parser, e.g.\ what the virus
+field stores.  A commercial version of MySQL is required because of MySQL
+licensing restrictions, but Sawmill's documentation explains why and
+includes instructions on how to compile Sawmill so that it can use a
+non-commercial version of MySQL (this was not attempted during the review
+process).
 
 Sawmill's web interface supports searching on any combination of the fields
 it extracts, and all searches produced accurate results.  The interface for
@@ -451,24 +459,24 @@ The web interface provides search functionality, generating statistics and
 graphs in real time, a facility not provided by \parsername{}.  Splunk
 allows quite complicated searches, based on the fields it extracts
 (described later) or the full text of the log line, though it is not
-possible to search on partial words.  Search results are not available for
-use with other tools.  Searches can be saved for reuse; saved searches can
-be run periodically and the results mailed to a recipient or sent to an
-external program for further processing.  The author was unable to save
-searches, though that may have been because of limitations in the free
-version.  The web interface is optimised for interactive use rather than
-automated queries, and it does not appear to be possible to write
-independent tools to utilise the Splunk database, whereas \parsername{}
-provides the database and leaves it to the user to utilise it without limit
-or restriction.  Some additional Postfix reports are supposedly available
-on \urlLastChecked{http://www.splunkbase.com/}{2009/04/21}, but the author
-was unable to find any Postfix reports, or indeed reports for any other log
+possible to search on partial words.  Searches can be saved for reuse;
+saved searches can be run periodically and the results mailed to a
+recipient or sent to an external program for further processing.  The
+author was unable to save searches, possibly because of limitations in the
+free version, and so was unable to examine the format of the data.  The web
+interface is optimised for interactive use rather than automated queries,
+and it does not appear to be possible to write independent tools to utilise
+the Splunk database, whereas \parsername{} provides the database and leaves
+it to the user to utilise it without limit or restriction.  Some additional
+Postfix reports are supposedly available on
+\urlLastChecked{http://www.splunkbase.com/}{2009/04/21}, but the author was
+unable to find any Postfix reports, or indeed reports for any other log
 file types: every category was empty, even those that the web site claimed
 had numerous reports available.  Many types of graphs can be generated,
 though all except the bubble and heatmap graphs are variations of a bar or
-pie chart.  It is trivial to drill down through the graphs to select a
-portion of the data, e.g.\ select the hour with the largest number of
-events, then select a particular host, and finally a specific sender
+pie chart.  Drilling down through the graphs to select a portion of the
+data is simple and intuitive, e.g.\ select the hour with the largest number
+of events, then select a particular host, and finally a specific sender
 address.  All searches performed using the indexed data returned reasonable
 results.  The full power of \acronym{SQL} is available when searching the
 data extracted by \parsername{}, allowing the user to search on arbitrarily
@@ -533,8 +541,9 @@ from addresses, HELO hostname, and protocol (\acronym{SMTP},
 more data (client and server IP address and hostname, queueid, start and
 end times, timestamps for each log line, \acronym{SMTP} and enhanced status
 codes, delivery delays, and message-id), though it does not make the full
-text of the log line available; this could be trivially added if desired,
-but would greatly increase the size of the resulting database.
+text of the log line available; a few minutes work could add this to
+\parsername{} if desired, but it would greatly increase the size of the
+database.
 
 Splunk is a generic tool, so it lacks any Postfix-specific support over and
 above extracting the \texttt{key=value} fields from each log line; it makes
@@ -930,23 +939,23 @@ understanding of Postfix log files achieved by \parsername{}.
     \empty{}\label{Summary of parsers' features}
     \begin{tabular}{llllll}
         \tabletopline{}%
-        Parser          & Parsed test   & Data              & Custom            & Documentation  & Source       \\
-                        & log files?    & store?            & reports?          & quality?       & code?        \\
+        Parser          & Parsed test   & Data              & Custom            & Documentation  & Source           \\
+                        & log files?    & store?            & reports?          & quality?       & code?            \\
         \tablemiddleline{}%
-        \acronym{LMA}       & No            & Yes               & No                & Poor           & Yes          \\
-        Pflogsumm       & Yes           & No                & Partial \dag{}    & Good           & Yes          \\
-        Sawmill         & Yes           & Yes               & Searches          & Excellent      & \nialpha{}   \\
-        Splunk          & Yes           & Yes               & Searches          & Abundant       & No           \\
-                        &               &                   & \& reports        & but poor       &              \\
-        Isoqlog         & No            & Yes               & No                & No English     & Yes          \\
-                        &               &                   &                   & documentation  &              \\
-        AWStats         & Partially     & Yes               & Partial \dag{}    & Good           & Yes          \\
-        Anteater        & No            & No                & No                & None           & Yes          \\
-        YAALA           & No            & Yes \ddag{}       & Searches          & Poor           & Yes          \\
-                        &               &                   & \& reports        &                &              \\
-        Lire            & Yes           & Yes               & Yes               & Reasonable     & Yes          \\
-        Logrep          & No            & Yes               & No                & None           & Yes          \\
-        \parsername{}   & Yes           & Yes \nibeta{}     & No \nichi{}       & \niepsilon{}   & Yes          \\
+        \acronym{LMA}   & No            & Yes               & No                & Poor           & Yes              \\
+        Pflogsumm       & Yes           & No                & Partial \dag{}    & Good           & Yes              \\
+        Sawmill         & Yes           & Yes               & Searches          & Excellent      & Yes \nialpha{}   \\
+        Splunk          & Yes           & Yes               & Searches          & Abundant       & No               \\
+                        &               &                   & \& reports        & but poor       &                  \\
+        Isoqlog         & No            & Yes               & No                & No English     & Yes              \\
+                        &               &                   &                   & documentation  &                  \\
+        AWStats         & Partially     & Yes               & Partial \dag{}    & Good           & Yes              \\
+        Anteater        & No            & No                & No                & None           & Yes              \\
+        YAALA           & No            & Yes \ddag{}       & Searches          & Poor           & Yes              \\
+                        &               &                   & \& reports        &                &                  \\
+        Lire            & Yes           & Yes               & Yes               & Poor           & Yes              \\
+        Logrep          & No            & Yes               & No                & None           & Yes              \\
+        \parsername{}   & Yes           & Yes \nibeta{}     & No \nichi{}       & \niepsilon{}   & Yes              \\
         \tablebottomline{}%
     \end{tabular}
 
@@ -958,9 +967,8 @@ understanding of Postfix log files achieved by \parsername{}.
         \item [\ddag{}] YAALA only stores the data required to produce the
             latest report; other data will be discarded.
 
-        \item [\nialpha{}] Sawmill's source code is available in an
-            encrypted form, so that customers can compile it on platforms
-            that pre-compiled binaries are not available for.
+        \item [\nialpha{}] Sawmill's source code is available, but in an
+            encrypted or obfuscated form.
 
         \item [\nibeta{}] \parsername{} is the only parser with
             documentation for the format of its data store.
