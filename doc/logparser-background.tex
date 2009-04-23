@@ -108,10 +108,10 @@ that mail servers are subjected to daily, a more appropriate maxim could
 be: \textit{Require strict adherence to relevant \acronyms{RFC}; implement
 the strongest restrictions you can; relax the restrictions and adherence
 only when legitimate mail is impeded.\/}  It is neither as friendly nor as
-catchy, but it more accurately reflects the current situation.} A typical
-\acronym{SMTP} conversation resembles the following (the lines starting
-with a three digit number are sent by the server, all other lines are sent
-by the client):
+catchy, but it more accurately reflects the current circumstances.} A
+typical \acronym{SMTP} conversation resembles the following (the lines
+starting with a three digit number are sent by the server, all other lines
+are sent by the client):
 
 \begin{verbatim}
 220 smtp.example.com ESMTP
@@ -317,7 +317,7 @@ perform more complex checks than those provided by Postfix: a trivial
 example is allowing addresses associated with the payroll system to send
 mail on the third Tuesday after pay day only, to help prevent problems from
 phishing mails using faked sender addresses.  For example, a phishing mail
-might claim that the payroll system had a disastrous disk failure, and
+might pretend that the payroll system had a disastrous disk failure, and
 until the server is replaced all salary payments will have to be processed
 manually, so please reply to this mail with your name, address, and bank
 account details; the criminal can then use any details sent to him to help

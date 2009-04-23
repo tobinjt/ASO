@@ -183,8 +183,8 @@ tables, and, most importantly, \parsernames{} understanding of such mails
 is incorrect.  This problem has only been observed when a state table entry
 is missing its initial log line, usually because it is in an earlier log
 file; this specific instance is not a serious problem, because
-\parsername{} can not be expected to fully understand and reconstruct a
-mail when it is lacking some of that mail's log lines.
+\parsername{} cannot be expected to fully understand and reconstruct a mail
+when it is lacking some of that mail's log lines.
 
 Tracking re-injected mail requires \parsername{} to do the following in the
 \action{COMMIT} action:
@@ -450,7 +450,7 @@ timeouts the \action{TIMEOUT} action does the following:
         rejected delivery attempt.  This assumption is not necessarily
         correct, because Postfix could have accepted an earlier recipient,
         rejected a later one, and continued to accept delivery of the mail
-        for the first recipient.  Tn that case the timeout applies to the
+        for the first recipient.  In that case the timeout applies to the
         partially accepted mail, which should be discarded; however, this
         has not occurred in practice.  Processing timeouts is further
         complicated by the presence of out of order \daemon{cleanup} log
@@ -488,7 +488,7 @@ that is processed:
 \begin{itemize}
 
     \item Does the \texttt{timeout\_queueids} state table have an entry for
-        the queueid in the log line?  If there is an entry, it will be
+        the queueid in the log line?  If an entry is found it will be
         removed, regardless of whether the remaining criteria are
         satisfied.
 
@@ -498,10 +498,10 @@ that is processed:
     \item The timestamp of the \daemon{cleanup} log line must be within ten
         minutes of the mail acceptance timestamp.  Timeouts happen after
         five minutes, but some data may have been transferred slowly, and
-        empirical evidence shows that ten minutes is not unreasonable;
-        hopefully it is a good compromise between false positives (log
-        lines incorrectly discarded) and false negatives (new state table
-        entries incorrectly created).
+        empirical evidence shows that ten minutes is not unreasonable; it
+        appears to be a good compromise between false positives (log lines
+        incorrectly discarded) and false negatives (new state table entries
+        incorrectly created).
 
 \end{itemize}
 

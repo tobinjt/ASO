@@ -24,11 +24,10 @@
         used to reject or penalise mail sent from IP addresses believed to
         be the source of large volumes of spam.  The criteria used when
         deciding if an IP address should be included vary widely between
-        \acronym[s]{DNSBL}, so before using one it is very important to
-        check their listing policies.  To use a \acronym{DNSBL}, Postfix
-        makes a DNS request incorporating the IP address of the client; if
-        the requested hostname is found the client is on the
-        \acronym{DNSBL}.
+        \acronym[s]{DNSBL}, so before using one it is essential to check
+        their listing policies.  To use a \acronym{DNSBL}, Postfix makes a
+        DNS request incorporating the IP address of the client; if the
+        requested hostname is found the client is on the \acronym{DNSBL}.
     }
 }
 
@@ -63,7 +62,7 @@
     simple, human readable, plain text protocol, making it quite simple to
     test and debug problems with it.  A detailed description of
     \acronym{SMTP} is beyond the scope of this thesis: the original
-    protocol definition is in \acronym{RFC}~821~\cite{RFC821}, which was
+    protocol definition is in \acronym{RFC}~821~\cite{RFC821}, later
     superceded by \acronym{RFC}~2821~\cite{RFC2821}.%
 }
 \newglossaryentry{SMTP glossary}{

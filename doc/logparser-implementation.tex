@@ -23,9 +23,9 @@ arise sometimes requires the parser to discard log lines (e.g.\
 \sectionref{aborted delivery attempts}), and, less frequently, to discard a
 data structure (e.g.\ \sectionref{timeouts during data phase}).
 \parsername{} can parse log files from Postfix version 2.2 through to
-version 2.5, and should be capable of parsing log files from later versions
-with only minor modifications or an updated ruleset.  The parser's task is
-to follow the journey each mail takes through Postfix, combining the data
+version 2.5, and should be able to parse log files from later versions with
+only minor modifications or an updated ruleset.  The parser's task is to
+follow the journey each mail takes through Postfix, combining the data
 captured by rules into a coherent whole, saving it in a useful and
 consistent form, and performing housekeeping duties.  The intermingling of
 log lines from different mails immediately rules out the possibility of
@@ -82,8 +82,7 @@ implemented.
 
 \section{Assumptions}
 
-\parsername{} makes a small number of (hopefully safe and reasonable)
-assumptions:
+\parsername{} makes a few (hopefully safe and reasonable) assumptions:
 
 \begin{itemize}
 
@@ -1040,23 +1039,23 @@ same arguments:
 
 \label{adding new actions in implementation}
 
-Adding new actions is not as easy as adding new rules, though care has been
-taken in the architecture and implementation to make adding new actions as
-painless as possible; one of the few limitations is that \parsername{} is
-written in Perl, so new actions must also be written in Perl.  The
-implementer writes a subroutine that accepts the standard arguments given
-to actions, and registers it with the framework by calling the framework's
-\texttt{add\_actions()} subroutine.  The new action must be registered
-before the rules are loaded, because it is an error for a rule to specify
-an unregistered action; this helps catch mistakes made when adding new
-rules.  No other work is required from the implementer to integrate the
-action into the parser; all of their attention and effort can be focused on
-correctly implementing their new action.  The action may need to extend the
-list of valid combinations described in \sectionref{out of order log lines}
-if the new action creates a different set of acceptable programs, but this
-would only be necessary if the new action processes log lines from Postfix
-components that \parsername{} does not have rules for, e.g.\
-\daemon{virtual} or \daemon{lmtp}.
+Adding new actions is not as facile as adding new rules, though care has
+been taken in the architecture and implementation to make adding new
+actions as painless as possible; one of the few limitations is that
+\parsername{} is written in Perl, so new actions must also be written in
+Perl.  The implementer writes a subroutine that accepts the standard
+arguments given to actions, and registers it with the framework by calling
+the framework's \texttt{add\_actions()} subroutine.  The new action must be
+registered before the rules are loaded, because it is an error for a rule
+to specify an unregistered action; this helps catch mistakes made when
+adding new rules.  No other work is required from the implementer to
+integrate the action into the parser; all of their attention and effort can
+be focused on correctly implementing their new action.  The action may need
+to extend the list of valid combinations described in \sectionref{out of
+order log lines} if the new action creates a different set of acceptable
+programs, but this would only be necessary if the new action processes log
+lines from Postfix components that \parsername{} does not have rules for,
+e.g.\ \daemon{virtual} or \daemon{lmtp}.
 
 \section{Rules}
 
