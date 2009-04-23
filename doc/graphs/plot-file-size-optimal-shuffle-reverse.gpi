@@ -1,0 +1,14 @@
+load "plot-defaults-ps.gpi"
+
+set xlabel "Log file size, in MB"
+set ylabel "Parsing time"
+set output "../build/graph-file-size-optimal-shuffle-reverse.ps"
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
+set autoscale x
+# Remove the horizontal lines.
+set grid noy
+
+plot "../build/stats-file-size-optimal-shuffle-reverse" using ($1 / (1024 * 1024)):4 title "Reverse ordering", \
+     "../build/stats-file-size-optimal-shuffle-reverse" using ($1 / (1024 * 1024)):3 title "Shuffled ordering", \
+     "../build/stats-file-size-optimal-shuffle-reverse" using ($1 / (1024 * 1024)):2 title "Optimal ordering"

@@ -59,16 +59,17 @@ parsing as best it can, allowing the developer of a new parser to decide
 which deficiencies are most important and require attention first, rather
 than being forced to fix the first error that arises.
 
-The flow of control in this architecture is quite different from most other
-architectures.  Most traditional parsers have a current state: each state
-has a fixed set of acceptable next states, processing is determined by the
-state transition that takes place, and unacceptable state transitions cause
-parsing to fail.  This architecture is different: the rule that recognises
-the input dictates the action that will be invoked.  Rule conditions
-(\sectionref{rule conditions in architecture}) enable stateful parsing,
-where the list of rules used to recognise an input is constrained by the
-parser's current state, but the recognising rule still dictates the action
-that is invoked and, whether directly or indirectly, the next state.
+The flow of control in this architecture is quite different from other
+architectures, e.g.\ those used for compiling a programming language.
+Typically, those parsers have a current state: each state has a fixed set
+of acceptable next states, processing is determined by the state transition
+that takes place, and unacceptable state transitions cause parsing to fail.
+This architecture is different: the rule that recognises the input dictates
+the action that will be invoked.  Rule conditions (\sectionref{rule
+conditions in architecture}) enable stateful parsing, where the list of
+rules used to recognise an input is constrained by the parser's current
+state, but the recognising rule still dictates the action that is invoked
+and, whether directly or indirectly, the next state.
 
 When writing \parsername{}, the real difficulties arose once the parser was
 successfully recognising almost all of the log lines, because most of the
@@ -103,18 +104,19 @@ efficiency is evaluated in \sectionref{parser efficiency}, where
 optimisations and the effect they have are explored.
 
 A parser's ability to correctly parse its inputs is extremely important;
-\parsernames{} coverage of \numberOFlogFILES{} log files is discussed in
-\sectionref{parsing coverage}.  Both its success at recognising individual
-log lines  and its correctness in reconstructing each mail's journey
-through Postfix are described in detail, including the results of manually
-verifying that a randomly selected portion of a log file was correctly
-parsed.  Experience implementing \parsername{} shows that full input
-coverage is relatively easy to achieve with this architecture, and that
-with enough time and effort a full understanding of the input is possible.
-Postfix log files would require substantial time and effort to correctly
-parse regardless of the architecture used; this architecture enables an
-iterative approach to be used~\cite{stepwise-refinement}, as is practiced
-in many other software engineering disciplines.
+\parsernames{} coverage of \numberOFlogFILES{} log files, each containing
+one day's log lines, is discussed in \sectionref{parsing coverage}.  Both
+its success at recognising individual log lines  and its correctness in
+reconstructing each mail's journey through Postfix are described in detail,
+including the results of manually verifying that a randomly selected
+portion of a log file was correctly parsed.  Experience implementing
+\parsername{} shows that full input coverage is relatively easy to achieve
+with this architecture, and that with enough time and effort a full
+understanding of the input is possible.  Postfix log files would require
+substantial time and effort to correctly parse regardless of the
+architecture used; this architecture enables an iterative approach to be
+used~\cite{stepwise-refinement}, as is practiced in many other software
+engineering disciplines.
 
 The data gathered by \parsername{} provides the foundation for the future
 of this project: using machine-learning algorithms to analyse the data and

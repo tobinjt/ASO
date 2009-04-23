@@ -1,0 +1,12 @@
+load "plot-defaults-ps.gpi"
+
+set xlabel "Log file size in MB"
+set ylabel "Parsing time in seconds"
+set output "../build/graph-parsing-time-vs-file-size.ps"
+
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
+set autoscale x
+set grid noy
+
+plot "../build/stats-parsing-time-vs-file-size" using ($2 / (1024 * 1024)):1 title "Parsing time in seconds"

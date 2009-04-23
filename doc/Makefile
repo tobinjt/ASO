@@ -241,7 +241,7 @@ build/plot-%-pdf.gpi: graphs/plot-%.gpi
 build/results-%: results/results-%
 	perl ../stats/parse-stats "$<" > "$@"
 
-build/results--optimal_ordering--maximum_ruleset--comment-stripped: build/results--optimal_ordering--maximum_ruleset
+build/results--%--comment-stripped: build/results--%
 	sed -e '/^#/d' "$<" > "$@"
 
 # Factored stats for graphs.
@@ -256,6 +256,10 @@ build/stats-optimal-and-reverse-vs-shuffle: build/results--optimal_ordering--max
 
 build/stats-perfect-best-and-perfect-worst-vs-shuffle: build/results--perfect_best--maximum_ruleset build/results--shuffle_ordering--maximum_ruleset build/results--perfect_worst--maximum_ruleset
 	paste -d ' ' $^ | awk 'BEGIN { print "# perfect-best/shuffle perfect-worst/shuffle"; } $$1 != "#" {print ($$3 * 100 / $$9), " ", ($$15 * 100 / $$9) }' > "$@"
+
+
+build/stats-file-size-optimal-shuffle-reverse: file-sizes.txt build/results--optimal_ordering--maximum_ruleset--comment-stripped build/results--shuffle_ordering--maximum_ruleset--comment-stripped build/results--reverse_ordering--maximum_ruleset--comment-stripped
+	paste -d ' ' $^ | awk 'BEGIN { print "# filesize optimal shuffle reverse"; } {print $$2, $$5, $$11, $$17 }' > "$@"
 
 build/stats-perfect-best-vs-optimal: build/results--optimal_ordering--maximum_ruleset build/results--perfect_best--maximum_ruleset
 	paste -d ' ' $^ | awk 'BEGIN { print "# optimal/perfect-best"; } $$1 != "#" {print ($$3 * 100 / $$9) - 100 }' > "$@"
@@ -321,6 +325,16 @@ build/include-file-size-and-number-of-log-lines-vs-parsing-time.tex: 			\
 		build/stats-file-size-vs-parsing-time-stddev				\
 		build/stats-number-of-log-lines-vs-parsing-time-stddev
 	perl mk-stats-cached-discarded-include $^ | sed -e 's/\\%//g' > "$@"
+
+# Mean number of bytes per log line
+build/stats-mean-bytes-per-log-line: file-sizes.txt wc.txt
+	paste -d ' ' $^ | awk '{printf "%.3f\n", $$2 / $$4}' > "$@"
+
+build/stats-parsing-time-vs-number-of-log-lines: build/results--optimal_ordering--maximum_ruleset--comment-stripped wc.txt
+	paste -d ' ' $^ | awk '{print $$3, $$8}' > "$@"
+
+build/stats-parsing-time-vs-file-size: build/results--optimal_ordering--maximum_ruleset--comment-stripped file-sizes.txt
+	paste -d ' ' $^ | awk '{print $$3, $$8}' > "$@"
 
 # Average number of rules tried per log line
 build/stats-average-number-of-rules-tried-per-log-line: results/results-full-run/timing

@@ -1,0 +1,9 @@
+load "plot-defaults-ps.gpi"
+
+set xlabel "Log file"
+set ylabel "Mean log line size in bytes"
+set output "../build/graph-mean-bytes-per-log-line.ps"
+
+set format y "% g b"
+
+plot "../build/stats-mean-bytes-per-log-line" using 1 with lines title "Mean log line size"

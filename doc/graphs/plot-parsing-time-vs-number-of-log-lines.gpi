@@ -1,0 +1,13 @@
+load "plot-defaults-ps.gpi"
+
+set xlabel "Number of log lines"
+set ylabel "Parsing time in seconds"
+set output "../build/graph-parsing-time-vs-number-of-log-lines.ps"
+
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
+set xrange [0:6000000]
+set grid noy
+set xtics ("1,000,000" 1000000, "2,000,000" 2000000, "3,000,000" 3000000, "4,000,000" 4000000, "5,000,000" 5000000)
+
+plot "../build/stats-parsing-time-vs-number-of-log-lines" using 2:1 title "Parsing time in seconds"
