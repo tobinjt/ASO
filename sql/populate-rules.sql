@@ -275,7 +275,7 @@ INSERT INTO rules(name, description, program, regex, action, restriction_name, c
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__CLIENT_HOSTNAME__)\[(__CLIENT_IP__)\]>: Client host rejected: Greylisted, see (__DATA__http://postgrey.schweikert.ch/help/[^\s]+|http://isg.ee.ethz.ch/tools/postgrey/help/[^\s]+); from=<(__SENDER__)> to=<(__RECIPIENT__)> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
-        'check_policy_service',
+        'check_policy_service greylisting',
         6
 );
 
@@ -285,7 +285,7 @@ INSERT INTO rules(name, description, program, regex, action, restriction_name, c
         'postfix/smtpd',
         '^__RESTRICTION_START__ <(__RECIPIENT__)>: Recipient address rejected: Greylisted, see (__DATA__http://postgrey.schweikert.ch/help/.*|http://isg.ee.ethz.ch/tools/postgrey/help/.*); from=<(__SENDER__)> to=<__RECIPIENT__> proto=E?SMTP helo=<(__HELO__)>$',
         'DELIVERY_REJECTED',
-        'check_policy_service',
+        'check_policy_service greylisting',
         6
 );
 

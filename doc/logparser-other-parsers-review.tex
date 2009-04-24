@@ -2,12 +2,11 @@
 
 \label{state of the art review}
 
-At the start of this project ten Postfix log file parsers were tested, with
+Ten Postfix log file parsers were tested at the start of this project, with
 the hope of finding a suitable parser to build upon, rather than writing
-one from scratch.  It was quite difficult to find ten parsers to review for
-this project, and the functionality offered by those parsers ranges from
-quite basic to much more mature, depending on the needs of the author of
-the parser.
+one from scratch.  It was quite difficult to find ten parsers to review,
+and the functionality offered by those parsers ranges from quite basic to
+more developed, depending on the needs of the parser's author.
 
 It was hoped to reuse an existing parser rather than writing one from
 scratch, but the existing parsers considered were rejected for one or more
@@ -21,11 +20,11 @@ distinguishing between log lines within one category, e.g.\ not
 distinguishing between different anti-spam techniques causing delivery
 attempts to be rejected.  The first parser
 reviewed~\cite{log-mail-analyser} is the only previously published research
-in this area that the author is aware of; that research aims to show that
+in this area that the author could find; that research aims to show that
 providing the data from log files in a more accessible form is helpful to
 systems administrators.
 
-The ten parsers have been reviewed and compared with \parsername{}, this
+The ten parsers have been compared and contrasted with \parsername{}, this
 project's parser, to show how much effort would have been required to use
 one of those parsers to fulfil the aims and requirements of this project.
 It is important to compare and contrast newly developed algorithms and
@@ -46,18 +45,18 @@ the parsers reviewed in this chapter:
 
     \item Only \parsername{} enables parsing of new log lines without
         extensive and intrusive modifications to the parser; the
-        architecture that enables this is documented in \sectionref{parser
+        architecture enabling this is documented in \sectionref{parser
         architecture}.
 
     \item The reviewed parsers all produce a report of varying complexity
-        and detail, whereas \parsername{} does not; it extracts data and
+        and detail, whereas \parsername{} does not: it extracts data and
         leaves generation of reports to other programs.  Using a
         \acronym{SQL} database simplifies the process of generating such
         reports (discussed in \sectionref{database as API}); some sample
         queries are given in \sectionref{motivation}.  The parser developed
         for this project is designed to enable much more detailed log file
-        analysis by providing a stable platform for subsequent programs to
-        build upon.
+        analysis than other parsers by providing a stable platform for
+        subsequent programs to build upon.
 
     \item Most of the reviewed parsers silently ignore log lines they
         cannot handle, whereas \parsername{} warns about every single log
@@ -86,13 +85,13 @@ Each of the reviewed parsers was tested with the three months
 \sectionref{parser efficiency}.
 
 The data extracted by \parsername{} is documented in
-\sectionref{connections table} and \sectionref{results table}; for
-convenience that list is repeated here: client and server IP address and
+\sectionref{connections table} and \sectionref{results table}, but for
+convenience the list is repeated here: client and server IP address and
 hostname, HELO hostname, queueid, start time, end time, \acronym{SMTP}
 code, enhanced status code, sender, recipient, size, message-id, delay, and
 delays.  Note: \parsername{} correlates log lines by both queueid and
 \acronym{pid} (\sectionref{queueid vs pid}), and it stores each mail's
-queueid, but it does not store each connection's \acronyms{pid}, because a
+queueid, but it does not store each connection's \acronym{pid}, because a
 use has not been identified for that data.
 
 \section{Log Mail Analyser}
@@ -108,64 +107,76 @@ using the myriad of standard Unix text processing utilities already
 available.  It produces a \acronym{CSV} file and either a MySQL or Berkeley
 DB database.  Hardly any documentation is provided with \acronym{LMA}, but
 some documentation is available in~\cite{log-mail-analyser}.  Studying the
-source code is informative, though this author had difficulty as the
-authors of \acronym{LMA} wrote in Italian.
+source code is informative, though this author had some difficulty because
+the authors of \acronym{LMA} wrote in Italian.
 
-\acronym{CSV} is a very simple format where each record is stored in a
-single line, with fields separated by a comma or other punctuation symbol.
-Problems with \acronym{CSV} files include the need to escape separators in
-the data stored, providing multiple values for a field (e.g.\ multiple
-recipients), and adding new fields.  \acronym{CSV} files do not have a
-standard mechanism to document the fields or the separator, unlike
-\acronym{SQL} where every database includes a schema naming the fields and
-the type of data they store (e.g.\ integer, text, timestamp).  The
-\acronym{CSV} record format used by \acronym{LMA} is not documented, but
-the output file contains a comment in Italian giving the format:\newline{}
-\texttt{\# Timestamp|Nome Client|IP Client|IP Server|From|To|Status|Size}
-\newline{}\acronym{LMA} treats \acronym{CSV} lines starting with
-\texttt{\#} as comments, but not all \acronym{CSV} parsers will.
+\begin{description}
 
-Berkeley DB only supports storing simple \textbf{(key, value)} pairs,
-unlike \acronym{SQL} databases that store arbitrary tuples.  In
-\acronym{LMA}'s main table the key is an integer referred to by secondary
-tables, and the value is a \acronym{CSV} line containing all of the data
-for that row.  The secondary by-sender, by-recipient, by-date, and by-IP
-tables use the sender/recipient/date/IP address as the key, and the value
-is a \acronym{CSV} list of integers referring to the keys in the main
-table.  This effectively re-implements \acronym{SQL} foreign keys, but
-without the functionality offered by even the most basic of \acronym{SQL}
-databases, e.g.\ joins, ordering, searches.  It also requires custom code
-to search on a combination of attributes, though the authors of
-\acronym{LMA} did provide some simple reports: IP-STORY, FROM-STORY,
-DAILY-EMAIL, and DAILY-REJECT (all described later).  Berkeley DB appears
-to be the least useful of the three output formats: it does not provide the
-functionality of a basic \acronym{SQL} database, and unlike \acronym{CSV}
-files it cannot be used with standard Unix text processing tools.
+    \item [CSV] \acronym{CSV} is a very simple format where each record is
+        stored in a single line, with fields separated by a comma or other
+        punctuation symbol.  Problems with \acronym{CSV} include the need
+        to escape separators in the data stored, providing multiple values
+        for a field (e.g.\ multiple recipients), and adding new fields.
+        \acronym{CSV} does not have a standard mechanism to document the
+        fields or the separator, unlike \acronym{SQL} where every database
+        includes a schema naming the fields and the type of data they store
+        (e.g.\ integer, text, timestamp).  The \acronym{CSV} record format
+        used by \acronym{LMA} is not documented
+        in~\cite{log-mail-analyser}, but the output file contains a comment
+        in Italian giving the format:\newline{} \tab{} \texttt{\#
+        Timestamp|Nome Client|IP Client|IP
+        Server|From|To\newline{}\tab{}\tab{}|Status|Size}
+        \newline{}\acronym{LMA} treats \acronym{CSV} lines starting with
+        \texttt{\#} as comments, but not all \acronym{CSV} parsers will.
 
-The schema used with the MySQL database is undocumented, but at least it is
-possible to discover the schema with an existing \acronym{SQL} database,
-unlike with Berkeley DB\@; all \acronym{SQL} databases embed the schema
-into the database and provide commands for displaying it.  Berkeley DB does
-not embed a schema in its files, because it does not need one, and
-embedding one would not provide any benefit; it only provides \textbf{(key,
-value)} pairs, so any additional structuring of the data is imposed by the
-application, and it is the responsibility of the author of the application
-to document this structure.  MySQL support was not tested because the
-schema is not documented, and no existing database was available to extract
-the schema from, so the required tables could not be created.
+    \item [Berkeley DB] Berkeley DB only supports storing simple
+        \textbf{(key, value)} pairs, unlike \acronym{SQL} databases that
+        store arbitrary tuples.  In \acronym{LMA}'s main table the key is
+        an integer referred to by secondary tables, and the value is a
+        \acronym{CSV} line containing all of the data for that row.  The
+        secondary by-sender, by-recipient, by-date, and by-IP tables use
+        the sender/recipient/date/IP address as the key, and the value is a
+        \acronym{CSV} list of integers referring to the keys in the main
+        table.  This effectively re-implements \acronym{SQL} foreign keys,
+        but without the functionality offered by even the most basic of
+        \acronym{SQL} databases, e.g.\ joins, ordering, searches.  It also
+        requires custom code to search on a combination of attributes, and
+        the authors of \acronym{LMA} did provide some simple reports:
+        IP-STORY, FROM-STORY, DAILY-EMAIL, and DAILY-REJECT (all described
+        later).  Berkeley DB appears to be the least useful of the three
+        output formats: it does not provide the functionality of a basic
+        \acronym{SQL} database, and unlike \acronym{CSV} files it cannot be
+        used with standard Unix text processing tools.
 
-Whether a MySQL database or Berkeley DB table is chosen in addition to the
+    \item [MySQL] The schema used with the MySQL database is undocumented,
+        but at least it is possible to discover the schema if one has an
+        existing \acronym{SQL} database, unlike with Berkeley DB\@; all
+        \acronym{SQL} databases embed the schema into the database and
+        provide commands for displaying it.  Berkeley DB does not embed a
+        schema in its database files, because it does not need one, and
+        embedding one would not provide any benefit; it only provides
+        \textbf{(key, value)} pairs, so any additional structuring of the
+        data is imposed by the application, and it is the responsibility of
+        the author of the application to document this structure.
+        \acronym['s]{LMA} MySQL support was not tested because the schema
+        is not documented, and no existing database was available to
+        extract the schema from, so the required database could not be
+        created.
+
+\end{description}
+
+Whether a MySQL or Berkeley DB database is chosen in addition to the
 \acronym{CSV} output, \acronym{LMA} stores the following data: time and
 date of the log line, client hostname and IP address, server IP address,
 sender and recipient addresses, \acronym{SMTP} code, and size (for accepted
 mails only).  Unlike \parsername{} it does not store the server hostname,
 HELO hostname, queueid, start and end times, timestamps for each log line,
-enhanced status code, delivery delays, or message id (for accepted mails
+enhanced status code, delivery delays, or message-id (for accepted mails
 only).  Handling of multiple recipients, \acronym{SMTP} codes, or remote
 servers\footnote{A single mail may be sent to multiple remote servers if it
 was addressed to recipients in different domains, or Postfix needs to try
 multiple servers for one or more recipients.} is not explained;
-experimental observation shows that multiple records are added when a mail
+experimental observation shows that multiple records were added when a mail
 had multiple recipients, but the records are not associated or linked in
 any way, and presumably the same approach was taken when there were
 multiple destination servers.
@@ -178,11 +189,11 @@ new block in the correct place; extracting extra data would require
 modifying multiple blocks, regexes, or both.
 
 \acronym{LMA} does not deal with any of the complications discussed in
-\sectionref{complications}, except for correlating log lines by queueid;
-not correlating log lines by \acronym{pid} means it cannot correlate most
-rejected delivery attempts.  It does not differentiate between different
-types of rejections, so it is not suitable for the purposes of this
-project; the data about which restriction caused the rejection is
+\sectionref{complications}, except for correlating log lines by queueid; it
+cannot correlate most rejected delivery attempts because it does not
+correlate log lines by \acronym{pid}.  It does not differentiate between
+different types of rejections, so it is not suitable for the purposes of
+this project; the data about which restriction caused the rejection is
 discarded, whereas the main goal of this project is to retain that
 information to aid optimisation and evaluation of anti-spam techniques.
 \acronym{LMA} fails to parse Postfix log files generated on Solaris hosts
@@ -236,8 +247,8 @@ Notes about the command above:
     \item \acronym{LMA} produces 32 lines in its \acronym{CSV} file for
         every single line it should have produced; the command above
         suppresses duplicate sequential lines.  DAILY-REJECT produces the
-        correct number of output lines, probably because it uses the
-        Berkeley DB files as input rather than the \acronym{CSV} file.
+        correct number of output lines, probably because it searches the
+        Berkeley DB database rather than the \acronym{CSV} file.
 
 \end{itemize}
 
@@ -252,7 +263,7 @@ these differences.
         between the data stored in the \acronym{CSV} and Berkeley DB files.
 
     \item Some records output by DAILY-REJECT are truncated: they are
-        missing the last $|$ that separates fields and also the newline
+        missing the last ``$|$'' that separates fields and also the newline
         following it, so the line containing only a single space is
         concatenated with the record.
 
@@ -298,7 +309,7 @@ Pflogsumm produces a report designed for troubleshooting rather than
 in-depth analysis.  It does not support saving any of the data it extracts
 from log files, and it does not extract any data that it does not require
 to produce its report: the HELO hostname, queueid, start and end times,
-timestamps for each log line, or message id.  Both the parsing and
+timestamps for each log line, or message-id.  Both the parsing and
 reporting are difficult to extend because it is a specialised tool, unlike
 the easily extensible design of \parsername{}.  It does not correlate log
 lines by queueid or \acronym{pid}, and does not need to deal with the
@@ -344,8 +355,8 @@ rejected delivery attempts, an important requirement for this project.
     can parse Postfix logs, import them into a SQL database (or its own
     built-in database), aggregate them, and generate dynamically filtered
     reports, all through a web interface.  Sawmill can perform Postfix
-    analysis on any platform, including Window~[sic], Linux, FreeBSD,
-    OpenBSD, Mac OS, Solaris, other UNIX, and more.
+    analysis on any platform, including Window, Linux, FreeBSD, OpenBSD,
+    Mac OS, Solaris, other UNIX, and more.
 }
 {http://www.thesawmill.co.uk/formats/postfix.html}
 {2008/11/23}
@@ -366,17 +377,16 @@ different sets of data:
 
     \item
         \urlLastChecked[\hfill{}\newline{}]{http://www.thesawmill.co.uk/formats/postfix.html}{2008/11/23}.
-        Fields extracted: from, to, server, UID, relay, status, number of
-        recipients, origin hostname, origin IP address, and virus.  It also
-        counts the number of and total size of all mails delivered.  The
-        fields \texttt{server}, \texttt{uid}, \texttt{relay}, and
+        Fields extracted: from, to, server, uid, relay, status, number of
+        recipients, origin hostname, origin IP address, and virus.  It
+        also counts the number of and total size of all mails delivered.
+        The fields \texttt{server}, \texttt{uid}, \texttt{relay}, and
         \texttt{virus} are not explained in the documentation:
         \texttt{server} is probably the hostname or IP address of the
         server the mail is delivered to; \texttt{relay} might be the
         delivery method: \acronym{SMTP}, local delivery, or \acronym{LMTP};
         \texttt{uid} might be the uid of the user submitting mail locally.
-        Postfix does not do any form of virus checking (though it has many
-        options for cooperating with an external virus scanner), so the
+        Postfix does not do any form of virus checking itself, so the
         \texttt{virus} field is a mystery.
 
     \item
@@ -389,7 +399,7 @@ different sets of data:
         \urlLastChecked[\hfill{}\newline{}]{http://www.thesawmill.co.uk/formats/beta_postfix.html}{2008/11/23}.
         Fields extracted: from, to, client hostname, client IP address,
         relay hostname, relay IP address, status, response code, RBL list,
-        and message id.  It also counts the number and size of all mails
+        and message-id.  It also counts the number and size of all mails
         delivered, processed, blocked, expired, and bounced.
 
 \end{enumerate}
@@ -423,7 +433,7 @@ administrative interface is much easier to use than Splunk's: it took only
 five minutes to start parsing all of the log files in a directory.
 
 When tested with the \numberOFlogFILES{} test log files it performed
-adequately, though the rate it processed log files at did slow down
+adequately, though the rate it processed log files at did slowdown
 noticeably as it progressed.  Sawmill supports reading compressed log files
 but it exhibits a dramatic slow down when doing so: it took six hours to
 parse the first half of the log files, and twelve hours to parse the next
@@ -491,8 +501,8 @@ indexing, doubling the disk space usage.  The next test was to index all
 the log files in a particular directory, but after three hours, reading all
 the available documentation, and numerous futile attempts, the author was
 still unable to index all the log files in a directory using the web
-interface.  Using Splunk's \acronym{CLI} rather than the web interface was
-more successful: the command ``\texttt{splunk find logs
+interface.  Using Splunk's command line interface rather than the web
+interface was more successful: the command ``\texttt{splunk find logs
 }\textit{log-directory\/}'' added 40 of the \numberOFlogFILES{} log files
 to the queue for indexing.  Further attempts enqueued the same 40 log
 files, without explaining why the others were excluded.\footnote{The log
@@ -503,12 +513,12 @@ useful feature for \parsername{}.}  The command did not have an option to
 ensure the log files would be processed in the order they were created,
 though such an option may be neither necessary nor beneficial with Splunk.
 Subsequently the author was successful in adding a single log file at a
-time using the command ``\texttt{splunk add tail }\textit{filename\/}''.  A
-simple loop using that command was enough to add all the desired log files.
-Splunk will periodically check all indexed log files for updates unless
-they are manually removed from its list; this may or may not be useful
-behaviour.  Splunk did not appear to have any difficulty in indexing the
-log files once they had been successfully added to its queue.
+time using the command ``\texttt{splunk add tail }\textit{filename\/}'',
+and then a simple loop using that command was enough to add all the desired
+log files.  Splunk will periodically check all indexed log files for
+updates unless they are manually removed from its list; this may or may not
+be useful behaviour.  Splunk did not appear to have any difficulty in
+indexing the log files once they had been successfully added to its queue.
 \parsername{} parses the log files it is instructed to parse, in the order
 they are given; periodic parsing of log files is a task an administrator
 can easily achieve with \texttt{cron(8)} and \texttt{logrotate(8)}.
@@ -530,7 +540,7 @@ per day.  In 2007, the cheapest licenced version cost \$5000 plus \$1000
 support per annum, and limited the volume of data indexed per day to
 500MB\@.  Prices were removed from the Splunk website during 2008; now
 Splunk's sales team must be asked for a quote.  Median log file size for
-the log files used when evaluating \parsername{} is
+the \numberOFlogFILES{} log files used when evaluating \parsername{} is
 \input{build/include-median-file-size}.
 
 When parsing Postfix log files Splunk parses the standard
@@ -538,9 +548,9 @@ syslog\glsadd{syslog} fields at the beginning of the log line, and extracts
 any \texttt{key=value} pairs occurring after the syslog prologue: to and
 from addresses, HELO hostname, and protocol (\acronym{SMTP},
 \acronym{LMTP}, or \acronym{ESMTP}).  \parsername{} extracts noticeably
-more data (client and server IP address and hostname, queueid, start and
+more data: client and server IP address and hostname, queueid, start and
 end times, timestamps for each log line, \acronym{SMTP} and enhanced status
-codes, delivery delays, and message-id), though it does not make the full
+codes, delivery delays, and message-id.  \parsername{} does not make the full
 text of the log line available; a few minutes work could add this to
 \parsername{} if desired, but it would greatly increase the size of the
 database.
@@ -656,7 +666,7 @@ log files, without substantial data loss, would require fully parsing the
 Postfix log files without using AWStats, i.e.\ would require writing a
 separate parser anyway.  It may be possible to use AWStats' graphing
 capabilities to generate reports, by generating input for AWStats from the
-database populated by \parsername{}.
+database populated by \parsername{}, but the author has not attempted that.
 
 \section{Anteater}
 
@@ -728,13 +738,13 @@ hostname, not both; it omits the HELO hostname, queueid, \acronym{SMTP} and
 enhanced status codes, size of each accepted mail, start and end times,
 timestamps for each log line, and message-id\@.  It extracts one piece of
 data that \parsername{} does not: how many times delivery was deferred for
-each mail; this information can be determined from the database populated
+each mail; this information can be calculated from the database populated
 by \parsername{} if desired.  Unlike \parsername{}, YAALA does not maintain
 separate counters for different delivery attempt rejections, precluding the
 possibility of using the collected data for optimisation, testing, or
 understanding of restrictions.  YAALA's Postfix log file parser does not
 deal with the complications explained in \sectionref{complications}, except
-that it does correlate log lines by queueid.
+that it does correlate log lines by queueid (but not by \acronym{pid}).
 
 YAALA provides a mini-language based on \acronym{SQL} that is used when
 generating reports; sample reports can be seen at
@@ -745,8 +755,8 @@ cannot be used to extract data for external use, merely to create reports.
 Only data selected by the query will be saved in the data store; other data
 will be discarded, and removed from the data store if already present.
 
-Testing YAALA was unsuccessful because all the select clauses tried
-produced a similar error message:
+Testing YAALA was unsuccessful because all the queries produced a similar
+error message:
 \newline{}\tab{}\texttt{lib/Yaala/Data/Core.pm: Unavailable aggregation
 requested:} \newline{}\tab{}\tab{}\texttt{``bytes''.  Returning 0.}
 \newline{}  The underlying reason for this is that YAALA only parsed 408
@@ -794,31 +804,28 @@ used, etc\empty{}.\/}
 
 Examining the source code reveals that Lire looks for
 \texttt{<key>=<value>} pairs in each log line, extracts them, and
-correlates the data by queueid.  This approach will extract the following
-data: HELO hostname, queueid, \acronym{SMTP} code, sender and recipient
-addresses, and size of accepted mails.  Lire misses the following fields
-extracted by \parsername{}: client and server IP address and hostname,
-start and end times, enhanced status code, delivery delays, timestamps of
-each log line, and message-id\@.
+correlates the data by queueid (but not by \acronym{pid}).  This approach
+will extract the following data: HELO hostname, queueid, \acronym{SMTP}
+code, sender and recipient addresses, and size of accepted mails.  Lire
+misses the following fields extracted by \parsername{}: client and server
+IP address and hostname, start and end times, enhanced status code,
+delivery delays, timestamps of each log line, and message-id\@.
 
 Lire supports multiple output formats for the reports it generates (text,
 HTML, PDF, and Excel 95) but the reports do not appear to be customisable,
 and are not as detailed as Pflogsumm's; \parsername{} does not produce any
 reports.  Lire supports saving extracted data for later report generation,
-but the format of this data store is undocumented; given the source code it
-should be possible, with enough time and effort, to understand the format.
-\parsername{} uses an \acronym{SQL} database to make accessing the
-extracted data as effortless as possible.  In general, Lire has poor
-documentation.
+but the format of this data store is undocumented.  \parsername{} uses an
+\acronym{SQL} database to make accessing the extracted data as effortless
+as possible.  In general, Lire has poor documentation.
 
 Similar to AWStats and Logrep, Lire attempts to correlate log lines by
-queueid, but not by \acronym{pid}, so the complete list of recipients for a
-mail should be available; its parser extracts only part of the available
-data and does not attempt to deal with the other complications described in
-\sectionref{complications}.  When testing Lire on the \numberOFlogFILES{}
-test log files it performed reasonably well: the numbers it reports appear
-accurate, and the subset verified by the author were correct.  Its report
-provides summaries of:
+queueid, but not by \acronym{pid}, so the complete list of recipients for
+each delivered mail should be available; it does not attempt to deal with
+the other complications described in \sectionref{complications}.  When
+testing Lire on the \numberOFlogFILES{} test log files it performed
+reasonably well: the numbers it reports appear accurate, and the subset
+verified by the author were correct.  Its report provides summaries of:
 
 \begin{itemize}
 
@@ -844,13 +851,13 @@ provides summaries of:
 Lire would not be a suitable base for this project: it does not extract
 enough data; does not deal with rejected delivery attempts in any way; does
 not make the extracted data easily available to other programs.  Its parser
-is in-extensible; it could easily be replaced, but that would require
-writing a parser from scratch, so would not be any less work.
-\parsername{} could possibly be used to parse Postfix log files for Lire,
-but the difficulty may outweigh the benefits, e.g.\ Lire's data store may
-not be capable of storing the data extracted by \parsername{}, but the lack
-of documentation hinders any evaluation.  As with YAALA this approach has
-not been attempted by the author.
+is not extensible; it could easily be replaced, but that would require
+writing a parser from scratch, so would not be any less work than writing
+\parsername{}.  \parsername{} could possibly be used to parse Postfix log
+files for Lire, but the difficulty may outweigh the benefits, e.g.\ Lire's
+data store may not be capable of storing the data extracted by
+\parsername{}, but the lack of documentation hinders any evaluation.  As
+with YAALA this approach has not been attempted by the author.
 
 \section{Logrep}
 
@@ -897,8 +904,8 @@ documentation is available on its website (\parsername{} provides copious
 documentation).  It requires a web browser to interact with it, so
 automated log file processing would be difficult, whereas enabling
 automated processing is a key part of \parsernames{} design.  Sadly, all
-the author's attempts to use Logrep failed, as it was unable to access the
-log files selected for parsing; this appears to be a bug rather than
+the author's attempts to use Logrep failed, because it was unable to access
+the log files selected for parsing; this appears to be a bug rather than
 operator error.  If the problem was caused by operator error, the interface
 needs improvement because the (minimal) instructions were followed as
 closely as possible, and multiple attempts were made.  Because parsing
@@ -974,8 +981,8 @@ understanding of Postfix log files achieved by \parsername{}.
             documentation for the format of its data store.
 
         \item [\nichi{}] \parsername{} defers report generation to
-            subsequent programs, but all the necessary data and
-            documentation to produce reports is provided.
+            subsequent programs, but all the necessary documentation to
+            produce reports is provided.
 
         \item [\niepsilon{}] \parsername{} aims to have thorough and
             complete documentation, but the author cannot provide an

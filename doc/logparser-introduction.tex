@@ -23,12 +23,12 @@ techniques.
 The approach chosen to measure performance is to analyse the log files
 produced by the \acronym{MTA} in use, Postfix, rather than modifying its
 source code to generate statistics: this approach improves the chances of
-other Postfix users testing and using the software developed for this
-project.  The need arose for a parser capable of dealing with the great
-number and variety of log lines produced by Postfix: the parser must be
-designed and implemented so that adding support for parsing new inputs is a
-simple task, because the log lines to be parsed will change over time.
-This variety in log lines occurs for several reasons:
+other Postfix users testing, using, and benefiting from the software
+developed for this project.  The need arose for a parser capable of dealing
+with the great number and variety of log lines produced by Postfix: the
+parser must be designed and implemented so that adding support for parsing
+new inputs is a simple task, because the log lines to be parsed will change
+over time.  This variety in log lines occurs for several reasons:
 
 \begin{itemize}
 
@@ -61,8 +61,8 @@ or users.\footnote{This was the first real foray the author, a Systems
 Administrator for a network of over 2000 computers and over 1800 users,
 took into processing Postfix log files.}  Very few will have performed
 in-depth parsing and analysis of their log files, where the parsing must
-correlate the log lines per-connection or per-queueid rather than
-processing log lines independently.  One of the barriers to this kind of
+correlate each connection or mail's log lines rather than
+processing each log line in isolation.  One of the barriers to this kind of
 processing is the unstructured nature of Postfix log files, where each log
 line was added on an ad hoc basis when a requirement was discovered or new
 functionality was added.\footnote{A history of all changes made to Postfix
@@ -109,16 +109,16 @@ work or a high level of understanding of the parsing process and the
 parser's internal workings.
 
 This architecture is the basis of \parsername{}, a program that parses
-Postfix log files and places the resulting data into a database for later
-analysis.  The gathered data can be used to optimise current anti-spam
-defences, to produce statistics showing how effective each technique in use
-is, or to provide a baseline to test new anti-spam measures against.
-Numerous other uses are possible for such data: improving server
-performance by identifying troublesome destinations and reconfiguring
-appropriately; identifying regular high volume uses (e.g.\ customer
-newsletters) and restricting those uses to off-peak times, or providing a
-dedicated service for them; detecting virus outbreaks that propagate via
-mail; as a base for billing customers on a shared server.  Preserving the
+Postfix log files and places the resulting data into a \acronym{SQL}
+database for later analysis.  The gathered data can be used to optimise
+current anti-spam defences, to produce statistics showing how effective
+each technique in use is, or to provide a baseline to test new anti-spam
+measures against.  Numerous other uses are possible for such data:
+improving server performance by identifying troublesome destinations and
+reconfiguring appropriately; identifying regular high volume uses (e.g.\
+customer newsletters) and restricting those uses to off-peak times or
+providing a dedicated service for them; detecting virus outbreaks that
+propagate via mail; billing customers on a shared server.  Preserving the
 raw data enables a multitude of uses far beyond those conceived of by the
 author.
 
@@ -147,8 +147,8 @@ components of the architecture are described, accompanied by the many
 complications encountered when parsing Postfix log files, and other details
 of the implementation.
 
-Chapter~\ref{Evaluation} evaluates \parsernames{} efficiency, discussing
-the various optimisations implemented in the parser, and the effect they
+Chapter~\ref{Evaluation} evaluates \parsernames{} efficiency, exploring
+the various optimisations implemented in the parser and the effect they
 have.  It also discusses the coverage achieved by \parsername{} over
 \numberOFlogFILES{} log files, with separate sections for the number of log
 lines correctly recognised, and the number of connections and mails whose
@@ -164,8 +164,8 @@ Appendix~\ref{Glossary} provides a glossary of terms used in the thesis.
 Appendix~\ref{Acronyms} contains a list of acronyms used in the thesis;
 uncommon acronyms will have an entry in the glossary too.
 
-Appendix~\ref{Postfix Daemons} provides a brief description of Postfix
-daemons.
+Appendix~\ref{Postfix Daemons} provides a brief description of each Postfix
+daemon.
 
 \section{Previously Published Work}
 

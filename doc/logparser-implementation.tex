@@ -1,4 +1,4 @@
-\chapter{Postfix Parser Implementation}
+\chapter{Postfix Log Parser}
 
 \label{Postfix Parser Implementation}
 
@@ -813,7 +813,7 @@ of times each action was invoked when parsing \numberOFlogFILES{} log
 files, excluding log files 22 \& 62--68}{Number of times each action was
 invoked excluding 22 and 62--68}
 
-\subsection{Actions In The \parsernamelong{}}
+\subsection{Description Of Each Action}
 
 \label{actions in detail in implementation}
 
@@ -1085,11 +1085,11 @@ are the penultimate topic (\sectionref{rule conditions in implementation}),
 and the section concludes with some suggestions for how to detect
 overlapping rules.
 
-\subsection{Example Rule}
+\subsection{Sample Rule}
 
 \label{example rule in implementation}
 
-The example rule in \tableref{Example rule in implementation table}
+The sample rule in \tableref{Example rule in implementation table}
 recognises the log line that results from Postfix rejecting a delivery
 attempt because the domain part of the sender address does not have an A,
 AAAA, or MX DNS entry, i.e.\ mail could not be delivered to any address in
@@ -1109,7 +1109,7 @@ NOQUEUE: reject: RCPT from smtp.example.com[192.0.2.1]:
 
 % do not reformat this!
 \begin{table}[thbp]
-    \caption{Example of a rule used by \parsernameshort{}}
+    \caption{Sample rule used by \parsernameshort{}}
     \empty{}\label{Example rule in implementation table}
     \begin{tabular}{ll}
         \tabletopline{}%

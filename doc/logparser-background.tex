@@ -14,24 +14,26 @@ anti-spam restrictions and policy servers.
 
 This work is part of a larger project to optimise a mail server's
 Postfix-based anti-spam restrictions, generate statistics and graphs, and
-provide a platform on which new restrictions can be evaluated to determine
+provide a platform on which new restrictions can be developed and evaluated to determine
 if they are beneficial in the fight against spam.  The program written for
-this project, \parsername{}, parses Postfix log files and populates a
+this project, \parsername{}, parses Postfix log files and populates an
+\acronym{SQL}
 database with the data gleaned from those log files, providing a consistent
 and simple view of the log files that future tools can utilise.  The
 gathered data can be used to optimise current anti-spam measures, to
 provide a baseline to test new anti-spam measures against, or to produce
 statistics showing how effective those measures are.
 
-Determining which Postfix restrictions reject the highest number of
-delivery attempts is a short example of the optimisation possible using
-data from the database:
+Determining the ten Postfix restrictions that reject the highest number of
+delivery attempts is a short example of the analysis possible using data
+from the database:
 
 \begin{verbatim}
 SELECT name, description, restriction_name, hits_total
     FROM rules
     WHERE action = 'DELIVERY_REJECTED'
-    ORDER BY hits_total DESC;
+    ORDER BY hits_total DESC
+    LIMIT 10;
 \end{verbatim}
 
 If the database supports sub-selects (where the results of one query are
@@ -66,11 +68,11 @@ output similar to \tableref{Sample output from SQL query}.
 \end{table}
 
 
-Another example is determining which restrictions are not effective:
-\figureref{Sample SQL query showing ineffective restrictions} shows which
-restrictions rejected fewer than 100 delivery attempts in the last log file
-parsed, and the percentage of total rejections in that log file that each
-of those restrictions represents.
+Another example is determining which restrictions are not effective: the
+query in \figureref{Sample SQL query showing ineffective restrictions}
+shows which restrictions rejected fewer than 100 delivery attempts in the
+last log file parsed, and the percentage of total rejections in that log
+file that each of those restrictions represents.
 
 \begin{figure}[thbp]
     \caption{Sample SQL query showing ineffective restrictions}
@@ -91,27 +93,27 @@ of those restrictions represents.
 \end{figure}
 
 The sample database queries yield summary statistics about the efficiency of
-anti-spam techniques.  These statistics are far less feasible to assess
-directly from log files without prior pre-processing into a database in the
-fashion proposed, implemented, and tested herein.
+anti-spam techniques.  Analysis of this kind is much easier to perform when
+the data source is a database that when trying to directly analyse log
+files.
 
 \section{Simple Mail Transfer Protocol (SMTP)}
 
 \SMTPglossaryDescription{} Despite the simplicity of the protocol, many
-virus and spam sending programs fail to implement it properly, so requiring
-strict adherence to the protocol specification is beneficial in protecting
-against spam and viruses.\footnote{Originally all mail servers adhered to
-the principle of \textit{Be liberal in what you accept, and conservative in
-what you send\/} from \acronym{RFC}~760~\cite{rfc760}, but unfortunately
-that principle was written in a friendlier time.  Given the deluge of spam
-that mail servers are subjected to daily, a more appropriate maxim could
-be: \textit{Require strict adherence to relevant \acronyms{RFC}; implement
-the strongest restrictions you can; relax the restrictions and adherence
-only when legitimate mail is impeded.\/}  It is neither as friendly nor as
-catchy, but it more accurately reflects the current circumstances.} A
-typical \acronym{SMTP} conversation resembles the following (the lines
-starting with a three digit number are sent by the server, all other lines
-are sent by the client):
+viruses and spam sending programs fail to implement it properly, so
+requiring strict adherence to the protocol specification is beneficial in
+protecting against spam and viruses.\footnote{Originally all mail servers
+adhered to the principle of \textit{Be liberal in what you accept, and
+conservative in what you send\/} from \acronym{RFC}~760~\cite{rfc760}, but
+unfortunately that principle was written in a friendlier time.  Given the
+deluge of spam that mail servers are subjected to daily, a more appropriate
+maxim could be: \textit{Require strict adherence to relevant
+\acronyms{RFC}; implement the strongest restrictions you can; relax the
+restrictions and adherence only when legitimate mail is impeded.\/}  It is
+neither as friendly nor as catchy, but it more accurately reflects the
+current circumstances.} A typical \acronym{SMTP} conversation resembles the
+following (the lines starting with a three digit number are sent by the
+server, all other lines are sent by the client):
 
 \begin{verbatim}
 220 smtp.example.com ESMTP
@@ -158,15 +160,16 @@ sent to its users as possible, e.g.\ by accepting sender or recipient
 addresses that were not enclosed in \texttt{<>}, or by ignoring the absence
 of a HELO command.\footnote{The HELO command is the first command sent by
 the client in the \acronym{SMTP} conversation; it is required by the
-protocol, but its original purpose was to detect a server trying to deliver
-mail to itself, so some implementations omitted it.}  Given the volume of
-spam sent daily, this liberal approach is no longer viable.
+protocol, but its original purpose was to prevent mail loops by detecting a
+server trying to deliver mail to itself, so some implementations omitted
+it.}  Given the volume of spam sent daily, this liberal approach is no
+longer viable.
 
 \section{Postfix}
 
 \label{postfix background}
 
-Postfix is a \glsfirst{MTA} with the following design aims (in order of
+Postfix is a \acronym{MTA} with the following design aims (in order of
 importance): security, flexibility of configuration, scalability, and high
 performance.  It features extensive optional anti-spam restrictions,
 allowing an administrator to employ those restrictions which they judge
@@ -175,27 +178,29 @@ Postfix's author.  These restrictions can be selectively applied, combined,
 and bypassed on a per-client, per-recipient, or per-sender basis, allowing
 different levels of stricture and permissiveness.  Administrators can
 supply their own rejection messages to make it clear to senders why their
-mail was rejected.  Policy servers (\sectionref{policy servers}) provide a
-simple way to write new restrictions without having to modify Postfix's
-source code.  Unfortunately this flexibility has a cost: the complexity
-Postfix's log files.  Although it is usually relatively simple to use
-standard Unix text processing utilities to determine the fate of an
-individual mail, sometimes it can be quite difficult.  For most mails the
-journey is simple and brief, but the remainder can be quite complex (see
-\sectionref{complications} for details).
+mail was rejected.  Policy servers (soon to be described in
+\sectionref{policy servers}) provide a simple way to write new restrictions
+without having to modify Postfix's source code.  Unfortunately this
+flexibility has a cost: the complexity of Postfix's log files.  Although it
+is usually relatively simple to use standard Unix text processing utilities
+to determine the fate of an individual mail, sometimes it can be quite
+difficult.  For most mails the journey through Postfix is simple and brief,
+but the remainder can be quite complex (see \sectionref{complications} for
+details).
 
 Postfix's design follows the Unix philosophy of \textit{``Write programs
 that do one thing and do it well''\/}~\cite{unix-philosophy}, and it is
 separated into multiple components that each perform one of the tasks
-required of an \acronym{MTA}, e.g.\ receive mail, send mail, local delivery
-of mail;\ full details can be found in~\cite{postfix-overview}.  Postfix's
-design is strongly influenced by security concerns: those components that
-interact with other hosts are not privileged,\footnote{Privilege means the
-power to perform actions that are limited to the administrator, and not
-available to ordinary users.} so bugs in those components will not give an
-attacker extra privileges; those components that are privileged do not
-interact with other hosts, making it much more difficult for an attacker to
-exploit any bugs that may exist in those components.
+required of an \acronym{MTA}, e.g.\ receive mail, send mail, deliver mail
+to a user's mailbox;\ full details can be found in~\cite{postfix-overview}.
+Postfix's design is strongly influenced by security concerns: those
+components that interact with other hosts are not
+privileged,\footnote{Privilege means the power to perform actions that are
+limited to the administrator, and are not available to ordinary users.} so
+bugs in those components will not give an attacker extra privileges; those
+components that are privileged do not interact with other hosts, making it
+much more difficult for an attacker to exploit any bugs that may exist in
+those components.
 
 \subsection{Mixing And Matching Postfix Restrictions}
 
@@ -232,7 +237,7 @@ restrictions, e.g.\newline{}
 
 The restriction \texttt{check\_client\_access} checks if the IP address of
 the connected client is found in the specified table and returns the
-associated action if found; the method of searching the file is dependant
+associated result if found; the method of searching the file is dependant
 on the type of the lookup table~\cite{postfix-lookup-tables}.  Other
 restrictions determine their result by consulting external sources,
 e.g.\newline{} \tab{}\texttt{reject\_rbl\_client
@@ -253,9 +258,9 @@ the web server is exempt because the legacy applications running on it lack
 authentication support.  The restriction list is evaluated from top to
 bottom: \texttt{permit\_sasl\_authenticated} permits authenticated clients;
 an exception is made for the web server in the
-\texttt{check\_client\_access} check, and other local machines are
-rejected, because they must be unauthenticated to reach that point in the
-restriction list.
+\texttt{check\_client\_access} check, and then other local machines are
+rejected, because to continue past \texttt{permit\_sasl\_authenticated} the
+client must not have authenticated.
 
 \begin{verbatim}
   main.cf:
@@ -270,13 +275,13 @@ restriction list.
     192.0.2.0/24    reject "Please authenticate to send mail"
 \end{verbatim}
 
-That example also shows that it is trivial to supply a custom rejection
-message.  When the result is the name of another restriction Postfix will
-evaluate that restriction, allowing restrictions to be chosen based on the
-client IP address, client hostname, HELO hostname, sender address, or
-recipient address.  For example, the administrator may require that all
-clients on the local network have valid DNS entries, to prevent people
-sending mail from unknown machines; one example of how to achieve this is:
+That example also shows how to supply a custom rejection message.  When the
+result of a lookup is the name of another restriction Postfix will evaluate
+that restriction; this allows restrictions to be chosen based on the client
+IP address, client hostname, HELO hostname, sender address, or recipient
+address.  For example, the administrator may require that all clients on
+the local network have valid DNS entries, to prevent people sending mail
+from unknown machines; one example of how to achieve this is:
 
 \begin{verbatim}
   main.cf:
@@ -292,8 +297,8 @@ sending mail from unknown machines; one example of how to achieve this is:
 The administrator can define new restrictions as a list of existing
 restrictions, allowing arbitrarily long and complex user-defined sequences
 of lookups, restrictions, and exceptions.  Postfix tries to protect the
-administrator from misconfiguration in as far as is reasonable, e.g.\ the
-restriction \texttt{check\_helo\_mx\_access} cannot cause a mail to be
+administrator from misconfiguration in as far as it reasonably can, e.g.\
+the restriction \texttt{check\_helo\_mx\_access} cannot cause a mail to be
 accepted, because the parameter it checks (the hostname given in the HELO
 command) is under the control of the remote client.  Despite this, it is
 possible for the administrator to make catastrophic mistakes, e.g.\
@@ -313,12 +318,12 @@ server is given state information by Postfix (sample state information is
 shown in \tableref{Example attributes sent to policy servers}) and returns
 a result (reject, permit, dunno, or a rejection name) as described in
 \sectionref{Mixing and matching Postfix restrictions}.  A policy server can
-perform more complex checks than those provided by Postfix: a trivial
-example is allowing addresses associated with the payroll system to send
-mail on the third Tuesday after pay day only, to help prevent problems from
-phishing mails using faked sender addresses.  For example, a phishing mail
-might pretend that the payroll system had a disastrous disk failure, and
-until the server is replaced all salary payments will have to be processed
+perform more complex checks than those provided by Postfix, such as
+allowing addresses associated with the payroll system to send mail on the
+third Tuesday after pay day only, to help prevent problems from phishing
+mails using faked sender addresses.  For example, a phishing mail might
+pretend that the payroll system had a disastrous disk failure, and until
+the server is replaced all salary payments will have to be processed
 manually, so please reply to this mail with your name, address, and bank
 account details; the criminal can then use any details sent to him to help
 with identity theft.
@@ -352,23 +357,22 @@ Some widely deployed policy servers:
 
 \begin{itemize}
 
-    \item \acronym{SPF} checks:
-        \urlLastChecked{http://www.openspf.org/}{2009/04/21}.
+    \item Checking if the client satisfies a domain's \acronym{SPF}
+        records, \urlLastChecked{http://www.openspf.org/}{2009/04/21}.
         \acronym{SPF} records specify which mail servers are allowed to
         send mail using sender addresses from a particular domain.  The
         intention is to reduce spam from faked sender addresses,
-        backscatter~\cite{postfix-backscatter}, and
-        Joe~jobs~\glsadd{Joe-job}.  There has been considerable resistance
-        to \acronym{SPF} because it breaks or vastly complicates some
-        commonly-used features of \acronym{SMTP}, e.g.\ forwarding mail
-        from one domain to another when a user moves.
+        backscatter, and joe~jobs~\glsadd{Joe-job}.  There has been
+        considerable resistance to \acronym{SPF} because it breaks or
+        vastly complicates some commonly-used features of \acronym{SMTP},
+        e.g.\ forwarding mail from one domain to another when a user moves.
 
     \item Greylisting,
         \urlLastChecked{http://www.greylisting.org/}{2009/04/21}, is a
         technique that temporarily rejects a delivery attempt when the
-        triple of \newline{} \tab{}\texttt{(sender address, recipient
+        tuple of \newline{} \tab{}\texttt{(sender address, recipient
         address, remote IP address)}\newline{} has not been seen before; on
-        second and subsequent delivery attempts from that triple the mail
+        second and subsequent delivery attempts from that tuple the mail
         will be accepted.  This blocks spam from some senders because
         maintaining a list of failed addresses and retrying after a
         temporary failure is uneconomical for a spam sender, but a
@@ -380,19 +384,16 @@ Some widely deployed policy servers:
         senders adapt, but it does block a large percentage of spam mail at
         the moment; the most effective restrictions from the
         \numberOFlogFILES{} log files used when generating the results in
-        \sectionref{Evaluation} are shown in \tableref{Most effective
-        Postfix restrictions}.  The table shows that greylisting is worth
-        using at the moment, particularly when you take into account its
-        position as the final restriction that a mail must overcome in the
+        \sectionref{Evaluation} are shown in \tableref{Sample output from
+        SQL query}.  That table shows that greylisting is worth using at
+        the moment, particularly when you take into account its position as
+        the final restriction that a mail must overcome in the
         configuration used on the mail server that generated the log files:
         on that server greylisting only takes effect for mails that have
         passed all other restrictions.  Some problems may be encountered
         when using greylisting: some servers fail to retry after a
         temporary failure, or legitimate mail may be delayed, particularly
         when coming from a pool of servers.
-
-        \showtable{build/include-restriction-summary-table}{Most effective
-        Postfix restrictions}{Most effective Postfix restrictions}
 
     \item Scoring systems such as postfwd,
         \urlLastChecked{http://postfwd.org/}{2009/04/21}, perform tests on
@@ -402,14 +403,14 @@ Some widely deployed policy servers:
         attempt is rejected.  The administrator must manually whitelist
         clients if they are to bypass a Postfix restriction, whereas using
         a threshold that requires a delivery attempt to hit several scored
-        restrictions will allow mail from clients that would be rejected by
-        a binary restriction.
+        restrictions will allow delivery attempt that would be rejected by
+        a boolean restriction.
 
 \end{itemize}
 
 \section{Summary}
 
-This section has provided background information useful in understanding
+This chapter has provided background information useful in understanding
 this thesis, starting with the motivation behind the project, continuing
 with an introduction to \acronym{SMTP}, and finishing with Postfix, its
 anti-spam restrictions, and its support for policy servers.

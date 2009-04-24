@@ -110,7 +110,7 @@ results to the database, parsing all \numberOFlogFILES{} log files took
 \input{build/include-skip-inserting-as-percentage-of-inserting} of the
 execution time when saving results to the database.
 
-\subsection{Characteristics Of The Input Log Files}
+\subsection{Characteristics Of The \numberOFlogFILES{} Log Files}
 
 The \numberOFlogFILES{} log files used when generating statistics have
 fairly consistent sizes and contents, except for two groups of log files:
@@ -197,8 +197,9 @@ log file size vs number of log lines factor table}
 number of rules used per log line}{Mean number of rules used per log line}
 
 \showgraph{build/graph-average-number-of-rules-tried-per-program}{Mean
-number of rules used per log line for each Postfix component over all log
-files}{Mean number of rules used per log line for each Postfix component}
+number of rules used per log line for each Postfix component over
+\numberOFlogFILES{} log files}{Mean number of rules used per log line for
+each Postfix component}
 
 \showgraph{build/graph-mean-bytes-per-log-line}{Mean log line size in
 bytes}{Mean log line size in bytes}
@@ -435,12 +436,13 @@ original regex, but it is the responsibility of the programmer to do so;
 \parsername{} does this with every rule's regex when the rules are loaded
 from the database.
 
-\Graphref{Increase in parsing time when not caching compiled regexes graph}
-shows the effect that not caching compiled regexes has on parser
-performance, with mean and standard deviation in \tableref{Increase in
-parsing time when not caching compiled regexes table}.  For typical log
-files, the mean increase in parsing time when not caching compiled regexes
-is \input{build/include-cached-regexes-vs-discarded-regexes-mean}.  Caching
+\Graphref{Percentage increase in parsing time when not caching compiled
+regexes graph} shows the effect that not caching compiled regexes has on
+parser performance, with mean and standard deviation in
+\tableref{Percentage increase in parsing time when not caching compiled
+regexes table}.  For typical log files, the mean increase in parsing time
+when not caching compiled regexes is
+\input{build/include-cached-regexes-vs-discarded-regexes-mean}.  Caching
 compiled regexes is probably the single most effective optimisation
 possible in \parsername{}, and was quite simple to implement: the framework
 compiles each rule's regex when the ruleset is loaded, and uses the
@@ -455,13 +457,13 @@ efficient than usual, the mean number of rules used for each log line is
 higher than usual, and more regexes will need to be compiled when
 recognising each log line.
 
-\showgraph{build/graph-cached-regexes-vs-discarded-regexes}{Increase in
-parsing time when not caching compiled regexes}{Increase in parsing time
-when not caching compiled regexes graph}
+\showgraph{build/graph-cached-regexes-vs-discarded-regexes}{Percentage
+increase in parsing time when not caching compiled regexes}{Percentage
+increase in parsing time when not caching compiled regexes graph}
 
-\showtable{build/include-cached-regexes-vs-discarded-regexes}{Increase in
-parsing time when not caching compiled regexes}{Increase in parsing time
-when not caching compiled regexes table}
+\showtable{build/include-cached-regexes-vs-discarded-regexes}{Percentage
+increase in parsing time when not caching compiled regexes}{Percentage
+increase in parsing time when not caching compiled regexes table}
 
 \FloatBarrier{}
 
