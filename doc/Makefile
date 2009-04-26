@@ -236,7 +236,7 @@ build/graph-%.pdf: build/plot-%-pdf.gpi
 # in recreating it each time make runs.
 .PRECIOUS: build/plot-%-pdf.gpi
 build/plot-%-pdf.gpi: graphs/plot-%.gpi
-	sed -e '/^load/s,","../graphs/,' -e 's/ps/pdf/g' "$<" > "$@"
+	sed -e '/^load/s,","../graphs/,' -e 's/\([-.]\)ps/\1pdf/g' "$<" > "$@"
 
 build/results-%: results/results-%
 	perl ../stats/parse-stats "$<" > "$@"

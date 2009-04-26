@@ -65,6 +65,18 @@ contribute to the figures: in particular, the vast amount of mail resulting
 from the mail loops noticeable in later graphs is not reflected in these
 figures.
 
+The standard deviation for mails received on weekend days is
+quite high, because approximately four times the usual number of mails was
+received on the weekend contained in the $16^{th}$ and $17^{th}$ log files.
+The standard deviation for all days is high because the high number of
+mails received during log files 16, 17, 35, 36, 39, and 40.  Interestingly,
+the extra mail received during log files 35, 36, 39, and 40 stopped during
+log files 37 and 38, which may indicate that it was a virus infected office
+machine that was turned off over the weekend.  Unfortunately, the source
+cannot be investigated properly because all the mails in question were
+relayed via the department's secondary MX (a backup mail server, hosted
+elsewhere), so the log files showing the original source were unavailable.
+
 \showgraph{build/graph-mails-received}{Number of mails received via SMTP
 per day}{Mails received per day}
 
@@ -515,9 +527,9 @@ efforts have concentrated on recognition of log lines for two reasons:
         most optimised parsing time by less than half that.  If processing
         of recognised log lines was optimised to 1\% of its original
         parsing time, it would be only slightly more effective than optimal
-        ordering, but it would be vastly harder to implement; optimising
-        actions would not reduce parsing time enough to justify the amount
-        of effort required.
+        ordering, but it would be vastly more difficult to implement;
+        optimising actions would not reduce parsing time enough to justify
+        the amount of effort required.
 
     \item The process of recognising log lines is not parser-specific
         (excluding evaluation of rule conditions), so the optimisations

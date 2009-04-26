@@ -817,8 +817,11 @@ action}{Distribution of rules per action}
 
 \showgraph{build/graph-number-of-action-invocations-excluding-22-and-62--68}{Number
 of times each action was invoked when parsing \numberOFlogFILES{} log
-files, excluding log files 22 \& 62--68}{Number of times each action was
-invoked excluding 22 and 62--68}
+files, excluding log files 22 \& 62--68 because their contents are
+extremely skewed by mail loops}{Number of times each action was invoked
+excluding 22 and 62--68}
+
+\FloatBarrier{}
 
 \subsection{Description Of Each Action}
 
@@ -961,10 +964,10 @@ action.  Each action is passed the same arguments:
         delivery attempts.
 
     \item [MAIL\_DISCARDED] Sometimes mail is discarded by Postfix, e.g.\
-        mail submitted locally that is larger than the limit configured by
-        the administrator.  This action is used for those mails; it invokes
-        the \action{COMMIT} action, but is a separate action to simplify
-        further analysis.
+        mail submitted locally on the server using \daemon{pickup} that is
+        larger than the limit configured by the administrator.  This action
+        is used for those mails; it invokes the \action{COMMIT} action, but
+        is a separate action to simplify further analysis.
 
     \item [MAIL\_QUEUED] This action represents Postfix picking a mail from
         the queue to deliver.  This action needs to deal with out of order
@@ -977,13 +980,14 @@ action.  Each action is passed the same arguments:
         action to distinguish successful delivery attempts from other
         delivery attempts.
 
-    \item [MAIL\_TOO\_LARGE] When a client tries to send a mail larger than
-        the local server accepts, the mail will be discarded by Postfix and
-        the client informed of the problem.  The mail may have been
-        accepted and partially transferred; if so the parser will have a
-        data structure that must be disposed of.  See \sectionref{timeouts
-        during data phase} for full details; although that describes
-        timeouts, the processing is the same for mails that are too large.
+    \item [MAIL\_TOO\_LARGE] When a remote client tries to send a mail over
+        \acronym{SMTP} that is larger than the server accepts, the mail
+        will be discarded by Postfix and the client informed of the
+        problem.  The mail may have been accepted and partially
+        transferred; if so the parser will have a data structure that must
+        be disposed of.  See \sectionref{timeouts during data phase} for
+        full details; although that describes timeouts, the processing is
+        the same for mails that are too large.
 
     \item [PICKUP] The \action{PICKUP} action corresponds to the
         \daemon{pickup} service processing a locally submitted mail.  A new
@@ -1438,8 +1442,9 @@ cascaded parsing would be dynamically applied by the framework.
 
 Rule conditions as part of the architecture have already been documented in
 \sectionref{rule conditions in architecture}, and they can be very complex
-and difficult to evaluate.  In contrast, \parsername{} uses quite simple
-rule conditions: each rule has a \texttt{program} attribute that specifies
+and difficult to evaluate.  Complex conditions are not required in parsers
+based on this architecture: \parsername{} uses quite simple
+rule conditions.  Each rule has a \texttt{program} attribute that specifies
 the Postfix component whose log lines it recognises, and each log line
 contains the name of the Postfix component that produced it; when trying to
 recognise log lines, the framework will only use rules where the two are
@@ -1575,7 +1580,7 @@ improvements that have been identified in \parsername{}.
 
     \item \parsername{} does not limit the size of the database, which will
         grow without bounds unless the user deletes connections and results
-        from it.  This is both a limitation and a benefit: the benefit is
+        from it.  This is both a benefit and a limitation: the benefit is
         that data will never be unexpectedly deleted, but the limitation is
         that the user must manage the size of the database.
 
