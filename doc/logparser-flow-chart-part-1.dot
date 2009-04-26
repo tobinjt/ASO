@@ -52,7 +52,7 @@ digraph logparser {
     /* NODE LABELS */
     rejection                       [label = "4: Postfix rejects a\nmail delivery attempt"]
     connect                         [label = "1: Connection from\nremote host."]
-    clone                           [label = "5: Clone data when\nmail is accepted"]
+    clone                           [label = "5: Clone data when\na mail is accepted"]
 
     /* Disconnect without queueid */
     disconnect                      [label = "6: Client disconnects,\neither successfully\nor with an error."]

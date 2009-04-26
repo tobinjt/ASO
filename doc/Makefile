@@ -575,6 +575,7 @@ check: lines-from-paragraphs
 	ack -i 'perfect best (?!oracle)' build/logparser*.tex
 	grep 'begin{table}' logparser-*.tex | grep -v -F 'begin{table}[thbp]' || true
 	grep 'set output.*pdf' graphs/* || true
+	grep 'XX[X]' logparser*.tex
 
 check-contractions:
 	ACK_PAGER=less ack "(?!(Postfix|mail|client|server|rule|parser|regex|user|program|architecture|restriction|sender|connection|word|line|framework)'s)\b\w+'s" logparser*.tex
