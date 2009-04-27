@@ -261,6 +261,12 @@ build/stats-perfect-best-and-perfect-worst-vs-shuffle: build/results--perfect_be
 build/stats-file-size-optimal-shuffle-reverse: file-sizes.txt build/results--optimal_ordering--maximum_ruleset--comment-stripped build/results--shuffle_ordering--maximum_ruleset--comment-stripped build/results--reverse_ordering--maximum_ruleset--comment-stripped
 	paste -d ' ' $^ | awk 'BEGIN { print "# filesize optimal shuffle reverse"; } {print $$2, $$5, $$11, $$17 }' > "$@"
 
+build/stats-file-size-discarded: file-sizes.txt build/results--optimal_ordering--discard_compiled_regexes--comment-stripped
+	paste -d ' ' $^ | awk 'BEGIN { print "# filesize discarded"; } {print $$2, $$5 }' > "$@"
+
+build/stats-file-size-oracle: file-sizes.txt build/results--perfect_best--maximum_ruleset--comment-stripped
+	paste -d ' ' $^ | awk 'BEGIN { print "# filesize oracle"; } {print $$2, $$5 }' > "$@"
+
 build/stats-perfect-best-vs-optimal: build/results--optimal_ordering--maximum_ruleset build/results--perfect_best--maximum_ruleset
 	paste -d ' ' $^ | awk 'BEGIN { print "# optimal/perfect-best"; } $$1 != "#" {print ($$3 * 100 / $$9) - 100 }' > "$@"
 
@@ -358,7 +364,7 @@ build/include-optimal-and-reverse-vs-shuffle.tex: 			\
 # Perfect-best/optimal/shuffle/reverse/perfect-worst ratios: stddev, mean, etc.
 # These partially depend on optimal/shuffle/reverse ratios generated above.
 build/stats-perfect-best-vs-shuffle-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
-	awk '!/#/ {print $$1}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Oracle" > "$@"
+	awk '!/#/ {print $$1}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "The oracle" > "$@"
 
 build/stats-perfect-worst-vs-shuffle-stddev: build/stats-perfect-best-and-perfect-worst-vs-shuffle
 	awk '!/#/ {print $$2}' "$<" | perl mk-mean-stddev-for-three-groups-of-log-files "Oracle" > "$@"
@@ -575,7 +581,7 @@ check: lines-from-paragraphs
 	ack -i 'perfect best (?!oracle)' build/logparser*.tex
 	grep 'begin{table}' logparser-*.tex | grep -v -F 'begin{table}[thbp]' || true
 	grep 'set output.*pdf' graphs/* || true
-	grep 'XX[X]' logparser*.tex
+	grep 'XX[X]' logparser*.tex || true
 
 check-contractions:
 	ACK_PAGER=less ack "(?!(Postfix|mail|client|server|rule|parser|regex|user|program|architecture|restriction|sender|connection|word|line|framework)'s)\b\w+'s" logparser*.tex

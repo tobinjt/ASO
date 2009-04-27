@@ -1,6 +1,6 @@
 load "plot-defaults-ps.gpi"
 
-set xlabel "Log file size, in MB"
+set xlabel "Log file size in MB"
 set ylabel "Parsing time"
 set output "../build/graph-file-size-optimal-shuffle-reverse.ps"
 # Put the legend at the top left, Left justified text.

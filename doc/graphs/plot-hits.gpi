@@ -10,6 +10,6 @@ set key top left Left reverse
 #set autoscale
 set yrange [0:9e6]
 # Disable scientific notation
-set format y "% .0f"
+set ytics ("0" 0, "1,000,000" 1000000, "2,000,000" 2000000, "3,000,000" 3000000, "4,000,000" 4000000, "5,000,000" 5000000, "6,000,000" 6000000, "7,000,000" 7000000, "8,000,000" 8000000, "9,000,000" 9000000)
 
 plot "../build/stats-hits" using 1:2 title "Number of log lines recognised"

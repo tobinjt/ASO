@@ -9,6 +9,6 @@ set format y "% g%%"
 set grid noy
 set yrange [0:120]
 
-plot "../build/stats-perfect-best-and-perfect-worst-vs-shuffle" using 1 with lines title "Oracle", \
+plot "../build/stats-perfect-best-and-perfect-worst-vs-shuffle" using 1 with lines title "The oracle", \
     "../build/stats-optimal-and-reverse-vs-shuffle" using 1 with lines title "Optimal ordering", \
     100 with lines title "Shuffled ordering"

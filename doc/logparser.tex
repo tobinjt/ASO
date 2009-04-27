@@ -261,6 +261,10 @@
     774%
 }
 
+\newcommand{\numberOFlogFILESallYEARS}[0]{%
+    2 years, 1\textonehalf{} months%
+}
+
 \newcommand{\numberOFrules}[0]{%
     184%
 }
@@ -300,10 +304,10 @@
 }
 
 % The name of the program, so I only have to change it in one place.
-\newcommand{\parsername}{\acronym{PLP}}
-\newcommand{\parsernames}{\acronym['s]{PLP}}
-\newcommand{\parsernamelong}{Postfix Log Parser}
-\newcommand{\parsernameshort}{PLP}
+\newcommand{\parsername}[1][]{\acronym[#1]{PLP}}
+\newcommand{\parsernames}[0]{\acronym['s]{PLP}}
+\newcommand{\parsernamelong}[0]{Postfix Log Parser}
+\newcommand{\parsernameshort}[1][]{PLP#1}
 
 \newcommand{\specialpage}[1]{%
     \phantomsection{}
@@ -425,8 +429,6 @@ will, and encouragement.
     efficiency and coverage of Postfix log files, demonstrating that the
     conflicting goals of efficiency and accuracy can be balanced, and that
     one need not be sacrificed to achieve the other.
-
-    XXX WOULD GRAPHS LOOK BETTER IF THE TICS WERE ON THE OUTSIDE\@?
 
     \SVN$Id$
 
