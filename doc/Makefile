@@ -531,6 +531,10 @@ build/include-sample-sql-output.tex: db.full-run.sq3 generate-sample-sql-output.
 build/include-sample-sql-query.tex: generate-sample-sql-output.sql
 	( echo '\begin{verbatim}'; cat "$<"; echo '\end{verbatim}' ) > "$@"
 
+# Number of rules tried by different orderings.
+build/stats-number-of-rules-used-%: results/results--%_ordering--maximum_ruleset
+	awk '/num_rules_tried:/ { print $$3 }' "$<"/timing.*.1 > "$@"
+
 # Database schema
 build/database-schema.pdf: database-schema.ipe
 	ipetoipe -pdf "$<" "$@"

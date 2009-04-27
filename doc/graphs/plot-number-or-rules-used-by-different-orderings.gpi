@@ -1,0 +1,15 @@
+load "plot-defaults-ps.gpi"
+
+set xlabel "Log file"
+set ylabel "Number of rules used"
+set output "../build/graph-number-or-rules-used-by-different-orderings.ps"
+# Remove the horizontal lines.
+set grid noy
+# Put the legend at the top left, Left justified text.
+set key top left Left reverse
+set ytics ("20,000,000" 20000000, "40,000,000" 40000000, "60,000,000" 60000000, "80,000,000" 80000000, "100,000,000" 100000000, "120,000,000" 120000000)
+set yrange [0:1.2e8]
+
+plot "../build/stats-number-of-rules-used-reverse" using 1 with lines title "Reverse ordering", \
+     "../build/stats-number-of-rules-used-shuffle" using 1 with lines title "Shuffled ordering", \
+     "../build/stats-number-of-rules-used-optimal" using 1 with lines title "Optimal ordering"

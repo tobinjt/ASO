@@ -9,5 +9,5 @@ set autoscale x
 # Remove the horizontal lines.
 set grid noy
 
-plot "../build/stats-file-size-discarded" using ($1 / (1024 * 1024)):2 title "Optimal ordering, discarding compiled regexes", \
+plot "../build/stats-file-size-discarded" using ($1 / (1024 * 1024)):2 title "Optimal ordering, not caching compiled regexes", \
      "../build/stats-file-size-optimal-shuffle-reverse" using ($1 / (1024 * 1024)):2 title "Optimal ordering, caching compiled regexes"
