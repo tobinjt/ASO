@@ -606,18 +606,18 @@ This complication is handled by several actions: \action{POSTFIX\_RELOAD} (1),
 \label{out of order log lines}
 
 Occasionally, a log file will have out of order log lines that cannot be
-dealt with by the techniques described in \sectionref{tracking re-injected
-mail}, \sectionref{discarding cleanup log lines}, or \sectionref{pickup
-logging after cleanup}.  In the \numberOFlogFILES{} log files used in
-\sectionref{Evaluation} this problem occurs only five times in 60,721,709
-log lines.  All five occurrences have the same characteristics: the
-\daemon{local} log line showing delivery to a user's mailbox comes after
-the \daemon{qmgr} log line showing removal of the mail from the queue
-because delivery is complete.  This causes several problems: the data in
-the state tables for the mail is not complete, so it cannot be entered into
-the database; a new mail is created when the \daemon{local} log line is
-processed and remains in the state tables; four warnings are issued per
-pair of out of order log lines.
+dealt with by the various techniques described in \sectionref{tracking
+re-injected mail}, \sectionref{discarding cleanup log lines}, or
+\sectionref{pickup logging after cleanup}.  In the \numberOFlogFILES{} log
+files used in \sectionref{Evaluation} this problem occurs only five times
+in 60,721,709 log lines.  All five occurrences have the same
+characteristics: the \daemon{local} log line showing delivery to a user's
+mailbox comes after the \daemon{qmgr} log line showing removal of the mail
+from the queue because delivery is complete.  This causes several problems:
+the data in the state tables for the mail is not complete, so it cannot be
+entered into the database; a new mail is created when the \daemon{local}
+log line is processed and remains in the state tables; four warnings are
+issued per pair of out of order log lines.
 
 The \action{COMMIT} action examines the list of programs that have produced
 log lines for each mail, checking the list against a table of known-good
