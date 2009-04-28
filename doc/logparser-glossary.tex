@@ -16,8 +16,10 @@
 
 \newglossaryentry{Backscatter}{name={Backscatter},description={
     When a spam sender or virus sends mail with forged sender addresses,
-    innocent servers are flooded with undeliverable mail notifications;
-    this is called backscatter.
+    innocent mail servers are flooded with undeliverable mail notifications
+    from badly configured mail servers that either do not verify recipient
+    addresses before accepting deliver attempts, or automatically reply to
+    mail identified as spam; this is called backscatter.
 }}
 
 \newglossaryentry{Joe-job}{name={Joe~Job},description={
@@ -38,11 +40,12 @@
 
 \newglossaryentry{<>}{name={$<>$},sort={<>},description={
     $<>$ is the sender address used for sending bounce notifications.  In
-    the \acronym{SMTP} conversation all addresses are enclosed in $<>$, so
+    the \acronym{SMTP} conversation, all addresses are enclosed in $<>$, so
     \texttt{username@domain} is sent as \texttt{$<$username@domain$>$};
     thus $<>$ is actually an empty address, but it is always written as
-    $<>$ for clarity.  All mail servers must accept mail sent from $<>$, or
-    they are in violation of \acronym{RFC}~2821~\cite{RFC2821}.
+    $<>$ for clarity.  Mail servers must not unconditionally reject mail
+    sent from $<>$, or they are in violation of
+    \acronym{RFC}~2821~\cite{RFC2821}.
 }}
 
 \newglossaryentry{queueid}{name={queueid},description={
@@ -56,19 +59,18 @@
     A hashing function transforms a string of characters to a number.  A
     common usage is to maintain a data structure indexed by strings in an
     efficient manner.  A full description is beyond the scope of this
-    thesis, further information can be found at~\cite{hash-functions}.
+    thesis, further information can be found in~\cite{hash-functions}.
 }}
 
 \newglossaryentry{awk}{name={AWK},description={
-    AWK is a general purpose programming language that is designed for
-    processing text and is available as a standard utility on all Unix
-    systems.
+    AWK is a general purpose programming language designed for processing
+    text that is available as a standard utility on all Unix systems.
 }}
 
 \newglossaryentry{syslog}{name={Syslog},description={
-    Syslog is the standard logging mechanism on Unix systems: a program
-    sends log messages to syslog, then syslog filters and stores the
-    messages as configured by the administrator.
+    Syslog is the standard logging mechanism used on Unix systems: a
+    program sends log messages to syslog, then syslog filters and stores
+    the messages as configured by the administrator.
 }}
 
 \newglossaryentry{mail bomb}{name={Mail Bomb},description={

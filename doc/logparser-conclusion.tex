@@ -35,15 +35,15 @@ and framework (\sectionref{parser design}) is unusual, partly because the
 three are separated so completely.  Although parsers are often divided into
 separate source code files (the combination of lex \&
 yacc~\cite{lex-and-yacc-book} being a common example), the parts are
-usually quite internally interdependent, and will be combined into a
-complete parser by the compilation process; in contrast \parsername{} keeps
-the rules and actions separate until the parser runs.  This separation
-enables the optimisations discussed in \sectionref{parser efficiency}, and
-it also allows different approaches to ruleset management, e.g.\ using
-machine learning techniques to seamlessly create or alter rules to
-recognise new inputs (\sectionref{adding new rules in architecture}).  The
-decoupling of rules from actions allows different sets of rules to be used
-with one set of actions, e.g.\ a parser might have actions to process
+usually quite internally interdependent, and will be combined by the
+compilation process; in contrast, \parsername{} keeps the rules and actions
+separate until the parser runs (\sectionref{framework in implementation}).
+This separation enables the optimisations discussed in \sectionref{parser
+efficiency}, and it also allows different approaches to ruleset management,
+e.g.\ using machine learning techniques to seamlessly create or alter rules
+to recognise new inputs (\sectionref{adding new rules in architecture}).
+The decoupling of rules from actions allows different sets of rules to be
+used with one set of actions, e.g.\ a parser might have actions to process
 versions one and two of a file format; by choosing the appropriate ruleset
 the parser will parse version one, or version two, or both versions.  A
 general purpose framework can be written, so that writing a parser just
@@ -73,7 +73,7 @@ and, whether directly or indirectly, the next state.
 
 When writing \parsername{}, the real difficulties arose once the parser was
 successfully recognising almost all of the log lines, because most of the
-irregularities and complications explained in \sectionref{complications}
+irregularities and complications documented in \sectionref{complications}
 started to become apparent then.  Adding new rules to deal with numerous
 infrequently occurring log line variants was a simple if tiresome task,
 whereas dealing with mails that were missing information or where Postfix's
@@ -91,7 +91,7 @@ was modified to deal with the irregularities, without adversely affecting
 existing parsing.  The complications documented in
 \sectionref{complications} are presented in the order they were solved in,
 and that order closely resembles the frequency in which they occur; the
-most frequently occurring complications dominate the warning messages
+most frequently occurring complications dominated the warning messages
 produced, and so naturally they were the first complications to be dealt
 with.
 
@@ -123,20 +123,21 @@ of this project: using machine-learning algorithms to analyse the data and
 optimise the set of anti-spam defences in use, followed by identifying
 patterns in the data that could be used to write new anti-spam techniques
 to recognise and reject spam rather than accepting it.  The database
-provides the data in a normalised form that is far easier to use as input
-to new or existing implementations of machine-learning algorithms than
-trying to adapt each algorithm to extract data directly from log files.
-New policy servers, written to implement new anti-spam measures, can be
-tested or trained by using the collected data to simulate mail delivery
-attempts; this would allow simple, fast, reproducible testing, without the
-risk of adversely affecting a production mail server.  Development of
-\parsername{} is finished, i.e.\ it correctly parses Postfix log files, and
-in future it will only require maintenance; however, one avenue of future
-development under consideration is to extend it to parse non-Postfix log
-lines, e.g.\ SpamAssassin or Amavisd-new log lines.  \parsername{} can
-easily be extended to do this, but it requires a method of associating the
-non-Postfix log lines with the existing data structures and state tables,
-so that all of the data for a mail delivery attempt can be stored together.
+(\sectionref{database}) provides the data in a normalised form that is far
+easier to use as input to new or existing implementations of
+machine-learning algorithms than trying to adapt each algorithm to extract
+data directly from log files.  New policy servers, written to implement new
+anti-spam measures, can be tested or trained by using the collected data to
+simulate mail delivery attempts; this would allow simple, fast,
+reproducible testing, without the risk of adversely affecting a production
+mail server.  Development of \parsername{} is finished, i.e.\ it correctly
+parses Postfix log files, and in future it will only require maintenance;
+however, one avenue of future development under consideration is to extend
+it to parse non-Postfix log lines, e.g.\ SpamAssassin or Amavisd-new log
+lines.  \parsername{} can easily be extended to do this, but it requires a
+method of associating the non-Postfix log lines with the existing data
+structures and state tables, so that all of the data for a mail delivery
+attempt can be stored together.
 
 \parsername{} provides a basis for systems administrators to monitor the
 effectiveness of their anti-spam measures and adapt their defences to

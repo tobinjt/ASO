@@ -84,7 +84,7 @@
         \acronym{LMTP} is a protocol derived from \acronym{SMTP} that
         removes the need for the server to maintain a mail delivery queue,
         instead relying on the client to maintain it.  Typically the client
-        is an \acronym{MTA}, and the server a delivery agent or a mail
+        is an \acronym{MTA}, and the server is a delivery agent or a mail
         store.  Full details are available in~\cite{lmtp-rfc}.
     }
 }
@@ -102,7 +102,9 @@
         \acronym{SMTP}\@.  Users submit mail to an \acronym{MTA} via their
         mail client (e.g.\ Microsoft Outlook, Thunderbird, webmail
         services); the sending \acronym{MTA} transfers the mail to the
-        receiving \acronym{MTA}.
+        receiving \acronym{MTA}, which forwards the mail to another
+        recipient, or delivers the mail to a user's mailbox or a program
+        such as a mailing list manager.
     }
 }
 
@@ -282,7 +284,7 @@
         terminal or non-terminal symbols.  Every \acronym{CFG} can be
         recognised by a \acronym{PDA}, and \acronyms{PDA} cannot recognise
         more complicated grammars, so \acronyms{CFG} and \acronyms{PDA} are
-        equivalent.
+        equivalent in computational power.
     }
 }
 
@@ -300,10 +302,9 @@
         A \acronym{PDA} can manipulate the stack during state transitions
         by adding or removing a single piece of data, and when determining
         which state transition to take, the piece of data on the top of the
-        stack can be used in addition to the input.  In addition to the
-        languages recognised by \acronyms{FA}, \acronyms{PDA} can recognise
-        languages of the form $a^{n}b^{n}$, i.e.\ any number of one symbol
-        followed by the same number of another symbol.
+        stack can be used in addition to the input.  \acronym{PDA} can
+        recognise all the languages recognised by \acronym{FA}, and can
+        also recognised languages of the form $a^{n}b^{n}$.
     }
 }
 
