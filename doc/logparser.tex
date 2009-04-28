@@ -327,12 +327,7 @@
     \specialpageheading{#1}
 }
 
-\begin{document}
-
-\pagestyle{empty}
-
-\specialpage{Title}
-
+\newcommand{\titleandauthor}[0]{%
 \begin{center}
 
     {\Huge Parsing Postfix Log Files}
@@ -342,6 +337,19 @@
     {\LARGE John Tobin}
 
     \vfill{}
+
+\end{center}
+}
+
+\begin{document}
+
+\pagestyle{empty}
+
+\specialpage{Title}
+
+\titleandauthor{}
+
+\begin{center}
 
     A thesis submitted to the University of Dublin, in fulfilment of the
     requirements for the degree of Master of Science in Computer Science.
@@ -404,39 +412,55 @@ assistance, and guidance.
 \noindent{}I am grateful to my wife, Ariane Tobin, for her patience, good
 will, and encouragement; without her, I would not have accomplished this.
 
-\begin{abstract}
+\newpage{}
 
-    \setcounter{page}{4}
-    \phantomsection{}
-    \addcontentsline{toc}{chapter}{Abstract}
+% Abstract
+\specialpage{Abstract}
 
-    Parsing Postfix log files is much more difficult than it first appears,
-    but it \textit{is\/} possible to achieve a high degree of accuracy in
-    understanding Postfix log files, and subsequently in reconstructing the
-    actions taken by Postfix when processing mail delivery attempts.  This
-    thesis describes the creation of a parser for Postfix log files,
-    documenting the architecture developed for this project and the parser
-    that implements it, the difficulties encountered and the solutions
-    developed.  The parser stores data gleaned from the log files in an SQL
-    database; the gathered data can be used to optimise current anti-spam
-    measures, to produce statistics showing how effective those measures
-    are, or to provide a baseline to test new anti-spam measures against.
-    The Postfix log file parser needs to be very precise and strict when
-    parsing, yet must allow users to easily adapt or extend it to parse new
-    log lines, without requiring that the user have an in-depth knowledge
-    and understanding of the parser's internal workings.  The newly
-    developed architecture is designed to make the process of parsing new
-    inputs as simple as possible, enabling users to trivially add new rules
-    (to parse variants of known inputs) and relatively easily add new
-    actions (to process a previously unknown category of inputs).  The
-    parser implemented for this project is evaluated on the criteria of
-    efficiency and coverage of Postfix log files, demonstrating that the
-    conflicting goals of efficiency and accuracy can be balanced, and that
-    one need not be sacrificed to achieve the other.
+~\empty{}
 
-    \SVN$Id$
+\vfill{}
+\vfill{}
+\vfill{}
 
-\end{abstract}
+%\titleandauthor{}
+
+\begin{center}
+    \textbf{Abstract}
+\end{center}
+
+Parsing Postfix log files is much more difficult than it first appears, but
+it \textit{is\/} possible to achieve a high degree of accuracy in
+understanding Postfix log files, and subsequently in reconstructing the
+actions taken by Postfix when processing mail delivery attempts.  This
+thesis describes the creation of a parser for Postfix log files,
+documenting the architecture developed for this project and the parser that
+implements it, the difficulties encountered and the solutions developed.
+The parser stores data gleaned from the log files in an SQL database; the
+gathered data can be used to optimise current anti-spam measures, to
+produce statistics showing how effective those measures are, or to provide
+a baseline to test new anti-spam measures against.  The Postfix log file
+parser needs to be very precise and strict when parsing, yet must allow
+users to easily adapt or extend it to parse new log lines, without
+requiring that the user have an in-depth knowledge and understanding of the
+parser's internal workings.  The newly developed architecture is designed
+to make the process of parsing new inputs as simple as possible, enabling
+users to trivially add new rules (to parse variants of known inputs) and
+relatively easily add new actions (to process a previously unknown category
+of inputs).  The parser implemented for this project is evaluated on the
+criteria of efficiency and coverage of Postfix log files, demonstrating
+that the conflicting goals of efficiency and accuracy can be balanced, and
+that one need not be sacrificed to achieve the other.
+
+\SVN$Id$
+
+\vfill{}
+\vfill{}
+\vfill{}
+
+~\empty{}
+
+\newpage{}
 
 % Include the header across the top of each page, after the declaration.
 \pagestyle{headings}
