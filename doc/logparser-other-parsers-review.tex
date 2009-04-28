@@ -819,13 +819,14 @@ but the format of this data store is undocumented.  \parsername{} uses an
 \acronym{SQL} database to make accessing the extracted data as effortless
 as possible.  In general, Lire has poor documentation.
 
-Similar to AWStats and Logrep, Lire attempts to correlate log lines by
-queueid, but not by \acronym{pid}, so the complete list of recipients for
-each delivered mail should be available; it does not attempt to deal with
-the other complications described in \sectionref{complications}.  When
-testing Lire on the \numberOFlogFILES{} test log files it performed
-reasonably well: the numbers it reports appear accurate, and the subset
-verified by the author were correct.  Its report provides summaries of:
+Similar to AWStats and Logrep (\sectionref{Logrep review}), Lire attempts
+to correlate log lines by queueid, but not by \acronym{pid}, so the
+complete list of recipients for each delivered mail should be available; it
+does not attempt to deal with the other complications described in
+\sectionref{complications}.  When testing Lire on the \numberOFlogFILES{}
+test log files it performed reasonably well: the numbers it reports appear
+accurate, and the subset verified by the author were correct.  Its report
+provides summaries of:
 
 \begin{itemize}
 
@@ -860,6 +861,8 @@ data store may not be capable of storing the data extracted by
 with YAALA this approach has not been attempted by the author.
 
 \section{Logrep}
+
+\label{Logrep review}
 
 \parserblurb{%
     Logrep is a secure multi-platform framework for the collection,

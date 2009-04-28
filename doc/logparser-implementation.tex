@@ -23,20 +23,19 @@ arise sometimes requires the parser to discard log lines (e.g.\
 \sectionref{aborted delivery attempts}), and, less frequently, to discard a
 data structure (e.g.\ \sectionref{timeouts during data phase}).
 \parsername{} can parse log files from Postfix version 2.2 through to
-version 2.5, and should be able to parse log files from later versions with
-only minor modifications or an updated ruleset.  The parser's task is to
-follow the journey each mail takes through Postfix, combining the data
-captured by rules into a coherent whole, and saving it in a useful and
-consistent form.  The intermingling of
-log lines from different mails immediately rules out the possibility of
-handling each mail in isolation; the parser must handle multiple mails in
-parallel, each potentially at a different stage in its journey, without any
-interference between mails --- except in the minority of cases where
-intra-mail interference is required, e.g.\ mail re-injected for forwarding
-(\sectionref{Re-injected mails}).  The best way to deal with intermingling
-of log lines is to maintain state information for every unfinished mail,
-and to manipulate the appropriate mail correctly for each log line
-encountered.
+version 2.5, and should parse log files from later versions with only minor
+modifications or an updated ruleset.  The parser's task is to follow the
+journey each mail takes through Postfix, combining the data captured by
+rules into a coherent whole, and saving it in a useful and consistent form.
+The intermingling of log lines from different mails immediately rules out
+the possibility of handling each mail in isolation; the parser must handle
+multiple mails in parallel, each potentially at a different stage in its
+journey, without any interference between mails --- except in the minority
+of cases where intra-mail interference is required, e.g.\ mail re-injected
+for forwarding (\sectionref{Re-injected mails}).  The best way to deal with
+intermingling of log lines is to maintain state information for every
+unfinished mail, and to manipulate the appropriate mail correctly for each
+log line encountered.
 
 This chapter begins with the assumptions under which \parsername{} was
 designed and written, followed by a flowchart showing the most common paths
@@ -89,13 +88,13 @@ implemented.
 
     \item The log files are whole and complete: nothing has been removed,
         either deliberately or accidentally (e.g.\ log file rotation gone
-        awry, file system filling up, logging system unable to cope with
-        the volume of log messages).  On a well run mail server it is
-        extremely unlikely that any of these problems will arise, though
-        the likelihood increases when suffering from a deluge of spam or a
-        mail loop.  When parsing individual log files in isolation, it is
-        highly likely that some mails will have log lines in previous log
-        files, and others will have log lines in subsequent log files; to
+        awry, filesystem filling up, logging system unable to cope with the
+        volume of log messages).  On a well run mail server it is extremely
+        unlikely that any of these problems will arise, though the
+        likelihood increases when suffering from a deluge of spam or a mail
+        loop.  When parsing individual log files in isolation, it is highly
+        likely that some mails will have log lines in previous log files,
+        and others will have log lines in subsequent log files; to
         alleviate this problem \parsername{} supports saving and loading
         its state tables, so they can be preserved between log files.
 
@@ -863,15 +862,17 @@ action.  Each action is passed the same arguments:
 
             \squeezeitems{}
 
-            \item [timestamp] The time the line was logged at.
+            \item [timestamp] The time the log line was written to the log
+                file.
 
             \item [program] The name of the program that generated the log
                 line.
 
-            \item [pid] The \acronym{pid} of the process that logged the
-                line.
+            \item [pid] The \acronym{pid} of the process that generated the
+                log line.
 
-            \item [host] The hostname of the server the line was logged on.
+            \item [host] The hostname of the server the log line was
+                generated on.
 
             \item [text] The remainder of the log line, i.e.\ the message
                 logged by the program and recognised by the rule.
@@ -1021,11 +1022,11 @@ action.  Each action is passed the same arguments:
     \item [SMTPD\_WATCHDOG] \daemon{smtpd} processes have a watchdog timer
         to deal with unusual situations; after five hours the timer will
         expire and the \daemon{smtpd} will exit.  This occurs very
-        infrequently, because there are many other timeouts that should
-        occur in the intervening hours, e.g.\ timeouts for DNS requests or
-        timeouts reading data from the client.  The active connection for
-        that \daemon{smtpd} must be cleaned up, entered in the database,
-        and deleted from the state tables.
+        infrequently, because many other timeouts should occur in the
+        intervening hours, e.g.\ timeouts for DNS requests or timeouts
+        reading data from the client.  The active connection for that
+        \daemon{smtpd} must be cleaned up, entered in the database, and
+        deleted from the state tables.
 
     \item [TIMEOUT] The connection with the remote client timed out, so the
         mail being transferred must be discarded by Postfix.  The mail may
@@ -1243,7 +1244,7 @@ steps:
 
 \begin{description}
 
-    \item [Pre-process the file.]  The modified algorithm begins by
+    \item [Pre-process the input.]  The modified algorithm begins by
         leveraging the knowledge gained from writing rules and developing
         \parsername{}; it performs many substitutions on the input log
         lines, replacing commonly occurring variable terms (e.g.\ email

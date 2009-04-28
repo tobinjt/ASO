@@ -562,7 +562,6 @@ these three conditions:
 
 \begin{enumerate}
 
-    % Reduce inter-item spacing because each item is a single line.
     \squeezeitems{}
 
     \item total $<$ 10
@@ -628,8 +627,8 @@ input, and the regex engine backtracks many times because of alteration or
 nested quantifiers; successful matching is generally quite fast with such
 regexes, so problematic regexes may go unnoticed for a long time.  For
 example, with most regex engines matching double quoted strings with
-\verb!\"([^"\\]+|\\.)*"\!  is very fast when there is a match, but when the
-match fails its computational complexity for a string of length $n$ is
+\verb!\"([^"\\]+|\\.)*"\!  is very fast when a match can be found, but when
+the match fails its computational complexity for a string of length $n$ is
 $O(2^{n})$; see~\cite{mastering-regular-expressions} for in-depth
 discussion of nested quantifiers, backtracking, alteration, and capturing
 groups.  Pathological regexes that consume excessive CPU time can be
