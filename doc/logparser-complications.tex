@@ -142,8 +142,9 @@ as if the child mail does not have an origin.  Subsequently, the parent
 mail will log the creation of the child mail, e.g.\ parent mail
 \texttt{3FF7C4317} creates child mail \texttt{56F5B43FD}\@:
 
-\texttt{3FF7C4317: to=<username@example.com>, relay=local, \hfill{}
-\newline{} \tab{} \tab{} delay=0, status=sent (forwarded as 56F5B43FD)}
+\texttt{\tab{} 3FF7C4317: to=<username@example.com>, relay=local, \hfill{}
+\newline{} \tab{} \tab{} \tab{} delay=0, status=sent (forwarded as
+56F5B43FD)}
 
 The sample log line above would be processed by the \action{TRACK} action,
 which creates the child mail if it does not exist in the state tables,

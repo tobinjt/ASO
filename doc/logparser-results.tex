@@ -59,13 +59,14 @@ for a university department; the benefit of using this mail server is that
 its log files exhibit the idiosyncrasies and peculiarities that a mail
 server in the wild must deal with, but the downside is that significantly
 altering its Postfix configuration to accommodate this project is not an
-option.  \Graphref{Mails received per day} and \tableref{Number of mails
-received per day: statistics} show that, as expected, it accepts far more
-mails on weekdays than at weekends.  Note that mail generated on the server
-(e.g.\ bounce notifications, mail re-injected for forwarding, mail sent
-from mailing lists) does not contribute to these figures: in particular,
-the vast amounts of mail resulting from the mail loops noticeable in later
-graphs are not reflected in these figures.
+option.  \Graphref{Mails received per day} shows the number of mails
+accepted over \acronym{SMTP}, with mean and standard deviation in
+\tableref{Number of mails received per day: statistics}; as expected, far
+more mails are accepted on weekdays than at weekends.  Note that mail
+generated on the server (e.g.\ bounce notifications, mail re-injected for
+forwarding, mail sent from mailing lists) does not contribute to these
+figures: in particular, the vast amounts of mail resulting from the mail
+loops noticeable in later graphs are not reflected in these figures.
 
 The standard deviation for mails received on weekend days is quite high,
 because approximately four times the usual number of mails were received on
@@ -110,15 +111,15 @@ log files were used, each containing one day's log lines; the three months
 of contiguous log files contain \numberOFlogLINEShuman{} log lines and
 total \input{build/include-total-size-of-93-log-files}.  Each log file was
 parsed 10 times, and the mean parsing time calculated for each log file.
-The computer used for test runs was a Dell Optiplex 745, shown in
-\tableref{Details of the computer used to generate statistics}; it was
-dedicated to the task of gathering statistics from test runs, and did not
-run any other programs while test runs were in progress.  Saving results to
-the database was disabled for the test runs, because that dominates the run
-time of the parser, and the tests are aimed at measuring the speed of
-\parsername{} rather than the speed of the database and the disks it is
-stored on.  Parsing all \numberOFlogFILES{} log files in one run without
-saving results to the database took
+The computer used for test runs was a Dell Optiplex 745, with components
+shown in \tableref{Details of the computer used to generate statistics}; it
+was dedicated to the task of gathering statistics from test runs, and did
+not run any other programs while test runs were in progress.  Saving
+results to the database was disabled for the test runs, because that
+dominates the run time of the parser, and the tests are aimed at measuring
+the speed of \parsername{} rather than the speed of the database and the
+disks it is stored on.  Parsing all \numberOFlogFILES{} log files in one
+run without saving results to the database took
 \input{build/include-full-run-duration}, with mean throughput of
 \input{build/include-full-run-throughput}.  In contrast, when saving
 results to the database, parsing all \numberOFlogFILES{} log files took
