@@ -21,14 +21,18 @@ by providing a platform for reasoning about the performance of anti-spam
 techniques.
 
 The approach chosen to measure performance is to analyse the log files
-produced by the \acronym{MTA} in use, Postfix, rather than modifying its
-source code to generate statistics: this approach improves the chances of
-other Postfix users testing, using, and benefiting from the software
-developed for this project.  The need arose for a parser capable of dealing
-with the great number and variety of log lines produced by Postfix: the
-parser must be designed and implemented so that adding support for parsing
-new inputs is a simple task, because the log lines to be parsed will change
-over time.  This variety in log lines occurs for several reasons:
+produced by
+Postfix,\footnote{\urlLastChecked{http://www.postfix.org/}{2009/04/21}.  An
+introduction to Postfix is provided in \sectionref{postfix background}.} the
+\acronym{MTA} used by the School of Computer Science and Statistics, rather
+than modifying its source code to generate statistics: this approach
+improves the chances of other Postfix users testing, using, and benefiting
+from the software developed for this project.  The need arose for a parser
+capable of dealing with the great number and variety of log lines produced
+by Postfix: the parser must be designed and implemented so that adding
+support for parsing new inputs is a simple task, because the log lines to
+be parsed will change over time.  This variety in log lines occurs for
+several reasons:
 
 \begin{itemize}
 

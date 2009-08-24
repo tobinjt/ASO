@@ -167,8 +167,11 @@
     % producing a dvi, but causes problems when generating \PDF{} output.
     \usepackage{breakurl}
 \fi{}
+\newcommand{\mytitle}[0]{%
+    Parsing Log Files Produced by the Postfix Mail Transfer Agent%
+}
 \hypersetup{
-    pdftitle    = {Parsing Postfix Log Files},
+    pdftitle    = {\mytitle},
     pdfauthor   = {John Tobin},
     final       = true,
     pdfborder   = {0, 0, 0},
@@ -335,7 +338,7 @@
 \newcommand{\titleandauthor}[0]{%
 \begin{center}
 
-    {\Huge Parsing Postfix Log Files}
+    {\Huge \mytitle{}}
 
     \vfill{}
 
@@ -434,7 +437,9 @@ will, and encouragement; without her, I would not have accomplished this.
     \textbf{Abstract}
 \end{center}
 
-Parsing Postfix log files is much more difficult than it first appears, but
+Postfix is a widely used Mail Transfer Agent, transferring hundreds of
+millions of mails between senders and recipients every day.  Parsing log
+files produced by Postfix is much more difficult than it first appears, but
 it \textit{is\/} possible to achieve a high degree of accuracy in
 understanding Postfix log files, and subsequently in reconstructing the
 actions taken by Postfix when processing mail delivery attempts.  This
