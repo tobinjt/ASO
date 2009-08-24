@@ -218,7 +218,16 @@ by default the restriction lists for client connection, HELO, and MAIL FROM
 commands will not be evaluated until the first RCPT TO command is received,
 because some clients do not deal properly with rejections before this
 stage; a benefit of this delay is that Postfix has more information
-available when logging rejections.
+available when logging rejections.  Each restriction is evaluated to
+produce a result of \textit{reject}, \textit{permit}, \textit{dunno}, or
+the name of another restriction to be evaluated; other less commonly used
+results are possible as described in~\cite{access-man-page}.  The meaning
+of \textit{permit\/} and \textit{reject\/} is obvious; \textit{dunno\/}
+means to stop evaluating the current restriction and continue processing
+the remainder of the restriction list, allowing exceptions to more general
+rules.  The administrator can define new restrictions as a list of existing
+restrictions, allowing arbitrarily long and complex user-defined sequences
+of lookups, restrictions, and exceptions.
 
 Postfix uses simple lookup tables to make decisions when evaluating some
 restrictions, e.g.\newline{}
@@ -245,19 +254,12 @@ dnsbl.example.com}\newline{} checks the \acronym{DNSBL}
 \texttt{dnsbl.example.com} and rejects the command if the client's IP
 address is listed.
 
-Each restriction is evaluated to produce a result of \textit{reject},
-\textit{permit}, \textit{dunno}, or the name of another restriction to be
-evaluated; other less commonly used results are possible as described
-in~\cite{access-man-page}.  The meaning of \textit{permit\/} and
-\textit{reject\/} is obvious; \textit{dunno\/} means to stop evaluating the
-current restriction and continue processing the remainder of the
-restriction list, allowing exceptions to more general rules.  The
-configuration example below shows how to require that all machines on the
-local network except for the web server authenticate before sending mail;
-the web server is exempt because the legacy applications running on it lack
-authentication support.  The restriction list is evaluated from top to
-bottom: \texttt{permit\_sasl\_authenticated} permits authenticated clients;
-an exception is made for the web server in the
+The configuration example below shows how to require that all machines on
+the local network except for the web server authenticate before sending
+mail; the web server is exempt because the legacy applications running on
+it lack authentication support.  The restriction list is evaluated from top
+to bottom: \texttt{permit\_sasl\_authenticated} permits authenticated
+clients; an exception is made for the web server in the
 \texttt{check\_client\_access} check, and then other local machines are
 rejected, because to continue past \texttt{permit\_sasl\_authenticated} the
 client must not have authenticated.
@@ -294,18 +296,16 @@ from unknown machines; one example of how to achieve this is:
     192.0.2.0/24    reject_unknown_client_hostname
 \end{verbatim}
 
-The administrator can define new restrictions as a list of existing
-restrictions, allowing arbitrarily long and complex user-defined sequences
-of lookups, restrictions, and exceptions.  Postfix tries to protect the
-administrator from misconfiguration in as far as it reasonably can, e.g.\
-the restriction \texttt{check\_helo\_mx\_access} cannot cause a mail to be
-accepted, because the parameter it checks (the hostname given in the HELO
-command) is under the control of the remote client.  Despite this, it is
-possible for the administrator to make catastrophic mistakes, e.g.\
-rejecting all mail --- the administrator must be cognisant of the effects
-their configuration changes will have.  This is similar to one of UNIX's
-design philosophies: \textit{``UNIX was not designed to stop its users from
-doing stupid things, as that would also stop them from doing clever
+Postfix tries to protect the administrator from misconfiguration in as far
+as it reasonably can, e.g.\ the restriction
+\texttt{check\_helo\_mx\_access} cannot cause a mail to be accepted,
+because the parameter it checks (the hostname given in the HELO command) is
+under the control of the remote client.  Despite this, it is possible for
+the administrator to make catastrophic mistakes, e.g.\ rejecting all mail
+--- the administrator must be cognisant of the effects their configuration
+changes will have.  This is similar to one of UNIX's design philosophies:
+\textit{``UNIX was not designed to stop its users from doing stupid things,
+as that would also stop them from doing clever
 things''\/}~\cite{unix-philosophy}.
 
 \subsection{Policy Servers}
@@ -316,7 +316,7 @@ A policy server~\cite{policy-servers} is an external program consulted by
 Postfix to determine the fate of an \acronym{SMTP} command.  The policy
 server is given state information by Postfix (sample state information is
 shown in \tableref{Example attributes sent to policy servers}) and returns
-a result (reject, permit, dunno, or a rejection name) as described in
+a result (reject, permit, dunno, or a restriction name) as described in
 \sectionref{Mixing and matching Postfix restrictions}.  A policy server can
 perform more complex checks than those provided by Postfix, such as
 allowing addresses associated with the payroll system to send mail on the
