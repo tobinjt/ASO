@@ -1,4 +1,4 @@
-\section{Complications Encountered While Writing The \parsernamelong{}}
+\section{Complications Encountered During Development of the \parsernamelong{}}
 
 \label{complications}
 
@@ -602,7 +602,7 @@ This complication is handled by several actions: \action{POSTFIX\_RELOAD} (1),
 
 % \newpage{} % There's always a fucking varioref problem here
 
-\subsection{Out Of Order Log Lines}
+\subsection{Out of Order Log Lines}
 
 \label{out of order log lines}
 
@@ -709,7 +709,7 @@ running for an extended period of time.  Each time the end of a log file is
 reached, the state tables are scanned for mails matching the
 characteristics above, and any mails found are deleted.
 
-\subsection{Mail Deleted Before Delivery Is Attempted}
+\subsection{Mail Deleted Before Delivery is Attempted}
 
 \label{Mail deleted before delivery is attempted}
 
@@ -740,8 +740,8 @@ reduction in the performance of the mail server.
 
 The \action{DELETE} action is responsible for handling this complication.
 
-\subsection[Bounce Notification Mails Delivered Before Their Creation Is
-Logged]{Bounce Notification Mails Delivered Before \newline{} Their
+\subsection[Bounce Notification Mails Delivered Before their Creation is
+Logged]{Bounce Notification Mails Delivered Before \newline{} their
 Creation Is Logged}
 
 \label{Bounce notification mails delivered before their creation is logged}
@@ -773,7 +773,7 @@ the \action{BOUNCE\_CREATED} action; if this flag is present the
 \texttt{bounce\_queueids} cache.  This prevents a bounce notification log
 line being incorrectly discarded if a queueid is reused within 10 seconds.
 
-\subsection{Mails Deleted During Delivery}
+\subsection{Mails Deleted from the Mail Queue During Delivery}
 
 \label{Mails deleted during delivery}
 

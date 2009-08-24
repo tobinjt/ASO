@@ -564,31 +564,31 @@ check: lines-from-paragraphs
 	grep '!!' *.?lg || true;
 	chktex -I0 -q *.tex *.bbl build/include-*.tex
 	# Check for contractions.
-	ack -i 'it'\''s|\w'\''(?!s)\w' logparser*.tex
-	ack 'etc\.' logparser*.tex
+	ack-grep -i 'it'\''s|\w'\''(?!s)\w' logparser*.tex
+	ack-grep 'etc\.' logparser*.tex
 	# Check for uncapitalised words in section headings, and then in bibliography entries.
-	ack '\\(chapter|(sub)*section)\{([[:lower:]]|.*? [[:lower:]])' logparser*.tex
-	ack '(address|author|publisher|title)\s+=\s+.*[ "](?!(a|and|by|for|from|is|in|of|the|to))[[:lower:]]' logparser-bibliography.tt2
+	ack-grep '\\(chapter|(sub)*section)\{([[:lower:]]|.*? (?!(a|and|by|for|from|is|in|of|or|the|to))[[:lower:]])' logparser*.tex
+	ack-grep '(address|author|publisher|title)\s+=\s+.*[ "](?!(a|and|by|for|from|is|in|of|or|the|to))[[:lower:]]' logparser-bibliography.tt2
 	# Check for:
 	# * using a bare \url{} command
 	# * trailing spaces or lines containing only spaces
 	# * repeated .
 	# * . not followed by two spaces
 	# * three or more spaces separating sentences
-	ack '\\url{|[ \t]+$$|\.{2,}|\. [^ ]|\. {3,}\w' logparser-*.tex
-	ack -i 'XX[X]' logparser.bbl
+	ack-grep '\\url{|[ \t]+$$|\.{2,}|\. [^ ]|\. {3,}\w' logparser-*.tex
+	ack-grep -i 'XX[X]' logparser.bbl
 	# Check for repeated words
-	ack '\b(\w+)\b\s+\b\1\b' build/logparser*.tex
+	ack-grep '\b(\w+)\b\s+\b\1\b' build/logparser*.tex
 	# Check for using an instead of a before \daemon{foo}
-	ack ' an \\daemon{' build/logparser*.tex
+	ack-grep ' an \\daemon{' build/logparser*.tex
 	# Check for perfect best not followed by oracle.
-	ack -i 'perfect best (?!oracle)' build/logparser*.tex
+	ack-grep -i 'perfect best (?!oracle)' build/logparser*.tex
 	grep 'begin{table}' logparser-*.tex | grep -v -F 'begin{table}[thbp]' || true
 	grep 'set output.*pdf' graphs/* || true
 	grep 'XX[X]' logparser*.tex || true
 
 check-contractions:
-	ACK_PAGER=less ack "(?!(Postfix|mail|client|server|rule|parser|regex|user|program|architecture|restriction|sender|connection|word|line|framework)'s)\b\w+'s" logparser*.tex
+	ACK_PAGER=less ack-grep "(?!(Postfix|mail|client|server|rule|parser|regex|user|program|architecture|restriction|sender|connection|word|line|framework)'s)\b\w+'s" logparser*.tex
 
 .PHONY: check-acronyms
 # List all acronyms not followed by {}, for visual inspection.
@@ -641,9 +641,9 @@ build/logparse%.tex: logparse%.tex
 lines-from-paragraphs: $(patsubst %,build/%,$(wildcard logparser*.tex))
 
 log-files-lines: lines-from-paragraphs
-	ACK_PAGER="$$PAGER" ack -i '(?<!log[- ])(?<!CSV\} )\b(line|file)s?\b(?!\{)' build/logparser*.tex
-	ACK_PAGER="$$PAGER" ack -i '\blogs\b' build/logparser*.tex
-	ACK_PAGER="$$PAGER" ack -i '(?<!log[- ])(?<!CSV\} )(?<!with )\b(line|file)s?\b' graphs/plot-*
+	ACK_PAGER="$$PAGER" ack-grep -i '(?<!log[- ])(?<!CSV\} )\b(line|file)s?\b(?!\{)' build/logparser*.tex
+	ACK_PAGER="$$PAGER" ack-grep -i '\blogs\b' build/logparser*.tex
+	ACK_PAGER="$$PAGER" ack-grep -i '(?<!log[- ])(?<!CSV\} )(?<!with )\b(line|file)s?\b' graphs/plot-*
 
 diction:
 	# Is -a a good option for untex?
