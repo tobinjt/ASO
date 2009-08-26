@@ -11,6 +11,30 @@
     first={Postfix Log Parser (PLP)}
 }
 
+\newglossaryentry{regex}{
+    type=\acronymtype,
+    name={regex},
+    description={Regular Expression},
+    first={Regular Expression (regex)}
+}
+\newcommand{\regexglossarydescription}[0]{
+    Regular Expressions are a compact, powerful method of specifying
+    patterns that describe a set of strings.  The regex \texttt{aa*b*b}
+    describes a set of strings, all of which start with \texttt{a},
+    followed by any number of \texttt{a}, then any number of \texttt{b},
+    and finish with \texttt{b}; the strings \texttt{ab},
+    \texttt{aaaaaaaab}, and \texttt{aaabbbbb} are members of that set,
+    whereas the strings \texttt{abba}, \texttt{abcd}, and \texttt{qwerty}
+    are not.  A string can be checked against a regex to determine if the
+    string is a member of the set of strings described by that regex.
+}
+\newglossaryentry{regex glossary}{
+    name={Regular Expression},
+    description={
+        \regexglossarydescription{}%
+    }
+}
+
 \newglossaryentry{DNSBL}{
     type=\acronymtype,
     name={DNSBL},

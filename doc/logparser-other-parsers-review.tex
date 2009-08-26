@@ -171,12 +171,13 @@ had multiple recipients, but the records are not associated or linked in
 any way, and presumably the same approach was taken when there were
 multiple destination servers.
 
-\acronym{LMA} requires major changes to the parser code to parse new log lines
-or to extract additional data.  The code is structured as a long series of
-blocks that each handle all log lines matching a single regex, so parsing
-new log lines requires modifying an existing regex or carefully inserting a
-new block in the correct place; extracting extra data would require
-modifying multiple blocks, regexes, or both.
+\acronym{LMA} requires major changes to the parser code to parse new log
+lines or to extract additional data.  The code is structured as a long
+series of blocks that each handle all log lines matching a single
+\acronym{regex}, so parsing new log lines requires modifying an existing
+regex or carefully inserting a new block in the correct place; extracting
+extra data would require modifying multiple blocks, regexes, or both.
+\regexglossarydescription{}
 
 \acronym{LMA} does not deal with any of the complications discussed in
 \sectionref{complications}, except for correlating log lines by queueid; it
