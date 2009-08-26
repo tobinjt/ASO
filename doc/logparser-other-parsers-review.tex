@@ -148,20 +148,10 @@ the authors of \acronym{LMA} wrote in Italian.
         \acronym{SQL} database, and unlike \acronym{CSV} files it cannot be
         used with standard Unix text processing tools.
 
-    \item [MySQL] The schema used with the MySQL database is undocumented,
-        but at least it is possible to discover the schema if one has an
-        existing \acronym{SQL} database, unlike with Berkeley DB\@; all
-        \acronym{SQL} databases embed the schema into the database and
-        provide commands for displaying it.  Berkeley DB does not embed a
-        schema in its database files, because it does not need one, and
-        embedding one would not provide any benefit; it only provides
-        \textbf{(key, value)} pairs, so any additional structuring of the
-        data is imposed by the application, and it is the responsibility of
-        the author of the application to document this structure.
-        \acronym['s]{LMA} MySQL support was not tested because the schema
-        is not documented, and no existing database was available to
-        extract the schema from, so the required database could not be
-        created.
+    \item [MySQL] MySQL is a widely used, open source, relational database.
+        \acronym['s]{LMA} MySQL support was not tested because the database
+        schema used by \acronym{LMA} is not documented, so the required
+        database could not be created.
 
 \end{description}
 
