@@ -31,10 +31,10 @@ digraph logparser {
     rejection                       -> { clone }
 
     /* Disconnect without queueid */
-    disconnect                      -> { fixup_enter_in_db_disconnect } [weight = 5, label = "Connection" ]
+    disconnect                      -> { fixup_enter_in_db_disconnect } [weight = 5, label = "If error:" ]
 
     /* Disconnect with queueid */
-    disconnect                      -> { save_by_queueid } [weight = 5, label = " Mail" ]
+    disconnect                      -> { save_by_queueid } [weight = 5, label = " Accepted mails" ]
 
     /* Misc entry */
     qmgr_chooses_mail               -> { save_by_queueid } [headport = ne]
@@ -51,17 +51,17 @@ digraph logparser {
 
     /* NODE LABELS */
     rejection                       [label = "4: Postfix rejects a\nmail delivery attempt"]
-    connect                         [label = "1: Connection from\nremote host."]
-    clone                           [label = "5: Clone data when\na mail is accepted"]
+    connect                         [label = "1: Connection from\nremote client\nfor SMTP."]
+    clone                           [label = "5: Create a new\ndata structure when\na mail is accepted"]
 
     /* Disconnect without queueid */
-    disconnect                      [label = "6: Client disconnects,\neither successfully\nor with an error."]
+    disconnect                      [label = "6: Remote client disconnects,\neither successfully\nor with an error."]
     fixup_enter_in_db_disconnect    [label = "7: Enter in database."]
 
     /* Disconnect with queueid - already covered */
 
     /* Misc entry */
-    pickup                          [label = "2: Mail submitted\nvia sendmail."]
+    pickup                          [label = "2: Local mail,\nsubmitted via sendmail\nor postdrop."]
     qmgr_chooses_mail               [label = "3: Internally generated mail,\ne.g. bounce notifications."]
 
     /* Save results by queueid */
@@ -70,7 +70,7 @@ digraph logparser {
 
     /* Commit is complicated */
     /* Neither parent nor child. */
-    commit                          [label = "10: Mail has been delivered,\nbounced, or deleted."]
+    commit                          [label = "10: Mail has been delivered,\nbounced, expired, or deleted."]
 
     /* SUB-GRAPHS */
     subgraph sources {

@@ -166,19 +166,19 @@ in this section.
 chart}{flow chart image}
 
 Everything starts off with a mail entering the system, whether by local
-submission via \daemon{postdrop}, by \acronym{SMTP}, by re-injection
-because of forwarding, or generated internally by Postfix.  Local
-submission is the simplest of the four: a queueid is assigned immediately
-\flowchart{PICKUP}{2}, and the mail moves on to the delivery stage.
-Re-injection because of forwarding lacks explicit log lines of its own; it
-is explained fully in \sectionref{Re-injected mails}.  Internally generated
-mails lack any explicit origin in Postfix 2.2.x and must be detected using
-heuristics as described in \sectionref{identifying bounce notifications};
-later versions of Postfix do provide log lines for internally generated
-mails \flowchart{BOUNCE\_CREATED}{3}.  Bounce notifications are the primary
-example of internally generated mails, though other types exist, e.g.\
-Postfix may generate mails to the administrator when it encounters
-configuration errors.
+submission via \daemon{postdrop} or \daemon{sendmail}, by \acronym{SMTP},
+by re-injection because of forwarding, or generated internally by Postfix.
+Local submission is the simplest of the four: a queueid is assigned
+immediately \flowchart{PICKUP}{2}, and the mail moves on to the delivery
+stage.  Re-injection because of forwarding lacks explicit log lines of its
+own; it is explained fully in \sectionref{Re-injected mails}.  Internally
+generated mails lack any explicit origin in Postfix 2.2.x and must be
+detected using heuristics as described in \sectionref{identifying bounce
+notifications}; later versions of Postfix do provide log lines for
+internally generated mails \flowchart{BOUNCE\_CREATED}{3}.  Bounce
+notifications are the primary example of internally generated mails, though
+other types exist, e.g.\ Postfix may generate mails to the administrator
+when it encounters configuration errors.
 
 \acronym{SMTP} is more complicated than the others:
 
@@ -197,9 +197,9 @@ configuration errors.
         rejected any mail delivery attempts the data gathered from those
         rejections will be saved to the database \flowchart{DISCONNECT}{7};
         if there were no rejections there will not be any data to save.
-        Any mails accepted will already have been cloned so their data is
-        in another data structure, and will be delivered in the same way as
-        mails that entered the system by any other route.
+        Any accepted mails will already have a separate data structure, and
+        will be delivered in the same way as mails that entered the system
+        by any other route.
 
 \end{enumerate}
 
