@@ -35,10 +35,10 @@ used by other mail administrators, they will need to extend the ruleset to
 parse their own log lines, so the next section addresses the question of
 how parser performance is affected by an increase in the number of rules in
 the ruleset.  The penultimate topic is the simple optimisation of caching
-the results of compiling each rule's regex, and the huge effect it has on
-parser efficiency.  The performance evaluation concludes by examining where
-parsing time is spent: recognition of log lines or their subsequent
-processing by actions?
+the results of compiling each rule's \acronym{regex}, and the huge effect
+it has on parser efficiency.  The performance evaluation concludes by
+examining where parsing time is spent: recognition of log lines or their
+subsequent processing by actions?
 
 The second criterion the parser is evaluated on is its coverage of Postfix
 log files.  Two kinds of coverage need to be evaluated: what proportion of
@@ -458,52 +458,54 @@ instead of the minimum ruleset table}
 
 \label{Caching compiled regexes}
 
-Before the Perl interpreter attempts to match a regex against a piece of
-text, the regex is compiled into an internal representation and optimised
-to improve the speed of matching.  This compilation and optimisation takes
-CPU time: for most regexes it takes far more CPU time than the actual
-matching does.  If the interpreter is certain that a regex will not change
-while the program is running, it will automatically cache the results of
-compiling and optimising the regex for later use.  The results of compiling
-a dynamically generated regex can be cached and used in preference to the
-original regex, but it is the responsibility of the programmer to do so;
-\parsername{} does this with every rule's regex when the rules are loaded
-from the database.
+Before the Perl interpreter attempts to match a \acronym{regex} against a
+piece of text, the \acronym{regex} is compiled into an internal
+representation and optimised to improve the speed of matching.  This
+compilation and optimisation takes CPU time: for most \regexes{} it takes
+far more CPU time than the actual matching does.  If the interpreter is
+certain that a \acronym{regex} will not change while the program is
+running, it will automatically cache the results of compiling and
+optimising the \acronym{regex} for later use.  The results of compiling a
+dynamically generated \acronym{regex} can be cached and used in preference
+to the original \acronym{regex}, but it is the responsibility of the
+programmer to do so; \parsername{} does this with every rule's
+\acronym{regex} when the rules are loaded from the database.
 
 A test run using optimal ordering was performed as described in
-\sectionref{parser efficiency}, with one difference: regexes were not
+\sectionref{parser efficiency}, with one difference: \regexes{} were not
 compiled and cached when the ruleset was loaded from the database, so the
-Perl interpreter had to compile each regex each time it was used when
-trying to recognise a log line.  \Graphref{Percentage increase in parsing
-time when not caching compiled regexes graph} shows the effect that not
-caching compiled regexes has on parser performance, with mean and standard
-deviation in \tableref{Percentage increase in parsing time when not caching
-compiled regexes table}.  For typical log files, the mean increase in
-parsing time when not caching compiled regexes is
+Perl interpreter had to compile each \acronym{regex} each time it was used
+when trying to recognise a log line.  \Graphref{Percentage increase in
+parsing time when not caching compiled regexes graph} shows the effect that
+not caching compiled \regexes{} has on parser performance, with mean and
+standard deviation in \tableref{Percentage increase in parsing time when
+not caching compiled regexes table}.  For typical log files, the mean
+increase in parsing time when not caching compiled \regexes{} is
 \input{build/include-cached-regexes-vs-discarded-regexes-mean}; looking at
-it from the opposite direction, caching compiled regexes reduces parsing
+it from the opposite direction, caching compiled \regexes{} reduces parsing
 time by
 \input{build/include-cached-regexes-vs-discarded-regexes-mean-reduction}.
-Caching compiled regexes is probably the single most effective optimisation
-possible in \parsername{}, and was quite simple to implement: the framework
-compiles each rule's regex when the ruleset is loaded, and uses the
-compiled regex instead of the source regex when recognising log lines.  As
-seen previously, log files 22 \& 62--68 do not suffer such a large increase
-in parsing time when the optimisation is disabled; this is because, on
-average, fewer rules are used per log line, so fewer regexes are compiled
-per log line for those log files.
+Caching compiled \regexes{} is probably the single most effective
+optimisation possible in \parsername{}, and was quite simple to implement:
+the framework compiles each rule's \acronym{regex} when the ruleset is
+loaded, and uses the compiled \acronym{regex} instead of the source
+\acronym{regex} when recognising log lines.  As seen previously, log files
+22 \& 62--68 do not suffer such a large increase in parsing time when the
+optimisation is disabled; this is because, on average, fewer rules are used
+per log line, so fewer \regexes{} are compiled per log line for those log
+files.
 
 The increase in parsing time when parsing the first log file is much
 greater than for the other log files (see \graphref{Percentage increase in
 parsing time when not caching compiled regexes graph}); again, this is
 because every rule's hits field starts at zero, so optimal ordering is less
 efficient than usual, the mean number of rules used for each log line is
-higher than usual, and more regexes will need to be compiled when
+higher than usual, and more \regexes{} will need to be compiled when
 recognising each log line.  Parsing time is plotted against log file size
-for caching and not caching compiled regexes in \graphref{Parsing time
+for caching and not caching compiled \regexes{} in \graphref{Parsing time
 plotted against log file size when caching and not caching compiled
-regexes}; the plot for not caching compiled regexes is quite uneven
-compared to caching compiled regexes --- some log files are particularly
+regexes}; the plot for not caching compiled \regexes{} is quite uneven
+compared to caching compiled \regexes{} --- some log files are particularly
 slow, whereas others are not as badly affected, but these differences have
 not been investigated.
 
@@ -544,9 +546,9 @@ efforts have concentrated on recognition of log lines for two reasons:
         \input{build/include-percentage-time-spent-recognising-log-lines-mean}
         of parsing time is spent recognising log lines.  To measure how
         long recognition of log lines takes, a full test run using optimal
-        ordering and caching compiled regexes was performed as previously
-        described in \sectionref{parser efficiency}, but with one
-        difference: actions were not invoked when a log line was
+        ordering and caching compiled \regexes{} was performed as
+        previously described in \sectionref{parser efficiency}, but with
+        one difference: actions were not invoked when a log line was
         recognised, so the parsing time did not include the time normally
         taken by invocation of actions; the mean parsing times for each log
         file were subtracted from the mean parsing times from a normal test
@@ -563,7 +565,7 @@ efforts have concentrated on recognition of log lines for two reasons:
         of parsing time, less if any optimisations are disabled, so
         optimising actions could not possibly provide as big a performance
         increase as optimally ordering rules.  Similarly, caching compiled
-        regexes provides an
+        \regexes{} provides an
         \input{build/include-cached-regexes-vs-discarded-regexes-mean-reduction}
         reduction in parsing time; not invoking actions at all reduces the
         most optimised parsing time by less than half that.  Optimising
@@ -606,9 +608,9 @@ The discussion of \parsernames{} coverage of Postfix log files is separated
 into two parts: log lines correctly recognised, and mail delivery attempts
 correctly understood --- the former is a requirement for the latter to be
 achieved.  Correctly understanding and reconstructing every mail delivery
-attempt is important so that the information in the database is accurate and
-complete.  Improving the proportion of log lines correctly recognised is
-the less difficult of the two, because it just requires new rules to be
+attempt is important so that the information in the database is accurate
+and complete.  Improving the proportion of log lines correctly recognised
+is the less difficult of the two, because it just requires new rules to be
 written or existing rules to be extended.  Improving the proportion of
 correctly understood and reconstructed mail delivery attempts is more
 difficult and intrusive, because it requires adding or changing actions,
@@ -650,11 +652,11 @@ associate such log lines with existing state table entries.  To correctly
 recognise all log lines that are not skipped, there must be a rule to
 recognise each log line variant produced by each Postfix component; if a
 log line is not recognised the parser will issue a warning, to inform the
-user that they need to extend their ruleset.  Each rule's regex should be
-as specific and precise as possible, to ensure accurate parsing: a rule
-with a regex that matches zero or more of any character will recognise
-every log line, but not in a meaningful way; most log lines contain fixed
-strings, so this is not a problem in practice.
+user that they need to extend their ruleset.  Each rule's \acronym{regex}
+should be as specific and precise as possible, to ensure accurate parsing:
+a rule with a \acronym{regex} that matches zero or more of any character
+will recognise every log line, but not in a meaningful way; most log lines
+contain fixed strings, so this is not a problem in practice.
 
 Full coverage of log lines can be achieved without undue effort, yet once
 achieved it requires maintenance.  Maintaining full coverage is an ongoing
@@ -677,8 +679,9 @@ identified from the \numberOFrules{} rules in the database; the correct
 rule was then compared to the rule that recognised the log line when
 parsing.  The sample results contained zero false positives, and this check
 has been automated to ensure continued accuracy.  Based on these results,
-and how precise each rule's regex is, the author is confident that zero
-false positives occur when parsing the \numberOFlogFILES{} log files.
+and how precise each rule's \acronym{regex} is, the author is confident
+that zero false positives occur when parsing the \numberOFlogFILES{} log
+files.
 
 \subsection{Mail Delivery Attempts Correctly Understood and Reconstructed}
 
@@ -842,9 +845,9 @@ trying to recognise each log line, and the effect that optimisation has on
 parsing time is explored; this is followed by comparing optimal ordering
 with an oracle.  How \parsername{} scales as the size of the ruleset
 increases is addressed, followed by a description and analysis of the
-simplest and most effective of the optimisations, caching compiled regexes,
-and the efficiency evaluation concludes with an examination of where
-parsing time is spent: recognising log lines or processing them?
+simplest and most effective of the optimisations, caching compiled
+\regexes{}, and the efficiency evaluation concludes with an examination of
+where parsing time is spent: recognising log lines or processing them?
 
 Coverage of Postfix log files is divided into two topics in this chapter:
 log lines correctly recognised, and mail delivery attempts correctly

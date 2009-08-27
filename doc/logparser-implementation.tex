@@ -65,12 +65,12 @@ they will need to add their own rules to recognise their own log lines.  A
 sample rule used by \parsername{} is examined, with every field clearly
 documented; that is followed by a description of adding new rules, and how
 to determine the value of each of the new rule's fields.  \parsername{}
-provides a utility to create regexes from unrecognised log lines; the
+provides a utility to create \regexes{} from unrecognised log lines; the
 algorithm it uses is documented, including the differences between it and
 the original algorithm it is based on.  The rules section finishes with a
 discussion of how \parsername{} uses rule conditions and overlapping rules,
-plus a description of the regex snippets provided to ease the process of
-writing regexes.
+plus a description of the \acronym{regex} snippets provided to ease the
+process of writing \regexes{}.
 
 On first inspection, Postfix log files look like they will be simple to
 parse, but this impression turns out to be incorrect.  The many
@@ -186,11 +186,11 @@ configuration errors.
 
     \item The remote client connects \flowchart{CONNECT}{1}.
 
-    \item This is followed by rejection of one or more mail delivery attempts
-        \flowchart{DELIVERY\_REJECTED}{4}; acceptance of one or more mails
-        \flowchart{CLONE}{5}; failure of the remote client's connection
-        \flowchart{DELIVERY\_ERROR}{6}; or some random interleaving of two
-        or more of the above.
+    \item This is followed by rejection of one or more mail delivery
+        attempts \flowchart{DELIVERY\_REJECTED}{4}; acceptance of one or
+        more mails \flowchart{CLONE}{5}; failure of the remote client's
+        connection \flowchart{DELIVERY\_ERROR}{6}; or some random
+        interleaving of two or more of the above.
 
     \item The client disconnects \flowchart{DISCONNECT \textnormal{or}
         TIMEOUT}{6}, either normally or with an error.  If Postfix has
@@ -249,13 +249,13 @@ as API} describes how the database schema functions as an \acronym{API}.
 
 The database schema can be conceptually divided in two: the rules used to
 recognise log lines, and the data saved from the parsing of log files.
-Each rule has a regex to recognise log lines and capture data from them,
-and specifies the action to be invoked when a log line is recognised; they
-also have several other fields used by the parser, and several fields that
-aid the user in understanding the meaning of the log lines recognised by
-each rule.  The rules are described in detail in \sectionref{rules in
-implementation}, but the rules table is documented in \sectionref{rules
-table} with the rest of the database schema.
+Each rule has a \acronym{regex} to recognise log lines and capture data
+from them, and specifies the action to be invoked when a log line is
+recognised; they also have several other fields used by the parser, and
+several fields that aid the user in understanding the meaning of the log
+lines recognised by each rule.  The rules are described in detail in
+\sectionref{rules in implementation}, but the rules table is documented in
+\sectionref{rules table} with the rest of the database schema.
 
 The data saved from parsing log files is divided into two tables:
 connections and results.  The connections table contains an entry for every
@@ -280,7 +280,8 @@ it, because storing the data is a once-off operation, whereas utilising
 the data requires frequent searching, sorting, and manipulation of the
 data.
 
-\subsection{Using a Database to Provide an Application Programming Interface}
+\subsection{Using a Database to Provide an Application Programming
+Interface}
 
 \label{database as API}
 
@@ -343,8 +344,8 @@ CREATE TRIGGER ON INSERT INTO results
 
 
     \item \acronym{SQL} is reasonably standard and many people will already
-        be familiar with it; for those unfamiliar with \acronym{SQL}, lots of
-        resources are available from which to learn, e.g.\
+        be familiar with it; for those unfamiliar with \acronym{SQL}, lots
+        of resources are available from which to learn, e.g.\
         \urlLastChecked{http://philip.greenspun.com/sql/}{2009/02/23}.
         Although every vendor implements a different dialect of
         \acronym{SQL}, the basics are the same everywhere.  Depending on
@@ -400,8 +401,8 @@ required unless otherwise stated in the description.
         lines the rule recognises; see \sectionref{rule conditions in
         implementation} for full details of how this attribute is used.
 
-    \item [regex] The regex to recognise log lines with, as documented in
-        \sectionref{regex components}.
+    \item [regex] The \acronym{regex} to recognise log lines with, as
+        documented in \sectionref{regex components}.
 
     \item [connection\_data] Sometimes rules need to provide data that is
         not present in the log line, e.g.\ setting \texttt{client\_ip} when
@@ -425,13 +426,14 @@ required unless otherwise stated in the description.
 
     \item [hits] This counter is maintained for every rule and incremented
         each time the rule successfully recognises a log line.  At the
-        start of each run \parsername{} sorts the rules by hits, and at the end of the run it updates
-        every rule's hits field in the database.  Assuming that the
-        distribution of log lines is reasonably consistent across log
-        files, ordering rules by their recognition frequency will reduce
-        the parser's execution time.  Rule ordering for efficiency is
-        discussed in \sectionref{rule ordering for efficiency}.  This field
-        will be set by the parser rather than the rule author.
+        start of each run \parsername{} sorts the rules by hits, and at the
+        end of the run it updates every rule's hits field in the database.
+        Assuming that the distribution of log lines is reasonably
+        consistent across log files, ordering rules by their recognition
+        frequency will reduce the parser's execution time.  Rule ordering
+        for efficiency is discussed in \sectionref{rule ordering for
+        efficiency}.  This field will be set by the parser rather than the
+        rule author.
 
     \item [hits\_total] The total number of log lines recognised by this
         rule over all runs of the parser; hits starts from zero each time
@@ -603,16 +605,17 @@ checking:
 
     \item That the specified action is registered with the framework.
 
-    \item That the regex is valid.  The regex will have regex components
-        expanded (see \sectionref{regex components}), and will also be
-        compiled for efficiency (\sectionref{Caching compiled regexes}).
+    \item That the \acronym{regex} is valid.  The \acronym{regex} will have
+        \acronym{regex} components expanded (see \sectionref{regex
+        components}), and will also be compiled for efficiency
+        (\sectionref{Caching compiled regexes}).
 
-    \item For overlap between the data captured by the regex and additional
-        data specified in either \texttt{connection\_data} or
+    \item For overlap between the data captured by the \acronym{regex} and
+        additional data specified in either \texttt{connection\_data} or
         \texttt{result\_data}.
 
     \item That \texttt{connection\_data}, \texttt{result\_data}, and the
-        regex captures specify valid fields to save data to.
+        \acronym{regex} captures specify valid fields to save data to.
 
 \end{itemize}
 
@@ -688,11 +691,11 @@ how effective each optimisation is:
         running time, because only one rule is used to recognise each log
         line, as discussed in \sectionref{perfect rule ordering}.
 
-    \item Each regex is compiled and the result cached when the ruleset is
-        loaded; this optimisation can be disabled and the regex compiled
-        every time it is used when recognising log lines.  The effect this
-        optimisation has is addressed shown in \sectionref{Caching compiled
-        regexes}.
+    \item Each \acronym{regex} is compiled and the result cached when the
+        ruleset is loaded; this optimisation can be disabled and the
+        \acronym{regex} compiled every time it is used when recognising log
+        lines.  The effect this optimisation has is addressed shown in
+        \sectionref{Caching compiled regexes}.
 
     \item Normally, when a log line has been recognised the framework
         invokes the action specified by the rule.  Invoking the action can
@@ -727,10 +730,10 @@ expected.  In increasing order of severity they are:
         the log file and the line number of the log line within it.  This
         extra information is not stored in the database.
 
-    \item Every time a log line is recognised, the recognising rule's regex
-        and the log line can be printed, so that the user can verify that
-        the correct rule recognised each log line.  This is equivalent to
-        setting every rule's debug field to true.
+    \item Every time a log line is recognised, the recognising rule's
+        \acronym{regex} and the log line can be printed, so that the user
+        can verify that the correct rule recognised each log line.  This is
+        equivalent to setting every rule's debug field to true.
 
     \item Every connection and result added to the database can be dumped
         in a human readable form.  This will result in a huge amount of
@@ -844,9 +847,9 @@ the action descriptions.
 
 If the log line has enough information to identify the correct connection
 or mail, each action will save all the data captured by the recognising
-rule's regex to the connection or mail; usually, log lines that lack
-identifying information will be processed by the \action{UNINTERESTING}
-action.  Each action is passed the same arguments:
+rule's \acronym{regex} to the connection or mail; usually, log lines that
+lack identifying information will be processed by the
+\action{UNINTERESTING} action.  Each action is passed the same arguments:
 
 \begin{boldeqlist}
 
@@ -854,7 +857,8 @@ action.  Each action is passed the same arguments:
 
     \item [rule] The recognising rule.
 
-    \item [data] The data captured from the log line by the rule's regex.
+    \item [data] The data captured from the log line by the rule's
+        \acronym{regex}.
 
     \item [line] The log line, separated into fields:
 
@@ -900,9 +904,9 @@ action.  Each action is passed the same arguments:
     \item [CLEANUP\_PROCESSING] \daemon{cleanup} processes every mail that
         passes through Postfix; details of what it does are available in
         \sectionref{Postfix Daemons}.  This action saves all data captured
-        by the rule's regex if the log line has not come after a timeout
-        (see \sectionref{discarding cleanup log lines}); it also creates
-        the mail if necessary, setting its unknown origin flag (see
+        by the rule's \acronym{regex} if the log line has not come after a
+        timeout (see \sectionref{discarding cleanup log lines}); it also
+        creates the mail if necessary, setting its unknown origin flag (see
         \sectionref{pickup logging after cleanup}).
 
     \item [CLONE] Multiple mails may be accepted on a single connection, so
@@ -942,8 +946,9 @@ action.  Each action is passed the same arguments:
         specified by rules, because so many different restrictions are used
         to reject delivery attempts.  This action is quite simple: if the
         log line contains a queueid, save the data captured by the rule's
-        regex to the mail identified by that queueid; otherwise save it to
-        the connection identified by the \acronym{pid} in the log line.
+        \acronym{regex} to the mail identified by that queueid; otherwise
+        save it to the connection identified by the \acronym{pid} in the
+        log line.
 
     \item [DISCONNECT] Invoked when the remote client disconnects, it
         enters the connection in the database if it has any useful data,
@@ -962,9 +967,9 @@ action.  Each action is passed the same arguments:
 
     \item [MAIL\_BOUNCED] This action behaves in exactly the same way as
         the \action{SAVE\_DATA} action; it saves all data captured by the
-        recognising rule's regex, and does nothing more.  It is a separate
-        action to distinguish delivery attempts that bounce from other
-        delivery attempts.
+        recognising rule's \acronym{regex}, and does nothing more.  It is a
+        separate action to distinguish delivery attempts that bounce from
+        other delivery attempts.
 
     \item [MAIL\_DISCARDED] Sometimes mail is discarded by Postfix, e.g.\
         mail submitted locally on the server using \daemon{pickup} that is
@@ -979,9 +984,9 @@ action.  Each action is passed the same arguments:
 
     \item [MAIL\_SENT] This action behaves in exactly the same way as the
         \action{SAVE\_DATA} action; it saves all data captured by the
-        recognising rule's regex, and does nothing more.  It is a separate
-        action to distinguish successful delivery attempts from other
-        delivery attempts.
+        recognising rule's \acronym{regex}, and does nothing more.  It is a
+        separate action to distinguish successful delivery attempts from
+        other delivery attempts.
 
     \item [MAIL\_TOO\_LARGE] When a remote client tries to send a mail over
         \acronym{SMTP} that is larger than the server accepts, the mail
@@ -1007,10 +1012,10 @@ action.  Each action is passed the same arguments:
 
     \item [SAVE\_DATA] Every action that can locate the correct data
         structure in the state tables saves any data captured by the
-        recognising rule's regex to it.  The \action{SAVE\_DATA} saves data
-        in this way but does not do anything else; it is invoked for log
-        lines that contain useful data but do not require any further
-        processing.
+        recognising rule's \acronym{regex} to it.  The \action{SAVE\_DATA}
+        saves data in this way but does not do anything else; it is invoked
+        for log lines that contain useful data but do not require any
+        further processing.
 
     \item [SMTPD\_DIED] Sometimes a \daemon{smtpd} dies, is killed by a
         signal, or exits unsuccessfully; the associated connection must be
@@ -1095,12 +1100,12 @@ should be fleshed out by the sample rule in \sectionref{example rule in
 implementation}.  The process of creating new rules from unparsed log lines
 is dealt with in \sectionref{creating new rules in implementation},
 followed by the algorithm used by the utility supplied with \parsername{}
-that creates regexes from unparsed log lines; the regex components provided
-by \parsername{} to ease writing of complex regexes are covered in
-\sectionref{regex components}.  The rule conditions used in \parsername{}
-are the penultimate topic (\sectionref{rule conditions in implementation}),
-and this section concludes with some suggestions for how to detect
-overlapping rules.
+that creates \regexes{} from unparsed log lines; the \acronym{regex}
+components provided by \parsername{} to ease writing of complex \regexes{}
+are covered in \sectionref{regex components}.  The rule conditions used in
+\parsername{} are the penultimate topic (\sectionref{rule conditions in
+implementation}), and this section concludes with some suggestions for how
+to detect overlapping rules.
 
 \subsection{Sample Rule}
 
@@ -1163,11 +1168,12 @@ table} are used as follows:
 
     \item [program and regex:] program is used to restrict the log lines
         this rule will be used to recognise; see \sectionref{rule
-        conditions in implementation} for details.  The regex does the
-        actual recognition of log lines, and data captured by the regex
-        (e.g.\ sender, recipient) will be automatically saved to the
-        results and connections tables.  The regex components used in the
-        regex are described in \sectionref{regex components}.
+        conditions in implementation} for details.  The \acronym{regex}
+        does the actual recognition of log lines, and data captured by the
+        \acronym{regex} (e.g.\ sender, recipient) will be automatically
+        saved to the results and connections tables.  The \acronym{regex}
+        components used in the \acronym{regex} are described in
+        \sectionref{regex components}.
 
     \item [action:] The action to be invoked when the rule recognises a log
         line.  See \sectionref{actions in detail in implementation} for
@@ -1204,17 +1210,17 @@ to recognise new log lines is trivial, and occurs much more frequently.
 
 To add a new rule a new row must be added to the rules table in the
 database, containing all the required attributes: action, name,
-description, program, and regex; all the other attributes are either
-optional, are set by the parser, or have sensible defaults.  The name and
-description fields should be set based on the meaning of the log line, to
-help others understand which log lines this rule will recognise; the value
-for the program field will be obvious from the unrecognised log lines.  The
-action depends on the what the log line represents, e.g.\ a delivery
-rejection, a mail being delivered, some useful information, or something
-else; examine the list of actions in \sectionref{actions in detail in
-implementation} to determine the correct one.  The regex needs to be based
-on the log line, but see below for a tool to ease the process of creating
-regexes from unrecognised log lines.
+description, program, and \acronym{regex}; all the other attributes are
+either optional, are set by the parser, or have sensible defaults.  The
+name and description fields should be set based on the meaning of the log
+line, to help others understand which log lines this rule will recognise;
+the value for the program field will be obvious from the unrecognised log
+lines.  The action depends on the what the log line represents, e.g.\ a
+delivery rejection, a mail being delivered, some useful information, or
+something else; examine the list of actions in \sectionref{actions in
+detail in implementation} to determine the correct one.  The
+\acronym{regex} needs to be based on the log line, but see below for a tool
+to ease the process of creating \regexes{} from unrecognised log lines.
 
 Other attributes may be required: connection\_data, result\_data, priority,
 or restriction\_name.  In general it will only become clear that
@@ -1241,8 +1247,8 @@ generally create log lines by substituting variable words into a fixed
 pattern, and analysis of the frequency with which each word occurs can be
 used to determine whether the word is variable or part of the fixed
 pattern.  This classification can be used to group similar log lines and
-generate a regex to match each group of log lines.  The algorithm has five
-steps:
+generate a \acronym{regex} to match each group of log lines.  The algorithm
+has five steps:
 
 \begin{description}
 
@@ -1253,12 +1259,12 @@ steps:
         addresses, IP addresses, the standard start of rejection messages)
         with keywords described in \sectionref{regex components}.  The
         purpose of this step is to utilise existing knowledge to create
-        more accurate regexes; it replaces many variable words with fixed
-        words, improving the subsequent classification of words as fixed or
-        variable.  Regex metacharacters in the log line will be escaped, to
-        avoid generating invalid or incorrect regexes.  The altered log
-        lines are written to a temporary file, which the next stage will
-        use instead of the original input file.
+        more accurate \regexes{}; it replaces many variable words with
+        fixed words, improving the subsequent classification of words as
+        fixed or variable.  Regex metacharacters in the log line will be
+        escaped, to avoid generating invalid or incorrect \regexes{}.  The
+        altered log lines are written to a temporary file, which the next
+        stage will use instead of the original input file.
 
         In the original algorithm the purpose of the pre-processing stage
         was to reduce the memory consumption of the program.  In the first
@@ -1306,91 +1312,96 @@ steps:
         it is classified as a fixed word, otherwise it is classified as a
         variable term.  If a variable term appears sufficiently often it
         will be misclassified as a fixed term, but that should be noticed
-        by the user when reviewing the new regexes, and will be obvious
+        by the user when reviewing the new \regexes{}, and will be obvious
         when the new rules do not recognise some log lines they are
         expected to.  Variable terms are replaced by \texttt{.+} to match
         one or more of any character.
 
-    \item [Build regexes.]  The words are reassembled to produce a regex
-        matching the log line, and a counter is maintained for each regex.
-        Contiguous sequences of \texttt{.+} in the newly assembled regexes
-        are collapsed to a single \texttt{.+}; any resulting duplicate
-        regexes and their counters are combined.  If a regex's counter is
-        lower than the threshold supplied by the user the regex is
-        discarded; this second threshold is independent of the threshold
-        used to differentiate between fixed and variable words, but once
-        again 1\% of log lines is a good starting point.
+    \item [Build regexes.]  The words are reassembled to produce a
+        \acronym{regex} matching the log line, and a counter is maintained
+        for each \acronym{regex}.  Contiguous sequences of \texttt{.+} in
+        the newly assembled \regexes{} are collapsed to a single
+        \texttt{.+}; any resulting duplicate \regexes{} and their counters
+        are combined.  If a \acronym{regex}'s counter is lower than the
+        threshold supplied by the user the \acronym{regex} is discarded;
+        this second threshold is independent of the threshold used to
+        differentiate between fixed and variable words, but once again 1\%
+        of log lines is a good starting point.
 
     \item [Test the new regexes.]  The final step replaces keywords in the
-        new regexes in the same way as \parsername{} does, and compiles
-        each regex to check they are valid.  A match will be attempted
-        between all of the new regexes and each of the original unparsed
-        log lines (not the pre-processed log lines); the user will be
-        warned if a log line is not matched by any regex, or if a log line
-        is matched by more than one regex.  The number of log lines each
-        regex matches is counted, as is the number of log lines matched by
-        all regexes, though a log line is counted once only, even if
-        matched by more than one regex.
+        new \regexes{} in the same way as \parsername{} does, and compiles
+        each \acronym{regex} to check they are valid.  A match will be
+        attempted between all of the new \regexes{} and each of the
+        original unparsed log lines (not the pre-processed log lines); the
+        user will be warned if a log line is not matched by any
+        \acronym{regex}, or if a log line is matched by more than one
+        \acronym{regex}.  The number of log lines each \acronym{regex}
+        matches is counted, as is the number of log lines matched by all
+        \regexes{}, though a log line is counted once only, even if matched
+        by more than one \acronym{regex}.
 
         This step is not performed by the original algorithm.
 
 \end{description}
 
-The new regexes are displayed for the user to add to the ruleset, either as
-new rules or merged into the regexes of existing rules; also displayed are
-the number of unrecognised log lines each regex was expected to match, and
-the number it actually matched, to help the user notice problems in the new
-regexes.  Discarding regexes will result in some of the unrecognised log
-lines not being matched; when the ruleset has been augmented with the new
-regexes, the original log files should be parsed again, and any remaining
-unparsed log lines used as input to this utility.
+The new \regexes{} are displayed for the user to add to the ruleset, either
+as new rules or merged into the \regexes{} of existing rules; also
+displayed are the number of unrecognised log lines each \acronym{regex} was
+expected to match, and the number it actually matched, to help the user
+notice problems in the new \regexes{}.  Discarding \regexes{} will result
+in some of the unrecognised log lines not being matched; when the ruleset
+has been augmented with the new \regexes{}, the original log files should
+be parsed again, and any remaining unparsed log lines used as input to this
+utility.
 
-This utility is not expected to create perfect regexes, but it greatly
+This utility is not expected to create perfect \regexes{}, but it greatly
 reduces the effort required to deal with unrecognised log lines.  The
-regexes it generates will be self-contained: a parser that relies on using
-cascaded parsing would require a modified algorithm, perhaps by replacing
-the pre-processing stage with one that applies existing cascading rules to
-each log line, and uses the resulting modified log lines for the remainder
-of the algorithm.
+\regexes{} it generates will be self-contained: a parser that relies on
+using cascaded parsing would require a modified algorithm, perhaps by
+replacing the pre-processing stage with one that applies existing cascading
+rules to each log line, and uses the resulting modified log lines for the
+remainder of the algorithm.
 
 \subsection{Regex Components}
 
 \label{regex components}
 
-Each rule's regex will have keywords expanded when the ruleset is loaded,
-for several reasons:
+Each rule's \acronym{regex} will have keywords expanded when the ruleset is
+loaded, for several reasons:
 
 \begin{itemize}
 
-    \item It simplifies both reading and writing of regexes and helps to
-        make each regex largely self-documenting.  For example, the meaning
-        of \_\_CLIENT\_HOSTNAME\_\_ is immediately clear, whereas its
-        expansion \verb!(?:unknown|(?:[-.\w]+))! needs to be deciphered
-        each time it is encountered.
+    \item It simplifies both reading and writing of \regexes{} and helps to
+        make each \acronym{regex} largely self-documenting.  For example,
+        the meaning of \_\_CLIENT\_HOSTNAME\_\_ is immediately clear,
+        whereas its expansion \verb!(?:unknown|(?:[-.\w]+))! needs to be
+        deciphered each time it is encountered.
 
-    \item It avoids needless repetition of complex regex components, and
-        allows the components to be corrected or improved in one location.
-        For example, \_\_SENDER\_\_ is used in 68 rules; if a mistake is
-        discovered in it the mistake only needs to be corrected in one
-        place.
+    \item It avoids needless repetition of complex \acronym{regex}
+        components, and allows the components to be corrected or improved
+        in one location.  For example, \_\_SENDER\_\_ is used in 68 rules;
+        if a mistake is discovered in it the mistake only needs to be
+        corrected in one place.
 
     \item It enables automatic extraction and saving of captured data.  The
-        regex snippets use Perl 5.10's named capture buffers~\cite{perlre}
-        to capture data, so the mapping between captures and fields does
-        not need to be explicitly specified by the rule.
+        \acronym{regex} snippets use Perl 5.10's named capture
+        buffers~\cite{perlre} to capture data, so the mapping between
+        captures and fields does not need to be explicitly specified by the
+        rule.
 
 \end{itemize}
 
-To improve efficiency, the keywords are expanded and every rule's regex is
-compiled before attempting to parse the log file, otherwise every regex
-would be recompiled each time it was used, resulting in a large, data
-dependent slowdown, as described in \sectionref{Caching compiled regexes}.
-Most of the keywords are named after the fields in the connections or
-results tables they populate: \_\_CLIENT\_HOSTNAME\_\_, \_\_CLIENT\_IP\_\_,
-\_\_DELAY\_\_, \_\_DELAYS\_\_, \_\_ENHANCED\_STATUS\_CODE\_\_,
-\_\_HELO\_\_, \_\_MESSAGE\_ID\_\_, \newline{} \_\_QUEUEID\_\_,
-\_\_RECIPIENT\_\_, \_\_SENDER\_\_, \_\_SERVER\_HOSTNAME\_\_,
-\_\_SERVER\_IP\_\_, \_\_SIZE\_\_, and \_\_SMTP\_CODE\_\_.
+To improve efficiency, the keywords are expanded and every rule's
+\acronym{regex} is compiled before attempting to parse the log file,
+otherwise every \acronym{regex} would be recompiled each time it was used,
+resulting in a large, data dependent slowdown, as described in
+\sectionref{Caching compiled regexes}.  Most of the keywords are named
+after the fields in the connections or results tables they populate:
+\_\_CLIENT\_HOSTNAME\_\_, \_\_CLIENT\_IP\_\_, \_\_DELAY\_\_,
+\_\_DELAYS\_\_, \_\_ENHANCED\_STATUS\_CODE\_\_, \_\_HELO\_\_,
+\_\_MESSAGE\_ID\_\_, \newline{} \_\_QUEUEID\_\_, \_\_RECIPIENT\_\_,
+\_\_SENDER\_\_, \_\_SERVER\_HOSTNAME\_\_, \_\_SERVER\_IP\_\_, \_\_SIZE\_\_,
+and \_\_SMTP\_CODE\_\_.
 
 The other keywords need more explanation:
 
@@ -1432,12 +1443,13 @@ The other keywords need more explanation:
 
 \end{eqlist}
 
-Some similarity exists between regex components and cascaded parsing: each
-regex component resembles a rule that recognises part of a log line and
-consumes it, leaving the remainder to be recognised by other components or
-cascaded rules.  The major difference between the two is that regex
-components are explicitly used by the author of the ruleset, whereas
-cascaded parsing would be dynamically applied by the framework.
+Some similarity exists between \acronym{regex} components and cascaded
+parsing: each \acronym{regex} component resembles a rule that recognises
+part of a log line and consumes it, leaving the remainder to be recognised
+by other components or cascaded rules.  The major difference between the
+two is that \acronym{regex} components are explicitly used by the author of
+the ruleset, whereas cascaded parsing would be dynamically applied by the
+framework.
 
 \subsection{Rule Conditions}
 
@@ -1477,20 +1489,20 @@ be helpful:
 
 \begin{itemize}
 
-    \item Sort rules by program and regex e.g.\ with an \acronym{SQL} query
-        similar to:                                     \newline{}
+    \item Sort rules by program and \acronym{regex} e.g.\ with an
+        \acronym{SQL} query similar to:                 \newline{}
         \verb!SELECT program, regex!                    \newline{}
         \verb!    FROM rules!                           \newline{}
         \verb!    ORDER BY program, regex;!             \newline{}
-        The rules are sorted first by program, then by regex, because rules
-        cannot overlap if their programs are different.  Note that this
-        query does not properly deal with generic rules whose program is
-        \texttt{*}; those rules will be used on all log lines that have not
-        been recognised by program-specific rules.
+        The rules are sorted first by program, then by \acronym{regex},
+        because rules cannot overlap if their programs are different.  Note
+        that this query does not properly deal with generic rules whose
+        program is \texttt{*}; those rules will be used on all log lines
+        that have not been recognised by program-specific rules.
 
-        Inspect the list to see if any pair of regexes look suspiciously
-        similar; overlapping regexes will often lie beside one another when
-        sorted.
+        Inspect the list to see if any pair of \regexes{} look suspiciously
+        similar; overlapping \regexes{} will often lie beside one another
+        when sorted.
 
     \item Compare the results of parsing using different rule orderings, as
         described in \sectionref{rule ordering for efficiency}.  Parse
@@ -1569,8 +1581,8 @@ improvements that have been identified in \parsername{}.
         will be logged, but when a mail has multiple recipients no
         addresses are logged.
 
-    \item \parsername{} will not detect that it is parsing the same log file
-        twice, resulting in the database containing duplicate entries.
+    \item \parsername{} will not detect that it is parsing the same log
+        file twice, resulting in the database containing duplicate entries.
 
     \item \parsername{} does not distinguish between log files produced by
         different servers when parsing; all results will be saved to the
@@ -1618,12 +1630,12 @@ rules, is also the most visible component, and its implementation is
 examined in detail with: a sample rule and an explanation of how every
 field in that rule is used; a description of how to add new rules and
 determine the values that should be used for each field; an explanation of
-the algorithm used by the utility that creates new regexes from unparsed
+the algorithm used by the utility that creates new \regexes{} from unparsed
 log lines, and how it differs from the original algorithm it is based on.
 How \parsername{} uses rule conditions and overlapping rules is discussed,
-accompanied by a description of the regex snippets the framework provides
-to simplify the regexes used in rules.  The many complications and
-difficulties encountered while writing \parsername{}, and the solutions
+accompanied by a description of the \acronym{regex} snippets the framework
+provides to simplify the \regexes{} used in rules.  The many complications
+and difficulties encountered while writing \parsername{}, and the solutions
 developed to overcome them, are documented in depth; also documented are
 how solutions interact, and which action or actions each solution is
 implemented in.  This chapter concludes with a list of the limitations

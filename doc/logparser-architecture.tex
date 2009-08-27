@@ -66,24 +66,24 @@ from those inputs for processing by actions.
 
 Separating the rules from the actions and framework makes it possible to
 parse new inputs without modifying the core parsing algorithm.  Adding a
-new rule with the action to invoke and a regex to recognise inputs is
-trivial in comparison to understanding an entire parser, identifying the
-correct location to change, and making the appropriate changes.  Changes to
-a parser must be made without adversely affecting existing parsing,
-including any edge cases that are not immediately obvious; an edge case
-that occurs only four times in \numberOFlogFILES{} log files is described
-in Yet More Aborted Delivery Attempts (\sectionref{yet more aborted
-delivery attempts}).  The more intrusive the changes are, the more likely
-they are to introduce a bug, so reducing the extent of the changes is
-important.  Requiring changes to a parser's source code also complicates
-upgrades of the parser, because the changes must be preserved during the
-upgrade, and they may clash with changes made by the developer.  This
-architecture allows the user to add new rules to a parser without having to
-edit it, unless the new inputs cannot be processed by the existing actions.
-If the new inputs do require new functionality, new actions can be added to
-the parser without having to modify existing actions; only when the new
-actions need to cooperate with existing actions will more extensive changes
-be required.
+new rule with the action to invoke and a \acronym{regex} to recognise
+inputs is trivial in comparison to understanding an entire parser,
+identifying the correct location to change, and making the appropriate
+changes.  Changes to a parser must be made without adversely affecting
+existing parsing, including any edge cases that are not immediately
+obvious; an edge case that occurs only four times in \numberOFlogFILES{}
+log files is described in Yet More Aborted Delivery Attempts
+(\sectionref{yet more aborted delivery attempts}).  The more intrusive the
+changes are, the more likely they are to introduce a bug, so reducing the
+extent of the changes is important.  Requiring changes to a parser's source
+code also complicates upgrades of the parser, because the changes must be
+preserved during the upgrade, and they may clash with changes made by the
+developer.  This architecture allows the user to add new rules to a parser
+without having to edit it, unless the new inputs cannot be processed by the
+existing actions.  If the new inputs do require new functionality, new
+actions can be added to the parser without having to modify existing
+actions; only when the new actions need to cooperate with existing actions
+will more extensive changes be required.
 
 Some similarity exists between this architecture and William A.\ Wood's
 \acronym{ATN}~\cite{nlpip,atns}, used in Computational Linguistics to
@@ -199,7 +199,7 @@ which will generally involve the following:
             \item Checking for conflicts in the data to be extracted, e.g.\
                 setting the same variable twice.
 
-            \item Checking that the regex in the rule is valid.
+            \item Checking that the \acronym{regex} in the rule is valid.
 
         \end{itemize}
 
@@ -343,15 +343,15 @@ allow maximum flexibility for parsers based on this architecture.
 Rules are responsible for recognising inputs: each rule should recognise
 one and only one input variant; an input category with multiple input
 variants should have multiple rules, one for each variant.  Rules will
-typically use a regex when recognising inputs, but other approaches may
-prove useful for some applications, e.g.\ comparing fixed strings to the
-input, or checking the length of the input; for the remainder of this
-thesis it will be assumed that a regex is used.  Each rule must specify the
-regex to recognise inputs and the action to invoke when recognition is
-successful, but implementations are free to add any other attributes they
-require; \sectionref{rules table} describes the attributes used in
-\parsername{}, and some generally useful attributes will be discussed later
-in this section.
+typically use a \acronym{regex} when recognising inputs, but other
+approaches may prove useful for some applications, e.g.\ comparing fixed
+strings to the input, or checking the length of the input; for the
+remainder of this thesis it will be assumed that a \acronym{regex} is used.
+Each rule must specify the \acronym{regex} to recognise inputs and the
+action to invoke when recognition is successful, but implementations are
+free to add any other attributes they require; \sectionref{rules table}
+describes the attributes used in \parsername{}, and some generally useful
+attributes will be discussed later in this section.
 
 Using the rules is simple: the first rule to recognise the input determines
 the action that will be invoked; there is no backtracking to try alternate
@@ -388,15 +388,15 @@ achieved in one of three ways:
 
 \begin{enumerate}
 
-    \item Modify an existing rule's regex, because the new input is part of
-        an existing variant.
+    \item Modify an existing rule's \acronym{regex}, because the new input
+        is part of an existing variant.
 
-    \item Write a new rule that pairs an existing action with a new regex,
-        adding a new variant to an existing category.
+    \item Write a new rule that pairs an existing action with a new
+        \acronym{regex}, adding a new variant to an existing category.
 
     \item Create a new category of inputs, write a new action to process
         inputs from the new category, and write a new rule pairing the new
-        action with a new regex.
+        action with a new \acronym{regex}.
 
 \end{enumerate}
 
@@ -472,23 +472,24 @@ them.
 An example of how rule conditions can be used is parsing C-style comments,
 which start with \texttt{/*} and end with \texttt{*/}; the start and end
 tokens can be on one line, or may have many lines between them.
-\Tableref{Rules to parse C-style comments} shows the regexes, conditions,
-and state changes of the four rules required to parse C-style comments.
-These are simplified rules, e.g.\ rules one and two will incorrectly
-recognise the comment start token if it is within a quoted string.  Rules
-one and two will be used when the parser is parsing code, not comments:
-rule one recognises a comment that is contained within one line and leaves
-the parser's state unchanged; rule two recognises the start of a comment
-and changes the parser's state to parsing comments instead of parsing code.
-Rules three and four will be used when the parser is parsing a comment:
-rule three recognises the end of a comment and switches the parser's state
-back to parsing code; rule four recognises a comment line without an end
-token and keeps the parser's state unchanged.  It is important that the
-rules are applied in the order listed in \tableref{Rules to parse C-style
-comments} because rule two overlaps with rule one, and rule four overlaps
-with rule three; \sectionref{rules in architecture} has explained how this
-is achieved.  \sectionref{overlapping rules in architecture} will discuss
-the benefits and difficulties of using overlapping rules.
+\Tableref{Rules to parse C-style comments} shows the \regexes{},
+conditions, and state changes of the four rules required to parse C-style
+comments.  These are simplified rules, e.g.\ rules one and two will
+incorrectly recognise the comment start token if it is within a quoted
+string.  Rules one and two will be used when the parser is parsing code,
+not comments: rule one recognises a comment that is contained within one
+line and leaves the parser's state unchanged; rule two recognises the start
+of a comment and changes the parser's state to parsing comments instead of
+parsing code.  Rules three and four will be used when the parser is parsing
+a comment: rule three recognises the end of a comment and switches the
+parser's state back to parsing code; rule four recognises a comment line
+without an end token and keeps the parser's state unchanged.  It is
+important that the rules are applied in the order listed in \tableref{Rules
+to parse C-style comments} because rule two overlaps with rule one, and
+rule four overlaps with rule three; \sectionref{rules in architecture} has
+explained how this is achieved.  \sectionref{overlapping rules in
+architecture} will discuss the benefits and difficulties of using
+overlapping rules.
 
 \begin{table}[thbp]
     \caption{Rules to parse C-style comments}
@@ -529,22 +530,22 @@ useful for catchall rules.  The architecture does not try to detect
 overlapping rules: that responsibility is left to the author of the rules.
 
 Overlapping rules can be detected by visual inspection, or a program could
-be written to analyse the regexes in a ruleset.  Traditional regexes are
-equivalent in computational power to \acronym{FA} and can be converted to
-\acronym{FA}, so regex overlap can be detected by finding a non-empty
-intersection of two \acronym{FA}\@.  Perl 5.10 regexes~\cite{perlre} are
-more powerful than traditional regexes: they can match correctly balanced
-brackets nested to an arbitrary depth, e.g.\
-\verb!/^[^<>]*(<(?:(?>[^<>]+)|(?1))*>)[^<>]*$/!  matches
+be written to analyse the \regexes{} in a ruleset.  Traditional \regexes{}
+are equivalent in computational power to \acronym{FA} and can be converted
+to \acronym{FA}, so \acronym{regex} overlap can be detected by finding a
+non-empty intersection of two \acronym{FA}\@.  Perl 5.10
+\regexes{}~\cite{perlre} are more powerful than traditional \regexes{}:
+they can match correctly balanced brackets nested to an arbitrary depth,
+e.g.\ \verb!/^[^<>]*(<(?:(?>[^<>]+)|(?1))*>)[^<>]*$/!  matches
 \verb!z<123<pq<>rs>j<r>ml>s!.  Matching balanced brackets requires the
-regex engine to maintain state on a stack, so Perl 5.10 regexes are
-equivalent in computational power to \acronym{PDA}; detecting overlap may
-require calculating the intersection of two \acronym{PDA} instead of two
-\acronym{FA}.  \acronym{PDA} intersection is not closed, i.e.\ the result
-cannot always be implemented using a \acronym{PDA}, so intersection may be
-intractable sometimes, e.g.:
+\acronym{regex} engine to maintain state on a stack, so Perl 5.10
+\regexes{} are equivalent in computational power to \acronym{PDA};
+detecting overlap may require calculating the intersection of two
+\acronym{PDA} instead of two \acronym{FA}.  \acronym{PDA} intersection is
+not closed, i.e.\ the result cannot always be implemented using a
+\acronym{PDA}, so intersection may be intractable sometimes, e.g.:
 $a^{*}b^{n}c^{n}~\cap~a^{n}b^{n}c^{*}~\rightarrow~a^{n}b^{n}c^{n}$.
-Detecting overlap amongst $n$ regexes requires calculating
+Detecting overlap amongst $n$ \regexes{} requires calculating
 $\frac{n\left(n-1\right)}{2}$ intersections, resulting in
 $O\left(n^{2}x\right)$ complexity, where $x$ is the cost of calculating
 \acronym{FA} or \acronym{PDA} intersection.  This is certainly not a task
@@ -553,12 +554,12 @@ amongst \parsernames{} \numberOFrules{} rules would require calculating
 \numberOFruleINTERSECTIONS{} intersections.
 
 When detecting overlap, any conditions attached to rules must be taken into
-account, because two rules whose regexes overlap may have conditions
+account, because two rules whose \regexes{} overlap may have conditions
 attached that prevent the rules overlapping.  A less naive approach to
 overlap detection would first check for overlapping conditions amongst
-rules, and then check for overlap between the regexes of each pair of rules
-with overlapping conditions.  Rule overlap is not transitive, e.g.\ given
-these three conditions:
+rules, and then check for overlap between the \regexes{} of each pair of
+rules with overlapping conditions.  Rule overlap is not transitive, e.g.\
+given these three conditions:
 
 \begin{enumerate}
 
@@ -581,16 +582,16 @@ detecting overlap amongst $n$ rules is $O\left(n^{2}y+|o|x\right)$, where:
 
     $y$ & = & cost of checking for overlap between two conditions \\
     $o$ & = & set of pairs of rules with overlapping conditions   \\
-    $x$ & = & cost of checking for overlap between two regexes    \\
+    $x$ & = & cost of checking for overlap between two \regexes{}    \\
 
 \end{tabular}
 
 In the worst case, $|o|$ above will be equal to $n^{2}$.  For this approach
 to be more efficient than the naive approach, $y$ must be significantly
 lower than $x$.  If $y$ is higher than $x$ then the checks for overlap
-should be performed in the opposite order: check for regex overlap first,
-then check for condition overlap only between pairs of rules with
-overlapping regexes.
+should be performed in the opposite order: check for \acronym{regex}
+overlap first, then check for condition overlap only between pairs of rules
+with overlapping \regexes{}.
 
 Once conditions pass a certain level of complexity, determining if two
 conditions overlap becomes intractable, because it requires so much
@@ -607,47 +608,50 @@ is implemented upon.
 
 \subsection{Pathological Rules}
 
-It is possible to write pathological regexes, which fall into two main
-categories: regexes that match inputs they should not, and regexes that
-consume excessive amounts of CPU time during matching.  Defining a regex
-that matches inputs it should not is trivial: \verb!/^/! matches the start
-of every input.  This regex would be found by a tool that detects
-overlapping rules, and would easily be noticed by visual inspection, but
-more complex regexes would be harder to find.  Regexes that match inputs
-more than they should are a problem not because of excessive resource
-usage, but because they may prevent the correct rule from recognising the
-input.  If an adaptive ordering system is used to prioritise rules that
-frequently recognise inputs (see \sectionref{rule ordering for
-efficiency}), then a rule with a regex that matches inputs it should not
-may be promoted up through the list, displacing an increasing number of
-correct rules as it rises.
+It is possible to write pathological \regexes{}, which fall into two main
+categories: \regexes{} that match inputs they should not, and \regexes{}
+that consume excessive amounts of CPU time during matching.  Defining a
+\acronym{regex} that matches inputs it should not is trivial: \verb!/^/!
+matches the start of every input.  This \acronym{regex} would be found by a
+tool that detects overlapping rules, and would easily be noticed by visual
+inspection, but more complex \regexes{} would be harder to find.  Regexes
+that match inputs more than they should are a problem not because of
+excessive resource usage, but because they may prevent the correct rule
+from recognising the input.  If an adaptive ordering system is used to
+prioritise rules that frequently recognise inputs (see \sectionref{rule
+ordering for efficiency}), then a rule with a \acronym{regex} that matches
+inputs it should not may be promoted up through the list, displacing an
+increasing number of correct rules as it rises.
 
-Excessive CPU time is usually consumed when a regex fails to match an
-input, and the regex engine backtracks many times because of alteration or
-nested quantifiers; successful matching is generally quite fast with such
-regexes, so problematic regexes may go unnoticed for a long time.  For
-example, with most regex engines matching double quoted strings with
-\verb!\"([^"\\]+|\\.)*"\!  is very fast when a match can be found, but when
-the match fails its computational complexity for a string of length $n$ is
-$O(2^{n})$; see~\cite{mastering-regular-expressions} for in-depth
-discussion of nested quantifiers, backtracking, alteration, and capturing
-groups.  Pathological regexes that consume excessive CPU time can be
-difficult to detect, whether by visual inspection or by machine inspection,
-but if a regex is converted to a \acronym{FA} or the internal
-representation used by the regex engine, it may be possible to determine if
-nested quantifiers or other troublesome constructs are present.  Modern
-regex engines have addressed many of these problems, e.g.\ the regex to
-match double quoted strings given above fails immediately with Perl 5.10,
-regardless of the input length, because the regex engine looks for both of
-the required double quotes first.  Similarly, Perl 5.10's regex engine
-optimises alterations starting with literal text into a trie, which has
-matching time proportional to the length of the alternatives, rather than
-the number of alternatives.  Perl regexes can use \verb!(?>pattern)!, which
-matches \verb!pattern! the first time the regex engine passes over it, and
-does not change what it originally matched if the regex engine backtracks
-over it, alleviating problems caused by excessive backtracking; Prolog
-users will notice a similarity to the \verb'!' (cut) operator.  A
-presentation showing some of Perl 5.10's new regex features is available at
+Excessive CPU time is usually consumed when a \acronym{regex} fails to
+match an input, and the \acronym{regex} engine backtracks many times
+because of alteration or nested quantifiers; successful matching is
+generally quite fast with such \regexes{}, so problematic \regexes{} may go
+unnoticed for a long time.  For example, with most \acronym{regex} engines
+matching double quoted strings with \verb!\"([^"\\]+|\\.)*"\!  is very fast
+when a match can be found, but when the match fails its computational
+complexity for a string of length $n$ is $O(2^{n})$;
+see~\cite{mastering-regular-expressions} for in-depth discussion of nested
+quantifiers, backtracking, alteration, and capturing groups.  Pathological
+\regexes{} that consume excessive CPU time can be difficult to detect,
+whether by visual inspection or by machine inspection, but if a
+\acronym{regex} is converted to a \acronym{FA} or the internal
+representation used by the \acronym{regex} engine, it may be possible to
+determine if nested quantifiers or other troublesome constructs are
+present.  Modern \acronym{regex} engines have addressed many of these
+problems, e.g.\ the \acronym{regex} to match double quoted strings given
+above fails immediately with Perl 5.10, regardless of the input length,
+because the \acronym{regex} engine looks for both of the required double
+quotes first.  Similarly, Perl 5.10's \acronym{regex} engine optimises
+alterations starting with literal text into a trie, which has matching time
+proportional to the length of the alternatives, rather than the number of
+alternatives.  Perl \regexes{} can use \verb!(?>pattern)!, which matches
+\verb!pattern! the first time the \acronym{regex} engine passes over it,
+and does not change what it originally matched if the \acronym{regex}
+engine backtracks over it, alleviating problems caused by excessive
+backtracking; Prolog users will notice a similarity to the \verb'!' (cut)
+operator.  A presentation showing some of Perl 5.10's new \acronym{regex}
+features is available at
 \urlLastChecked{http://www.regex-engineer.org/slides/perl510_regex.html}{2009/03/03}.
 
 Conditions can vary in complexity from simple equality through to a
@@ -692,6 +696,7 @@ inputs unexpectedly.  The framework does not try to detect overlapping
 rules, because overlap amongst rules may be valid and is quite often
 intentional; that responsibility falls to the author of the ruleset.  The
 difficulty involved in detecting overlap is proportional to the complexity
-of a ruleset's regexes and conditions, and may be possible for a human yet
-intractable or impossible for a program.  The rules section concludes with
-a discussion of pathological rules, concentrating on pathological regexes.
+of a ruleset's \regexes{} and conditions, and may be possible for a human
+yet intractable or impossible for a program.  The rules section concludes
+with a discussion of pathological rules, concentrating on pathological
+\regexes{}.
