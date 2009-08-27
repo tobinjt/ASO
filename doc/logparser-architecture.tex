@@ -2,15 +2,23 @@
 
 \label{parser architecture}
 
-To avoid cluttering the description of the parser architecture with the
-details of implementing a parser for Postfix log files, each topic has been
-given its own chapter.  This chapter presents the architecture developed
-for this project, beginning with the overall architecture and design,
-followed by detailed documentation of the three components of the
-architecture: Framework, Actions, and Rules.  This chapter is focused on
-the theoretical, implementation-independent aspects of the architecture;
+The parser architecture described in this chapter is flexible enough to be
+used as the basis of other parsers.  Obviously it is particularly suitable
+for writing parsers for log files; with judicious use of cascaded parsing
+(see \sectionref{actions in architecture}), a calculator could easily be
+implemented; a more ambitious project might attempt to parse a programming
+language.\footnote{Lisp, where every statement is enclosed in parentheses
+and can easily be isolated from the surrounding statements, might be
+particularly amenable.}  To avoid cluttering the description of the
+architecture with the details of implementing a parser for Postfix log
+files, each topic has been given its own chapter.  This chapter is focused
+on the theoretical, implementation-independent aspects of the architecture;
 the practical difficulties of writing a parser for Postfix log files are
-covered in detail in \sectionref{Postfix Parser Implementation}.
+covered in detail in \sectionref{Postfix Parser Implementation}.  This
+chapter presents the architecture developed for this project, beginning
+with the overall architecture and design, followed by detailed
+documentation of the three components of the architecture: Framework,
+Actions, and Rules.
 
 \section{Architecture Overview}
 
