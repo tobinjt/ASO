@@ -52,7 +52,7 @@ digraph logparser {
     /* NODE LABELS */
     rejection                       [label = "4: Postfix rejects a\nmail delivery attempt"]
     connect                         [label = "1: Connection from\nremote client\nfor SMTP."]
-    clone                           [label = "5: Create a new\ndata structure when\na mail is accepted"]
+    clone                           [label = "5: Create a new\ndata structure when\na mail is accepted,\ncopying the remote\nclient's IP address\nand hostname"]
 
     /* Disconnect without queueid */
     disconnect                      [label = "6: Remote client disconnects,\neither successfully\nor with an error."]
